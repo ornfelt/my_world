@@ -1,0 +1,38 @@
+v8buildconfig = x64.debug
+v8dir = /home/anuka/dev/wowemu/v8/v8_src/v8
+v8includedir = $v8dir/include
+v8libdir = $v8dir/out.gn/$v8buildconfig
+
+cxx = clang
+cflags = -I$v8includedir --std=c++14 -g
+ldflags = -Wl,-rpath $v8libdir -L$v8libdir
+
+scriptsdir = scripts
+builddir = bin
+objdir = $builddir/obj
+
+rule cc
+  command = $cxx $cflags -c $in -o $out
+rule link
+  command = $cxx $ldflags -o $out $in $libs
+
+rule copy
+  command = cp $in $out
+rule copydir
+  command = cp -R $in $out
+
+build $objdir/Creature.o: cc src/Creature.cpp
+build $objdir/CreatureAI.o: cc src/CreatureAI.cpp
+build $objdir/Main.o: cc src/Main.cpp
+build $objdir/ScriptManager.o: cc src/ScriptManager.cpp
+build $objdir/ScriptRunner.o: cc src/ScriptRunner.cpp
+
+build $builddir/trinity-js-v8-scripts: link $objdir/Creature.o $objdir/CreatureAI.o $objdir/Main.o $objdir/ScriptManager.o $objdir/ScriptRunner.o
+  libs = -lstdc++ -lc++ -lv8 -lv8_libbase -lv8_libplatform -pthread
+
+build $builddir/natives_blob.bin: copy $v8libdir/natives_blob.bin
+build $builddir/snapshot_blob.bin: copy $v8libdir/snapshot_blob.bin
+
+build $builddir/scripts: copydir $scriptsdir/
+
+default $builddir/trinity-js-v8-scripts $builddir/natives_blob.bin $builddir/snapshot_blob.bin $builddir/scripts/

@@ -1,0 +1,13 @@
+smsg SMSG_FORCE_MOVE_ROOT = 0x00E8 {
+    Guid guid;
+    u32 counter;
+} {
+    versions = "1.12";
+}
+
+smsg SMSG_FORCE_MOVE_ROOT = 0x00E8 {
+    PackedGuid guid;
+    u32 counter;
+} {
+    paste_versions = "2.4.3 3.3.5";
+}

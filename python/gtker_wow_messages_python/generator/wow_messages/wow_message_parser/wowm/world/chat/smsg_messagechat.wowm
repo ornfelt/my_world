@@ -1,0 +1,164 @@
+enum PlayerChatTag : u8 {
+    NONE = 0;
+    AFK = 1;
+    DND = 2;
+    GM = 3;
+} {
+    versions = "1 2";
+}
+
+smsg SMSG_MESSAGECHAT = 0x0096 {
+    ChatType chat_type;
+    Language language;
+    if (chat_type == MONSTER_WHISPER
+     || chat_type == RAID_BOSS_EMOTE
+     || chat_type == MONSTER_EMOTE) {
+        SizedCString monster_name;
+        Guid monster;
+    }
+    else if (chat_type == SAY
+          || chat_type == PARTY
+          || chat_type == YELL) {
+        /// This character will have the speech bubble above their head.
+        /// 0 value credits same as `chat_credit`. Invalid value credits no one.
+        /// cmangos/vmangos/mangoszero: `chat_credit` and `speech_bubble_credit` are the same
+        Guid speech_bubble_credit;
+        /// This character will be appear to say this in the chat box.
+        /// 0 value credits no name.
+        /// cmangos/vmangos/mangoszero: `chat_credit` and `speech_bubble_credit` are the same
+        Guid chat_credit;
+    }
+    else if (chat_type == MONSTER_SAY
+          || chat_type == MONSTER_YELL) {
+        Guid sender1;
+        SizedCString sender_name;
+        Guid target;
+    }
+    else if (chat_type == CHANNEL) {
+        CString channel_name;
+        u32 player_rank;
+        Guid player;
+    }
+    else {
+        Guid sender2;
+    }
+    SizedCString message;
+    PlayerChatTag tag;
+} {
+    versions = "1.7 1.8 1.9 1.10 1.11 1.12";
+}
+
+test SMSG_MESSAGECHAT {
+    chat_type = SAY;
+    language = UNIVERSAL;
+    speech_bubble_credit = 5;
+    chat_credit = 5;
+    message = "This is a say message.";
+    tag = NONE;
+} [
+  0x00, 0x33, /* size */
+  0x96, 0x00, /* opcode */
+  0x00, /* chat_type */
+  0x00, 0x00, 0x00, 0x00, /* language */
+  0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* speech_bubble_credit */
+  0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* chat_credit */
+  0x17, 0x00, 0x00, 0x00, /* SizedCString length */
+  0x54, 0x68, 0x69, 0x73, 0x20, 0x69, 0x73, 0x20, 0x61, 0x20, 0x73,
+  0x61, 0x79, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x2e, 0x00, /* message */
+  0x00 /* tag */
+] {
+    versions = "1.12";
+}
+
+enum PlayerChatTag : u8 {
+    NONE = 0;
+    AFK = 1;
+    DND = 2;
+    GM = 3;
+    COMMENTATOR = 4;
+    DEVELOPER = 5;
+} {
+    versions = "3";
+}
+
+smsg SMSG_MESSAGECHAT = 0x0096 {
+    ChatType chat_type;
+    (u32)Language language;
+    if (chat_type == MONSTER_SAY
+     || chat_type == MONSTER_PARTY
+     || chat_type == MONSTER_YELL
+     || chat_type == MONSTER_WHISPER
+     || chat_type == RAID_BOSS_WHISPER
+     || chat_type == RAID_BOSS_EMOTE
+     || chat_type == MONSTER_EMOTE)
+    {
+        SizedCString sender;
+        NamedGuid target1;
+    }
+    else if (chat_type == BG_SYSTEM_NEUTRAL
+          || chat_type == BG_SYSTEM_ALLIANCE
+          || chat_type == BG_SYSTEM_HORDE)
+    {
+        NamedGuid target2;
+    }
+    else if (chat_type == CHANNEL) {
+        CString channel_name;
+        Guid target4;
+    } else {
+        Guid target5;
+    }
+    SizedCString message;
+    PlayerChatTag tag;
+} {
+    versions = "2.4.3";
+}
+
+smsg SMSG_MESSAGECHAT = 0x0096 {
+    ChatType chat_type;
+    (u32)Language language;
+    Guid sender;
+    /// azerothcore sets to 0.
+    u32 flags;
+    if (chat_type == MONSTER_SAY
+     || chat_type == MONSTER_PARTY
+     || chat_type == MONSTER_YELL
+     || chat_type == MONSTER_WHISPER
+     || chat_type == RAID_BOSS_WHISPER
+     || chat_type == RAID_BOSS_EMOTE
+     || chat_type == MONSTER_EMOTE
+     || chat_type == BATTLENET)
+    {
+        SizedCString sender1;
+        NamedGuid target1;
+    }
+    else if (chat_type == WHISPER_FOREIGN) {
+        SizedCString sender2;
+        Guid target2;
+    }
+    else if (chat_type == BG_SYSTEM_NEUTRAL
+          || chat_type == BG_SYSTEM_ALLIANCE
+          || chat_type == BG_SYSTEM_HORDE)
+    {
+        NamedGuid target3;
+    }
+    else if (chat_type == ACHIEVEMENT
+          || chat_type == GUILD_ACHIEVEMENT)
+    {
+        Guid target4;
+    }
+    else if (chat_type == CHANNEL) {
+        CString channel_name;
+        Guid target5;
+    } else {
+        Guid target6;
+    }
+    SizedCString message;
+    PlayerChatTag tag;
+    if (chat_type == ACHIEVEMENT
+     || chat_type == GUILD_ACHIEVEMENT)
+    {
+        u32 achievement_id;
+    }
+} {
+    versions = "3.3.5";
+}

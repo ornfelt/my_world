@@ -1,0 +1,30 @@
+name: Rust
+
+on: [push, pull_request]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo check --all-features --workspace --exclude 'wow_items' --exclude 'wow_spells'
+      - run: cargo clippy --all-features --workspace --exclude 'wow_items' --exclude 'wow_spells'
+      - run: cargo test --all-features --workspace --exclude 'wow_items' --exclude 'wow_spells'
+  validate-ir:
+    name: Validate Intermediate Representation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: sudo apt install zip -y
+      - name: Download jtd-validate
+        run: wget https://github.com/jsontypedef/json-typedef-validate/releases/download/v0.2.0/x86_64-unknown-linux-musl.zip
+      - name: Extract jtd-validate
+        run: unzip x86_64-unknown-linux-musl.zip
+      - name: Validate IR
+        run: ./jtd-validate intermediate_representation_schema.json intermediate_representation.json

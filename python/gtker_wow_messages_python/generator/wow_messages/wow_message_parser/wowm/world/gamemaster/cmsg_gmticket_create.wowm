@@ -1,0 +1,33 @@
+cmsg CMSG_GMTICKET_CREATE = 0x0205 {
+    GmTicketType category;
+    Map map;
+    Vector3d position;
+    CString message;
+    /// cmangos/vmangos/mangoszero: Pre-TBC: 'Reserved for future use'
+    /// cmangos/vmangos/mangoszero: Unused
+    CString reserved_for_future_use;
+    if (category == BEHAVIOR_HARASSMENT) {
+        u32 chat_data_line_count;
+        u8[-] compressed_chat_data {
+            compressed = "true";
+        }
+    }
+} {
+    paste_versions = "1.12 2.4.3";
+}
+
+cmsg CMSG_GMTICKET_CREATE = 0x0205 {
+    Map map;
+    Vector3d position;
+    CString message;
+    Bool needs_response;
+    Bool needs_more_help;
+    u32 num_of_times;
+    u32[num_of_times] times;
+    u8[-] compressed_data {
+        compressed = "true";
+    }
+} {
+    versions = "3.3.5";
+}
+

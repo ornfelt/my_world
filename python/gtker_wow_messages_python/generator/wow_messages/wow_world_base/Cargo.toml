@@ -1,0 +1,28 @@
+[package]
+name = "wow_world_base"
+description = "Base definitions and functions for World of Warcraft game servers"
+version = "0.2.0"
+keywords = ["wow", "world-of-warcraft", "game", "definitions"]
+categories = ["network-programming", "game-development", "game-engines"]
+
+edition.workspace = true
+authors.workspace = true
+repository.workspace = true
+license.workspace = true
+
+exclude = ["release.toml"]
+
+[features]
+extended = []
+vanilla = []
+tbc = []
+wrath = []
+shared = []
+print-testcase = []
+
+[dependencies]
+serde = { version = "1", optional = true, default-features = false, features = ["derive"] }
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

@@ -1,0 +1,7 @@
+smsg SMSG_RESURRECT_FAILED = 0x0252 {
+    /// arcemu is the only emulator that has this.
+    /// arcemu sets to 1.
+    u32 unknown;
+} {
+    versions = "2.4.3 3";
+}

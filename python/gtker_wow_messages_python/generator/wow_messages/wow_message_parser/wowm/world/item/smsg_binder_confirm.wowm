@@ -1,0 +1,13 @@
+smsg SMSG_BINDER_CONFIRM = 0x02EB {
+    Guid guid;
+} {
+    versions = "1 2";
+}
+
+smsg SMSG_BINDER_CONFIRM = 0x02EB {
+    Guid guid;
+    /// arcemu has this field while other emus do not.
+    Area area;
+} {
+    versions = "3.3.5";
+}

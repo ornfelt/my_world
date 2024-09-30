@@ -1,0 +1,14 @@
+[package]
+name = "wrath_server"
+version = "0.0.0"
+edition = "2018"
+publish = false
+metadata.release.release = false
+
+[dependencies]
+tokio = { version = "1.18.2", features = ["full"] }
+wow_login_messages = { path = "../../wow_login_messages", features = ["tokio"] }
+wow_world_messages = { path = "../../wow_world_messages", features = ["tokio", "wrath"] }
+
+[dependencies.wow_srp]
+version = "0.7.0"

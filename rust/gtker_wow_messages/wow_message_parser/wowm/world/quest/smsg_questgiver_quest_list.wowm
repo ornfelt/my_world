@@ -1,0 +1,29 @@
+smsg SMSG_QUESTGIVER_QUEST_LIST = 0x0185 {
+    Guid npc;
+    CString title;
+    /// mangoszero: player emote
+    u32 emote_delay;
+    /// mangoszero: NPC emote
+    u32 emote;
+    u8 amount_of_entries {
+        valid_range = "0 32";
+    }
+    QuestItem[amount_of_entries] quest_items;
+} {
+    versions = "1 2";
+}
+
+smsg SMSG_QUESTGIVER_QUEST_LIST = 0x0185 {
+    Guid npc;
+    CString title;
+    /// mangoszero: player emote
+    u32 emote_delay;
+    /// mangoszero: NPC emote
+    u32 emote;
+    u8 amount_of_entries {
+        valid_range = "0 32";
+    }
+    QuestItem[amount_of_entries] quest_items;
+} {
+    versions = "3.3.5";
+}

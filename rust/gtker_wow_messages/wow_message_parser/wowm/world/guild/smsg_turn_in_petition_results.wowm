@@ -1,0 +1,11 @@
+smsg SMSG_TURN_IN_PETITION_RESULTS = 0x01C5 {
+    PetitionResult result;
+} {
+    versions = "1.12";
+}
+
+smsg SMSG_TURN_IN_PETITION_RESULTS = 0x01C5 {
+    PetitionResult result;
+} {
+    versions = "2.4.3 3";
+}

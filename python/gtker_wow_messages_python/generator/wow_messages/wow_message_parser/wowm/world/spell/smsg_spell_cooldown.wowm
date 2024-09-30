@@ -1,0 +1,21 @@
+struct SpellCooldownStatus {
+    Spell id;
+    Milliseconds cooldown_time;
+} {
+    versions = "1 2 3";
+}
+
+smsg SMSG_SPELL_COOLDOWN = 0x0134 {
+    Guid guid;
+    SpellCooldownStatus[-] cooldowns;
+} {
+    versions = "1";
+}
+
+smsg SMSG_SPELL_COOLDOWN = 0x0134 {
+    Guid guid;
+    u8 flags;
+    SpellCooldownStatus[-] cooldowns;
+} {
+    versions = "2.4.3 3";
+}

@@ -1,0 +1,14 @@
+[package]
+name = "warthog_messages"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+sync = []
+tokio = ["dep:tokio"]
+
+[dependencies]
+tokio = { workspace = true, optional = true }
+
+[lints]
+workspace = true

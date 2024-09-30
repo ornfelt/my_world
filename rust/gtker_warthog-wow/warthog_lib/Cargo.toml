@@ -1,0 +1,14 @@
+[package]
+name = "warthog_lib"
+description = "Authentication server for World of Warcraft versions 1.2 through to 3.3.5."
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+md5 = "0.7.0"
+tokio.workspace = true
+tracing = { version = "0.1.40", features = ["async-await"] }
+
+wow_login_messages.workspace = true
+
+wow_srp.workspace = true

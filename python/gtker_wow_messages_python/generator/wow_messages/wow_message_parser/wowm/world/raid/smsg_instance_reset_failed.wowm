@@ -1,0 +1,18 @@
+enum InstanceResetFailedReason : u8 {
+    /// at least one player is in the instance
+    GENERAL = 0;
+    /// at least one player is offline
+    OFFLINE = 1;
+    /// at least one player try to enter the instance (being teleported in)
+    ZONING = 2;
+    SILENTLY = 3;
+} {
+    versions = "1 2 3";
+}
+
+smsg SMSG_INSTANCE_RESET_FAILED = 0x031F {
+    (u32)InstanceResetFailedReason reason;
+    Map map;
+} {
+    paste_versions = "1.12 2.4.3 3.3.5";
+}

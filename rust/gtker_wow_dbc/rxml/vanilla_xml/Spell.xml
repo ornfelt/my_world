@@ -1,0 +1,893 @@
+<?xml version="1.0"?>
+<dbc comment="todo, size is correct but number of fields isn't">
+    <name>Spell</name>
+    
+    <field>
+        <type>uint32</type>
+        <name>id</name>
+        <key>
+            <type>primary</type>
+        </key>
+    </field>
+
+    <field>
+        <type>uint32</type>
+        <name>school</name>
+        <key>
+            <type>foreign</type>
+            <parent>Resistances</parent>
+        </key>
+    </field>
+
+    <field>
+        <type>uint32</type>
+        <name>category</name>
+        <key>
+            <type>foreign</type>
+            <parent>SpellCategory</parent>
+        </key>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>cast_ui</name>
+    </field>
+
+    <field>
+        <type>uint32</type>
+        <name>dispel_type</name>
+        <key>
+            <type>foreign</type>
+            <parent>SpellDispelType</parent>
+        </key>
+    </field>
+
+    <field>
+        <type>uint32</type>
+        <name>mechanic</name>
+        <key>
+            <type>foreign</type>
+            <parent>SpellMechanic</parent>
+        </key>
+    </field>
+
+    <flag>
+        <type>uint32</type>
+        <name>Attributes</name>
+        <options>
+            <option name="none" value="0x00" />
+            <option name="proc_failure_burns_charge" value="0x00000001" />
+            <option name="uses_ranged_slot" value="0x00000002" />
+            <option name="on_next_swing_no_damage" value="0x00000004" />
+            <option name="need_exotic_ammo" value="0x00000008" />
+            <option name="is_ability" value="0x00000010" />
+            <option name="is_tradeskill" value="0x00000020" />
+            <option name="passive" value="0x00000040" />
+            <option name="do_not_display" value="0x00000080" />
+            <option name="do_not_log" value="0x00000100" />
+            <option name="held_item_only" value="0x00000200" />
+            <option name="on_next_swing" value="0x00000400" />
+            <option name="wearer_casts_proc_trigger" value="0x00000800" />
+            <option name="daytime_only" value="0x00001000" />
+            <option name="night_only" value="0x00002000" />
+            <option name="only_indoors" value="0x00004000" />
+            <option name="only_outdoors" value="0x00008000" />
+            <option name="not_shapeshift" value="0x00010000" />
+            <option name="only_stealthed" value="0x00020000" />
+            <option name="do_not_sheath" value="0x00040000" />
+            <option name="scales_with_creature_level" value="0x00080000" />
+            <option name="cancels_auto_attack_combat" value="0x00100000" />
+            <option name="no_active_defense" value="0x00200000" />
+            <option name="track_target_in_cast_player_only" value="0x00400000" />
+            <option name="allow_cast_while_dead" value="0x00800000" />
+            <option name="allow_while_mounted" value="0x01000000" />
+            <option name="cooldown_on_event" value="0x02000000" />
+            <option name="aura_is_debuff" value="0x04000000" />
+            <option name="allow_while_sitting" value="0x08000000" />
+            <option name="not_in_combat_only_peaceful" value="0x10000000" />
+            <option name="no_immunities" value="0x20000000" />
+            <option name="heartbeat_resist" value="0x40000000" />
+            <option name="no_aura_cancel" value="0x80000000" />
+        </options>
+    </flag>
+
+    <field>
+        <type>Attributes</type>
+        <name>attributes</name>
+    </field>
+
+    <flag>
+        <type>uint32</type>
+        <name>AttributesEx1</name>
+        <options>
+            <option name="none" value="0x00" />
+            <option name="dismiss_pet_first" value="0x00000001" />
+            <option name="use_all_mana" value="0x00000002" />
+            <option name="is_channeled" value="0x00000004" />
+            <option name="no_redirection" value="0x00000008" />
+            <option name="no_skill_increase" value="0x00000010" />
+            <option name="allow_while_stealthed" value="0x00000020" />
+            <option name="is_self_channeled" value="0x00000040" />
+            <option name="no_reflection" value="0x00000080" />
+            <option name="only_peaceful_targets" value="0x00000100" />
+            <option name="initiates_combat_enables_auto_attack" value="0x00000200" />
+            <option name="no_threat" value="0x00000400" />
+            <option name="aura_unique" value="0x00000800" />
+            <option name="failure_breaks_stealth" value="0x00001000" />
+            <option name="toggle_farsight" value="0x00002000" />
+            <option name="track_target_in_channel" value="0x00004000" />
+            <option name="immunity_purges_effect" value="0x00008000" />
+            <option name="immunity_to_hostile_and_friendly_effects" value="0x00010000" />
+            <option name="no_autocast_ai" value="0x00020000" />
+            <option name="prevents_anim" value="0x00040000" />
+            <option name="exclude_caster" value="0x00080000" />
+            <option name="finishing_move_damage" value="0x00100000" />
+            <option name="threat_only_on_miss" value="0x00200000" />
+            <option name="finishing_move_duration" value="0x00400000" />
+            <option name="unk23" value="0x00800000" />
+            <option name="special_skillup" value="0x01000000" />
+            <option name="aura_stays_after_combat" value="0x02000000" />
+            <option name="require_all_targets" value="0x04000000" />
+            <option name="discount_power_on_miss" value="0x08000000" />
+            <option name="no_aura_icon" value="0x10000000" />
+            <option name="name_in_channel_bar" value="0x20000000" />
+            <option name="combo_on_block" value="0x40000000" />
+            <option name="cast_when_learned" value="0x80000000" />
+        </options>
+    </flag>
+
+    <field>
+        <type>AttributesEx1</type>
+        <name>attributes_ex1</name>
+    </field>
+
+    <flag>
+        <type>uint32</type>
+        <name>AttributesEx2</name>
+        <options>
+            <option name="none" value="0x00" />
+            <option name="allow_dead_target" value="0x00000001" />
+            <option name="no_shapeshift_ui" value="0x00000002" />
+            <option name="ignore_line_of_sight" value="0x00000004" />
+            <option name="allow_low_level_buff" value="0x00000008" />
+            <option name="use_shapeshift_bar" value="0x00000010" />
+            <option name="auto_repeat" value="0x00000020" />
+            <option name="cannot_cast_on_tapped" value="0x00000040" />
+            <option name="do_not_report_spell_failure" value="0x00000080" />
+            <option name="include_in_advanced_combat_log" value="0x00000100" />
+            <option name="always_cast_as_unit" value="0x00000200" />
+            <option name="special_taming_flag" value="0x00000400" />
+            <option name="no_target_per_second_costs" value="0x00000800" />
+            <option name="chain_from_caster" value="0x00001000" />
+            <option name="enchant_own_item_only" value="0x00002000" />
+            <option name="allow_while_invisible" value="0x00004000" />
+            <option name="unk15" value="0x00008000" />
+            <option name="no_active_pets" value="0x00010000" />
+            <option name="do_not_reset_combat_timers" value="0x00020000" />
+            <option name="req_dead_pet" value="0x00040000" />
+            <option name="allow_while_not_shapeshifted" value="0x00080000" />
+            <option name="initiate_combat_post_cast" value="0x00100000" />
+            <option name="fail_on_all_targets_immune" value="0x00200000" />
+            <option name="no_initial_threat" value="0x00400000" />
+            <option name="proc_cooldown_on_failure" value="0x00800000" />
+            <option name="item_cast_with_owner_skill" value="0x01000000" />
+            <option name="dont_block_mana_regen" value="0x02000000" />
+            <option name="no_school_immunities" value="0x04000000" />
+            <option name="ignore_weaponskill" value="0x08000000" />
+            <option name="not_an_action" value="0x10000000" />
+            <option name="cant_crit" value="0x20000000" />
+            <option name="active_threat" value="0x40000000" />
+            <option name="retain_item_cast" value="0x80000000" />
+        </options>
+    </flag>
+
+    <field>
+        <type>AttributesEx2</type>
+        <name>attributes_ex2</name>
+    </field>
+
+    <flag>
+        <type>uint32</type>
+        <name>AttributesEx3</name>
+        <options>
+            <option name="none" value="0x00" />
+            <option name="pvp_enabling" value="0x00000001" />
+            <option name="no_proc_equip_requirement" value="0x00000002" />
+            <option name="no_casting_bar_text" value="0x00000004" />
+            <option name="completely_blocked" value="0x00000008" />
+            <option name="no_res_timer" value="0x00000010" />
+            <option name="no_durability_loss" value="0x00000020" />
+            <option name="no_avoidance" value="0x00000040" />
+            <option name="dot_stacking_rule" value="0x00000080" />
+            <option name="only_on_player" value="0x00000100" />
+            <option name="not_a_proc" value="0x00000200" />
+            <option name="requires_main_hand_weapon" value="0x00000400" />
+            <option name="only_battlegrounds" value="0x00000800" />
+            <option name="only_on_ghosts" value="0x00001000" />
+            <option name="hide_channel_bar" value="0x00002000" />
+            <option name="hide_in_raid_filter" value="0x00004000" />
+            <option name="normal_ranged_attack" value="0x00008000" />
+            <option name="suppress_caster_procs" value="0x00010000" />
+            <option name="suppress_target_procs" value="0x00020000" />
+            <option name="always_hit" value="0x00040000" />
+            <option name="instant_target_procs" value="0x00080000" />
+            <option name="allow_aura_while_dead" value="0x00100000" />
+            <option name="only_proc_outdoors" value="0x00200000" />
+            <option name="casting_cancels_autorepeat" value="0x00400000" />
+            <option name="no_damage_history" value="0x00800000" />
+            <option name="requires_offhand_weapon" value="0x01000000" />
+            <option name="treat_as_periodic" value="0x02000000" />
+            <option name="can_proc_from_procs" value="0x04000000" />
+            <option name="only_proc_on_caster" value="0x08000000" />
+            <option name="ignore_caster_and_target_restrictions" value="0x10000000" />
+            <option name="ignore_caster_modifiers" value="0x20000000" />
+            <option name="do_not_display_range" value="0x40000000" />
+            <option name="not_on_aoe_immune" value="0x80000000" />
+        </options>
+    </flag>
+
+    <field>
+        <type>AttributesEx3</type>
+        <name>attributes_ex3</name>
+    </field>
+
+    <flag>
+        <type>uint32</type>
+        <name>AttributesEx4</name>
+        <options>
+            <option name="none" value="0x00" />
+            <option name="no_cast_log" value="0x00000001" />
+            <option name="class_trigger_only_on_target" value="0x00000002" />
+            <option name="aura_expires_offline" value="0x00000004" />
+            <option name="no_helpful_threat" value="0x00000008" />
+            <option name="no_harmful_threat" value="0x00000010" />
+            <option name="allow_client_targeting" value="0x00000020" />
+            <option name="cannot_be_stolen" value="0x00000040" />
+            <option name="allow_cast_while_casting" value="0x00000080" />
+            <option name="ignore_damage_taken_modifiers" value="0x00000100" />
+            <option name="combat_feedback_when_usable" value="0x00000200" />
+            <option name="weapon_speed_cost_scaling" value="0x00000400" />
+            <option name="no_partial_immunity" value="0x00000800" />
+        </options>
+    </flag>
+
+
+    <field>
+        <type>AttributesEx4</type>
+        <name>attributes_ex4</name>
+    </field>
+
+    <field>
+        <type>uint32</type>
+        <name>shapeshift_mask</name>
+        <key>
+            <type>foreign</type>
+            <parent>SpellShapeshiftForm</parent>
+        </key>
+    </field>
+
+    <field>
+        <type>uint32</type>
+        <name>shapeshift_exclude</name>
+        <key>
+            <type>foreign</type>
+            <parent>SpellShapeshiftForm</parent>
+        </key>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>targets</name>
+    </field>
+
+    <field>
+        <type>uint32</type>
+        <name>target_creature_type</name>
+        <key>
+            <type>foreign</type>
+            <parent>CreatureType</parent>
+        </key>
+    </field>
+
+    <field>
+        <type>uint32</type>
+        <name>requires_spell_focus</name>
+        <key>
+            <type>foreign</type>
+            <parent>SpellFocusObject</parent>
+        </key>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>caster_aura_state</name>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>target_aura_state</name>
+    </field>
+
+    <field>
+        <type>uint32</type>
+        <name>casting_time_index</name>
+        <key>
+            <type>foreign</type>
+            <parent>SpellCastTimes</parent>
+        </key>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>recovery_time</name>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>category_recovery_time</name>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>aura_interrupt_flags</name>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>channel_interrupt_flags</name>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>proc_type_mask</name>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>proc_chance</name>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>proc_charges</name>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>max_level</name>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>base_level</name>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>spell_level</name>
+    </field>
+
+    <field>
+        <type>uint32</type>
+        <name>duration</name>
+        <key>
+            <type>foreign</type>
+            <parent>SpellDuration</parent>
+        </key>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>power_type</name>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>mana_cost</name>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>mana_cost_per_level</name>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>mana_cost_per_second</name>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>mana_cost_per_second_per_level</name>
+    </field>
+
+    <field>
+        <type>uint32</type>
+        <name>range</name>
+        <key>
+            <type>foreign</type>
+            <parent>SpellRange</parent>
+        </key>
+    </field>
+
+    <field>
+        <type>float</type>
+        <name>speed</name>
+    </field>
+
+    <field>
+        <type>uint32</type>
+        <name>modal_next_spell</name>
+        <key>
+            <type>foreign</type>
+            <parent>Spell</parent>
+        </key>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>stack_amount</name>
+    </field>
+
+    <field>
+        <type>int32[2]</type>
+        <name>totem</name>
+    </field>
+
+    <field>
+        <type>int32[8]</type>
+        <name>reagent</name>
+    </field>
+
+    <field>
+        <type>int32[8]</type>
+        <name>reagent_count</name>
+    </field>
+
+    <field>
+        <type>uint32</type>
+        <name>equipped_item_class</name>
+        <key>
+            <type>foreign</type>
+            <parent>ItemClass</parent>
+        </key>
+    </field>
+
+    <field>
+        <type>uint32</type>
+        <name>equipped_item_subclass</name>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>equipped_item_inventory_type</name>
+    </field>
+
+    <field>
+        <type>int32[3]</type>
+        <name>effect</name>
+    </field>
+
+    <field>
+        <type>int32[3]</type>
+        <name>effect_die_sides</name>
+    </field>
+
+    <field>
+        <type>int32[3]</type>
+        <name>effect_base_dice</name>
+    </field>
+
+    <field>
+        <type>float[3]</type>
+        <name>effect_dice_per_level</name>
+    </field>
+
+    <field>
+        <type>float[3]</type>
+        <name>effect_real_points_per_level</name>
+    </field>
+
+    <field>
+        <type>int32[3]</type>
+        <name>effect_base_points</name>
+    </field>
+
+    <field>
+        <type>uint32[3]</type>
+        <name>effect_mechanic</name>
+        <key>
+            <type>foreign</type>
+            <parent>SpellMechanic</parent>
+        </key>
+    </field>
+
+    <field>
+        <type>int32[3]</type>
+        <name>implicit_target_a</name>
+    </field>
+
+    <field>
+        <type>int32[3]</type>
+        <name>implicit_target_b</name>
+    </field>
+
+    <field>
+        <type>uint32[3]</type>
+        <name>effect_radius</name>
+        <key>
+            <type>foreign</type>
+            <parent>SpellRadius</parent>
+        </key>
+    </field>
+
+    <enum>
+        <type>int32</type>
+        <name>AuraMod</name>
+        <options>
+            <option name="none" value="0" />
+            <option name="bind_sight" value="1" />
+            <option name="mod_possess" value="2" />
+            <option name="periodic_damage" value="3" />
+            <option name="dummy" value="4" />
+            <option name="mod_confuse" value="5" />
+            <option name="mod_charm" value="6" />
+            <option name="mod_fear" value="7" />
+            <option name="periodic_heal" value="8" />
+            <option name="mod_attackspeed" value="9" />
+            <option name="mod_threat" value="10" />
+            <option name="mod_taunt" value="11" />
+            <option name="mod_stun" value="12" />
+            <option name="mod_damage_done" value="13" />
+            <option name="mod_damage_taken" value="14" />
+            <option name="damage_shield" value="15" />
+            <option name="mod_stealth" value="16" />
+            <option name="mod_stealth_detect" value="17" />
+            <option name="mod_invisibility" value="18" />
+            <option name="mod_invisibility_detection" value="19" />
+            <option name="obs_mod_health" value="20" />
+            <option name="obs_mod_mana" value="21" />
+            <option name="mod_resistance" value="22" />
+            <option name="periodic_trigger_spell" value="23" />
+            <option name="periodic_energize" value="24" />
+            <option name="mod_pacify" value="25" />
+            <option name="mod_root" value="26" />
+            <option name="mod_silence" value="27" />
+            <option name="reflect_spells" value="28" />
+            <option name="mod_stat" value="29" />
+            <option name="mod_skill" value="30" />
+            <option name="mod_increase_speed" value="31" />
+            <option name="mod_increase_mounted_speed" value="32" />
+            <option name="mod_decrease_speed" value="33" />
+            <option name="mod_increase_health" value="34" />
+            <option name="mod_increase_energy" value="35" />
+            <option name="mod_shapeshift" value="36" />
+            <option name="effect_immunity" value="37" />
+            <option name="state_immunity" value="38" />
+            <option name="school_immunity" value="39" />
+            <option name="damage_immunity" value="40" />
+            <option name="dispel_immunity" value="41" />
+            <option name="proc_trigger_spell" value="42" />
+            <option name="proc_trigger_damage" value="43" />
+            <option name="track_creatures" value="44" />
+            <option name="track_resources" value="45" />
+            <option name="mod_parry_skill" value="46" />
+            <option name="mod_parry_percent" value="47" />
+            <option name="mod_dodge_skill" value="48" />
+            <option name="mod_dodge_percent" value="49" />
+            <option name="mod_block_skill" value="50" />
+            <option name="mod_block_percent" value="51" />
+            <option name="mod_crit_percent" value="52" />
+            <option name="periodic_leech" value="53" />
+            <option name="mod_hit_chance" value="54" />
+            <option name="mod_spell_hit_chance" value="55" />
+            <option name="transform" value="56" />
+            <option name="mod_spell_crit_chance" value="57" />
+            <option name="mod_increase_swim_speed" value="58" />
+            <option name="mod_damage_done_creature" value="59" />
+            <option name="mod_pacify_silence" value="60" />
+            <option name="mod_scale" value="61" />
+            <option name="periodic_health_funnel" value="62" />
+            <option name="periodic_mana_funnel" value="63" />
+            <option name="periodic_mana_leech" value="64" />
+            <option name="mod_casting_speed_not_stack" value="65" />
+            <option name="feign_death" value="66" />
+            <option name="mod_disarm" value="67" />
+            <option name="mod_stalked" value="68" />
+            <option name="school_absorb" value="69" />
+            <option name="extra_attacks" value="70" />
+            <option name="mod_spell_crit_chance_school" value="71" />
+            <option name="mod_power_cost_school_pct" value="72" />
+            <option name="mod_power_cost_school" value="73" />
+            <option name="reflect_spells_school" value="74" />
+            <option name="mod_language" value="75" />
+            <option name="far_sight" value="76" />
+            <option name="mechanic_immunity" value="77" />
+            <option name="mounted" value="78" />
+            <option name="mod_damage_percent_done" value="79" />
+            <option name="mod_percent_stat" value="80" />
+            <option name="split_damage_pct" value="81" />
+            <option name="water_breathing" value="82" />
+            <option name="mod_base_resistance" value="83" />
+            <option name="mod_regen" value="84" />
+            <option name="mod_power_regen" value="85" />
+            <option name="channel_death_item" value="86" />
+            <option name="mod_damage_percent_taken" value="87" />
+            <option name="mod_health_regen_percent" value="88" />
+            <option name="periodic_damage_percent" value="89" />
+            <option name="mod_resist_chance" value="90" />
+            <option name="mod_detect_range" value="91" />
+            <option name="prevents_fleeing" value="92" />
+            <option name="mod_unattackable" value="93" />
+            <option name="interrupt_regen" value="94" />
+            <option name="ghost" value="95" />
+            <option name="spell_magnet" value="96" />
+            <option name="mana_shield" value="97" />
+            <option name="mod_skill_talent" value="98" />
+            <option name="mod_attack_power" value="99" />
+            <option name="auras_visible" value="100" />
+            <option name="mod_resistance_pct" value="101" />
+            <option name="mod_melee_attack_power_versus" value="102" />
+            <option name="mod_total_threat" value="103" />
+            <option name="water_walk" value="104" />
+            <option name="feather_fall" value="105" />
+            <option name="hover" value="106" />
+            <option name="add_flat_modifier" value="107" />
+            <option name="add_pct_modifier" value="108" />
+            <option name="add_target_trigger" value="109" />
+            <option name="mod_power_regen_percent" value="110" />
+            <option name="add_caster_hit_trigger" value="111" />
+            <option name="override_class_scripts" value="112" />
+            <option name="mod_ranged_damage_taken" value="113" />
+            <option name="mod_ranged_damage_taken_pct" value="114" />
+            <option name="mod_healing" value="115" />
+            <option name="mod_regen_during_combat" value="116" />
+            <option name="mod_mechanic_resistance" value="117" />
+            <option name="mod_healing_pct" value="118" />
+            <option name="share_pet_tracking" value="119" />
+            <option name="untrackable" value="120" />
+            <option name="empathy" value="121" />
+            <option name="mod_offhand_damage_pct" value="122" />
+            <option name="mod_target_resistance" value="123" />
+            <option name="mod_ranged_attack_power" value="124" />
+            <option name="mod_melee_damage_taken" value="125" />
+            <option name="mod_melee_damage_taken_pct" value="126" />
+            <option name="ranged_attack_power_attacker_bonus" value="127" />
+            <option name="mod_possess_pet" value="128" />
+            <option name="mod_speed_always" value="129" />
+            <option name="mod_mounted_speed_always" value="130" />
+            <option name="mod_ranged_attack_power_versus" value="131" />
+            <option name="mod_increase_energy_percent" value="132" />
+            <option name="mod_increase_health_percent" value="133" />
+            <option name="mod_mana_regen_interrupt" value="134" />
+            <option name="mod_healing_done" value="135" />
+            <option name="mod_healing_done_percent" value="136" />
+            <option name="mod_total_stat_percentage" value="137" />
+            <option name="mod_melee_haste" value="138" />
+            <option name="force_reaction" value="139" />
+            <option name="mod_ranged_haste" value="140" />
+            <option name="mod_ranged_ammo_haste" value="141" />
+            <option name="mod_base_resistance_pct" value="142" />
+            <option name="mod_resistance_exclusive" value="143" />
+            <option name="safe_fall" value="144" />
+            <option name="charisma" value="145" />
+            <option name="persuaded" value="146" />
+            <option name="mechanic_immunity_mask" value="147" />
+            <option name="retain_combo_points" value="148" />
+            <option name="resist_pushback" value="149" />
+            <option name="mod_shield_blockvalue_pct" value="150" />
+            <option name="track_stealthed" value="151" />
+            <option name="mod_detected_range" value="152" />
+            <option name="split_damage_flat" value="153" />
+            <option name="mod_stealth_level" value="154" />
+            <option name="mod_water_breathing" value="155" />
+            <option name="mod_reputation_gain" value="156" />
+            <option name="pet_damage_multi" value="157" />
+            <option name="mod_shield_blockvalue" value="158" />
+            <option name="no_pvp_credit" value="159" />
+            <option name="mod_aoe_avoidance" value="160" />
+            <option name="mod_health_regen_in_combat" value="161" />
+            <option name="power_burn_mana" value="162" />
+            <option name="mod_crit_damage_bonus" value="163" />
+            <option name="unknown164" value="164" />
+            <option name="melee_attack_power_attacker_bonus" value="165" />
+            <option name="mod_attack_power_pct" value="166" />
+            <option name="mod_ranged_attack_power_pct" value="167" />
+            <option name="mod_damage_done_versus" value="168" />
+            <option name="mod_crit_percent_versus" value="169" />
+            <option name="detect_amore" value="170" />
+            <option name="mod_speed_not_stack" value="171" />
+            <option name="mod_mounted_speed_not_stack" value="172" />
+            <option name="allow_champion_spells" value="173" />
+            <option name="mod_spell_damage_of_stat_percent" value="174" />
+            <option name="mod_spell_healing_of_stat_percent" value="175" />
+            <option name="spirit_of_redemption" value="176" />
+            <option name="aoe_charm" value="177" />
+            <option name="mod_debuff_resistance" value="178" />
+            <option name="mod_attacker_spell_crit_chance" value="179" />
+            <option name="mod_flat_spell_damage_versus" value="180" />
+            <option name="mod_flat_spell_crit_damage_versus" value="181" />
+            <option name="mod_resistance_of_stat_percent" value="182" />
+            <option name="mod_critical_threat" value="183" />
+            <option name="mod_attacker_melee_hit_chance" value="184" />
+            <option name="mod_attacker_ranged_hit_chance" value="185" />
+            <option name="mod_attacker_spell_hit_chance" value="186" />
+            <option name="mod_attacker_melee_crit_chance" value="187" />
+            <option name="mod_attacker_ranged_crit_chance" value="188" />
+            <option name="mod_rating" value="189" />
+            <option name="mod_faction_reputation_gain" value="190" />
+            <option name="use_normal_movement_speed" value="191" />
+        </options>
+    </enum>
+
+    <field>
+        <type>AuraMod[3]</type>
+        <name>effect_aura</name>
+    </field>
+
+    <field>
+        <type>float[3]</type>
+        <name>effect_amplitude</name>
+    </field>
+
+    <field>
+        <type>float[3]</type>
+        <name>effect_multiple_values</name>
+    </field>
+
+    <field>
+        <type>int32[3]</type>
+        <name>effect_chain_target</name>
+    </field>
+
+    <field>
+        <type>int32[3]</type>
+        <name>effect_item_type</name>
+    </field>
+
+    <field>
+        <type>uint32[3]</type>
+        <name>effect_misc_value</name>
+        <key>
+            <type>foreign</type>
+            <parent>SpellItemEnchantment</parent>
+        </key>
+    </field>
+
+    <field>
+        <type>uint32[3]</type>
+        <name>effect_trigger_spell</name>
+        <key>
+            <type>foreign</type>
+            <parent>Spell</parent>
+        </key>
+    </field>
+
+    <field>
+        <type>float[3]</type>
+        <name>effect_points_per_combo</name>
+    </field>
+
+    <field>
+        <type>int32[2]</type>
+        <name>spell_visual</name>
+    </field>
+
+    <field>
+        <type>uint32</type>
+        <name>spell_icon</name>
+        <key>
+            <type>foreign</type>
+            <parent>SpellIcon</parent>
+        </key>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>active_icon</name>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>spell_priority</name>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>unknown_flag</name>
+    </field>
+
+    <field>
+        <type>string_ref_loc</type>
+        <name>name</name>
+    </field>
+
+    <field>
+        <type>string_ref_loc</type>
+        <name>name_subtext</name>
+    </field>
+
+    <field>
+        <type>string_ref_loc</type>
+        <name>description</name>
+    </field>
+
+    <field>
+        <type>string_ref_loc</type>
+        <name>aura_description</name>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>mana_cost_percent</name>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>start_recovery_category</name>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>start_recovery_time</name>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>max_target_level</name>
+    </field>
+
+    <field comment="todo">
+        <type>uint32</type>
+        <name>spell_class_set</name>
+        <key>
+            <type>foreign</type>
+            <parent>ChrClasses</parent>
+        </key>
+    </field>
+
+    <field>
+        <type>int32[2]</type>
+        <name>spell_class_mask</name>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>max_targets</name>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>defence_type</name>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>prevention_type</name>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>stance_bar_order</name>
+    </field>
+
+    <field>
+        <type>float[3]</type>
+        <name>damage_multiplier</name>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>min_faction</name>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>min_reputation</name>
+    </field>
+
+    <field>
+        <type>int32</type>
+        <name>required_aura_vision</name>
+    </field>
+</dbc>

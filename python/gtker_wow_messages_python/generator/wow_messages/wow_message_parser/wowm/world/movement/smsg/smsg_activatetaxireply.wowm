@@ -1,0 +1,22 @@
+#tag_all versions "1 2 3";
+
+enum ActivateTaxiReply : u32 {
+    OK = 0;
+    UNSPECIFIED_SERVER_ERROR = 1;
+    NO_SUCH_PATH = 2;
+    NOT_ENOUGH_MONEY = 3;
+    TOO_FAR_AWAY = 4;
+    NO_VENDOR_NEARBY = 5;
+    NOT_VISITED = 6;
+    PLAYER_BUSY = 7;
+    PLAYER_ALREADY_MOUNTED = 8;
+    PLAYER_SHAPE_SHIFTED = 9;
+    PLAYER_MOVING = 10;
+    SAME_NODE = 11;
+    NOT_STANDING = 12;
+}
+
+smsg SMSG_ACTIVATETAXIREPLY = 0x01AE {
+    ActivateTaxiReply reply;
+}
+

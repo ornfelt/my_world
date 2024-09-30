@@ -1,0 +1,111 @@
+#tag_all versions "3.3.5";
+
+struct TransportInfo {
+    PackedGuid guid;
+    Vector3d position;
+    f32 orientation;
+    u32 timestamp;
+    u8 seat;
+}
+
+flag MovementFlags : u48 {
+    NONE                  = 0x00000000;
+    FORWARD               = 0x00000001;
+    BACKWARD              = 0x00000002;
+    STRAFE_LEFT           = 0x00000004;
+    STRAFE_RIGHT          = 0x00000008;
+    LEFT                  = 0x00000010;
+    RIGHT                 = 0x00000020;
+    PITCH_UP              = 0x00000040;
+    PITCH_DOWN            = 0x00000080;
+    /// Walking
+    WALKING               = 0x00000100;
+    /// `AzerothCore`: Used for flying on some creatures
+    ON_TRANSPORT           = 0x00000200;
+    /// `AzerothCore`: Former `MOVEMENTFLAG_LEVITATING`. This is used when walking is not possible.
+    DISABLE_GRAVITY       = 0x00000400;
+    /// `AzerothCore`: Must not be set along with `MOVEMENTFLAG_MASK_MOVING`
+    ROOT                  = 0x00000800;
+    /// `AzerothCore`: damage dealt on that type of falling
+    FALLING               = 0x00001000;
+    FALLING_FAR           = 0x00002000;
+    PENDING_STOP          = 0x00004000;
+    PENDING_STRAFE_STOP   = 0x00008000;
+    PENDING_FORWARD       = 0x00010000;
+    PENDING_BACKWARD      = 0x00020000;
+    PENDING_STRAFE_LEFT   = 0x00040000;
+    PENDING_STRAFE_RIGHT  = 0x00080000;
+    PENDING_ROOT          = 0x00100000;
+    /// `AzerothCore`: appears with fly flag also
+    SWIMMING              = 0x00200000;
+    /// `AzerothCore`: press 'space' when flying
+    ASCENDING             = 0x00400000;
+    DESCENDING            = 0x00800000;
+    /// `AzerothCore`: Appears when unit can fly AND also walk
+    CAN_FLY               = 0x01000000;
+    /// `AzerothCore`: unit is actually flying. pretty sure this is only used for players. creatures use `disable_gravity`
+    FLYING                = 0x02000000;
+    /// `AzerothCore`: used for flight paths
+    SPLINE_ELEVATION      = 0x04000000;
+    /// `AzerothCore`: used for flight paths
+    SPLINE_ENABLED        = 0x08000000;
+    /// `AzerothCore`: prevent unit from falling through water
+    WATERWALKING          = 0x10000000;
+    /// `AzerothCore`: active rogue safe fall spell (passive)
+    FALLING_SLOW          = 0x20000000;
+    /// `AzerothCore`: hover, cannot jump
+    HOVER                 = 0x40000000;
+    NO_STRAFE                = 0x0000000100000000;
+    NO_JUMPING               = 0x0000000200000000;
+    /// `AzerothCore`: Overrides various clientside checks
+    UNK3                     = 0x0000000400000000;
+    FULL_SPEED_TURNING       = 0x0000000800000000;
+    FULL_SPEED_PITCHING      = 0x0000001000000000;
+    ALWAYS_ALLOW_PITCHING    = 0x0000002000000000;
+    UNK7                     = 0x0000004000000000;
+    UNK8                     = 0x0000008000000000;
+    UNK9                     = 0x0000010000000000;
+    UNK10                    = 0x0000020000000000;
+    INTERPOLATED_MOVEMENT    = 0x0000040000000000;
+    INTERPOLATED_TURNING     = 0x0000080000000000;
+    INTERPOLATED_PITCHING    = 0x0000100000000000;
+    UNK14                    = 0x0000200000000000;
+    UNK15                    = 0x0000400000000000;
+    UNK16                    = 0x0000800000000000;
+
+    ON_TRANSPORT_AND_INTERPOLATED_MOVEMENT = 0x0000040000000200;
+}
+
+struct MovementInfo {
+    MovementFlags flags;
+    u32 timestamp;
+    Vector3d position;
+    f32 orientation;
+    if (flags & ON_TRANSPORT_AND_INTERPOLATED_MOVEMENT) {
+        TransportInfo transport_info;
+        u32 transport_time;
+    }
+    else if (flags & ON_TRANSPORT) {
+        TransportInfo transport;
+    }
+
+    if (flags & SWIMMING) {
+        f32 pitch1;
+    } else if (flags & FLYING) {
+        f32 pitch2;
+    }
+    else if (flags & ALWAYS_ALLOW_PITCHING) {
+        f32 pitch3;
+    }
+    f32 fall_time;
+    if (flags & FALLING) {
+        f32 z_speed;
+        f32 cos_angle;
+        f32 sin_angle;
+        f32 xy_speed;
+    }
+    if (flags & SPLINE_ELEVATION) {
+        f32 spline_elevation;
+    }
+}
+

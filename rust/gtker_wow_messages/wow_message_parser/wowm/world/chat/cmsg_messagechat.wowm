@@ -1,0 +1,55 @@
+cmsg CMSG_MESSAGECHAT = 0x0095 {
+    (u32)ChatType chat_type;   
+    Language language;
+    if (chat_type == WHISPER) {
+        CString target_player;
+    } else if (chat_type == CHANNEL) {
+        CString channel;
+    }
+    CString message;
+} {
+    versions = "1.12";
+}
+
+/// Say message.
+test CMSG_MESSAGECHAT {
+    chat_type = SAY;
+    language = COMMON;
+    message = "This is a say message.";
+} [
+  0x00, 0x23,
+  0x95, 0x00, 0x00, 0x00, /* opcode */
+  0x00, 0x00, 0x00, 0x00, /* chat_type */
+  0x07, 0x00, 0x00, 0x00, /* Language */
+  0x54, 0x68, 0x69, 0x73, 0x20, 0x69, 0x73, 0x20, 0x61, 0x20,
+  0x73, 0x61, 0x79, 0x20, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x2e, 0x00 /* message */
+] {
+    versions = "1.12";
+}
+
+cmsg CMSG_MESSAGECHAT = 0x0095 {
+    (u32)ChatType chat_type;   
+    (u32)Language language;
+    if (chat_type == WHISPER) {
+        CString target_player;
+    } else if (chat_type == CHANNEL) {
+        CString channel;
+    }
+    CString message;
+} {
+    versions = "2.4.3";
+}
+
+
+cmsg CMSG_MESSAGECHAT = 0x0095 {
+    (u32)ChatType chat_type;   
+    (u32)Language language;
+    if (chat_type == WHISPER) {
+        CString target_player;
+    } else if (chat_type == CHANNEL) {
+        CString channel;
+    }
+    CString message;
+} {
+    versions = "3.3.5";
+}

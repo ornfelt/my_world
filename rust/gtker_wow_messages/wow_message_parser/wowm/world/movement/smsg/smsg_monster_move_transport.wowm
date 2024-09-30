@@ -1,0 +1,50 @@
+smsg SMSG_MONSTER_MOVE_TRANSPORT = 0x02AE {
+    PackedGuid guid;
+    PackedGuid transport;
+    Vector3d spline_point;
+    u32 spline_id;
+    MonsterMoveType move_type;
+    if (move_type == FACING_TARGET) {
+        Guid target;
+    } else if (move_type == FACING_ANGLE) {
+        f32 angle;
+    } else if (move_type == FACING_SPOT) {
+        Vector3d position;
+    }
+    SplineFlag spline_flags;
+    u32 duration;
+    MonsterMoveSplines splines;
+} {
+    versions = "1.12 2";
+}
+
+smsg SMSG_MONSTER_MOVE_TRANSPORT = 0x02AE {
+    PackedGuid guid;
+    PackedGuid transport;
+    /// cmangos-wotlk sets to 0
+    u8 unknown;
+    Vector3d spline_point;
+    u32 spline_id;
+    MonsterMoveType move_type;
+    if (move_type == FACING_TARGET) {
+        Guid target;
+    } else if (move_type == FACING_ANGLE) {
+        f32 angle;
+    } else if (move_type == FACING_SPOT) {
+        Vector3d position;
+    }
+    SplineFlag spline_flags;
+    if (spline_flags & ENTER_CYCLE) {
+        u32 animation_id;
+        u32 animation_start_time;
+    }
+    u32 duration;
+    if (spline_flags & PARABOLIC) {
+        f32 vertical_acceleration;
+        u32 effect_start_time;
+    }
+    MonsterMoveSplines splines;
+} {
+    versions = "3.3.5";
+}
+

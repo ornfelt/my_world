@@ -1,0 +1,54 @@
+/// cmangos has one instance of this be u32, but both vmangos/mangoszero are u8
+enum QuestPartyMessage : u8 {
+    /// ERR_QUEST_PUSH_SUCCESS_S
+    SHARING_QUEST = 0;
+    /// ERR_QUEST_PUSH_INVALID_S
+    CANT_TAKE_QUEST = 1;
+    /// ERR_QUEST_PUSH_ACCEPTED_S
+    ACCEPT_QUEST = 2;
+    /// ERR_QUEST_PUSH_DECLINED_S
+    DECLINE_QUEST = 3;
+    /// removed in 3.x
+    TOO_FAR = 4;
+    /// ERR_QUEST_PUSH_BUSY_S
+    BUSY = 5;
+    /// ERR_QUEST_PUSH_LOG_FULL_S
+    LOG_FULL = 6;
+    /// ERR_QUEST_PUSH_ONQUEST_S
+    HAVE_QUEST = 7;
+    /// ERR_QUEST_PUSH_ALREADY_DONE_S
+    FINISH_QUEST = 8;
+} {
+    versions = "1 2";
+}
+
+msg MSG_QUEST_PUSH_RESULT = 0x0276 {
+    Guid guid;
+    QuestPartyMessage message;
+} {
+    versions = "1 2";
+}
+
+enum QuestPartyMessage : u8 {
+    MSG_SHARING_QUEST = 0;
+    MSG_CANT_TAKE_QUEST = 1;
+    MSG_ACCEPT_QUEST = 2;
+    MSG_REFUSE_QUEST = 3;
+    MSG_BUSY = 4;
+    MSG_LOG_FULL = 5;
+    MSG_HAVE_QUEST = 6;
+    MSG_FINISH_QUEST = 7;
+    MSG_CANT_BE_SHARED_TODAY = 8;
+    MSG_SHARING_TIMER_EXPIRED = 9;
+    MSG_NOT_IN_PARTY = 10;
+    MSG_DIFFERENT_SERVER_DAILY = 11;
+} {
+    versions = "3.3.5";
+}
+
+msg MSG_QUEST_PUSH_RESULT = 0x0276 {
+    Guid guid;
+    QuestPartyMessage message;
+} {
+    versions = "3.3.5";
+}

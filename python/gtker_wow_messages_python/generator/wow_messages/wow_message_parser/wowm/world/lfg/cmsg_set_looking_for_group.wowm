@@ -1,0 +1,6 @@
+cmsg CMSG_SET_LOOKING_FOR_GROUP = 0x0200 {
+    u32 slot;
+    LfgData data;
+} {
+    versions = "2.4.3";
+}

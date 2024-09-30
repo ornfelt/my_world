@@ -1,0 +1,14 @@
+[package]
+name = "dev_wow_auth_server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.0.18", features = ["derive"] }
+log = "0.4.17"
+simple_logger = "4.0.0"
+wow_login_messages = { git = "https://github.com/gtker/wow_messages.git", rev = "512184123a4b73c9d2915410751f250d1533ba99", features = ["sync"] }
+#wow_login_messages = { path = "../wow_messages/wow_login_messages", features = ["sync"] }
+wow_srp = { version = "0.7.0", default-features = false, features = ["srp-default-math"] }
+
+[features]

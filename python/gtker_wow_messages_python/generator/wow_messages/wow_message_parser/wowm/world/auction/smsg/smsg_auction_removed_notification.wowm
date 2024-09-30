@@ -1,0 +1,8 @@
+#tag_all versions "1 2 3";
+
+smsg SMSG_AUCTION_REMOVED_NOTIFICATION = 0x028D {
+    Item item;
+    u32 item_template;
+    u32 random_property_id;
+}
+

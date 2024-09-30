@@ -1,0 +1,34 @@
+smsg SMSG_SPELLDISPELLOG = 0x027B {
+    PackedGuid victim;
+    PackedGuid caster;
+    u32 amount_of_spells;
+    Spell[amount_of_spells] spells;
+} {
+    versions = "1.12";
+}
+
+smsg SMSG_SPELLDISPELLOG = 0x027B {
+    PackedGuid victim;
+    PackedGuid caster;
+    Spell dispell_spell;
+    /// mangosone: unused
+    u8 unknown;
+    u32 amount_of_spells;
+    DispelledSpell[amount_of_spells] spells;
+} {
+    versions = "2.4.3 3";
+}
+
+enum DispelMethod : u8 {
+    DISPELLED = 0;
+    CLEANSED = 1;
+} {
+    versions = "2.4.3 3";
+}
+
+struct DispelledSpell {
+    Spell spell;
+    DispelMethod method;
+} {
+    versions = "2.4.3 3";
+}

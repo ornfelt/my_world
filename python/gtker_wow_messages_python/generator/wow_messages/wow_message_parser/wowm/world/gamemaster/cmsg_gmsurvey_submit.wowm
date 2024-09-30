@@ -1,0 +1,23 @@
+#tag_all versions "1 2 3";
+
+struct GmSurveyQuestion {
+    /// cmangos: questions found in GMSurveyQuestions.dbc
+    /// ref to i'th GMSurveySurveys.dbc field (all fields in that dbc point to fields in GMSurveyQuestions.dbc)
+    u32 question_id;
+    /// Rating: hardcoded limit of 0-5 in pre-Wrath, ranges defined in GMSurveyAnswers.dbc Wrath+
+    u8 answer;
+    /// Usage: `GMSurveyAnswerSubmit(question, rank, comment)`
+    /// cmangos: Unused in stock UI, can be only set by calling Lua function
+    CString comment;
+}
+
+cmsg CMSG_GMSURVEY_SUBMIT = 0x032A {
+    /* Enum for survey id */
+    /// cmangos: Survey ID: found in GMSurveySurveys.dbc
+    u32 survey_id;
+    GmSurveyQuestion[10] questions;
+    /// cmangos: Answer comment: Unused in stock UI, can be only set by calling Lua function
+    /// cmangos: Answer comment max sizes in bytes: Vanilla - 8106:8110, TBC - 11459:11463, Wrath - 582:586
+    CString answer_comment;
+}
+

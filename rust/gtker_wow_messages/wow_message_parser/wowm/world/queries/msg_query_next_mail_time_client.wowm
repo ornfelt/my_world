@@ -1,0 +1,13 @@
+/// Sent when the client enters the world.
+cmsg MSG_QUERY_NEXT_MAIL_TIME_Client = 0x0284 {} {
+    versions = "1.12 2 3.3.5";
+}
+
+test MSG_QUERY_NEXT_MAIL_TIME_Client {
+} [
+    0x00, 0x04, /* size */
+    0x84, 0x02, 0x00, 0x00, /* opcode */
+] {
+    versions = "1.12";
+}
+

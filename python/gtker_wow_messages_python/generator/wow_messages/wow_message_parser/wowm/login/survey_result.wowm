@@ -1,0 +1,22 @@
+#tag_all login_versions "3";
+
+clogin CMD_SURVEY_RESULT = 0x04 {
+    u32 survey_id;
+    u8 error;
+    u16 compressed_data_length;
+    u8[compressed_data_length] data;
+}
+
+test CMD_SURVEY_RESULT {
+    survey_id = 0xFADE;
+    error = 0;
+    compressed_data_length = 1;
+    data = [ 0xFF ];
+} [
+    0x04, /* opcode */
+    0xDE, 0xFA, 0x00, 0x00, /* survey_id */
+    0x00, /* error */
+    0x01, 0x00, /* compressed_data_length */
+    0xFF, /* data */
+]
+

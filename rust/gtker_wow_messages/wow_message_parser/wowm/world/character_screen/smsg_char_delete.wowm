@@ -1,0 +1,17 @@
+/// Response to [CMSG_CHAR_DELETE].
+/// The result of this message will update the client character screen without them sending another [CMSG_CHAR_ENUM].
+smsg SMSG_CHAR_DELETE = 0x3C {
+    WorldResult result;
+} {
+    paste_versions = "1.12 2.4.3 3.3.5";
+}
+
+test SMSG_CHAR_DELETE {
+    result = CHAR_DELETE_SUCCESS;
+} [
+    0x00, 0x03, /* size */
+    0x3C, 0x00, /* opcode */
+    0x39, /* result */
+] {
+    versions = "1.12";
+}

@@ -1,0 +1,13 @@
+[package]
+name = "wowdbdefs-rs"
+version = "0.1.0" # Remember to update docs in src/lib.rs, and README.md
+edition = "2018"
+description = "Library for parsing WoWDBDefs/.dbd files."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/gtker/wowdbdefs-rs"
+keywords = ["wow", "world-of-warcraft"]
+categories = ["game-development", "game-engines", "parsing", "encoding"]
+readme = "README.md"
+authors = ["Gtker <git@gtker.com"]
+rust-version = "1.58.1"
+exclude = ["WoWDBDefs", ".github", ".gitignore", ".gitmodules"]

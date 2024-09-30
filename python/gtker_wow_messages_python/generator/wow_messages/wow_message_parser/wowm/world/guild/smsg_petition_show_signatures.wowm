@@ -1,0 +1,15 @@
+#tag_all versions "1 2 3";
+
+struct PetitionSignature {
+    Guid signer;
+    u32 unknown1;
+}
+
+smsg SMSG_PETITION_SHOW_SIGNATURES = 0x01BF {
+    Guid item;
+    Guid owner;
+    u32 petition;
+    u8 amount_of_signatures;
+    PetitionSignature[amount_of_signatures] signatures;
+}
+

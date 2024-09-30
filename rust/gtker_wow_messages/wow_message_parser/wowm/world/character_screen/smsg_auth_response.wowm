@@ -1,0 +1,124 @@
+/// Response to [CMSG_AUTH_SESSION].
+/// Usually followed by [CMSG_CHAR_ENUM] if login was successful (`AUTH_OK`).
+/// vmangos/cmangos/mangoszero all have a variant of this message that contains fields from `AUTH_OK` for `AUTH_WAIT_QUEUE` as well (`https://github.com/vmangos/core/blob/cd896d43712ceafecdbd8f005846d7f676e55b4f/src/game/World.cpp#L322`) but this does not seem to be actually be a real thing.
+smsg SMSG_AUTH_RESPONSE = 0x1EE {
+    WorldResult result;
+    if (result == AUTH_OK) {
+        u32 billing_time;
+        u8 billing_flags;
+        u32 billing_rested;
+    }
+    else if (result == AUTH_WAIT_QUEUE) {
+        u32 queue_position;
+    }
+} {
+    versions = "1";
+}
+
+/// Authentication failed.
+test SMSG_AUTH_RESPONSE {
+    result = AUTH_FAILED;
+} [
+    0x00, 0x03, /* size */
+    0xEE, 0x01, /* opcode */
+    0x0D, /* result */
+] {
+    versions = "1.12";
+}
+
+/// Client told to wait in queue.
+test SMSG_AUTH_RESPONSE {
+    result = AUTH_WAIT_QUEUE;
+    queue_position = 0xDEADBEEF;
+} [
+    0x00, 0x07, /* size */
+    0xEE, 0x01, /* opcode */
+    0x1B, /* result */
+    0xEF, 0xBE, 0xAD, 0xDE, /* queue_position */
+] {
+    versions = "1.12";
+}
+
+/// Client can join.
+test SMSG_AUTH_RESPONSE {
+    result = AUTH_OK;
+    billing_time = 0xDEADBEEF;
+    billing_flags = 0;
+    billing_rested = 0;
+} [
+    0x00, 0x0C, /* size */
+    0xEE, 0x01, /* opcode */
+    0x0C, /* result */
+    0xEF, 0xBE, 0xAD, 0xDE, /* queue_position */
+    0x00, /* billing_flags */
+    0x00, 0x00, 0x00, 0x00, /* billing_rested */
+] {
+    versions = "1.12";
+}
+
+enum Expansion : u8 {
+    VANILLA = 0;
+    THE_BURNING_CRUSADE = 1;
+} {
+    versions = "2.4.3";
+}
+
+flag BillingPlanFlags : u8 {
+    NONE            = 0x00;
+    UNUSED          = 0x01;
+    RECURRING_BILL  = 0x02;
+    FREE_TRIAL      = 0x04;
+    /// Name meaning unknown
+    IGR             = 0x08;
+    USAGE           = 0x10;
+    TIME_MIXTURE    = 0x20;
+    RESTRICTED      = 0x40;
+    ENABLE_CAIS     = 0x80; 
+} {
+    versions = "2.4.3 3";
+}
+
+/// Response to [CMSG_AUTH_SESSION].
+/// Usually followed by [CMSG_CHAR_ENUM] if login was successful (`AUTH_OK`).
+/// vmangos/cmangos/mangoszero all have a variant of this message that contains fields from `AUTH_OK` for `AUTH_WAIT_QUEUE` as well (`https://github.com/vmangos/core/blob/cd896d43712ceafecdbd8f005846d7f676e55b4f/src/game/World.cpp#L322`) but this does not seem to be actually be a real thing.
+smsg SMSG_AUTH_RESPONSE = 0x1EE {
+    WorldResult result;
+    if (result == AUTH_OK) {
+        u32 billing_time;
+        BillingPlanFlags billing_flags;
+        u32 billing_rested;
+        Expansion expansion;
+    }
+    else if (result == AUTH_WAIT_QUEUE) {
+        u32 queue_position;
+    }
+} {
+    versions = "2.4.3";
+}
+
+enum Expansion : u8 {
+    VANILLA = 0;
+    THE_BURNING_CRUSADE = 1;
+    WRATH_OF_THE_LICH_KING = 2;
+} {
+    versions = "3.3.5";
+}
+
+/// Response to [CMSG_AUTH_SESSION].
+/// Usually followed by [CMSG_CHAR_ENUM] if login was successful (`AUTH_OK`).
+/// vmangos/cmangos/mangoszero all have a variant of this message that contains fields from `AUTH_OK` for `AUTH_WAIT_QUEUE` as well (`https://github.com/vmangos/core/blob/cd896d43712ceafecdbd8f005846d7f676e55b4f/src/game/World.cpp#L322`) but this does not seem to be actually be a real thing.
+smsg SMSG_AUTH_RESPONSE = 0x1EE {
+    WorldResult result;
+    if (result == AUTH_OK) {
+        u32 billing_time;
+        BillingPlanFlags billing_flags;
+        u32 billing_rested;
+        Expansion expansion;
+    }
+    else if (result == AUTH_WAIT_QUEUE) {
+        u32 queue_position;
+        Bool realm_has_free_character_migration;
+    }
+} {
+    versions = "3.3.5";
+}

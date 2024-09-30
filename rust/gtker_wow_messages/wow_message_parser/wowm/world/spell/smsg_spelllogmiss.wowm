@@ -1,0 +1,17 @@
+struct SpellLogMiss {
+    Guid target;
+    SpellMissInfo miss_info;
+} {
+    versions = "1 2 3";
+}
+
+smsg SMSG_SPELLLOGMISS = 0x024B {
+    Spell id;
+    Guid caster;
+    /// cmangos/mangoszero: can be 0 or 1
+    u8 unknown1;
+    u32 amount_of_targets;
+    SpellLogMiss[amount_of_targets] targets;
+} {
+    versions = "1 2 3";
+}

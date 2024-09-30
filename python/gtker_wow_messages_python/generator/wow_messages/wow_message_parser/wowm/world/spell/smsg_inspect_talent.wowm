@@ -1,0 +1,44 @@
+smsg SMSG_INSPECT_TALENT = 0x03F3 {
+    PackedGuid player;
+    /* TODO CORRECT_LAYOUT Proper typing */
+    u8[-] talent_data;
+} {
+    versions = "2.4.3";
+}
+
+struct InspectTalentSpec {
+    u8 amount_of_talents;
+    InspectTalent[amount_of_talents] talents;
+} {
+     versions = "3.3.5";
+}
+
+struct InspectTalent {
+    Talent talent;
+    u8 max_rank;
+} {
+     versions = "3.3.5";
+}
+
+struct InspectTalentGear {
+    Item item;
+    EnchantMask enchant_mask;
+    u16 unknown1;
+    PackedGuid creator;
+    u32 unknown2;
+} {
+     versions = "3.3.5";
+}
+
+smsg SMSG_INSPECT_TALENT = 0x03F4 {
+    PackedGuid player;
+    u32 unspent_talent_points;
+    u8 amount_of_specs;
+    u8 active_spec;
+    InspectTalentSpec[amount_of_specs] specs;
+    u8 amount_of_glyphs;
+    u16[amount_of_glyphs] glyphs;
+    InspectTalentGearMask talent_gear_mask;
+} {
+    versions = "3.3.5";
+}

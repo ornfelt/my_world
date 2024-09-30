@@ -1,0 +1,7 @@
+#tag_all paste_versions "1.12 2.4.3 3.3.5";
+
+smsg SMSG_QUESTGIVER_STATUS = 0x0183 {
+    Guid guid;
+    (u32)QuestGiverStatus status;
+}
+

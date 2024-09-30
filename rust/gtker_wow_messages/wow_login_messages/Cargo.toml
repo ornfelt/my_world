@@ -1,0 +1,44 @@
+[package]
+name = "wow_login_messages"
+description = "Message definitions for World of Warcraft authentication servers"
+version = "0.4.0"
+keywords = ["wow", "world-of-warcraft", "login", "messages", "packets"]
+categories = ["authentication", "network-programming", "game-development", "game-engines"]
+readme = "README.md"
+
+edition.workspace = true
+authors.workspace = true
+repository.workspace = true
+license.workspace = true
+
+exclude = ["release.toml"]
+
+[features]
+default = []
+sync = []
+
+[dependencies.tokio]
+version = "1"
+default-features = false
+features = ["io-util"]
+optional = true
+
+[dependencies.async-std]
+version = "1.11"
+optional = true
+default-features = false
+features = ["async-io", "std"]
+
+[dev-dependencies.async-std]
+version = "1.11"
+default-features = false
+features = ["attributes", "default"]
+
+[dev-dependencies.tokio]
+version = "1"
+default-features = false
+features = ["macros", "rt"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

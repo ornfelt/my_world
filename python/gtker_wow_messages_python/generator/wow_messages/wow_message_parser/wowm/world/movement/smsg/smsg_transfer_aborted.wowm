@@ -1,0 +1,102 @@
+enum TransferAbortReason : u8 {
+    NONE = 0x00;
+    IS_FULL = 0x01;
+    NOT_FOUND = 0x02;
+    TOO_MANY_INSTANCES = 0x03;
+    ZONE_IS_IN_COMBAT = 0x05;
+} {
+    versions = "1.12";
+}
+
+smsg SMSG_TRANSFER_ABORTED = 0x0040 {
+    Map map;
+    TransferAbortReason reason;
+    /// Possibly not needed.
+    u8 argument;
+} {
+    versions = "1.12";
+}
+
+enum TransferAbortReason : u8 {
+    NONE = 0x00;
+    IS_FULL = 0x01;
+    NOT_FOUND = 0x02;
+    TOO_MANY_INSTANCES = 0x03;
+    ZONE_IS_IN_COMBAT = 0x05;
+    INSUFFICIENT_EXPANSION_LEVEL = 0x06;
+    DIFFICULTY_NOT_AVAILABLE = 0x07;
+    MISSING_DIFFICULTY = 8;
+    ZONE_IN_COMBAT = 9;
+    INSTANCE_IS_FULL = 10;
+    NOT_ALLOWED = 11;
+    HAS_BIND = 12;
+} {
+    versions = "2.4.3";
+}
+
+enum DungeonDifficulty : u8 {
+    NORMAL = 0;
+    HEROIC = 1;
+} {
+    versions = "2 3";
+}
+
+smsg SMSG_TRANSFER_ABORTED = 0x0040 {
+    Map map;
+    TransferAbortReason reason;
+    if (reason == INSUFFICIENT_EXPANSION_LEVEL
+     || reason == DIFFICULTY_NOT_AVAILABLE)
+    {
+        DungeonDifficulty difficulty;
+    }
+} {
+    versions = "2.4.3";
+}
+
+enum TransferAbortReason : u8 {
+    NONE = 0x00;
+    ERROR = 0x01;
+    /// Transfer Aborted: instance is full
+    MAX_PLAYERS = 0x02;
+    /// Transfer Aborted: instance not found
+    NOT_FOUND = 0x03;
+    /// You have entered too many instances recently.
+    TOO_MANY_INSTANCES = 0x04;
+    /// Unable to zone in while an encounter is in progress.
+    ZONE_IN_COMBAT = 0x06;
+    /// You must have TBC/WotLK expansion installed to access this area.
+    INSUFFICIENT_EXPANSION_LEVEL = 0x07;
+    /// Normal/Heroic/Epic difficulty mode is not available for %s.
+    DIFFICULTY_NOT_AVAILABLE = 0x08;
+    /// Until you've escaped The Lich Kings grasp, you cannot leave this place!
+    UNIQUE_MESSAGE = 0x09;
+    /// Additional instances cannot be launched, please try again later.
+    TOO_MANY_REALM_INSTANCES = 0x0A;
+    /// 3.1
+    NEED_GROUP = 0x0B;
+    /// 3.1
+    NOT_FOUND1 = 0x0C;
+    /// 3.1
+    NOT_FOUND2 = 0x0D;
+    /// 3.2
+    NOT_FOUND3 = 0x0E;
+    /// All players on party must be from the same realm.
+    REALM_ONLY = 0x0F;
+    /// Map can't be entered at this time.
+    MAP_NOT_ALLOWED = 0x10;
+} {
+    versions = "3.3.5";
+}
+
+smsg SMSG_TRANSFER_ABORTED = 0x0040 {
+    Map map;
+    TransferAbortReason reason;
+    if (reason == INSUFFICIENT_EXPANSION_LEVEL
+     || reason == DIFFICULTY_NOT_AVAILABLE
+     || reason == UNIQUE_MESSAGE)
+    {
+        DungeonDifficulty difficulty;
+    }
+} {
+    versions = "3.3.5";
+}

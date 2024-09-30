@@ -1,0 +1,15 @@
+#tag_all versions "1.12 2 3";
+
+enum LogFormat : u8 {
+    DEFAULT = 0;
+    DEBUG = 1;
+}
+
+/// According to cmangos/azerothcore/trinitycore/mangostwo. Not present in vmangos.
+smsg SMSG_PROCRESIST = 0x0260 {
+    Guid caster;
+    Guid target;
+    Spell id;
+    LogFormat log_format;
+}
+

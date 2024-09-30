@@ -1,0 +1,12 @@
+cmsg CMSG_ADD_FRIEND = 0x69 {
+    CString name;
+} {
+    versions = "1";
+}
+
+cmsg CMSG_ADD_FRIEND = 0x69 {
+    CString name;
+    CString note;
+} {
+    versions = "2.4.3 3";
+}

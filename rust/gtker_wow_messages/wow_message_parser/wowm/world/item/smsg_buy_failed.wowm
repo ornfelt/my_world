@@ -1,0 +1,20 @@
+#tag_all versions "1 2 3";
+
+enum BuyResult : u8 {
+    CANT_FIND_ITEM = 0;
+    ITEM_ALREADY_SOLD = 1;
+    NOT_ENOUGH_MONEY = 2;
+    SELLER_DONT_LIKE_YOU = 4;
+    DISTANCE_TOO_FAR = 5;
+    ITEM_SOLD_OUT = 7;
+    CANT_CARRY_MORE = 8;
+    RANK_REQUIRE = 11;
+    REPUTATION_REQUIRE = 12;
+}
+
+/// Some TBC and Wrath emus have a u32 before `result` that is only included if the value is > 0, but the emus never call it with anything other than 0.
+smsg SMSG_BUY_FAILED = 0x01A5 {
+    Guid guid;
+    Item item;
+    BuyResult result;
+}

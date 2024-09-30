@@ -1,0 +1,6 @@
+#tag_all versions "1 2 3";
+
+cmsg CMSG_BINDER_ACTIVATE = 0x01B5 {
+    Guid guid;
+}
+

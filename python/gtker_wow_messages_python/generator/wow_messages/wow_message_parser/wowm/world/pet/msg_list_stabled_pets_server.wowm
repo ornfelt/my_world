@@ -1,0 +1,19 @@
+#tag_all versions "1 2 3";
+
+struct StabledPet {
+    u32 pet_number;
+    u32 entry;
+    Level32 level;
+    CString name;
+    u32 loyalty;
+    /// vmangos/mangoszero/cmangos: client slot 1 == current pet (0)
+    u8 slot;
+}
+
+smsg MSG_LIST_STABLED_PETS_Server = 0x026F {
+    Guid npc;
+    u8 amount_of_pets;
+    u8 stable_slots;
+    StabledPet[amount_of_pets] pets;
+}
+

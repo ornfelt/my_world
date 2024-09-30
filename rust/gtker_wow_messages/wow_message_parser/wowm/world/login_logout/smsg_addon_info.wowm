@@ -1,0 +1,88 @@
+enum AddonType : u8 {
+    BANNED = 0;
+    /// Shows addon in list. Probably intended for player-created addons.
+    ENABLED = 1;
+    /// Hides addon from list.
+    BLIZZARD = 2;
+} {
+    versions = "1.12";
+}
+
+enum InfoBlock : u8 {
+    UNAVAILABLE = 0;
+    AVAILABLE = 1;
+} {
+    versions = "1.12";
+}
+
+enum UrlInfo : u8 {
+    UNAVAILABLE = 0;
+    AVAILABLE = 1;
+} {
+    versions = "1.12";
+}
+
+enum KeyVersion : u8 {
+    ZERO = 0;
+    ONE = 1;
+    TWO = 2;
+    THREE = 3;
+    FOUR = 4;
+    FIVE = 5;
+    SIX = 6;
+    SEVEN = 7;
+    EIGHT = 8;
+    NINE = 9;
+} {
+    versions = "1.12";
+}
+
+struct Addon {
+    AddonType addon_type;
+    InfoBlock info_block;
+    if (info_block == AVAILABLE) {
+        KeyVersion key_version;
+        if (key_version != ZERO) {
+            u8[256] public_key;
+        }
+        u32 update_available_flag;
+    }
+    UrlInfo url_info;
+    if (url_info == AVAILABLE) {
+        CString url;
+    }
+} {
+    versions = "1.12";
+}
+
+smsg SMSG_ADDON_INFO = 0x2EF {
+    Addon[-] addons;
+} {
+    versions = "1.12";
+}
+
+struct Addon
+{
+    /* TODO NARROW_TYPE addon_type requires more research and turn into a proper enum */
+    /// Other emus hardcode this to 2. More research is required
+    u8 addon_type;
+    /// Other emus hardcode this to 1.
+    u8 uses_crc;
+    Bool uses_diffent_public_key;
+    /// Other emus hardcode this to 0
+    u32 unknown1;
+    /// Other emus hardcode this to 0
+    u8 unknown2;
+} {
+    versions = "2.4.3 3";
+}
+
+/// Banned addons are not properly implemented in the wowm. Sending any number other than 0 means that the packet is incomplete and thus invalid
+smsg SMSG_ADDON_INFO = 0x2EF {
+    AddonArray addons;
+    u32 number_of_banned_addons = 0;
+    /* TODO CORRECT_LAYOUT Figure out the structure of banned addons and remove hardcoded 0 */
+} {
+    paste_versions = "2.4.3 3.3.5";
+}
+

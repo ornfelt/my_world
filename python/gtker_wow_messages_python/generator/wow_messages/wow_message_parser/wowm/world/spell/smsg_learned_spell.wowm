@@ -1,0 +1,13 @@
+smsg SMSG_LEARNED_SPELL = 0x012B {
+    Spell id;
+} {
+    paste_versions = "1.12 2.4.3";
+}
+
+smsg SMSG_LEARNED_SPELL = 0x012B {
+    Spell id;
+    /// mangostwo: 3.3.3 unk
+    u16 unknown;
+} {
+    versions = "3.3.5";
+}

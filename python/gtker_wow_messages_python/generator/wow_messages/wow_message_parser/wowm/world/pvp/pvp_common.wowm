@@ -1,0 +1,55 @@
+#tag_all versions "1 2 3";
+
+enum PvpRank : u8 {
+    NO_RANK = 0;
+    PARIAH = 1;
+    OUTLAW = 2;
+    EXILED = 3;
+    DISHONORED = 4;
+    /// Alliance name: Private
+    /// Horde name: Scout
+    RANK1 = 5;
+    /// Alliance name: Corporal
+    /// Horde name: Grunt
+    RANK2 = 6;
+    /// Alliance name: Sergeant
+    /// Horde name: Sergeant
+    RANK3 = 7;
+    /// Alliance name: Master Sergeant
+    /// Horde name: Senior Sergeatn
+    RANK4 = 8;
+    /// Alliance name: Sergeant Major
+    /// Horde name: First Sergeant
+    RANK5 = 9;
+    /// Alliance name: Knight
+    /// Horde name: Stone Guard
+    RANK6 = 10;
+    /// Alliance name: Knight Lieutenant
+    /// Horde name: Blood Guard
+    RANK7 = 11;
+    /// Alliance name: Knight Captain
+    /// Horde name: Legionnare
+    RANK8 = 12;
+    /// Alliance name: Kngith Champion
+    /// Horde name: Centurion
+    RANK9 = 13;
+    /// Alliance name: Liuetenant Commander
+    /// Horde name: Champion
+    RANK10 = 14;
+    /// Alliance name: Commander
+    /// Horde name: Lieutenant General
+    RANK11 = 15;
+    /// Alliance name: Marshal
+    /// Horde name: General
+    RANK12 = 16;
+    /// Alliance name: Field Marshal
+    /// Horde name: Warlord
+    RANK13 = 17;
+    /// Alliance name: Grand Marshal
+    /// Horde name: High Warlord
+    RANK14 = 18;
+    FACTION_LEADER = 19;
+} {
+    rust_base_type = "true";
+}
+

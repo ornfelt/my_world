@@ -1,0 +1,154 @@
+use std::io::{Read, Write};
+
+use crate::vanilla::SimpleEnum;
+
+/// Auto generated from the original `wowm` in file [`wow_message_parser/tests/impl_levels.wowm:128`](https://github.com/gtker/wow_messages/tree/main/wow_message_parser/tests/impl_levels.wowm#L128):
+/// ```text
+/// struct SimpleIfNotEnumElse {
+///     SimpleEnum enum;
+///     if (enum != ZERO) {
+///         u8 others;
+///     }
+///     else {
+///         u16 zero;
+///     }
+/// }
+/// ```
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum SimpleIfNotEnumElse {
+    Zero {
+        zero: u16,
+    },
+    One {
+        others: u8,
+    },
+    Two {
+        others: u8,
+    },
+}
+
+impl SimpleIfNotEnumElse {
+    pub(crate) fn write_into_vec(&self, mut w: impl Write) -> Result<(), std::io::Error> {
+        // enum: SimpleEnum
+        w.write_all(&(self.as_int().to_le_bytes()))?;
+
+        match &self {
+            SimpleIfNotEnumElse::Zero {
+                zero,
+            } => {
+                // zero: u16
+                w.write_all(&zero.to_le_bytes())?;
+
+            }
+            SimpleIfNotEnumElse::One {
+                others,
+            } => {
+                // others: u8
+                w.write_all(&others.to_le_bytes())?;
+
+            }
+            SimpleIfNotEnumElse::Two {
+                others,
+            } => {
+                // others: u8
+                w.write_all(&others.to_le_bytes())?;
+
+            }
+        }
+
+        Ok(())
+    }
+}
+
+impl SimpleIfNotEnumElse {
+    pub(crate) fn read<R: std::io::Read>(mut r: R) -> Result<Self, crate::errors::ParseErrorKind> {
+        // enum: SimpleEnum
+        let enum = crate::util::read_u8_le(&mut r)?.try_into()?;
+
+        let enum_if = match enum {
+            SimpleEnum::Zero => {
+                // zero: u16
+                let zero = crate::util::read_u16_le(&mut r)?;
+
+                SimpleIfNotEnumElse::Zero {
+                    zero,
+                }
+            }
+            SimpleEnum::One => {
+                // others: u8
+                let others = crate::util::read_u8_le(&mut r)?;
+
+                SimpleIfNotEnumElse::One {
+                    others,
+                }
+            }
+            SimpleEnum::Two => {
+                // others: u8
+                let others = crate::util::read_u8_le(&mut r)?;
+
+                SimpleIfNotEnumElse::Two {
+                    others,
+                }
+            }
+        };
+
+        Ok(enum_if)
+    }
+
+}
+
+impl SimpleIfNotEnumElse {
+    pub(crate) const fn size(&self) -> usize {
+        (match self {
+            Self::Zero {
+                ..
+            } => {
+                1
+                + 2 // zero: u16
+            }
+            Self::One {
+                ..
+            } => {
+                1
+                + 1 // others: u8
+            }
+            Self::Two {
+                ..
+            } => {
+                1
+                + 1 // others: u8
+            }
+        }) // enum: SimpleIfNotEnumElse
+    }
+}
+
+impl Default for SimpleIfNotEnumElse {
+    fn default() -> Self {
+        // First enumerator without any fields
+        Self::Zero {
+            zero: Default::default(),
+        }
+    }
+}
+
+impl SimpleIfNotEnumElse {
+    pub(crate) const fn as_int(&self) -> u8 {
+        match self {
+            Self::Zero { .. } => 0,
+            Self::One { .. } => 1,
+            Self::Two { .. } => 2,
+        }
+    }
+
+}
+
+impl std::fmt::Display for SimpleIfNotEnumElse {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Zero{ .. } => f.write_str("Zero"),
+            Self::One{ .. } => f.write_str("One"),
+            Self::Two{ .. } => f.write_str("Two"),
+        }
+    }
+}
+

@@ -1,0 +1,37 @@
+struct RaidInfo {
+    Map map;
+    u32 reset_time;
+    u32 instance_id;
+} {
+    versions = "1.12";
+}
+
+smsg SMSG_RAID_INSTANCE_INFO = 0x02CC {
+    u32 amount_of_raid_infos;
+    RaidInfo[amount_of_raid_infos] raid_infos;
+} {
+    paste_versions = "1.12 2.4.3 3.3.5";
+}
+
+struct RaidInfo {
+    Map map;
+    u32 reset_time;
+    u32 instance_id;
+    /// Neither 1.12 nor 3.3.5 have an index field so this might not be accurate.
+    u32 index;
+} {
+    versions = "2.4.3";
+}
+
+struct RaidInfo {
+    Map map;
+    (u32)DungeonDifficulty difficulty;
+    u64 instance_id;
+    Bool expired;
+    Bool extended;
+    /// Seems to be in seconds
+    u32 time_until_reset;
+} {
+    versions = "3.3.5";
+}
+

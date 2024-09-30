@@ -1,0 +1,7 @@
+#tag_all versions "1 2 3";
+
+cmsg CMSG_PET_CANCEL_AURA = 0x026B {
+    Guid guid;
+    Spell id;
+}
+

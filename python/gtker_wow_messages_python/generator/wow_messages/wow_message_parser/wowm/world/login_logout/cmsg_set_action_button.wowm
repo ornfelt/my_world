@@ -1,0 +1,8 @@
+cmsg CMSG_SET_ACTION_BUTTON = 0x0128 {
+    u8 button;
+    u16 action;
+    u8 misc;
+    u8 action_type;
+} {
+    versions = "1 2 3";
+}

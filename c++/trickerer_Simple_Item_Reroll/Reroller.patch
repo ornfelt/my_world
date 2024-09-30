@@ -1,0 +1,35 @@
+From 150aaa186d39416ac37087752105f50899b082a3 Mon Sep 17 00:00:00 2001
+From: trickerer <onlysuffering@gmail.com>
+Date: Wed, 23 Dec 2020 15:22:41 +0700
+Subject: [PATCH] Reroller
+
+---
+ src/server/game/Entities/Player/Player.cpp | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/src/server/game/Entities/Player/Player.cpp b/src/server/game/Entities/Player/Player.cpp
+index e729a5f..0c71644 100644
+--- a/src/server/game/Entities/Player/Player.cpp
++++ b/src/server/game/Entities/Player/Player.cpp
+@@ -13375,6 +13375,18 @@ void Player::SwapItem(uint16 src, uint16 dst)
+         }
+     }
+ 
++    //static const uint32 REROLL_TOKEN = 39352;
++    if (pSrcItem->GetEntry() == 39352 && pDstItem->GetItemRandomPropertyId() &&
++        IsInventoryPos(src) && IsInventoryPos(dst) && pDstItem->GetCount() == 1 && pSrcItem->GetCount() == 1)
++    {
++        pDstItem->SetItemRandomProperties(GenerateItemRandomPropertyId(pDstItem->GetEntry()));
++        RemoveItem(dstbag, dstslot, false);
++        StoreItem(sDest, pDstItem, true);
++        uint32 count = 1;
++        DestroyItemCount(pSrcItem, count, true);
++        return;
++    }
++
+     // now do moves, remove...
+     RemoveItem(dstbag, dstslot, false);
+     RemoveItem(srcbag, srcslot, false);
+-- 
+2.10.0.windows.1
+

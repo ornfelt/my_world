@@ -1,0 +1,5 @@
+#tag_all versions "1 2 3";
+
+/// Not implemented in any Wrath emulator.
+smsg SMSG_PET_BROKEN = 0x02AF {}
+

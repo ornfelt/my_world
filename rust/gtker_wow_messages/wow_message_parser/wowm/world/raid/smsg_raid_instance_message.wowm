@@ -1,0 +1,45 @@
+enum RaidInstanceMessage : u32 {
+    /// WARNING! %s is scheduled to reset in %d hour(s).
+    WARNING_HOURS     = 1;
+    /// WARNING! %s is scheduled to reset in %d minute(s)!
+    WARNING_MIN       = 2;
+    /// WARNING! %s is scheduled to reset in %d minute(s). Please exit the zone or you will be returned to your bind location!
+    WARNING_MIN_SOON  = 3;
+    /// Welcome to %s. This raid instance is scheduled to reset in %s.
+    WELCOME           = 4;
+} {
+    versions = "1 2";
+}
+
+smsg SMSG_RAID_INSTANCE_MESSAGE = 0x02FA {
+    RaidInstanceMessage message_type;
+    Map map;
+    /* TODO NARROW_TYPE unit? */
+    u32 time_left;
+} {
+    paste_versions = "1.12 2.4.3";
+}
+
+enum RaidInstanceMessage : u32 {
+    /// WARNING! %s is scheduled to reset in %d hour(s).
+    WARNING_HOURS     = 1;
+    /// WARNING! %s is scheduled to reset in %d minute(s)!
+    WARNING_MIN       = 2;
+    /// WARNING! %s is scheduled to reset in %d minute(s). Please exit the zone or you will be returned to your bind location!
+    WARNING_MIN_SOON  = 3;
+    /// Welcome to %s. This raid instance is scheduled to reset in %s.
+    WELCOME           = 4;
+    EXPIRED = 5;
+} {
+    versions = "3.3.5";
+}
+
+smsg SMSG_RAID_INSTANCE_MESSAGE = 0x02FA {
+    RaidInstanceMessage message_type;
+    Map map;
+    (u32)RaidDifficulty difficulty;
+    /* TODO NARROW_TYPE: unit? */
+    u32 time_left;
+} {
+    versions = "3.3.5";
+}

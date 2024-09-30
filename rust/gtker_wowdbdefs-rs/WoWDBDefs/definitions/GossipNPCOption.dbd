@@ -1,0 +1,83 @@
+COLUMNS
+int ID
+int GossipNpcOption // GossipConstants.GossipNpcOption
+int<LFGDungeons::ID> LFGDungeonsID // {3x Vendor, manyx LFGDungeon, somex QueueScenario}
+int TrainerID? // serverside Trainer id
+int<GarrFollowerType::ID> GarrFollowerTypeID
+int<CharShipment::ID> CharShipmentID // {1x Vendor, 1x Stablemaster, manyx ShipmentCrafter}
+int<GarrTalentTree::ID> GarrTalentTreeID // {1x TraitSystem, manyx GarrisonTalent}
+int<UiMap::ID> UiMapID? // {1x WorldMap, manyx AdventureMap}
+int<UiItemInteraction::ID> UiItemInteractionID // {1x Vendor, manyx UIItemInteraction}
+int Field_10_0_0_45141_008? // {1x Soulbind}
+int Field_10_0_0_45141_009? // never
+int<Covenant::ID> CovenantID // {4x unknown 53, manyx CovenantPreviewNpc}
+int GossipIndex? // probably the fk
+int<TraitTree::ID> TraitTreeID // {2x TraitSystem}
+int<Profession::ID> ProfessionID // {1x ProfessionsCraftingOrder, 1x ProfessionsOpen, 1x ProfessionsCustomerOrder}
+int Field_10_0_2_46144_014?
+int Field_3_4_1_46722_000?
+int Field_3_4_1_46722_001?
+int Field_3_4_1_46722_002?
+int Field_3_4_1_46722_003?
+int Field_3_4_1_46722_004?
+int Field_3_4_1_46722_005?
+int Field_3_4_1_46722_006?
+int Field_3_4_1_46722_007?
+int Field_3_4_1_46722_008?
+int Field_3_4_1_46722_009?
+int Field_3_4_1_46722_010?
+int Field_3_4_1_46722_011?
+
+LAYOUT 30CA59EB
+BUILD 3.4.1.46722
+$noninline,id$ID<32>
+Field_3_4_1_46722_000<32>
+Field_3_4_1_46722_001<32>
+Field_3_4_1_46722_002<32>
+Field_3_4_1_46722_003<32>
+Field_3_4_1_46722_004<32>
+Field_3_4_1_46722_005<32>
+Field_3_4_1_46722_006<32>
+Field_3_4_1_46722_007<32>
+Field_3_4_1_46722_008<32>
+Field_3_4_1_46722_009<32>
+Field_3_4_1_46722_010<32>
+Field_3_4_1_46722_011<32>
+
+LAYOUT 238BCF2B
+BUILD 10.0.2.45480, 10.0.2.45505, 10.0.2.45569, 10.0.2.45632, 10.0.2.45698, 10.0.2.45746, 10.0.2.45779, 10.0.2.45969, 10.0.2.46091, 10.0.2.46092, 10.0.2.46157
+BUILD 10.0.0.45141, 10.0.0.45232, 10.0.0.45335, 10.0.0.45454, 10.0.0.45570, 10.0.0.45661, 10.0.0.45697, 10.0.0.45970, 10.0.0.46047, 10.0.0.46112, 10.0.0.46181, 10.0.0.46247, 10.0.0.46270, 10.0.0.46293, 10.0.0.46313, 10.0.0.46340, 10.0.0.46366, 10.0.0.46455, 10.0.0.46547, 10.0.0.46549, 10.0.0.46597
+$noninline,id$ID<32>
+GossipNpcOption<32>
+LFGDungeonsID<32>
+TrainerID<32>
+GarrFollowerTypeID<32>
+CharShipmentID<32>
+GarrTalentTreeID<32>
+UiMapID<32>
+UiItemInteractionID<32>
+Field_10_0_0_45141_008<32>
+Field_10_0_0_45141_009<32>
+CovenantID<32>
+GossipIndex<32>
+TraitTreeID<32>
+ProfessionID<32>
+
+LAYOUT 9170AADA
+BUILD 10.0.2.46144, 10.0.2.46259, 10.0.2.46420, 10.0.2.46456, 10.0.2.46479, 10.0.2.46619, 10.0.2.46658, 10.0.2.46689, 10.0.2.46702, 10.0.2.46741, 10.0.2.46781, 10.0.2.46801, 10.0.2.46802, 10.0.2.46879
+$noninline,id$ID<32>
+GossipNpcOption<32>
+LFGDungeonsID<32>
+TrainerID<32>
+GarrFollowerTypeID<32>
+CharShipmentID<32>
+GarrTalentTreeID<32>
+UiMapID<32>
+UiItemInteractionID<32>
+Field_10_0_0_45141_008<32>
+Field_10_0_0_45141_009<32>
+CovenantID<32>
+GossipIndex<32>
+TraitTreeID<32>
+ProfessionID<32>
+Field_10_0_2_46144_014<32>

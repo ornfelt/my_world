@@ -1,0 +1,34 @@
+use std::io::{Read, Write};
+
+/// Auto generated from the original `wowm` in file [`wow_message_parser/tests/impl_levels.wowm:208`](https://github.com/gtker/wow_messages/tree/main/wow_message_parser/tests/impl_levels.wowm#L208):
+/// ```text
+/// struct Optional {
+///     u8 basic;
+/// }
+/// ```
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]
+pub struct Optional {
+    pub basic: u8,
+}
+
+impl Optional {
+    pub(crate) fn write_into_vec(&self, mut w: impl Write) -> Result<(), std::io::Error> {
+        // basic: u8
+        w.write_all(&self.basic.to_le_bytes())?;
+
+        Ok(())
+    }
+}
+
+impl Optional {
+    pub(crate) fn read<R: std::io::Read>(mut r: R) -> Result<Self, std::io::Error> {
+        // basic: u8
+        let basic = crate::util::read_u8_le(&mut r)?;
+
+        Ok(Self {
+            basic,
+        })
+    }
+
+}
+

@@ -1,0 +1,42 @@
+# c#
+https://github.com/gtker/wow_srp_csharp
+https://github.com/Koward/M2Lib
+
+# c++
+https://github.com/wubaolin2009/Wow-3D-viewer
+https://github.com/YunataSavior/TC_autobis
+https://github.com/trickerer/Magic-Find
+https://github.com/trickerer/Simple_Item_Reroll
+https://github.com/trickerer/boss_runeworder
+https://github.com/trickerer/Traumas
+https://github.com/IntelligentQuantum/WoWAddin
+
+# go
+https://github.com/Kangaroux/go-wow-realmd
+https://github.com/bradleybonitatibus/frostparse
+
+# java
+https://github.com/Teor99/WOWSnifferServer
+
+# js
+https://github.com/azerothcore/ac-nodejs-srp6
+https://github.com/Miorey/trinitycore-srp6
+https://github.com/swiftmatt/wow-chat-client
+https://github.com/Anubisss/trinityjs-v8-scripting
+
+# python
+https://github.com/oiramario/wow_srp6
+https://github.com/gtker/wow_messages_python
+https://github.com/gtker/wow_db_sqlite
+https://github.com/YunataSavior/TC_WOTLK_BossDropLootz
+
+# rust
+https://github.com/gtker/wow_vanilla_server
+https://github.com/gtker/dev_wow_auth_server
+https://github.com/gtker/wow_dbc
+https://github.com/gtker/wowdbdefs-rs
+https://github.com/gtker/wow_messages
+https://github.com/gtker/namigator-rs
+https://github.com/gtker/warthog-wow
+https://github.com/gtker/wow_srp
+https://github.com/glkrlos/wowparser

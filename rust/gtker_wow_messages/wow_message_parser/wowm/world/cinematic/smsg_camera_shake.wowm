@@ -1,0 +1,8 @@
+/// Only exists as a comment in trinitycore/azerothcore.
+smsg SMSG_CAMERA_SHAKE = 0x050A {
+    /// SpellEffectCameraShakes.dbc
+    u32 camera_shake_id;
+    u32 unknown;
+} {
+    versions = "3.3.5";
+}

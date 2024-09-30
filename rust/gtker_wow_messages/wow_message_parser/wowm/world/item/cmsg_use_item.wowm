@@ -1,0 +1,80 @@
+cmsg CMSG_USE_ITEM = 0x00AB {
+    u8 bag_index;
+    u8 bag_slot;
+    u8 spell_index;
+    SpellCastTargets targets;
+} {
+    versions = "1.12";
+}
+
+cmsg CMSG_USE_ITEM = 0x00AB {
+    u8 bag_index;
+    u8 bag_slot;
+    u8 spell_index;
+    /// mangosone: next cast if exists (single or not)
+    u8 cast_count;
+    Guid item;
+    SpellCastTargets targets;
+} {
+    versions = "2.4.3";
+}
+
+enum ClientCastFlags : u8 {
+    NONE = 0;
+    EXTRA = 2;
+} {
+    versions = "3.3.5";
+}
+
+enum ClientMovementData : u8 {
+    NOT_PRESENT = 0;
+    PRESENT = 1;
+} {
+    versions = "3.3.5";
+}
+
+cmsg CMSG_USE_ITEM = 0x00AB {
+    u8 bag_index;
+    u8 bag_slot;
+    u8 spell_index;
+    /// mangosone: next cast if exists (single or not)
+    u8 cast_count;
+    Spell spell;
+    Guid item;
+    u32 glyph_index;
+    ClientCastFlags cast_flags;
+    if (cast_flags == EXTRA) {
+        f32 elevation;
+        f32 speed;
+        ClientMovementData movement_data;
+        if (movement_data == PRESENT) {
+            u32 opcode;
+            PackedGuid guid;
+            MovementInfo info;
+        }
+    }
+    SpellCastTargets targets;
+} {
+    versions = "3.3.5";
+}
+
+test CMSG_USE_ITEM {
+    bag_index = 255;
+    bag_slot = 24;
+    spell_index = 0;
+    targets = {
+        target_flags = SELF;
+    };
+} [
+    0x00, 0x09, /* size */
+    0xAB, 0x00, 0x00, 0x00, /* opcode */
+    0xFF, /* bag_index */
+    0x18, /* bag_slot */
+    0x00, /* spell_index */
+    /* targets: SpellCastTargets start */
+        0x00, 0x00, /* target_flags */
+    /* targets: SpellCastTargets end */
+] {
+    versions = "1.12";
+}
+

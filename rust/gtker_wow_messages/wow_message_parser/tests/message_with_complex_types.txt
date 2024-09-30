@@ -1,0 +1,96 @@
+use std::io::{Read, Write};
+
+use crate::vanilla::{
+    SimpleEnum, SimpleFlag, StructWithAllBuiltInTypes,
+};
+
+/// Auto generated from the original `wowm` in file [`wow_message_parser/tests/impl_levels.wowm:55`](https://github.com/gtker/wow_messages/tree/main/wow_message_parser/tests/impl_levels.wowm#L55):
+/// ```text
+/// msg MessageWithComplexTypes = 0x0003 {
+///     SimpleEnum simple_enum;
+///     SimpleFlag simple_flag;
+///     StructWithAllBuiltInTypes simple_struct;
+/// }
+/// ```
+#[derive(Debug, Clone, PartialEq, PartialOrd, Default)]
+pub struct MessageWithComplexTypes {
+    pub simple_enum: SimpleEnum,
+    pub simple_flag: SimpleFlag,
+    pub simple_struct: StructWithAllBuiltInTypes,
+}
+
+impl crate::private::Sealed for MessageWithComplexTypes {}
+impl MessageWithComplexTypes {
+    fn read_inner(mut r: &mut &[u8], body_size: u32) -> Result<Self, crate::errors::ParseErrorKind> {
+        if !(23..=534).contains(&body_size) {
+            return Err(crate::errors::ParseErrorKind::InvalidSize);
+        }
+
+        // simple_enum: SimpleEnum
+        let simple_enum = crate::util::read_u8_le(&mut r)?.try_into()?;
+
+        // simple_flag: SimpleFlag
+        let simple_flag = SimpleFlag::new(crate::util::read_u8_le(&mut r)?);
+
+        // simple_struct: StructWithAllBuiltInTypes
+        let simple_struct = StructWithAllBuiltInTypes::read(&mut r)?;
+
+        Ok(Self {
+            simple_enum,
+            simple_flag,
+            simple_struct,
+        })
+    }
+
+}
+
+impl crate::Message for MessageWithComplexTypes {
+    const OPCODE: u32 = 0x0003;
+
+    #[cfg(feature = "print-testcase")]
+    fn message_name(&self) -> &'static str {
+        "MessageWithComplexTypes"
+    }
+
+    #[cfg(feature = "print-testcase")]
+    fn to_test_case_string(&self) -> Option<String> {
+        panic!("MSG types not supported");
+    }
+
+    fn size_without_header(&self) -> u32 {
+        self.size() as u32
+    }
+
+    fn write_into_vec(&self, mut w: impl Write) -> Result<(), std::io::Error> {
+        // simple_enum: SimpleEnum
+        w.write_all(&(self.simple_enum.as_int().to_le_bytes()))?;
+
+        // simple_flag: SimpleFlag
+        w.write_all(&(self.simple_flag.as_int().to_le_bytes()))?;
+
+        // simple_struct: StructWithAllBuiltInTypes
+        self.simple_struct.write_into_vec(&mut w)?;
+
+        Ok(())
+    }
+
+    fn read_body<S: crate::private::Sealed>(r: &mut &[u8], body_size: u32) -> Result<Self, crate::errors::ParseError> {
+        Self::read_inner(r, body_size).map_err(|a| crate::errors::ParseError::new(3, "MessageWithComplexTypes", body_size, a))
+    }
+
+}
+
+#[cfg(feature = "vanilla")]
+impl crate::vanilla::ClientMessage for MessageWithComplexTypes {}
+
+#[cfg(feature = "vanilla")]
+impl crate::vanilla::ServerMessage for MessageWithComplexTypes {}
+
+impl MessageWithComplexTypes {
+    pub(crate) fn size(&self) -> usize {
+        1 // simple_enum: SimpleEnum
+        + 1 // simple_flag: SimpleFlag
+        + self.simple_struct.size() // simple_struct: StructWithAllBuiltInTypes
+    }
+}
+

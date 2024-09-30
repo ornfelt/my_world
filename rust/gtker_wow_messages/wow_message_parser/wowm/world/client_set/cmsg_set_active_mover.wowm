@@ -1,0 +1,17 @@
+/// Sent when the client enters the world.
+cmsg CMSG_SET_ACTIVE_MOVER = 0x26A {
+    Guid guid;
+} {
+    versions = "1 2 3";
+}
+
+test CMSG_SET_ACTIVE_MOVER {
+    guid = 23;
+} [
+    0x00, 0x0C, /* size */
+    0x6A, 0x02, 0x00, 0x00, /* opcode */
+    0x17, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* guid */
+] {
+    versions = "1.12";
+}
+

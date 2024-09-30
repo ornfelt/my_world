@@ -1,0 +1,42 @@
+/// Some emulators have this with fields, but it has been verified to be empty on 1.12 through reverse engineering.
+smsg SMSG_PET_NAME_INVALID = 0x0178 {} {
+    versions = "1.12";
+}
+
+enum PetNameInvalidReason : u8 {
+    INVALID = 1;
+    NO_NAME = 2;
+    TOO_SHORT = 3;
+    TOO_LONG = 4;
+    MIXED_LANGUAGES = 6;
+    PROFANE = 7;
+    RESERVED = 8;
+    THREE_CONSECUTIVE = 11;
+    INVALID_SPACE = 12;
+    CONSECUTIVE_SPACES = 13;
+    RUSSIAN_CONSECUTIVE_SILENT_CHARACTERS = 14;
+    RUSSIAN_SILENT_CHARACTER_AT_BEGINNING_OR_END = 15;
+    DECLENSION_DOESNT_MATCH_BASE_NAME = 16;
+} {
+    versions = "2 3";
+}
+
+enum DeclinedPetNameIncluded : u8 {
+    NOT_INCLUDED = 0;
+    INCLUDED = 1;
+} {
+    versions = "2.4.3 3";
+}
+
+/// Some emulators have this with fields, but it has been verified to be empty on 1.12 through reverse engineering.
+smsg SMSG_PET_NAME_INVALID = 0x0178 {
+    (u32)PetNameInvalidReason reason;
+    CString name;
+    DeclinedPetNameIncluded included;
+    if (included == INCLUDED) {
+        CString[5] declined_names;
+    }
+} {
+    versions = "2.4.3 3";
+}
+

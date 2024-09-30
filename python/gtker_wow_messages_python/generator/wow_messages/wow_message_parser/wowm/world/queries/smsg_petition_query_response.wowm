@@ -1,0 +1,97 @@
+smsg SMSG_PETITION_QUERY_RESPONSE = 0x01C7 {
+    u32 petition_id;
+    Guid charter_owner;
+    CString guild_name;
+    /// cmangos/vmangos/mangoszero: Set to 0, only info is comment from vmangos
+    CString body_text;
+    /// cmangos/vmangos/mangoszero: Set to 1, only info is comment from vmangos
+    u32 unknown_flags;
+    /// cmangos/vmangos/mangoszero: Set to 9, only info is comment from vmangos
+    u32 minimum_signatures;
+    /// cmangos/vmangos/mangoszero: Set to 9, only info is comment from vmangos
+    u32 maximum_signatures;
+    /// cmangos/vmangos/mangoszero: Set to 0, only info is comment from vmangos
+    u32 deadline;
+    /// cmangos/vmangos/mangoszero: Set to 0, only info is comment from vmangos
+    u32 issue_date;
+    /// cmangos/vmangos/mangoszero: Set to 0, only info is comment from vmangos
+    u32 allowed_guild_id;
+    /// cmangos/vmangos/mangoszero: Set to 0, only info is comment from vmangos
+    AllowedClass allowed_class;
+    /// cmangos/vmangos/mangoszero: Set to 0, only info is comment from vmangos
+    AllowedRace allowed_race;
+    /// cmangos/vmangos/mangoszero: Set to 0, only info is comment from vmangos
+    u16 allowed_genders;
+    /// cmangos/vmangos/mangoszero: Set to 0, only info is comment from vmangos
+    Level32 allowed_minimum_level;
+    /// cmangos/vmangos/mangoszero: Set to 0, only info is comment from vmangos
+    Level32 allowed_maximum_level;
+    /* TODO CORRECT_LAYOUT Figure out if CStrings work? */
+    /// cmangos/vmangos/mangoszero: Set to 0, only info is comment from vmangos
+    /// vmangos: char m_choicetext[10][64]
+    u32 todo_amount_of_signers;
+    /// cmangos/vmangos/mangoszero: Set to 0, only info is comment from vmangos
+    u32 number_of_choices;
+} {
+    versions = "1.12";
+}
+
+enum CharterType : u8 {
+    GUILD = 0;
+    ARENA = 1;
+} {
+    versions = "2 3";
+}
+
+smsg SMSG_PETITION_QUERY_RESPONSE = 0x01C7 {
+    u32 petition_id;
+    Guid charter_owner;
+    CString guild_name;
+    /// cmangos/vmangos/mangoszero: Set to 0, only info is comment from vmangos
+    CString body_text;
+    /// cmangos/vmangos/mangoszero: Set to 9, only info is comment from vmangos
+    u32 minimum_signatures;
+    /// cmangos/vmangos/mangoszero: Set to 9, only info is comment from vmangos
+    u32 maximum_signatures;
+    /// mangosone: bypass client - side limitation, a different value is needed here for each petition
+    u32 unknown1;
+    u32 unknown2;
+    u32 unknown3;
+    u32 unknown4;
+    u32 unknown5;
+    u16 unknown6;
+    u32 unknown7;
+    u32 unknown8;
+    u32 unknown9;
+    u32 unknown10;
+    (u32)CharterType charter_type;
+} {
+    versions = "2.4.3";
+}
+
+smsg SMSG_PETITION_QUERY_RESPONSE = 0x01C7 {
+    u32 petition_id;
+    Guid charter_owner;
+    CString guild_name;
+    /// cmangos/vmangos/mangoszero: Set to 0, only info is comment from vmangos
+    CString body_text;
+    /// cmangos/vmangos/mangoszero: Set to 9, only info is comment from vmangos
+    u32 minimum_signatures;
+    /// cmangos/vmangos/mangoszero: Set to 9, only info is comment from vmangos
+    u32 maximum_signatures;
+    /// mangosone: bypass client - side limitation, a different value is needed here for each petition
+    u32 unknown1;
+    u32 unknown2;
+    u32 unknown3;
+    u32 unknown4;
+    u32 unknown5;
+    u16 unknown6;
+    u32 unknown7;
+    u32 unknown8;
+    u32 unknown9;
+    u8[10] unknown10;
+    u32 unknown11;
+    (u32)CharterType charter_type;
+} {
+    versions = "3.3.5";
+}

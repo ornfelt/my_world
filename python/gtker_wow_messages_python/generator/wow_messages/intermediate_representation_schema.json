@@ -1,0 +1,1196 @@
+{
+  "properties": {
+    "version": {
+      "ref": "schema_version"
+    },
+    "world": {
+      "ref": "objects"
+    },
+    "integer_type_information": {
+      "values": {
+        "properties": {
+          "size": {
+            "type": "uint8"
+          },
+          "bits": {
+            "type": "uint8"
+          }
+        }
+      }
+    },
+    "distinct_login_versions_other_than_all": {
+      "elements": {
+        "type": "uint8"
+      }
+    },
+    "login_version_opcodes": {
+      "values": {
+        "type": "uint8"
+      }
+    },
+    "login": {
+      "ref": "objects"
+    },
+    "vanilla_update_mask": {
+      "elements": {
+        "ref": "update_mask"
+      }
+    },
+    "tbc_update_mask": {
+      "elements": {
+        "ref": "update_mask"
+      }
+    },
+    "wrath_update_mask": {
+      "elements": {
+        "ref": "update_mask"
+      }
+    }
+  },
+  "definitions": {
+    "update_mask": {
+      "properties": {
+        "object_type": {
+          "enum": [
+            "Object",
+            "Item",
+            "Unit",
+            "Player",
+            "Container",
+            "GameObject",
+            "DynamicObject",
+            "Corpse"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "offset": {
+          "type": "uint16"
+        },
+        "size": {
+          "type": "uint16"
+        },
+        "data_type": {
+          "discriminator": "update_mask_type_tag",
+          "mapping": {
+            "Guid": {
+              "properties": {}
+            },
+            "Int": {
+              "properties": {}
+            },
+            "Float": {
+              "properties": {}
+            },
+            "TwoShort": {
+              "properties": {
+                "content": {
+                  "properties": {
+                    "first": {
+                      "ref": "two_short_type"
+                    },
+                    "second": {
+                      "ref": "two_short_type"
+                    }
+                  }
+                }
+              }
+            },
+            "GuidArrayUsingEnum": {
+              "properties": {
+                "content": {
+                  "properties": {
+                    "definer": {
+                      "ref": "definer"
+                    },
+                    "variable_name": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "ArrayOfStruct": {
+              "properties": {
+                "content": {
+                  "properties": {
+                    "update_mask_struct": {
+                      "ref": "update_mask_struct"
+                    },
+                    "size": {
+                      "type": "int32"
+                    },
+                    "variable_name": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "Bytes": {
+              "properties": {
+                "content": {
+                  "properties": {
+                    "first": {
+                      "ref": "byte_type"
+                    },
+                    "second": {
+                      "ref": "byte_type"
+                    },
+                    "third": {
+                      "ref": "byte_type"
+                    },
+                    "fourth": {
+                      "ref": "byte_type"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "byte_type": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "inner_type": {
+          "discriminator": "byte_type_tag",
+          "mapping": {
+            "Byte": {
+              "properties": {}
+            },
+            "Definer": {
+              "properties": {
+                "byte_type": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "two_short_type": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "inner_type": {
+          "discriminator": "two_short_type_tag",
+          "mapping": {
+            "Short": {
+              "properties": {}
+            },
+            "Definer": {
+              "properties": {
+                "two_short_type": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "schema_version": {
+      "properties": {
+        "major": {
+          "type": "uint32"
+        },
+        "minor": {
+          "type": "uint32"
+        },
+        "patch": {
+          "type": "uint32"
+        }
+      }
+    },
+    "objects": {
+      "properties": {
+        "enums": {
+          "elements": {
+            "ref": "definer"
+          }
+        },
+        "flags": {
+          "elements": {
+            "ref": "definer"
+          }
+        },
+        "structs": {
+          "elements": {
+            "ref": "container"
+          }
+        },
+        "messages": {
+          "elements": {
+            "ref": "container"
+          }
+        }
+      }
+    },
+    "definer": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "definer_type": {
+          "ref": "definer_type"
+        },
+        "objects_used_in": {
+          "elements": {
+            "properties": {
+              "object_name": {
+                "type": "string"
+              },
+              "definer_usage": {
+                "ref": "definer_usage"
+              }
+            }
+          }
+        },
+        "enumerators": {
+          "elements": {
+            "ref": "enumerator"
+          }
+        },
+        "integer_type": {
+          "ref": "integer_type"
+        },
+        "tags": {
+          "ref": "object_tags"
+        },
+        "file_info": {
+          "ref": "file_info"
+        }
+      }
+    },
+    "sizes": {
+      "properties": {
+        "constant_sized": {
+          "type": "boolean"
+        },
+        "minimum_size": {
+          "type": "uint32"
+        },
+        "maximum_size": {
+          "type": "uint32"
+        }
+      }
+    },
+    "container": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "object_type": {
+          "ref": "object_type"
+        },
+        "has_manual_size_field": {
+          "type": "boolean"
+        },
+        "manual_size_subtraction": {
+          "type": "uint16",
+          "nullable": true
+        },
+        "sizes": {
+          "ref": "sizes"
+        },
+        "file_info": {
+          "ref": "file_info"
+        },
+        "only_has_io_error": {
+          "type": "boolean"
+        },
+        "tags": {
+          "ref": "object_tags"
+        },
+        "members": {
+          "elements": {
+            "ref": "struct_member"
+          }
+        },
+        "tests": {
+          "elements": {
+            "ref": "test_case"
+          }
+        },
+        "optional": {
+          "nullable": true,
+          "ref": "optional_members"
+        },
+        "prepared_objects": {
+          "metadata": {
+            "description": "Is a structured representation of the object where fields that are inside if statements will be put inside the enumerators they are present in. This is used for example when wanting to represent conditionally present fields through e.g. discriminated unions or inheritance."
+          },
+          "elements": {
+            "ref": "prepared_object"
+          }
+        }
+      }
+    },
+    "prepared_object": {
+      "metadata": {
+        "description": "Represents a field in the object, and the fields for each enumerator if it's an enum/flag."
+      },
+      "properties": {
+        "name": {
+          "metadata": {
+            "description": "Name inside the object. Search through the original object to get type and other information."
+          },
+          "type": "string"
+        },
+        "is_elseif_flag": {
+          "type": "boolean"
+        },
+        "enum_part_of_separate_statements": {
+          "type": "boolean"
+        }
+      },
+      "optionalProperties": {
+        "enumerators": {
+          "metadata": {
+            "description": "If this is present the field contains other fields."
+          },
+          "values": {
+            "elements": {
+              "ref": "prepared_object"
+            }
+          }
+        },
+        "definer_type": {
+          "ref": "definer_type"
+        }
+      }
+    },
+    "update_mask_struct": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "sizes": {
+          "ref": "sizes"
+        },
+        "file_info": {
+          "ref": "file_info"
+        },
+        "tags": {
+          "ref": "object_tags"
+        },
+        "members": {
+          "elements": {
+            "elements": {
+              "properties": {
+                "member": {
+                  "ref": "definition"
+                },
+                "offset": {
+                  "type": "int32"
+                },
+                "size": {
+                  "type": "int32"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "floating_point_value": {
+      "properties": {
+        "value": {
+          "type": "float64"
+        },
+        "original_string": {
+          "type": "string"
+        }
+      }
+    },
+    "test_case_value": {
+      "discriminator": "test_value_tag",
+      "mapping": {
+        "Integer": {
+          "properties": {
+            "content": {
+              "ref": "value"
+            }
+          }
+        },
+        "Bool": {
+          "properties": {
+            "content": {
+              "type": "boolean"
+            }
+          }
+        },
+        "Population": {
+          "properties": {
+            "content": {
+              "type": "float32"
+            }
+          }
+        },
+        "DateTime": {
+          "properties": {
+            "content": {
+              "ref": "value"
+            }
+          }
+        },
+        "Guid": {
+          "properties": {
+            "content": {
+              "ref": "value"
+            }
+          }
+        },
+        "FloatingPoint": {
+          "properties": {
+            "content": {
+              "ref": "floating_point_value"
+            }
+          }
+        },
+        "Array": {
+          "properties": {
+            "content": {
+              "properties": {
+                "values": {
+                  "elements": {
+                    "type": "string"
+                  }
+                },
+                "size": {
+                  "ref": "array_size"
+                }
+              }
+            }
+          }
+        },
+        "String": {
+          "properties": {
+            "content": {
+              "type": "string"
+            }
+          }
+        },
+        "Flag": {
+          "properties": {
+            "content": {
+              "elements": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "Enum": {
+          "properties": {
+            "content": {
+              "ref": "value"
+            }
+          }
+        },
+        "SubObject": {
+          "properties": {
+            "content": {
+              "properties": {
+                "type_name": {
+                  "type": "string"
+                },
+                "members": {
+                  "elements": {
+                    "ref": "test_case_member"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "ArrayOfSubObject": {
+          "properties": {
+            "content": {
+              "properties": {
+                "type_name": {
+                  "type": "string"
+                },
+                "members": {
+                  "elements": {
+                    "elements": {
+                      "ref": "test_case_member"
+                    }
+                  }
+                },
+                "size": {
+                  "ref": "array_size"
+                }
+              }
+            }
+          }
+        },
+        "UpdateMask": {
+          "properties": {
+            "content": {
+              "elements": {
+                "properties": {
+                  "update_mask_type": {
+                    "enum": [
+                      "Object",
+                      "Item",
+                      "Unit",
+                      "Player",
+                      "Container",
+                      "GameObject",
+                      "DynamicObject",
+                      "Corpse"
+                    ]
+                  },
+                  "update_mask_name": {
+                    "type": "string"
+                  },
+                  "update_mask_value": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "IpAddress": {
+          "properties": {
+            "content": {
+              "ref": "value"
+            }
+          }
+        },
+        "Seconds": {
+          "properties": {
+            "content": {
+              "ref": "value"
+            }
+          }
+        },
+        "Milliseconds": {
+          "properties": {
+            "content": {
+              "ref": "value"
+            }
+          }
+        },
+        "Gold": {
+          "properties": {
+            "content": {
+              "ref": "value"
+            }
+          }
+        },
+        "Level": {
+          "properties": {
+            "content": {
+              "ref": "value"
+            }
+          }
+        },
+        "MonsterMoveSpline": {
+          "properties": {
+            "content": {
+              "elements": {
+                "properties": {
+                  "x": {
+                    "type": "float32"
+                  },
+                  "y": {
+                    "type": "float32"
+                  },
+                  "z": {
+                    "type": "float32"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "test_case_member": {
+      "properties": {
+        "variable_name": {
+          "type": "string"
+        },
+        "value": {
+          "ref": "test_case_value"
+        },
+        "tags": {
+          "ref": "member_tags"
+        }
+      }
+    },
+    "test_case": {
+      "properties": {
+        "subject": {
+          "type": "string"
+        },
+        "members": {
+          "elements": {
+            "ref": "test_case_member"
+          }
+        },
+        "raw_bytes": {
+          "elements": {
+            "type": "uint8"
+          }
+        },
+        "tags": {
+          "ref": "object_tags"
+        },
+        "file_info": {
+          "ref": "file_info"
+        }
+      }
+    },
+    "object_tags": {
+      "properties": {
+        "version": {
+          "ref": "object_versions"
+        }
+      },
+      "optionalProperties": {
+        "comment": {
+          "type": "string"
+        },
+        "unimplemented": {
+          "type": "boolean"
+        },
+        "compressed": {
+          "type": "boolean"
+        },
+        "non_network_type": {
+          "type": "boolean"
+        },
+        "used_in_update_mask": {
+          "type": "boolean"
+        }
+      }
+    },
+    "member_tags": {
+      "optionalProperties": {
+        "comment": {
+          "type": "string"
+        },
+        "display": {
+          "type": "string"
+        },
+        "maximum_length": {
+          "metadata": {
+            "description": "JSON Typedef does not support integers larger than unsigned 32 bit, so this is a string"
+          },
+          "type": "string"
+        },
+        "valid_range": {
+          "metadata": {
+            "description": "JSON Typedef does not support integers larger than unsigned 32 bit, so this is a string"
+          },
+          "properties": {
+            "from": {
+              "type": "string"
+            },
+            "to": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "object_versions": {
+      "discriminator": "version_type_tag",
+      "mapping": {
+        "login": {
+          "properties": {
+            "version_type": {
+              "ref": "login_versions"
+            }
+          }
+        },
+        "world": {
+          "properties": {
+            "version_type": {
+              "ref": "world_versions"
+            }
+          }
+        }
+      }
+    },
+    "login_versions": {
+      "discriminator": "login_version_tag",
+      "mapping": {
+        "specific": {
+          "properties": {
+            "versions": {
+              "elements": {
+                "type": "uint8"
+              }
+            }
+          }
+        },
+        "all": {
+          "properties": {}
+        }
+      }
+    },
+    "world_versions": {
+      "discriminator": "world_version_tag",
+      "mapping": {
+        "specific": {
+          "properties": {
+            "versions": {
+              "elements": {
+                "ref": "world_version"
+              }
+            }
+          }
+        },
+        "all": {
+          "properties": {}
+        }
+      }
+    },
+    "world_version": {
+      "properties": {
+        "major": {
+          "type": "uint8"
+        },
+        "minor": {
+          "type": "uint8",
+          "nullable": true
+        },
+        "patch": {
+          "type": "uint8",
+          "nullable": true
+        },
+        "build": {
+          "type": "uint16",
+          "nullable": true
+        }
+      }
+    },
+    "integer_type": {
+      "enum": [
+        "U8",
+        "I8",
+        "U16",
+        "U32",
+        "U64",
+        "I16",
+        "I32",
+        "I64",
+        "U48"
+      ]
+    },
+    "file_info": {
+      "properties": {
+        "file_name": {
+          "type": "string"
+        },
+        "start_position": {
+          "type": "uint32"
+        },
+        "end_position": {
+          "type": "uint32"
+        }
+      }
+    },
+    "value": {
+      "properties": {
+        "value": {
+          "metadata": {
+            "description": "JSON Typedef does not support integers larger than unsigned 32 bit, so this is a string"
+          },
+          "type": "string"
+        },
+        "original_string": {
+          "type": "string"
+        }
+      }
+    },
+    "definer_type": {
+      "enum": [
+        "Enum",
+        "Flag"
+      ]
+    },
+    "enumerator": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "ref": "value"
+        },
+        "tags": {
+          "ref": "member_tags"
+        }
+      }
+    },
+    "definer_usage": {
+      "enum": [
+        "RegularUse",
+        "InIfStatement"
+      ]
+    },
+    "object_type": {
+      "discriminator": "container_type_tag",
+      "mapping": {
+        "Struct": {
+          "properties": {}
+        },
+        "CLogin": {
+          "properties": {
+            "opcode": {
+              "type": "uint16"
+            }
+          }
+        },
+        "SLogin": {
+          "properties": {
+            "opcode": {
+              "type": "uint16"
+            }
+          }
+        },
+        "Msg": {
+          "properties": {
+            "opcode": {
+              "type": "uint16"
+            }
+          }
+        },
+        "CMsg": {
+          "properties": {
+            "opcode": {
+              "type": "uint16"
+            }
+          }
+        },
+        "SMsg": {
+          "properties": {
+            "opcode": {
+              "type": "uint16"
+            }
+          }
+        }
+      }
+    },
+    "struct_member": {
+      "discriminator": "struct_member_tag",
+      "mapping": {
+        "Definition": {
+          "properties": {
+            "struct_member_content": {
+              "ref": "definition"
+            }
+          }
+        },
+        "IfStatement": {
+          "properties": {
+            "struct_member_content": {
+              "ref": "if_statement"
+            }
+          }
+        }
+      }
+    },
+    "definition": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "data_type": {
+          "ref": "data_type"
+        },
+        "constant_value": {
+          "ref": "value",
+          "nullable": true
+        },
+        "size_of_fields_before_size": {
+          "type": "uint8",
+          "nullable": true
+        },
+        "used_as_size_in": {
+          "type": "string",
+          "nullable": true
+        },
+        "used_in_if": {
+          "type": "boolean"
+        },
+        "tags": {
+          "ref": "member_tags"
+        }
+      }
+    },
+    "array_type": {
+      "discriminator": "array_type_tag",
+      "mapping": {
+        "Integer": {
+          "properties": {
+            "integer_type": {
+              "ref": "integer_type"
+            }
+          }
+        },
+        "Struct": {
+          "properties": {
+            "struct_data": {
+              "ref": "container"
+            }
+          }
+        },
+        "CString": {
+          "properties": {}
+        },
+        "Guid": {
+          "properties": {}
+        },
+        "PackedGuid": {
+          "properties": {}
+        },
+        "Spell": {
+          "properties": {}
+        }
+      }
+    },
+    "array_size": {
+      "discriminator": "array_size_tag",
+      "mapping": {
+        "Fixed": {
+          "properties": {
+            "size": {
+              "metadata": {
+                "description": "JSON Typedef does not support integers larger than unsigned 32 bit, so this is a string"
+              },
+              "type": "string"
+            }
+          }
+        },
+        "Variable": {
+          "properties": {
+            "size": {
+              "type": "string"
+            }
+          }
+        },
+        "Endless": {
+          "properties": {}
+        }
+      }
+    },
+    "data_type": {
+      "discriminator": "data_type_tag",
+      "mapping": {
+        "Integer": {
+          "properties": {
+            "integer_type": {
+              "ref": "integer_type"
+            }
+          }
+        },
+        "Bool": {
+          "properties": {
+            "integer_type": {
+              "ref": "integer_type"
+            }
+          }
+        },
+        "Population": {
+          "properties": {}
+        },
+        "DateTime": {
+          "properties": {}
+        },
+        "PackedGuid": {
+          "properties": {}
+        },
+        "Guid": {
+          "properties": {}
+        },
+        "NamedGuid": {
+          "properties": {}
+        },
+        "FloatingPoint": {
+          "properties": {}
+        },
+        "CString": {
+          "properties": {}
+        },
+        "SizedCString": {
+          "properties": {}
+        },
+        "String": {
+          "properties": {}
+        },
+        "Spell": {
+          "properties": {}
+        },
+        "Spell16": {
+          "properties": {}
+        },
+        "Item": {
+          "properties": {}
+        },
+        "Array": {
+          "properties": {
+            "inner_type": {
+              "ref": "array_type"
+            },
+            "size": {
+              "ref": "array_size"
+            },
+            "compressed": {
+              "type": "boolean"
+            }
+          }
+        },
+        "Enum": {
+          "properties": {
+            "type_name": {
+              "type": "string"
+            },
+            "integer_type": {
+              "ref": "integer_type"
+            },
+            "upcast": {
+              "type": "boolean"
+            }
+          }
+        },
+        "Flag": {
+          "properties": {
+            "type_name": {
+              "type": "string"
+            },
+            "integer_type": {
+              "ref": "integer_type"
+            },
+            "upcast": {
+              "type": "boolean"
+            }
+          }
+        },
+        "Struct": {
+          "properties": {
+            "struct_data": {
+              "ref": "container"
+            }
+          }
+        },
+        "UpdateMask": {
+          "properties": {}
+        },
+        "AuraMask": {
+          "properties": {}
+        },
+        "MonsterMoveSpline": {
+          "properties": {}
+        },
+        "AchievementDoneArray": {
+          "properties": {}
+        },
+        "AchievementInProgressArray": {
+          "properties": {}
+        },
+        "EnchantMask": {
+          "properties": {}
+        },
+        "InspectTalentGearMask": {
+          "properties": {}
+        },
+        "Gold": {
+          "properties": {}
+        },
+        "Level": {
+          "properties": {}
+        },
+        "Level16": {
+          "properties": {}
+        },
+        "Level32": {
+          "properties": {}
+        },
+        "VariableItemRandomProperty": {
+          "properties": {}
+        },
+        "AddonArray": {
+          "properties": {}
+        },
+        "IpAddress": {
+          "properties": {}
+        },
+        "Seconds": {
+          "properties": {}
+        },
+        "Milliseconds": {
+          "properties": {}
+        },
+        "CacheMask": {
+          "properties": {}
+        }
+      }
+    },
+    "if_statement": {
+      "properties": {
+        "variable_name": {
+          "type": "string"
+        },
+        "definer_type": {
+          "ref": "definer_type"
+        },
+        "values": {
+          "elements": {
+            "type": "string"
+          }
+        },
+        "members": {
+          "elements": {
+            "ref": "struct_member"
+          }
+        },
+        "else_if_statements": {
+          "elements": {
+            "ref": "if_statement"
+          }
+        },
+        "original_type": {
+          "ref": "data_type"
+        },
+        "part_of_separate_if_statement": {
+          "type": "boolean"
+        },
+        "is_else_if_flag": {
+          "type": "boolean"
+        }
+      }
+    },
+    "optional_members": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "members": {
+          "elements": {
+            "ref": "struct_member"
+          }
+        },
+        "prepared_objects": {
+          "metadata": {
+            "description": "Is a structured representation of the object where fields that are inside if statements will be put inside the enumerators they are present in. This is used for example when wanting to represent conditionally present fields through e.g. discriminated unions or inheritance."
+          },
+          "elements": {
+            "ref": "prepared_object"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,67 @@
+[package]
+name = "wow_world_messages"
+description = "Message definitions for World of Warcraft world servers"
+version = "0.2.0"
+keywords = ["wow", "world-of-warcraft", "message", "definitions"]
+categories = ["network-programming", "game-development", "game-engines"]
+
+edition.workspace = true
+authors.workspace = true
+repository.workspace = true
+license.workspace = true
+
+exclude = ["release.toml"]
+
+[features]
+default = ["encryption"]
+sync = []
+vanilla = ["wow_world_base/vanilla"]
+tbc = ["wow_srp/tbc-header", "wow_world_base/tbc"]
+wrath = ["wow_srp/wrath-header", "wow_world_base/wrath"]
+encryption = ["wow_srp"]
+print-testcase = ["wow_world_base/print-testcase"]
+
+[dependencies.wow_world_base]
+workspace = true
+
+[dependencies.wow_srp]
+default-features = false
+optional = true
+version = "0.7.0"
+
+[dependencies.chrono]
+version = "0.4"
+default-features = false
+optional = true
+
+[dependencies.flate2]
+version = "1.0.24"
+optional = false
+default-features = false
+features = ["zlib"]
+
+[dependencies.tokio]
+version = "1"
+default-features = false
+features = ["io-util"]
+optional = true
+
+[dependencies.async-std]
+version = "1.11"
+default-features = false
+optional = true
+features = ["async-io", "std"]
+
+[dev-dependencies.async-std]
+version = "1.11"
+default-features = false
+features = ["attributes", "default"]
+
+[dev-dependencies.tokio]
+version = "1"
+default-features = false
+features = ["macros", "rt"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

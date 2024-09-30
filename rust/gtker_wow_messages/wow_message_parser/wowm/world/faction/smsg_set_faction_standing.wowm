@@ -1,0 +1,34 @@
+struct FactionStanding {
+    Faction faction;
+    /* TODO NARROW_TYPE Units? */
+    u32 standing;
+} {
+    paste_versions = "1.12 2.4.3 3.3.5";
+}
+
+smsg SMSG_SET_FACTION_STANDING = 0x0124 {
+    u32 amount_of_faction_standings;
+    FactionStanding[amount_of_faction_standings] faction_standings;
+} {
+    versions = "1.12";
+}
+
+smsg SMSG_SET_FACTION_STANDING = 0x0124 {
+    /// All emus set to 0.
+    f32 refer_a_friend_bonus;
+    u32 amount_of_faction_standings;
+    FactionStanding[amount_of_faction_standings] faction_standings;
+} {
+    versions = "2.4.3";
+}
+
+smsg SMSG_SET_FACTION_STANDING = 0x0124 {
+    /// All emus set to 0.
+    f32 refer_a_friend_bonus;
+    /// mangostwo: display visual effect
+    Bool any_rank_increased;
+    u32 amount_of_faction_standings;
+    FactionStanding[amount_of_faction_standings] faction_standings;
+} {
+    versions = "3.3.5";
+}

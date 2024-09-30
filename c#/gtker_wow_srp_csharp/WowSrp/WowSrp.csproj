@@ -1,0 +1,54 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <PackageId>WowSrp</PackageId>
+        <TargetFramework>netstandard2.1</TargetFramework>
+        <LangVersion>8</LangVersion>
+
+        <Authors>Gtker</Authors>
+        <Version>0.3.0</Version>
+        <Title>WoW SRP</Title>
+        <Description>
+            Library for most cryptographic algorithms used on World of Warcraft 1.0 through to 3.3.5.
+
+            Contains implementations of integrity checking PIN authentication, MatrixCard and the general SRP6 algorithm.
+        </Description>
+        <PackageTags>WorldOfWarcraft;WoW;Blizzard;SRP6;MatrixCard;PIN;Server;Client</PackageTags>
+        <PackageLicenseExpression>MIT OR Apache-2.0</PackageLicenseExpression>
+        <Copyright>Copyright (c) Gtker 2024</Copyright>
+
+        <PackageReleaseNotes>$([System.IO.File]::ReadAllText("$(MSBuildProjectDirectory)/CHANGELOG.md"))</PackageReleaseNotes>
+
+        <RepositoryUrl>https://github.com/gtker/wow_srp_csharp</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <RootNamespace>WowSrp</RootNamespace>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <Nullable>enable</Nullable>
+        <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    </PropertyGroup>
+
+    <!-- Documentation and Debug info -->
+    <PropertyGroup>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <EmbedAllSources>true</EmbedAllSources>
+        <DebugType>embedded</DebugType>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+        <NoWarn>1701;1702;CS1591</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="WowSrp.Test"/>
+        <!-- Unsure if this is even necessary, but it was in release notes https://devblogs.microsoft.com/nuget/add-a-readme-to-your-nuget-package/ -->
+        <None Include="../README.md" Pack="true" PackagePath="\"/>
+    </ItemGroup>
+</Project>

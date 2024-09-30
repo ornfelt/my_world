@@ -1,0 +1,47 @@
+use std::io::{Read, Write};
+
+/// Auto generated from the original `wowm` in file [`wow_message_parser/tests/impl_levels.wowm:287`](https://github.com/gtker/wow_messages/tree/main/wow_message_parser/tests/impl_levels.wowm#L287):
+/// ```text
+/// struct SizedCString {
+///     SizedCString s;
+/// }
+/// ```
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]
+pub struct SizedCString {
+    pub s: String,
+}
+
+impl SizedCString {
+    pub(crate) fn write_into_vec(&self, mut w: impl Write) -> Result<(), std::io::Error> {
+        // s: SizedCString
+        w.write_all(&((self.s.len() + 1) as u32).to_le_bytes())?;
+        w.write_all(self.s.as_bytes())?;
+        // Null terminator
+        w.write_all(&[0])?;
+
+        Ok(())
+    }
+}
+
+impl SizedCString {
+    pub(crate) fn read<R: std::io::Read>(mut r: R) -> Result<Self, crate::errors::ParseErrorKind> {
+        // s: SizedCString
+        let s = {
+            let s = crate::util::read_u32_le(&mut r)?;
+            let s = crate::util::read_sized_c_string_to_vec(&mut r, s)?;
+            String::from_utf8(s)?
+        };
+
+        Ok(Self {
+            s,
+        })
+    }
+
+}
+
+impl SizedCString {
+    pub(crate) fn size(&self) -> usize {
+        self.s.len() + 5 // s: SizedCString
+    }
+}
+

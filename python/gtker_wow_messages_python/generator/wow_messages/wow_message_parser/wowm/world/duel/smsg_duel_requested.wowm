@@ -1,0 +1,7 @@
+#tag_all versions "1 2 3";
+
+smsg SMSG_DUEL_REQUESTED = 0x0167 {
+    Guid initiator;
+    Guid target;
+}
+

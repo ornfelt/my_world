@@ -1,0 +1,89 @@
+smsg SMSG_GM_MESSAGECHAT = 0x03B2 {
+    ChatType chat_type;
+    (u32)Language language;
+    if (chat_type == MONSTER_SAY
+     || chat_type == MONSTER_PARTY
+     || chat_type == MONSTER_YELL
+     || chat_type == MONSTER_WHISPER
+     || chat_type == RAID_BOSS_WHISPER
+     || chat_type == RAID_BOSS_EMOTE
+     || chat_type == MONSTER_EMOTE)
+    {
+        SizedCString sender;
+        NamedGuid target1;
+        SizedCString message1;
+        PlayerChatTag chat_tag1;
+    }
+    else if (chat_type == BG_SYSTEM_NEUTRAL
+          || chat_type == BG_SYSTEM_ALLIANCE
+          || chat_type == BG_SYSTEM_HORDE)
+    {
+        NamedGuid target2;
+        SizedCString message2;
+        PlayerChatTag chat_tag2;
+    }
+    else if (chat_type == CHANNEL) {
+        CString channel_name;
+        Guid target4;
+        SizedCString message3;
+        PlayerChatTag chat_tag3;
+    } else {
+        Guid target5;
+        SizedCString message4;
+        PlayerChatTag chat_tag4;
+        SizedCString sender_name;
+    }
+} {
+    versions = "2.4.3";
+}
+
+smsg SMSG_GM_MESSAGECHAT = 0x03B3 {
+    ChatType chat_type;
+    (u32)Language language;
+    Guid sender;
+    /// azerothcore sets to 0.
+    u32 flags;
+    if (chat_type == MONSTER_SAY
+     || chat_type == MONSTER_PARTY
+     || chat_type == MONSTER_YELL
+     || chat_type == MONSTER_WHISPER
+     || chat_type == RAID_BOSS_WHISPER
+     || chat_type == RAID_BOSS_EMOTE
+     || chat_type == MONSTER_EMOTE
+     || chat_type == BATTLENET)
+    {
+        SizedCString sender1;
+        NamedGuid target1;
+    }
+    else if (chat_type == WHISPER_FOREIGN) {
+        SizedCString sender2;
+        Guid target2;
+    }
+    else if (chat_type == BG_SYSTEM_NEUTRAL
+          || chat_type == BG_SYSTEM_ALLIANCE
+          || chat_type == BG_SYSTEM_HORDE)
+    {
+        NamedGuid target3;
+    }
+    else if (chat_type == ACHIEVEMENT
+          || chat_type == GUILD_ACHIEVEMENT)
+    {
+        Guid target4;
+    }
+    else if (chat_type == CHANNEL) {
+        CString channel_name;
+        Guid target5;
+    } else {
+        SizedCString sender_name;
+        Guid target6;
+    }
+    SizedCString message;
+    PlayerChatTag chat_tag;
+    if (chat_type == ACHIEVEMENT
+     || chat_type == GUILD_ACHIEVEMENT)
+    {
+        u32 achievement_id;
+    }
+} {
+    versions = "3.3.5";
+}

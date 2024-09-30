@@ -1,0 +1,39 @@
+/// Tells the client what the datetime is and how fast time passes.
+/// The client also asks for the datetime with [CMSG_QUERY_TIME] and gets a reply from [SMSG_QUERY_TIME_RESPONSE], but this does not appear to change anything in the client.
+/// Despite sending this as the very first message after the client logs in it will still send a [CMSG_QUERY_TIME].
+smsg SMSG_LOGIN_SETTIMESPEED = 0x0042 {
+    /// Current server datetime.
+    /// Running the client with `-console` verifies that this message in this format sets the correct datetime. [SMSG_QUERY_TIME_RESPONSE] will not set this.
+    DateTime datetime;
+    /// How many minutes should pass by every second.
+    /// vmangos/cmangos/mangoszero set this to 0.01666667. This means that 1/60 minutes pass every second (one second passes every second). Setting this to 1.0 will make the client advance one minute every second.
+    f32 timescale;
+} {
+    versions = "1 2 3.0 3.1.0 3.1.1";
+}
+
+/// Set time to 2022-08-13 (Wednesday) 08:10 and timescale 0.016666668 (1/60).
+test SMSG_LOGIN_SETTIMESPEED {
+    datetime = 0x1673320A;
+    timescale = 0.016666668;
+} [
+  0x00, 0x0a, /* size */
+  0x42, 0x00, /* opcode */
+  0x0a, 0x32, 0x73, 0x16, /* datetime */
+  0x89, 0x88, 0x88, 0x3c, /* timescale */
+] {
+    versions = "1.12";
+}
+
+smsg SMSG_LOGIN_SETTIMESPEED = 0x0042 {
+    /// Current server datetime.
+    /// Running the client with `-console` verifies that this message in this format sets the correct datetime. [SMSG_QUERY_TIME_RESPONSE] will not set this.
+    DateTime datetime;
+    /// How many minutes should pass by every second.
+    /// vmangos/cmangos/mangoszero set this to 0.01666667. This means that 1/60 minutes pass every second (one second passes every second). Setting this to 1.0 will make the client advance one minute every second.
+    f32 timescale;
+    /// arcemu/azerothcore/mangostwo: Set to 0.
+    u32 unknown1;
+} {
+    versions = "3.1.2 3.2 3.3";
+}

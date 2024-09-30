@@ -1,0 +1,38 @@
+enum GuildEmblemResult : u32 {
+    /// Guild Emblem saved.
+    SUCCESS = 0;
+    INVALID_TABARD_COLORS = 1;
+    /// vmangos: You are not part of a guild!
+    NO_GUILD = 2;
+    /// vmangos: Only guild leaders can create emblems.
+    NOT_GUILD_MASTER = 3;
+    /// vmangos: You can't afford to do that.
+    NOT_ENOUGH_MONEY = 4;
+    /// mangoszero: This version fails silently.
+    NO_MESSAGE = 5;
+} {
+    versions = "1";
+}
+
+enum GuildEmblemResult : u32 {
+    SUCCESS = 0;
+    INVALID_TABARD_COLORS = 1;
+    NO_GUILD = 2;
+    NOT_GUILD_MASTER = 3;
+    NOT_ENOUGH_MONEY = 4;
+    INVALID_VENDOR = 5;
+} {
+    versions = "2.4.3 3";
+}
+
+smsg MSG_SAVE_GUILD_EMBLEM_Server = 0x01F1 {
+    GuildEmblemResult result;
+} {
+    paste_versions = "1";
+}
+
+smsg MSG_SAVE_GUILD_EMBLEM_Server = 0x01F1 {
+    GuildEmblemResult result;
+} {
+    paste_versions = "2.4.3 3";
+}

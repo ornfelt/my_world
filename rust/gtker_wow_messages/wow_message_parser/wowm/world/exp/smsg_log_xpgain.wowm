@@ -1,0 +1,33 @@
+enum ExperienceAwardType : u8 {
+    KILL = 0;
+    NON_KILL = 1;
+} {
+    versions = "1 2 3";
+}
+
+smsg SMSG_LOG_XPGAIN = 0x01D0 {
+    Guid target;
+    u32 total_exp;
+    ExperienceAwardType exp_type; 
+    if (exp_type == NON_KILL) {
+        u32 experience_without_rested;
+        /// mangoszero sets to 1 and comments: 1 - none 0 - 100% group bonus output
+        f32 exp_group_bonus;
+    }
+} {
+    versions = "1 2";
+}
+
+smsg SMSG_LOG_XPGAIN = 0x01D0 {
+    Guid target;
+    u32 total_exp;
+    ExperienceAwardType exp_type; 
+    if (exp_type == NON_KILL) {
+        u32 experience_without_rested;
+        /// mangoszero sets to 1 and comments: 1 - none 0 - 100% group bonus output
+        f32 exp_group_bonus;
+    }
+    Bool exp_includes_recruit_a_friend_bonus;
+} {
+    versions = "3.3.5";
+}

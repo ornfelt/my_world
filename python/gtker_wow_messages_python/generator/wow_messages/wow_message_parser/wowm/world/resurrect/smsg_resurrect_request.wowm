@@ -1,0 +1,7 @@
+smsg SMSG_RESURRECT_REQUEST = 0x015B {
+    Guid guid;
+    SizedCString name;
+    Bool player;
+} {
+    versions = "1 2 3";
+}

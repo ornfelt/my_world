@@ -1,0 +1,6 @@
+#tag_all versions "1 2 3";
+
+smsg SMSG_AREA_TRIGGER_MESSAGE = 0x02B8 {
+    SizedCString message;
+}
+

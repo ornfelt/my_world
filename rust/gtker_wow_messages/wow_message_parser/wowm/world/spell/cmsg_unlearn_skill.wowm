@@ -1,0 +1,7 @@
+cmsg CMSG_UNLEARN_SKILL = 0x0202 {
+    (u32)Skill skill;
+} {
+    paste_versions = "1.12 2.4.3 3.3.5";
+}
+
+

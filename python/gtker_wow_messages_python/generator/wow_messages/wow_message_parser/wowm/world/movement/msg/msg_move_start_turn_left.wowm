@@ -1,0 +1,86 @@
+cmsg MSG_MOVE_START_TURN_LEFT_Client = 0x00BC {
+    MovementInfo info;
+} {
+    versions = "1.12";
+}
+
+cmsg MSG_MOVE_START_TURN_LEFT_Client = 0x00BC {
+    MovementInfo info;
+} {
+    versions = "2.4.3";
+}
+
+msg MSG_MOVE_START_TURN_LEFT = 0x00BC {
+    PackedGuid guid;
+    MovementInfo info;
+} {
+    versions = "3.3.5";
+}
+
+test MSG_MOVE_START_TURN_LEFT_Client {
+    info = {
+        flags = TURN_LEFT;
+        timestamp = 24755963;
+        position = {
+            x = -8949.95;
+            y = -132.493;
+            z = 83.5312;
+        };
+        orientation = 0.0;
+        fall_time = 0.0;
+    };
+} [
+  0x00, 0x20, /* size */
+  0xBC, 0x00, 0x00, 0x00, /* opcode */
+  0x10, 0x00, 0x00, 0x00, /* flags */
+  0xfb, 0xbe, 0x79, 0x01, /* timestamp */
+  0xcd, 0xd7, 0x0b, 0xc6, /* position.x */
+  0x35, 0x7e, 0x04, 0xc3, /* position.y */
+  0xf9, 0x0f, 0xa7, 0x42, /* position.z */
+  0x00, 0x00, 0x00, 0x00, /* orientation */
+  0x00, 0x00, 0x00, 0x00, /* fall_time */
+] {
+    versions = "1.12";
+}
+
+smsg MSG_MOVE_START_TURN_LEFT_Server = 0x00BC {
+    PackedGuid guid;
+    MovementInfo info;
+} {
+    versions = "1.12";
+}
+
+test MSG_MOVE_START_TURN_LEFT_Server {
+    guid = 5;
+    info = {
+        flags = TURN_LEFT;
+        timestamp = 24755963;
+        position = {
+            x = -8949.95;
+            y = -132.493;
+            z = 83.5312;
+        };
+        orientation = 0.0;
+        fall_time = 0.0;
+    };
+} [
+  0x00, 0x20, /* size */
+  0xBC, 0x00, /* opcode */
+  0x01, 0x05, /* guid */
+  0x10, 0x00, 0x00, 0x00, /* flags */
+  0xfb, 0xbe, 0x79, 0x01, /* timestamp */
+  0xcd, 0xd7, 0x0b, 0xc6, /* position.x */
+  0x35, 0x7e, 0x04, 0xc3, /* position.y */
+  0xf9, 0x0f, 0xa7, 0x42, /* position.z */
+  0x00, 0x00, 0x00, 0x00, /* orientation */
+  0x00, 0x00, 0x00, 0x00, /* fall_time */
+] {
+    versions = "1.12";
+}
+
+smsg MSG_MOVE_START_TURN_LEFT_Server = 0x00BC {
+    PackedGuid guid;
+    MovementInfo info;
+} {
+    versions = "2.4.3";
+}

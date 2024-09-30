@@ -1,0 +1,24 @@
+[package]
+name = "wow_dbc"
+version = "0.3.0"
+edition = "2021"
+description = "Library for parsing World of Warcraft DBC files for 1.12, 2.4.3 and 3.3.5."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/gtker/wow_dbc"
+keywords = ["wow", "world-of-warcraft", "mpq", "dbc", "databaseclient"]
+categories = ["games", "game-development", "game-engines", "parser-implementations"]
+readme = "README.md"
+authors = ["Gtker <github@gtker.com"]
+
+[features]
+default = []
+vanilla = ["wow_world_base/vanilla"]
+tbc = ["wow_world_base/tbc"]
+wrath = ["wow_world_base/wrath"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]
+wow_world_base = "0.2.0"

@@ -1,0 +1,35 @@
+{
+  "name": "@azerothcore/ac-nodejs-srp6",
+  "version": "1.0.8",
+  "description": "Generate verifier for AzerothCore SRP6 authentication.",
+  "main": "index.js",
+  "types": "./types/index.d.ts",
+  "scripts": {
+    "prepublish": "npx -p typescript tsc index.js --declaration --allowJs --emitDeclarationOnly --outDir types",
+    "test": "mocha ./test/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/azerothcore/azerothcore-srp6.git"
+  },
+  "keywords": [
+    "AzerothCore",
+    "SRP6"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/azerothcore/azerothcore-srp6/issues"
+  },
+  "homepage": "https://github.com/azerothcore/azerothcore-srp6#readme",
+  "dependencies": {
+    "big-integer": "^1.6.51",
+    "bigint-buffer": "^1.1.5",
+    "crypto": "^1.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.12",
+    "eslint": "^7.32.0",
+    "mocha": "^8.4.0"
+  }
+}

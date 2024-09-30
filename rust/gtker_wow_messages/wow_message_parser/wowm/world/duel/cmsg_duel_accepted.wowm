@@ -1,0 +1,6 @@
+#tag_all versions "1 2 3";
+
+cmsg CMSG_DUEL_ACCEPTED = 0x016C {
+    Guid guid;
+}
+

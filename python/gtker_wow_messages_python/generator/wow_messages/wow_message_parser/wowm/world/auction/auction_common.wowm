@@ -1,0 +1,68 @@
+struct AuctionListItem {
+    u32 id;
+    Item item;
+    u32 item_enchantment;
+    u32 item_random_property_id;
+    u32 item_suffix_factor;
+    u32 item_count;
+    u32 item_charges;
+    Guid item_owner;
+    u32 start_bid;
+    u32 minimum_bid;
+    u32 buyout_amount;
+    Milliseconds time_left;
+    Guid highest_bidder;
+    u32 highest_bid;
+} {
+    versions = "1";
+}
+
+struct AuctionEnchantment {
+    u32 enchant_id;
+    u32 enchant_duration;
+    u32 enchant_charges;
+} {
+    versions = "2.4.3 3";
+}
+
+struct AuctionListItem {
+    u32 id;
+    Item item;
+    AuctionEnchantment[6] enchantments;
+    u32 item_random_property_id;
+    u32 item_suffix_factor;
+    u32 item_count;
+    u32 item_charges;
+    /// mangosone: item flags (dynamic?) (0x04 no lockId?)
+    u32 item_flags;
+    Guid item_owner;
+    u32 start_bid;
+    u32 minimum_bid;
+    u32 buyout_amount;
+    Milliseconds time_left;
+    Guid highest_bidder;
+    u32 highest_bid;
+} {
+    versions = "2.4.3";
+}
+
+struct AuctionListItem {
+    u32 id;
+    Item item;
+    AuctionEnchantment[7] enchantments;
+    u32 item_random_property_id;
+    u32 item_suffix_factor;
+    u32 item_count;
+    u32 item_charges;
+    /// mangosone: item flags (dynamic?) (0x04 no lockId?)
+    u32 item_flags;
+    Guid item_owner;
+    u32 start_bid;
+    u32 minimum_bid;
+    u32 buyout_amount;
+    Milliseconds time_left;
+    Guid highest_bidder;
+    u32 highest_bid;
+} {
+    versions = "3.3.5";
+}

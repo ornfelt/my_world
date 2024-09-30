@@ -1,0 +1,43 @@
+enum StableResult : u8 {
+    /// you don't have enough money
+    ERR_MONEY = 0x01;
+    /// currently used in most fail cases
+    ERR_STABLE = 0x06;
+    /// table success
+    SUCCESS_STABLE = 0x08;
+    /// unstable/swap success
+    SUCCESS_UNSTABLE = 0x09;
+    /// buy slot success
+    SUCCESS_BUY_SLOT = 0x0A;
+} {
+    versions = "1 2";
+}
+
+smsg SMSG_STABLE_RESULT = 0x0273 {
+    StableResult result;
+} {
+    versions = "1 2";
+}
+
+enum StableResult : u8 {
+    /// you don't have enough money
+    ERR_MONEY = 0x01;
+    /// currently used in most fail cases
+    ERR_STABLE = 0x06;
+    /// table success
+    SUCCESS_STABLE = 0x08;
+    /// unstable/swap success
+    SUCCESS_UNSTABLE = 0x09;
+    /// buy slot success
+    SUCCESS_BUY_SLOT = 0x0A;
+    /// you are unable to control exotic creatures
+    ERR_EXOTIC = 0x0C;
+} {
+    versions = "3.3.5";
+}
+
+smsg SMSG_STABLE_RESULT = 0x0273 {
+    StableResult result;
+} {
+    versions = "3.3.5";
+}

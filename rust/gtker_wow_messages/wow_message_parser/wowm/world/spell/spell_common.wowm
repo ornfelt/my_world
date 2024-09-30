@@ -1,0 +1,66 @@
+enum TimerType : u32 {
+    FATIGUE = 0;
+    BREATH = 1;
+    FEIGN_DEATH = 2;
+    /// Might be a mangos only thing.
+    ENVIRONMENTAL = 3;
+} {
+    versions = "1 2 3";
+}
+
+enum SpellMissInfo : u8 {
+    NONE = 0;
+    MISS = 1;
+    RESIST = 2;
+    DODGE = 3;
+    PARRY = 4;
+    BLOCK = 5;
+    EVADE = 6;
+    IMMUNE = 7;
+    IMMUNE2 = 8;
+    DEFLECT = 9;
+    ABSORB = 10;
+    REFLECT = 11;
+} {
+    versions = "1 2 3";
+}
+
+struct SpellMiss {
+    Guid target;
+    SpellMissInfo miss_info;
+} {
+    versions = "1.12";
+}
+
+enum SpellSchool : u8 {
+    /// Physical, Armor
+    NORMAL = 0;
+    HOLY = 1;
+    FIRE = 2;
+    NATURE = 3;
+    FROST = 4;
+    SHADOW = 5;
+    ARCANE = 6;
+} {
+    versions = "1 2 3";
+    rust_base_type = "true";
+}
+
+flag CastFlags : u16 {
+    NONE = 0x00000000;
+    /// mangoszero/cmangos/vmangos: hide in combat log?
+    HIDDEN_COMBATLOG = 0x00000001;
+    UNKNOWN2 = 0x00000002;
+    UNKNOWN3 = 0x00000004;
+    UNKNOWN4 = 0x00000008;
+    UNKNOWN5 = 0x00000010;
+    /// cmangos/vmangos/mangoszero: Projectiles visual
+    AMMO = 0x00000020;
+    /// cmangos/vmangos/mangoszero: !0x41 mask used to call `CGTradeSkillInfo::DoRecast`
+    UNKNOWN7 = 0x00000040;
+    UNKNOWN8 = 0x00000080;
+    UNKNOWN9 = 0x00000100;
+} {
+    versions = "1.12 2";
+}
+

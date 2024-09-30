@@ -1,0 +1,59 @@
+[package]
+name = "namigator-sys"
+version = "0.1.0"
+edition = "2021"
+description = "Direct bindings for the namigator pathfinding library for World of Warcraft."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/gtker/namigator-rs"
+keywords = ["namigator", "pathfinding", "wow", "world-of-warcraft", "line-of-sight"]
+categories = ["game-development", "external-ffi-bindings"]
+readme = "README.md"
+authors = ["Gtker <github@gtker.com"]
+rust-version = "1.64.0"
+
+links = "namigator"
+
+exclude = ["vendor/test",
+           "vendor/.clang-format",
+           ".github",
+           ".gitignore",
+           ".gitmodules",
+           "CMakeLists.txt",
+           "vendor/MapViewer/",
+           "python.cpp",
+
+           ".editorconfig",
+           ".travis.yml",
+           "CONTRIBUTING.md",
+           "Doxyfile",
+           "appveyor.yml",
+
+           "vendor/recastnavigation/Docs/",
+           "vendor/recastnavigation/RecastDemo/",
+           "vendor/recastnavigation/DebugUtils/",
+           "vendor/recastnavigation/Tests/",
+
+           "vendor/stormlib/storm_dll/",
+           "vendor/stormlib/doc/",
+
+           "vendor/stormlib/Info.plist",
+           "vendor/stormlib/Premake5.lua",
+           "vendor/stormlib/Publish.bat",
+           "vendor/stormlib/*.sln",
+           "vendor/stormlib/*.vcproj",
+           "vendor/stormlib/*.vcxproj",
+           "vendor/stormlib/*.vcxproj.filters",
+           "vendor/stormlib/*.kdev4",
+           "vendor/stormlib/StormLib.xcodeproj/",
+           "vendor/stormlib/sources",
+
+           "vendor/stormlib/src/DllMain.*",
+           "vendor/stormlib/make-msvc.bat",
+           "vendor/stormlib/make.bat",
+
+           "vendor/stormlib/src/wdk/",
+           "vendor/stormlib/test/",
+]
+
+[build-dependencies]
+cc = {version = "1.0.73", features = ["parallel"]}

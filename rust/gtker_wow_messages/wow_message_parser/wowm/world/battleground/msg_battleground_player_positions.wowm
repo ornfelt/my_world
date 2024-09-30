@@ -1,0 +1,22 @@
+cmsg MSG_BATTLEGROUND_PLAYER_POSITIONS_Client = 0x02E9 {} {
+    versions = "1 2 3";
+}
+
+struct BattlegroundPlayerPosition {
+    Guid player;
+    f32 position_x;
+    f32 position_y;
+} {
+    versions = "1 2 3";
+}
+
+smsg MSG_BATTLEGROUND_PLAYER_POSITIONS_Server = 0x02E9 {
+    u32 amount_of_teammates; 
+    BattlegroundPlayerPosition[amount_of_teammates] teammates;
+    /// vmangos only sends the carrier of the player team. No emu ever sends more than 2.
+    u8 amount_of_carriers;
+    BattlegroundPlayerPosition[amount_of_carriers] carriers;
+} {
+    versions = "1 2 3";
+}
+

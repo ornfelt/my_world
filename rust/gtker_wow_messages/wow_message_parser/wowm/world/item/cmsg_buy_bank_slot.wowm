@@ -1,0 +1,6 @@
+#tag_all versions "1 2 3";
+
+cmsg CMSG_BUY_BANK_SLOT = 0x01B9 {
+    Guid guid;
+}
+

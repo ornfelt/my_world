@@ -1,0 +1,8 @@
+#tag_all versions "1 2 3";
+
+cmsg CMSG_LOOT_MASTER_GIVE = 0x02A3 {
+    Guid loot;
+    u8 slot_id;
+    Guid player;
+}
+

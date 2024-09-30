@@ -1,0 +1,7 @@
+#tag_all versions "1 2 3";
+
+cmsg CMSG_CREATURE_QUERY = 0x60 {
+    u32 creature;
+    Guid guid;
+}
+

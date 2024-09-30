@@ -1,0 +1,6 @@
+#tag_all versions "1 2 3";
+
+cmsg CMSG_LIST_INVENTORY = 0x019E {
+    Guid guid;
+}
+

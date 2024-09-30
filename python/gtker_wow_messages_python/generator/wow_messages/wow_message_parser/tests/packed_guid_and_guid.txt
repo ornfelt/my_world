@@ -1,0 +1,140 @@
+use std::io::{Read, Write};
+
+use crate::Guid;
+
+/// Auto generated from the original `wowm` in file [`wow_message_parser/tests/impl_levels.wowm:196`](https://github.com/gtker/wow_messages/tree/main/wow_message_parser/tests/impl_levels.wowm#L196):
+/// ```text
+/// struct PackedGuidAndGuid {
+///     PackedGuid packed;
+///     Guid guid;
+///     PackedGuid[10] static_packed;
+///     Guid[10] static_guid;
+///     u8 basic1;
+///     u8 basic2;
+///     PackedGuid[basic1] variable_packed;
+///     Guid[basic2] variable_guid;
+/// }
+/// ```
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]
+pub struct PackedGuidAndGuid {
+    pub packed: Guid,
+    pub guid: Guid,
+    pub static_packed: [Guid; 10],
+    pub static_guid: [Guid; 10],
+    pub variable_packed: Vec<Guid>,
+    pub variable_guid: Vec<Guid>,
+}
+
+impl PackedGuidAndGuid {
+    pub(crate) fn write_into_vec(&self, mut w: impl Write) -> Result<(), std::io::Error> {
+        // packed: PackedGuid
+        crate::util::write_packed_guid(&self.packed, &mut w)?;
+
+        // guid: Guid
+        w.write_all(&self.guid.guid().to_le_bytes())?;
+
+        // static_packed: PackedGuid[10]
+        for i in self.static_packed.iter() {
+            crate::util::write_packed_guid(i, &mut w)?;
+        }
+
+        // static_guid: Guid[10]
+        for i in self.static_guid.iter() {
+            w.write_all(&i.guid().to_le_bytes())?;
+        }
+
+        // basic1: u8
+        w.write_all(&(self.variable_packed.len() as u8).to_le_bytes())?;
+
+        // basic2: u8
+        w.write_all(&(self.variable_guid.len() as u8).to_le_bytes())?;
+
+        // variable_packed: PackedGuid[basic1]
+        for i in self.variable_packed.iter() {
+            crate::util::write_packed_guid(i, &mut w)?;
+        }
+
+        // variable_guid: Guid[basic2]
+        for i in self.variable_guid.iter() {
+            w.write_all(&i.guid().to_le_bytes())?;
+        }
+
+        Ok(())
+    }
+}
+
+impl PackedGuidAndGuid {
+    pub(crate) fn read<R: std::io::Read>(mut r: R) -> Result<Self, std::io::Error> {
+        // packed: PackedGuid
+        let packed = crate::util::read_packed_guid(&mut r)?;
+
+        // guid: Guid
+        let guid = crate::util::read_guid(&mut r)?;
+
+        // static_packed: PackedGuid[10]
+        let static_packed = {
+            let mut static_packed = [Guid::default(); 10];
+            for i in static_packed.iter_mut() {
+                *i = crate::util::read_packed_guid(&mut r)?;
+            }
+            static_packed
+        };
+
+        // static_guid: Guid[10]
+        let static_guid = {
+            let mut static_guid = [Guid::default(); 10];
+            for i in static_guid.iter_mut() {
+                *i = crate::util::read_guid(&mut r)?;
+            }
+            static_guid
+        };
+
+        // basic1: u8
+        let basic1 = crate::util::read_u8_le(&mut r)?;
+
+        // basic2: u8
+        let basic2 = crate::util::read_u8_le(&mut r)?;
+
+        // variable_packed: PackedGuid[basic1]
+        let variable_packed = {
+            let mut variable_packed = Vec::with_capacity(basic1 as usize);
+            for _ in 0..basic1 {
+                variable_packed.push(crate::util::read_packed_guid(&mut r)?);
+            }
+            variable_packed
+        };
+
+        // variable_guid: Guid[basic2]
+        let variable_guid = {
+            let mut variable_guid = Vec::with_capacity(basic2 as usize);
+            for _ in 0..basic2 {
+                variable_guid.push(crate::util::read_guid(&mut r)?);
+            }
+            variable_guid
+        };
+
+        Ok(Self {
+            packed,
+            guid,
+            static_packed,
+            static_guid,
+            variable_packed,
+            variable_guid,
+        })
+    }
+
+}
+
+impl PackedGuidAndGuid {
+    pub(crate) fn size(&self) -> usize {
+        crate::util::packed_guid_size(&self.packed) // packed: PackedGuid
+        + 8 // guid: Guid
+        + self.static_packed.iter().fold(0, |acc, x| acc + crate::util::packed_guid_size(x)) // static_packed: PackedGuid[10]
+        + self.static_guid.len() *  8 // static_guid: Guid[10]
+        + 1 // basic1: u8
+        + 1 // basic2: u8
+        + self.variable_packed.iter().fold(0, |acc, x| acc + crate::util::packed_guid_size(x)) // variable_packed: PackedGuid[basic1]
+        + self.variable_guid.len() *  8 // variable_guid: Guid[basic2]
+    }
+}
+

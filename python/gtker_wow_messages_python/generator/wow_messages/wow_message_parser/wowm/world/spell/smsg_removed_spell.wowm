@@ -1,0 +1,11 @@
+smsg SMSG_REMOVED_SPELL = 0x0203 {
+    Spell16 spell;
+} {
+    versions = "1 2";
+}
+
+smsg SMSG_REMOVED_SPELL = 0x0203 {
+    Spell spell;
+} {
+    versions = "3.3.5";
+}

@@ -1,0 +1,14 @@
+cmsg CMSG_PET_RENAME = 0x0177 {
+    Guid pet;
+    CString name;
+} {
+    versions = "1";
+}
+
+cmsg CMSG_PET_RENAME = 0x0177 {
+    Guid pet;
+    CString name;
+    Bool declined;
+} {
+    versions = "2 3";
+}

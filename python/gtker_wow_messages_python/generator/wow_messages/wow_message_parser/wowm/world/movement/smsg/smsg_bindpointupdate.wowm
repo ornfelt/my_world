@@ -1,0 +1,9 @@
+/// Inform the client of a their hearthstone location.
+smsg SMSG_BINDPOINTUPDATE = 0x0155 {
+    Vector3d position;
+    Map map;
+    Area area;
+} {
+    paste_versions = "1.12 2.4.3 3.3.5";
+}
+

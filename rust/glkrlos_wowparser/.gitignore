@@ -1,0 +1,10 @@
+.vs/
+.idea/
+bin/
+x64/
+Win32/
+*.user
+staticdata.rs
+target/
+Cargo.lock
+*.log

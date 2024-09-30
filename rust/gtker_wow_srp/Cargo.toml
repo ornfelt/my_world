@@ -1,0 +1,72 @@
+[package]
+name = "wow_srp"
+description = "Server and client library for the World of Warcraft flavor of SRP6 with support for reconnection."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/gtker/wow_srp"
+keywords = ["wow", "world-of-warcraft", "srp6", "authentication", "login"]
+categories = ["authentication", "cryptography", "game-development", "game-engines"]
+readme = "README.md"
+version = "0.7.0"
+authors = ["Gtker <github@gtker.com"]
+edition = "2018"
+rust-version = "1.65.0"
+
+exclude = [".github", "release.toml", "tests"]
+
+[features]
+default = ["srp-default-math", "tbc-header", "wrath-header", "integrity"]
+srp-default-math = ["num-bigint"]
+srp-fast-math = ["rug"]
+integrity = ["hmac"]
+tbc-header = ["hmac"]
+wrath-header = ["hmac"]
+matrix-card = ["md5", "hmac"]
+
+[dependencies.sha-1]
+# Required for SRP6 algorithm
+version = "0.10.0"
+default-features = false
+
+[dependencies.md5]
+# Required for matrix cards
+version = "0.7.0"
+default-features = false
+optional = true
+
+[dependencies.hmac]
+# Required for Wrath header crypto
+version = "0.12.1"
+optional = true
+default-features = false
+
+[dependencies.rand]
+# Required for generating private keys
+version = "0.8"
+default-features = false
+features = ["std", "std_rng"]
+
+[dependencies.num-bigint]
+# Required for SRP6 algorithm.
+version = "0.4"
+default-features = false
+optional = true
+
+[dependencies.rug]
+# rug is ~100% faster than num-bigint (50% reduced time used) but is not
+# pure Rust so it has external dependencies.
+version = "1.13"
+features = ["integer", "std"]
+default-features = false
+optional = true
+
+[dev-dependencies.criterion]
+# Required for benchmarking.
+version = "0.5"
+
+[[bench]]
+name = "benchmark"
+harness = false
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

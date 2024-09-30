@@ -1,0 +1,9 @@
+M2Lib/bin/
+TestApp/bin/
+UnitTests/bin/
+M2Lib/obj/
+TestApp/obj/
+UnitTests/obj/
+*.suo
+*.user
+*.ncb

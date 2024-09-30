@@ -1,0 +1,17 @@
+[workspace]
+members = [
+    "warthog_wow",
+    "warthog_lib",
+    "warthog_messages",
+    "wow_client",
+]
+resolver = "2"
+
+[workspace.dependencies]
+tokio = { version = "1.36.0", features = ["full"] }
+wow_login_messages = { git = "https://github.com/gtker/wow_messages.git", rev = "0b8c01775429660da4b7a3b60477a7909daacbc6", features = ["tokio"] }
+wow_srp = { git = "https://github.com/gtker/wow_srp", rev = "ba30fc8c8d6279938bb1eeea9c060c8592b61dda", default-features = false, features = ["srp-default-math", "integrity", "matrix-card"] }
+#wow_srp = { path = "../../wow_srp", default-features = false, features = ["srp-default-math", "integrity", "matrix-card"] }
+
+[workspace.lints.rust]
+unused_must_use = "deny"

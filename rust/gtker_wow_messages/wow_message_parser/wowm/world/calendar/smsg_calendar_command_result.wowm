@@ -1,0 +1,10 @@
+smsg SMSG_CALENDAR_COMMAND_RESULT = 0x043D {
+    /// All emus set to 0.
+    u32 unknown1;
+    /// All emus set to 0.
+    u8 unknown2;
+    CString name;
+    u32 result;
+} {
+    versions = "3.3.5";
+}

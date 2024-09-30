@@ -1,0 +1,290 @@
+#tag_all versions "3.3.5";
+
+enum UpdateType : u8 {
+    VALUES = 0;
+    MOVEMENT = 1;
+    CREATE_OBJECT = 2;
+    CREATE_OBJECT2 = 3;
+    OUT_OF_RANGE_OBJECTS = 4;
+    NEAR_OBJECTS = 5;
+}
+
+flag UpdateFlag : u16 {
+    NONE = 0x0000;
+    SELF = 0x0001;
+    TRANSPORT = 0x0002;
+    HAS_ATTACKING_TARGET = 0x0004;
+    LOW_GUID = 0x0008;
+    HIGH_GUID = 0x0010;
+    LIVING = 0x0020;
+    HAS_POSITION = 0x0040;
+    VEHICLE = 0x0080;
+    POSITION = 0x0100;
+    ROTATION = 0x0200;
+}
+
+flag SplineFlag : u32 {
+    NONE = 0x00000000;
+    DONE = 0x00000100;
+    /// vmangos: Affects elevation computation
+    FALLING = 0x00000200;
+    NO_SPLINE = 0x00000400;
+    PARABOLIC = 0x00000800;
+    WALK_MODE = 0x00001000;
+    FLYING = 0x00002000;
+    ORIENTATION_FIXED = 0x00004000;
+    FINAL_POINT = 0x00008000;
+    FINAL_TARGET = 0x00010000;
+    FINAL_ANGLE = 0x00020000;
+    /// azerothcore: Used Catmullrom interpolation mode
+    CATMULLROM = 0x00040000;
+    /// azerothcore: Movement by cycled spline
+    CYCLIC = 0x00080000;
+    /// azerothcore: Everytimes appears with cyclic flag in monster move packet, erases first spline vertex after first cycle done
+    ENTER_CYCLE = 0x00100000;
+    /// azerothcore: Plays animation after some time passed
+    ANIMATION = 0x00200000;
+    /// vmangos: Will never arrive
+    FROZEN = 0x00400000;
+    TRANSPORT_ENTER = 0x00800000;
+    TRANSPORT_EXIT = 0x01000000;
+    /// vmangos: exists, but unknown what it does
+    UNKNOWN7 = 0x02000000;
+    UNKNOWN8 = 0x04000000;
+    ORIENTATION_INVERSED = 0x08000000;
+    UNKNOWN10 = 0x10000000;
+    UNKNOWN11 = 0x20000000;
+    UNKNOWN12 = 0x40000000;
+    UNKNOWN13 = 0x80000000;
+}
+
+enum ObjectType : u8 {
+    OBJECT = 0;
+    ITEM = 1;
+    CONTAINER = 2;
+    UNIT = 3;
+    PLAYER = 4;
+    GAME_OBJECT = 5;
+    DYNAMIC_OBJECT = 6;
+    CORPSE = 7;
+}
+
+struct MovementBlock {
+    UpdateFlag update_flag;
+    if (update_flag & LIVING) {
+        /* All variables until newline are actually just a MovementInfo,
+           but the if statement later requires access to flags. */
+        MovementFlags flags;
+        u32 timestamp;
+        Vector3d position;
+        f32 orientation;
+        if (flags & ON_TRANSPORT_AND_INTERPOLATED_MOVEMENT) {
+            TransportInfo transport_info;
+            u32 transport_time;
+        }
+        else if (flags & ON_TRANSPORT) {
+            TransportInfo transport;
+        }
+
+        if (flags & SWIMMING) {
+            f32 pitch1;
+        } else if (flags & FLYING) {
+            f32 pitch2;
+        }
+        else if (flags & ALWAYS_ALLOW_PITCHING) {
+            f32 pitch3;
+        }
+        f32 fall_time;
+        if (flags & FALLING) {
+            f32 z_speed;
+            f32 cos_angle;
+            f32 sin_angle;
+            f32 xy_speed;
+        }
+        if (flags & SPLINE_ELEVATION) {
+            f32 spline_elevation;
+        }
+        /* MovementInfo end */
+
+        f32 walking_speed;
+        f32 running_speed;
+        f32 backwards_running_speed;
+        f32 swimming_speed;
+        f32 backwards_swimming_speed;
+        f32 flight_speed;
+        f32 backwards_flight_speed;
+        f32 turn_rate;
+        f32 pitch_rate;
+        if (flags & SPLINE_ENABLED) {
+            SplineFlag spline_flags;
+            if (spline_flags & FINAL_ANGLE) {
+                f32 angle;
+            }
+            else if (spline_flags & FINAL_TARGET) {
+                u64 target;
+            }
+            else if (spline_flags & FINAL_POINT) {
+                Vector3d spline_final_point;
+            }
+            u32 time_passed;
+            u32 duration;
+            u32 id;
+            f32 duration_mod;
+            f32 duration_mod_next;
+            f32 vertical_acceleration;
+            f32 effect_start_time;
+            u32 amount_of_nodes;
+            Vector3d[amount_of_nodes] nodes;
+            u8 mode;
+            Vector3d final_node;
+        }
+    }
+    else if (update_flag & POSITION) {
+        PackedGuid transport_guid;
+        Vector3d position1;
+        Vector3d transport_offset;
+        f32 orientation1;
+        f32 corpse_orientation;
+    }
+    else if (update_flag & HAS_POSITION) {
+        Vector3d position2;
+        f32 orientation2;
+    }
+    if (update_flag & HIGH_GUID) {
+        /// vmangos statically sets to 0
+        u32 unknown0;
+    }
+    if (update_flag & LOW_GUID) {
+        u32 unknown1;
+    }
+    if (update_flag & HAS_ATTACKING_TARGET) {
+        PackedGuid guid;
+    }
+    if (update_flag & TRANSPORT) {
+        u32 transport_progress_in_ms;
+    }
+    if (update_flag & VEHICLE) {
+        u32 vehicle_id;
+        f32 vehicle_orientation;
+    }
+    if (update_flag & ROTATION) {
+        /// AzerothCore deliberately casts to i64
+        u64 packed_local_rotation;
+    }
+}
+
+struct Object {
+    UpdateType update_type;
+    if (update_type == VALUES) {
+        PackedGuid guid1;   
+        UpdateMask mask1;
+    }
+    else if (update_type == MOVEMENT) {
+        PackedGuid guid2;
+        MovementBlock movement1;
+    }
+    else if (update_type == CREATE_OBJECT || update_type == CREATE_OBJECT2) {
+        PackedGuid guid3;
+        ObjectType object_type;
+        MovementBlock movement2;
+        UpdateMask mask2;
+    }
+    else if (update_type == OUT_OF_RANGE_OBJECTS
+          || update_type == NEAR_OBJECTS) {      /* Complete */
+        u32 count;
+        PackedGuid[count] guids;
+    }
+}
+
+smsg SMSG_UPDATE_OBJECT = 0x0A9 {
+    u32 amount_of_objects;
+    Object[amount_of_objects] objects;
+}
+
+test SMSG_UPDATE_OBJECT {
+    objects = [
+        {
+            update_type = CREATE_OBJECT2;
+            guid3 = 8;
+            object_type = PLAYER;
+            movement2 = {
+                update_flag = LIVING | SELF;
+                flags = NONE;
+                timestamp = 0;
+                position = {
+                    x = -8949.95;
+                    y = -132.493;
+                    z = 83.5312;
+                };
+                orientation = 0.0;
+                fall_time = 0;
+                walking_speed = 1.0;
+                running_speed = 70.0;
+                backwards_running_speed = 4.5;
+                swimming_speed = 0.0;
+                backwards_swimming_speed = 0.0;
+                flight_speed = 0.0;
+                backwards_flight_speed = 0.0;
+                turn_rate = 3.14159;
+                pitch_rate = 0.0;
+            };
+            mask2 = {
+                OBJECT_GUID = 8;
+                OBJECT_TYPE = 0x19;
+                UNIT_FACTIONTEMPLATE = 1;
+                UNIT_DISPLAYID = 0x4D0C;
+                UNIT_NATIVEDISPLAYID = 0x4D0C;
+            };
+        }
+    ];
+} [
+    /* header */
+    0x00, 0x73,            /* size (115) */
+    0xa9, 0x00,            /* opcode (169) */
+    0x01, 0x00, 0x00, 0x00,      /* number of objects */
+
+    /* start of object */
+    0x03,               /* CREATE_OBJECT2 (trinity uses this for creating new objects */
+                     /* and CREATE_OBJECT for existing objects? not sure) */
+    0x01, 0x08,            /* packed guid (id: 8) */
+    0x04,               /* player object type */
+
+    /* movement block */
+    0x21, 0x00,            /* update flag self | update flag living */
+    0x00, 0x00, 0x00, 0x00,      /* movement flags */
+    0x00, 0x00,            /* movement flags cont. */
+    0x00, 0x00, 0x00, 0x00,      /* timestamp (trinity uses unix epoch, caching related?) */
+    0xcd, 0xd7, 0x0b, 0xc6,      /* x pos (-8949.95) */
+    0x35, 0x7e, 0x04, 0xc3,      /* y pos (-132.493) */
+    0xf9, 0x0f, 0xa7, 0x42,      /* z pos (83.5312) */
+    0x00, 0x00, 0x00, 0x00,      /* orientation */
+    0x00, 0x00, 0x00, 0x00,      /* fall time */
+    0x00, 0x00, 0x80, 0x3f,      /* walk speed (1.0f) */
+    0x00, 0x00, 0x8c, 0x42,      /* run speed (70.0f) */
+    0x00, 0x00, 0x90, 0x40,      /* reverse speed (4.5f) */
+    0x00, 0x00, 0x00, 0x00,      /* swim speed (0.0f) */
+    0x00, 0x00, 0x00, 0x00,      /* swim reverse speed (0.0f) */
+    0x00, 0x00, 0x00, 0x00,      /* flight speed (0.0f) */
+    0x00, 0x00, 0x00, 0x00,      /* flight reverse speed (0.0f) */
+    0xd0, 0x0f, 0x49, 0x40,      /* turn speed (3.14159) */
+    0x00, 0x00, 0x00, 0x00,      /* pitch rate (0.0f) */
+
+    /* update/values block */
+    0x03,                /* size of mask (measured in uint32, 3*4 = 12 byte mask) */
+
+    /* mask */
+    0x07, 0x00, 0x00, 0x00,       /* OBJECT_TYPE | OBJECT_GUID (size=2) */
+    0x00, 0x00, 0x80, 0x00,       /* UNIT_FACTIONTEMPLATE */
+    0x18, 0x00, 0x00, 0x00,       /* UNIT_DISPLAYID | UNIT_NATIVEDISPLAYID */
+
+    /* OBJECT_GUID */
+    0x08, 0x00, 0x00, 0x00,       /* low guid (id: 8) */
+    0x00, 0x00, 0x00, 0x00,       /* high guid (2 MSB = 0x0000 for player, haven't tested this much) */
+    /* OBJECT_TYPE */
+    0x19, 0x00, 0x00, 0x00,
+
+    /* not including any of these seems to cause a segfault */
+    0x01, 0x00, 0x00, 0x00,       /* UNIT_FACTIONTEMPLATE (race, 0x1 = human) */
+    0x0c, 0x4d, 0x00, 0x00,       /* UNIT_DISPLAYID (0x4D0C = human female) */
+    0x0c, 0x4d, 0x00, 0x00,       /* UNIT_NATIVEDISPLAYID (same as above) */
+]

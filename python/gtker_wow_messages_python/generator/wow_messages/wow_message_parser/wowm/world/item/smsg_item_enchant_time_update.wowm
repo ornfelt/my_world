@@ -1,0 +1,10 @@
+#tag_all versions "1 2 3";
+
+smsg SMSG_ITEM_ENCHANT_TIME_UPDATE = 0x01EB {
+    Guid item;
+    /// Possibly used with EnchantmentSlot enum.
+    u32 slot;
+    u32 duration;
+    Guid player;
+}
+

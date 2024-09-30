@@ -1,0 +1,223 @@
+#[cfg(feature = "sync")]
+pub fn expect_server_message<M: crate::vanilla::ServerMessage, R: std::io::Read>(
+    r: &mut R,
+) -> Result<M, crate::errors::ExpectedOpcodeError> {
+    let mut header = [0_u8; 4];
+    r.read_exact(&mut header)?;
+    let d = crate::util::ServerHeader::from_array(header);
+
+    let mut buf = vec![0_u8; d.size.saturating_sub(2) as usize];
+    r.read_exact(&mut buf)?;
+
+    read_server_body(&mut buf.as_slice(), d.size, d.opcode.into())
+}
+
+#[cfg(feature = "sync")]
+pub fn expect_client_message<M: crate::vanilla::ClientMessage, R: std::io::Read>(
+    r: &mut R,
+) -> Result<M, crate::errors::ExpectedOpcodeError> {
+    let mut header = [0_u8; 6];
+    r.read_exact(&mut header)?;
+    let d = crate::util::ClientHeader::from_array(header);
+
+    let mut buf = vec![0_u8; d.size.saturating_sub(4) as usize];
+    r.read_exact(&mut buf)?;
+
+    read_client_body(&mut buf.as_slice(), d.size, d.opcode)
+}
+
+#[cfg(all(feature = "sync", feature = "encryption"))]
+pub fn expect_server_message_encryption<M: crate::vanilla::ServerMessage, R: std::io::Read>(
+    r: &mut R,
+    d: &mut wow_srp::vanilla_header::DecrypterHalf,
+) -> Result<M, crate::errors::ExpectedOpcodeError> {
+    let mut header = [0_u8; 4];
+    r.read_exact(&mut header)?;
+    let d = d.decrypt_server_header(header);
+
+    let mut buf = vec![0_u8; d.size.saturating_sub(2) as usize];
+    r.read_exact(&mut buf)?;
+
+    read_server_body(&mut buf.as_slice(), d.size.into(), d.opcode.into())
+}
+
+#[cfg(all(feature = "sync", feature = "encryption"))]
+pub fn expect_client_message_encryption<M: crate::vanilla::ClientMessage, R: std::io::Read>(
+    r: &mut R,
+    d: &mut wow_srp::vanilla_header::DecrypterHalf,
+) -> Result<M, crate::errors::ExpectedOpcodeError> {
+    let mut header = [0_u8; 6];
+    r.read_exact(&mut header)?;
+    let d = d.decrypt_client_header(header);
+
+    let mut buf = vec![0_u8; d.size.saturating_sub(4) as usize];
+    r.read_exact(&mut buf)?;
+
+    read_client_body(&mut buf.as_slice(), d.size, d.opcode)
+}
+
+#[cfg(feature = "tokio")]
+pub async fn tokio_expect_server_message<M: crate::vanilla::ServerMessage, R: tokio::io::AsyncReadExt + Unpin + Send>(
+    r: &mut R,
+) -> Result<M, crate::errors::ExpectedOpcodeError> {
+    let mut header = [0_u8; 4];
+    r.read_exact(&mut header).await?;
+    let d = crate::util::ServerHeader::from_array(header);
+
+    let mut buf = vec![0_u8; d.size.saturating_sub(2) as usize];
+    r.read_exact(&mut buf).await?;
+
+    read_server_body(&mut buf.as_slice(), d.size, d.opcode.into())
+}
+
+#[cfg(feature = "tokio")]
+pub async fn tokio_expect_client_message<M: crate::vanilla::ClientMessage, R: tokio::io::AsyncReadExt + Unpin + Send>(
+    r: &mut R,
+) -> Result<M, crate::errors::ExpectedOpcodeError> {
+    let mut header = [0_u8; 6];
+    r.read_exact(&mut header).await?;
+    let d = crate::util::ClientHeader::from_array(header);
+
+    let mut buf = vec![0_u8; d.size.saturating_sub(4) as usize];
+    r.read_exact(&mut buf).await?;
+
+    read_client_body(&mut buf.as_slice(), d.size, d.opcode)
+}
+
+#[cfg(all(feature = "tokio", feature = "encryption"))]
+pub async fn tokio_expect_server_message_encryption<M: crate::vanilla::ServerMessage, R: tokio::io::AsyncReadExt + Unpin + Send>(
+    r: &mut R,
+    d: &mut wow_srp::vanilla_header::DecrypterHalf,
+) -> Result<M, crate::errors::ExpectedOpcodeError> {
+    let mut header = [0_u8; 4];
+    r.read_exact(&mut header).await?;
+    let d = d.decrypt_server_header(header);
+
+    let mut buf = vec![0_u8; d.size.saturating_sub(2) as usize];
+    r.read_exact(&mut buf).await?;
+
+    read_server_body(&mut buf.as_slice(), d.size.into(), d.opcode.into())
+}
+
+#[cfg(all(feature = "tokio", feature = "encryption"))]
+pub async fn tokio_expect_client_message_encryption<M: crate::vanilla::ClientMessage, R: tokio::io::AsyncReadExt + Unpin + Send>(
+    r: &mut R,
+    d: &mut wow_srp::vanilla_header::DecrypterHalf,
+) -> Result<M, crate::errors::ExpectedOpcodeError> {
+    let mut header = [0_u8; 6];
+    r.read_exact(&mut header).await?;
+    let d = d.decrypt_client_header(header);
+
+    let mut buf = vec![0_u8; d.size.saturating_sub(4) as usize];
+    r.read_exact(&mut buf).await?;
+
+    read_client_body(&mut buf.as_slice(), d.size, d.opcode)
+}
+
+#[cfg(feature = "async-std")]
+pub async fn astd_expect_server_message<M: crate::vanilla::ServerMessage, R: async_std::io::ReadExt + Unpin + Send>(
+    r: &mut R,
+) -> Result<M, crate::errors::ExpectedOpcodeError> {
+    let mut header = [0_u8; 4];
+    r.read_exact(&mut header).await?;
+    let d = crate::util::ServerHeader::from_array(header);
+
+    let mut buf = vec![0_u8; d.size.saturating_sub(2) as usize];
+    r.read_exact(&mut buf).await?;
+
+    read_server_body(&mut buf.as_slice(), d.size, d.opcode.into())
+}
+
+#[cfg(feature = "async-std")]
+pub async fn astd_expect_client_message<M: crate::vanilla::ClientMessage, R: async_std::io::ReadExt + Unpin + Send>(
+    r: &mut R,
+) -> Result<M, crate::errors::ExpectedOpcodeError> {
+    let mut header = [0_u8; 6];
+    r.read_exact(&mut header).await?;
+    let d = crate::util::ClientHeader::from_array(header);
+
+    let mut buf = vec![0_u8; d.size.saturating_sub(4) as usize];
+    r.read_exact(&mut buf).await?;
+
+    read_client_body(&mut buf.as_slice(), d.size, d.opcode)
+}
+
+#[cfg(all(feature = "async-std", feature = "encryption"))]
+pub async fn astd_expect_server_message_encryption<M: crate::vanilla::ServerMessage, R: async_std::io::ReadExt + Unpin + Send>(
+    r: &mut R,
+    d: &mut wow_srp::vanilla_header::DecrypterHalf,
+) -> Result<M, crate::errors::ExpectedOpcodeError> {
+    let mut header = [0_u8; 4];
+    r.read_exact(&mut header).await?;
+    let d = d.decrypt_server_header(header);
+
+    let mut buf = vec![0_u8; d.size.saturating_sub(2) as usize];
+    r.read_exact(&mut buf).await?;
+
+    read_server_body(&mut buf.as_slice(), d.size.into(), d.opcode.into())
+}
+
+#[cfg(all(feature = "async-std", feature = "encryption"))]
+pub async fn astd_expect_client_message_encryption<M: crate::vanilla::ClientMessage, R: async_std::io::ReadExt + Unpin + Send>(
+    r: &mut R,
+    d: &mut wow_srp::vanilla_header::DecrypterHalf,
+) -> Result<M, crate::errors::ExpectedOpcodeError> {
+    let mut header = [0_u8; 6];
+    r.read_exact(&mut header).await?;
+    let d = d.decrypt_client_header(header);
+
+    let mut buf = vec![0_u8; d.size.saturating_sub(4) as usize];
+    r.read_exact(&mut buf).await?;
+
+    read_client_body(&mut buf.as_slice(), d.size, d.opcode)
+}
+
+#[cfg(any(feature = "sync", feature = "tokio", feature = "async-std"))]
+fn read_server_body<M: crate::vanilla::ServerMessage>(
+    buf: &mut &[u8],
+    size: u32,
+    opcode: u32,
+) -> Result<M, crate::errors::ExpectedOpcodeError> {
+    // Unable to match on associated const M::OPCODE, so we do if
+    if opcode == M::OPCODE {
+        let m = M::read_body::<crate::traits::private::Internal>(
+            buf,
+            size.saturating_sub(2),
+        );
+        match m {
+            Ok(m) => Ok(m),
+            Err(e) => Err(e.into()),
+        }
+    } else {
+        Err(crate::errors::ExpectedOpcodeError::Opcode {
+            opcode,
+            name: crate::vanilla::opcode_to_name(opcode),
+            size,
+        })
+    }
+}
+
+#[cfg(any(feature = "sync", feature = "tokio", feature = "async-std"))]
+fn read_client_body<M: crate::vanilla::ClientMessage>(
+    buf: &mut &[u8],
+    size: u16,
+    opcode: u32,
+) -> Result<M, crate::errors::ExpectedOpcodeError> {
+    // Unable to match on associated const M::OPCODE, so we do if
+    if opcode == M::OPCODE {
+        let m = M::read_body::<crate::traits::private::Internal>(
+            buf,
+            size.saturating_sub(4) as u32,
+        );
+        match m {
+            Ok(m) => Ok(m),
+            Err(e) => Err(e.into()),
+        }
+    } else {
+        Err(crate::errors::ExpectedOpcodeError::Opcode {
+            opcode,
+            name: crate::vanilla::opcode_to_name(opcode),
+            size: size.into(),
+        })
+    }
+}

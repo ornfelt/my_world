@@ -1,0 +1,20 @@
+name: Release
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - v[0-9]+.*
+
+jobs:
+  pack-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+      - run: dotnet test
+      - run: dotnet pack -c Release
+      - run: cd WowSrp/bin/Release &&  dotnet nuget push "*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }}  -s https://api.nuget.org/v3/index.json
+
