@@ -1,0 +1,3 @@
+[submodule "jkl"]
+	path = lib/jkl
+	url = https://git.sr.ht/~acazuc/jkl

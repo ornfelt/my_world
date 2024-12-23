@@ -3,10 +3,40 @@
 
 
 
+acazuc_fuse_mpq [c/acazuc_fuse_mpq](c/acazuc_fuse_mpq)
+
+
+acazuc_gfx [c/acazuc_gfx](c/acazuc_gfx)
+
+
+acazuc_jkssl [c/acazuc_jkssl](c/acazuc_jkssl)
+
+
+acazuc_libwow [c/acazuc_libwow](c/acazuc_libwow)
+
+
+acazuc_voxel [c/acazuc_voxel](c/acazuc_voxel)
+
+
+acazuc_wow-rs [c/acazuc_wow-rs](c/acazuc_wow-rs)
+
+
+acazuc_wow_client [c/acazuc_wow_client](c/acazuc_wow_client)
+
+
+acazuc_wow_explorer [c/acazuc_wow_explorer](c/acazuc_wow_explorer)
+
+
+enworker17_refact [c/enworker17_refact](c/enworker17_refact)
+
+
 gtker_wow_srp_csharp [c#/gtker_wow_srp_csharp](c#/gtker_wow_srp_csharp)
 
 
 Koward_M2Lib [c#/Koward_M2Lib](c#/Koward_M2Lib)
+
+
+IntelligentQuantum_WoWAddin [c++/IntelligentQuantum_WoWAddin](c++/IntelligentQuantum_WoWAddin)
 
 
 trickerer_boss_runeworder [c++/trickerer_boss_runeworder](c++/trickerer_boss_runeworder)

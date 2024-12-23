@@ -1,0 +1,8 @@
+*.swp
+obj
+/voxel*
+saves
+callgrind.*
+massif.*
+lib/build_*
+config

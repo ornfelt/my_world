@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: libgfx
+Description: GPU API abstraction library
+URL: https://git.sr.ht/~acazuc/gfx
+Version: @VERSION@
+
+Cflags: -I${includedir}
+Libs: -L${libdir} -lgfx @SYSTEM_LIBS@ @LIBJKS_LIBS@

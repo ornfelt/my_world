@@ -17,6 +17,7 @@
 //! * [`tbc`] for items valid for version 2.4.3.8606.
 //! * [`wrath`] for items valid for version 3.3.5.12340.
 //! * [`shared`] for items that are valid for multiple versions.
+//!
 //! These are also exported through the regular modules, so for example if you are working with vanilla it is only necessary to export items from [`vanilla`].
 //!
 //!
@@ -85,7 +86,9 @@ pub(crate) mod util;
     clippy::needless_borrow,
     clippy::identity_op,
     clippy::missing_errors_doc,
-    clippy::needless_borrows_for_generic_args
+    clippy::needless_borrows_for_generic_args,
+    clippy::doc_lazy_continuation,
+    clippy::doc_markdown
 )]
 #[rustfmt::skip]
 // Panics in testcase prints

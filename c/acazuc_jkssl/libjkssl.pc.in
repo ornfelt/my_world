@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: libjkssl
+Description: Crypto library
+URL: https://git.sr.ht/~acazuc/jkssl
+Version: @VERSION@
+
+Cflags: -I${includedir}
+Libs: -L${libdir} -ljkssl

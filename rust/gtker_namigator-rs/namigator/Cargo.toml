@@ -17,8 +17,8 @@ tbc = ["wow_world_base/tbc", "wow_world_base/extended"]
 wrath = ["wow_world_base/wrath", "wow_world_base/extended"]
 
 [dependencies]
-namigator-sys = {path = "../namigator-sys"}
-wow_world_base = { git="https://github.com/gtker/wow_messages.git", rev = "e8dc643aea0647083e5f5a1fa6d2c5e4fb274d08", features = ["shared"]}
+namigator-sys = { version = "0.2.0", path = "../namigator-sys"}
+wow_world_base = { version = "0.3.0", features = ["shared"]}
 
 [package.metadata.docs.rs]
 all-features = true

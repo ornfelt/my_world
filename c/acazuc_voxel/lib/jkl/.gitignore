@@ -1,0 +1,8 @@
+.extract
+.pre_configure
+.configure
+.build
+.install
+build
+*.swp
+*.swo

@@ -230,7 +230,6 @@ __all__ = [
     "AchievementInProgress",
     "ActionButton",
     "Addon",
-    "AddonInfo",
     "ArenaTeamMember",
     "AuctionEnchantment",
     "AuctionListItem",
@@ -2780,7 +2779,7 @@ class UpdateMaskValue(enum.IntEnum):
     PLAYER_TODAY_CONTRIBUTION = 1226
     PLAYER_YESTERDAY_CONTRIBUTION = 1227
     PLAYER_LIFETIME_HONORBALE_KILLS = 1228
-    PLAYER_BYTES2 = 1229
+    PLAYER_BYTES2_GLOW = 1229
     PLAYER_WATCHED_FACTION_INDEX = 1230
     PLAYER_COMBAT_RATING_1 = 1231
     PLAYER_ARENA_TEAM_INFO_1_1 = 1256
@@ -11114,38 +11113,30 @@ class SpellCastTargetFlags(enum.Flag):
 
 class SplineFlag(enum.Flag):
     NONE = 0
-    DONE = 1
-    FALLING = 2
-    UNKNOWN3 = 4
-    UNKNOWN4 = 8
-    UNKNOWN5 = 16
-    UNKNOWN6 = 32
-    UNKNOWN7 = 64
-    UNKNOWN8 = 128
-    RUNMODE = 256
-    FLYING = 512
+    DONE = 256
+    FALLING = 512
     NO_SPLINE = 1024
     PARABOLIC = 2048
-    UNKNOWN13 = 4096
-    UNKNOWN14 = 8192
-    UNKNOWN15 = 16384
-    UNKNOWN16 = 32768
-    FINAL_POINT = 65536
-    FINAL_TARGET = 131072
-    FINAL_ANGLE = 262144
-    UNKNOWN19 = 524288
-    CYCLIC = 1048576
-    ENTER_CYCLE = 2097152
+    WALK_MODE = 4096
+    FLYING = 8192
+    ORIENTATION_FIXED = 16384
+    FINAL_POINT = 32768
+    FINAL_TARGET = 65536
+    FINAL_ANGLE = 131072
+    CATMULLROM = 262144
+    CYCLIC = 524288
+    ENTER_CYCLE = 1048576
+    ANIMATION = 2097152
     FROZEN = 4194304
-    UNKNOWN23 = 8388608
-    UNKNOWN24 = 16777216
-    UNKNOWN25 = 33554432
-    UNKNOWN26 = 67108864
-    UNKNOWN27 = 134217728
-    UNKNOWN28 = 268435456
-    UNKNOWN29 = 536870912
-    UNKNOWN30 = 1073741824
-    UNKNOWN31 = 2147483648
+    TRANSPORT_ENTER = 8388608
+    TRANSPORT_EXIT = 16777216
+    UNKNOWN7 = 33554432
+    UNKNOWN8 = 67108864
+    ORIENTATION_INVERSED = 134217728
+    UNKNOWN10 = 268435456
+    UNKNOWN11 = 536870912
+    UNKNOWN12 = 1073741824
+    UNKNOWN13 = 2147483648
 
 
 class UpdateFlag(enum.Flag):
@@ -11338,43 +11329,6 @@ class Addon:
         _fmt += 'BBBIB'
         _data.extend([self.addon_type, self.uses_crc, self.uses_diffent_public_key, self.unknown1, self.unknown2])
         return _fmt, _data
-
-
-@dataclasses.dataclass
-class AddonInfo:
-    addon_name: str
-    addon_has_signature: int
-    addon_crc: int
-    addon_extra_crc: int
-
-    @staticmethod
-    async def read(reader: asyncio.StreamReader) -> AddonInfo:
-        # addon_name: CString
-        addon_name = await read_cstring(reader)
-
-        # addon_has_signature: u8
-        addon_has_signature = await read_int(reader, 1)
-
-        # addon_crc: u32
-        addon_crc = await read_int(reader, 4)
-
-        # addon_extra_crc: u32
-        addon_extra_crc = await read_int(reader, 4)
-
-        return AddonInfo(
-            addon_name=addon_name,
-            addon_has_signature=addon_has_signature,
-            addon_crc=addon_crc,
-            addon_extra_crc=addon_extra_crc,
-        )
-
-    def write(self, _fmt, _data):
-        _fmt += f'{len(self.addon_name)}sBBII'
-        _data.extend([self.addon_name.encode('utf-8'), 0, self.addon_has_signature, self.addon_crc, self.addon_extra_crc])
-        return _fmt, _data
-
-    def size(self) -> int:
-        return 10 + len(self.addon_name)
 
 
 @dataclasses.dataclass
@@ -14633,10 +14587,16 @@ class MovementBlock:
     time_passed: typing.Optional[int] = None
     duration: typing.Optional[int] = None
     id: typing.Optional[int] = None
+    duration_mod: typing.Optional[float] = None
+    duration_mod_next: typing.Optional[float] = None
+    vertical_acceleration: typing.Optional[float] = None
+    effect_start_time: typing.Optional[float] = None
     nodes: typing.Optional[typing.List[Vector3d]] = None
+    mode: typing.Optional[int] = None
     final_node: typing.Optional[Vector3d] = None
     transport_guid: typing.Optional[int] = None
     position1: typing.Optional[Vector3d] = None
+    transport_offset: typing.Optional[Vector3d] = None
     orientation1: typing.Optional[float] = None
     corpse_orientation: typing.Optional[float] = None
     position2: typing.Optional[Vector3d] = None
@@ -14683,11 +14643,17 @@ class MovementBlock:
         time_passed = None
         duration = None
         id = None
+        duration_mod = None
+        duration_mod_next = None
+        vertical_acceleration = None
+        effect_start_time = None
         amount_of_nodes = None
         nodes = None
+        mode = None
         final_node = None
         transport_guid = None
         position1 = None
+        transport_offset = None
         orientation1 = None
         corpse_orientation = None
         position2 = None
@@ -14810,6 +14776,18 @@ class MovementBlock:
                 # id: u32
                 id = await read_int(reader, 4)
 
+                # duration_mod: f32
+                duration_mod = await read_float(reader)
+
+                # duration_mod_next: f32
+                duration_mod_next = await read_float(reader)
+
+                # vertical_acceleration: f32
+                vertical_acceleration = await read_float(reader)
+
+                # effect_start_time: f32
+                effect_start_time = await read_float(reader)
+
                 # amount_of_nodes: u32
                 amount_of_nodes = await read_int(reader, 4)
 
@@ -14817,6 +14795,9 @@ class MovementBlock:
                 nodes = []
                 for _ in range(0, amount_of_nodes):
                     nodes.append(await Vector3d.read(reader))
+
+                # mode: u8
+                mode = await read_int(reader, 1)
 
                 # final_node: Vector3d
                 final_node = await Vector3d.read(reader)
@@ -14827,6 +14808,9 @@ class MovementBlock:
 
             # position1: Vector3d
             position1 = await Vector3d.read(reader)
+
+            # transport_offset: Vector3d
+            transport_offset = await Vector3d.read(reader)
 
             # orientation1: f32
             orientation1 = await read_float(reader)
@@ -14902,10 +14886,16 @@ class MovementBlock:
             time_passed=time_passed,
             duration=duration,
             id=id,
+            duration_mod=duration_mod,
+            duration_mod_next=duration_mod_next,
+            vertical_acceleration=vertical_acceleration,
+            effect_start_time=effect_start_time,
             nodes=nodes,
+            mode=mode,
             final_node=final_node,
             transport_guid=transport_guid,
             position1=position1,
+            transport_offset=transport_offset,
             orientation1=orientation1,
             corpse_orientation=corpse_orientation,
             position2=position2,
@@ -15024,6 +15014,22 @@ class MovementBlock:
                 _fmt += 'I'
                 _data.append(self.id)
 
+                # duration_mod: f32
+                _fmt += 'f'
+                _data.append(self.duration_mod)
+
+                # duration_mod_next: f32
+                _fmt += 'f'
+                _data.append(self.duration_mod_next)
+
+                # vertical_acceleration: f32
+                _fmt += 'f'
+                _data.append(self.vertical_acceleration)
+
+                # effect_start_time: f32
+                _fmt += 'f'
+                _data.append(self.effect_start_time)
+
                 # amount_of_nodes: u32
                 _fmt += 'I'
                 _data.append(len(self.nodes))
@@ -15031,6 +15037,10 @@ class MovementBlock:
                 # nodes: Vector3d[amount_of_nodes]
                 for i in self.nodes:
                     _fmt, _data = i.write(_fmt, _data)
+
+                # mode: u8
+                _fmt += 'B'
+                _data.append(self.mode)
 
                 # final_node: Vector3d
                 _fmt, _data = self.final_node.write(_fmt, _data)
@@ -15041,6 +15051,9 @@ class MovementBlock:
 
             # position1: Vector3d
             _fmt, _data = self.position1.write(_fmt, _data)
+
+            # transport_offset: Vector3d
+            _fmt, _data = self.transport_offset.write(_fmt, _data)
 
             # orientation1: f32
             _fmt += 'f'
@@ -15104,7 +15117,7 @@ class MovementBlock:
                 _size += 4
 
             if MovementFlags.SPLINE_ENABLED in self.flags:
-                _size += 32 + 12 * len(self.nodes)
+                _size += 49 + 12 * len(self.nodes)
 
                 if SplineFlag.FINAL_ANGLE in self.spline_flags:
                     _size += 4
@@ -15115,7 +15128,7 @@ class MovementBlock:
 
 
         elif UpdateFlag.POSITION in self.update_flag:
-            _size += 20 + packed_guid_size(self.transport_guid)
+            _size += 32 + packed_guid_size(self.transport_guid)
         elif UpdateFlag.HAS_POSITION in self.update_flag:
             _size += 16
 
@@ -15996,7 +16009,7 @@ class QuestPoi:
 @dataclasses.dataclass
 class QuestPoiList:
     quest_id: int
-    amount_of_pois: int
+    pois: typing.List[QuestPoi]
 
     @staticmethod
     async def read(reader: asyncio.StreamReader) -> QuestPoiList:
@@ -16006,15 +16019,27 @@ class QuestPoiList:
         # amount_of_pois: u32
         amount_of_pois = await read_int(reader, 4)
 
+        # pois: QuestPoi[amount_of_pois]
+        pois = []
+        for _ in range(0, amount_of_pois):
+            pois.append(await QuestPoi.read(reader))
+
         return QuestPoiList(
             quest_id=quest_id,
-            amount_of_pois=amount_of_pois,
+            pois=pois,
         )
 
     def write(self, _fmt, _data):
         _fmt += 'II'
-        _data.extend([self.quest_id, self.amount_of_pois])
+        _data.extend([self.quest_id, len(self.pois)])
+        # pois: QuestPoi[amount_of_pois]
+        for i in self.pois:
+            _fmt, _data = i.write(_fmt, _data)
+
         return _fmt, _data
+
+    def size(self) -> int:
+        return 8 + sum([i.size() for i in self.pois])
 
 
 @dataclasses.dataclass
@@ -36795,7 +36820,7 @@ class SMSG_QUEST_POI_QUERY_RESPONSE:
         writer.write(_data)
 
     def size(self) -> int:
-        return 4 + 8 * len(self.quests)
+        return 4 + sum([i.size() for i in self.quests])
 
 
 @dataclasses.dataclass
@@ -56447,7 +56472,7 @@ class SMSG_CALENDAR_SEND_CALENDAR:
     instances: typing.List[SendCalendarInstance]
     relative_time: int
     reset_times: typing.List[SendCalendarResetTime]
-    amount_of_holidays: int
+    holidays: typing.List[SendCalendarHoliday]
 
     @staticmethod
     async def read(reader: asyncio.StreamReader, body_size: int) -> SMSG_CALENDAR_SEND_CALENDAR:
@@ -56495,6 +56520,11 @@ class SMSG_CALENDAR_SEND_CALENDAR:
         # amount_of_holidays: u32
         amount_of_holidays = await read_int(reader, 4)
 
+        # holidays: SendCalendarHoliday[amount_of_holidays]
+        holidays = []
+        for _ in range(0, amount_of_holidays):
+            holidays.append(await SendCalendarHoliday.read(reader))
+
         return SMSG_CALENDAR_SEND_CALENDAR(
             invites=invites,
             events=events,
@@ -56503,7 +56533,7 @@ class SMSG_CALENDAR_SEND_CALENDAR:
             instances=instances,
             relative_time=relative_time,
             reset_times=reset_times,
-            amount_of_holidays=amount_of_holidays,
+            holidays=holidays,
         )
 
     def write_encrypted_server(
@@ -56559,7 +56589,11 @@ class SMSG_CALENDAR_SEND_CALENDAR:
 
         # amount_of_holidays: u32
         _fmt += 'I'
-        _data.append(self.amount_of_holidays)
+        _data.append(len(self.holidays))
+
+        # holidays: SendCalendarHoliday[amount_of_holidays]
+        for i in self.holidays:
+            _fmt, _data = i.write(_fmt, _data)
 
         _data = struct.pack(_fmt, *_data)
         if isinstance(writer, bytearray):
@@ -56569,7 +56603,7 @@ class SMSG_CALENDAR_SEND_CALENDAR:
         writer.write(_data)
 
     def size(self) -> int:
-        return 32 + sum([i.size() for i in self.invites]) + sum([i.size() for i in self.events]) + 20 * len(self.instances) + 12 * len(self.reset_times)
+        return 32 + sum([i.size() for i in self.invites]) + sum([i.size() for i in self.events]) + 20 * len(self.instances) + 12 * len(self.reset_times) + sum([i.size() for i in self.holidays])
 
 
 @dataclasses.dataclass

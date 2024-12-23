@@ -1,3 +1,14 @@
+# c
+https://github.com/enworker17/refact
+https://git.sr.ht/~acazuc/wow_client
+https://git.sr.ht/~acazuc/wow-rs
+https://git.sr.ht/~acazuc/libwow
+https://git.sr.ht/~acazuc/gfx
+https://git.sr.ht/~acazuc/fuse_mpq
+https://git.sr.ht/~acazuc/voxel
+https://git.sr.ht/~acazuc/wow_explorer
+https://git.sr.ht/~acazuc/jkssl
+
 # c#
 https://github.com/gtker/wow_srp_csharp
 https://github.com/Koward/M2Lib

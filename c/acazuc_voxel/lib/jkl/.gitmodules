@@ -1,0 +1,36 @@
+[submodule "jks/jks"]
+	path = jks/jks
+	url = https://git.sr.ht/~acazuc/jks
+[submodule "gfx/gfx"]
+	path = gfx/gfx
+	url = https://git.sr.ht/~acazuc/gfx
+[submodule "jkssl/jkssl"]
+	path = jkssl/jkssl
+	url = https://git.sr.ht/~acazuc/jkssl
+[submodule "libwow/libwow"]
+	path = libwow/libwow
+	url = https://git.sr.ht/~acazuc/libwow
+[submodule "libunicode/libunicode"]
+	path = libunicode/libunicode
+	url = https://git.sr.ht/~acazuc/libunicode
+[submodule "librender/librender"]
+	path = librender/librender
+	url = https://git.sr.ht/~acazuc/librender
+[submodule "libsql/libsql"]
+	path = libsql/libsql
+	url = https://git.sr.ht/~acazuc/libsql
+[submodule "libnet/libnet"]
+	path = libnet/libnet
+	url = https://git.sr.ht/~acazuc/libnet
+[submodule "libgzip/libgzip"]
+	path = libgzip/libgzip
+	url = https://git.sr.ht/~acazuc/libgzip
+[submodule "libformat/libformat"]
+	path = libformat/libformat
+	url = https://git.sr.ht/~acazuc/libformat
+[submodule "libaudio/libaudio"]
+	path = libaudio/libaudio
+	url = https://git.sr.ht/~acazuc/libaudio
+[submodule "libnbt/libnbt"]
+	path = libnbt/libnbt
+	url = https://git.sr.ht/~acazuc/libnbt

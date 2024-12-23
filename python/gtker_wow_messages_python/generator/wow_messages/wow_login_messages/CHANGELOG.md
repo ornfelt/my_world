@@ -6,8 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 <!-- next-header -->
-
 ## [Unreleased] - ReleaseDate
+
+
+## [0.5.0] - 2024-10-10
 
 ### Changed
 
@@ -19,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * BREAKING: `CMD_AUTH_LOGON_PROOF_Client` field `authenticator` is now a `String` from `Vec<u8>`.
 * BREAKING: Version 5 `CMD_REALM_LIST_Server` is now the same as version 6/7.
 * BREAKING: Message structs that only consisted of a single field with an enum have been converted to enums.
+* BREAKING: `utc_timezone_offset` in `CMD_AUTH_LOGON_CHALLENGE_Client`/`CMD_AUTH_RECONNECT_CHALLENGE_Client` is now a signed integer.
 
 ## [0.4.0] - 2024-02-21
 
@@ -113,8 +116,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Initial release. This is very WIP and things are not guaranteed to be documented or actually work correctly.
 
 <!-- next-url -->
+[Unreleased]: https://github.com/gtker/wow_messages/compare/wow_login_messages-v0.5.0...HEAD
 
-[Unreleased]: https://github.com/gtker/wow_messages/compare/wow_login_messages-v0.4.0...HEAD
+[0.5.0]: https://github.com/gtker/wow_messages/compare/wow_login_messages-v0.4.0...wow_login_messages-v0.5.0
 
 [0.4.0]: https://github.com/gtker/wow_messages/compare/wow_login_messages-v0.3.0...wow_login_messages-v0.4.0
 

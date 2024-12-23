@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+### Removed
+
+* BREAKING: `Item`s/`Spell`s for `wow_items` and `wow_spells` crates. These were heavily optimized for storing data and not very useful as general purpose abstractions, such as those found in this crate.
+
+## [0.3.0] - 2024-10-10
+
 ### Added
 
 * `Aura` types for Wrath and TBC.
@@ -52,7 +58,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * First release.
 
 <!-- next-url -->
-[Unreleased]: https://github.com/gtker/wow_messages/compare/wow_world_base-v0.2.0...HEAD
+[Unreleased]: https://github.com/gtker/wow_messages/compare/wow_world_base-v0.3.0...HEAD
+[0.3.0]: https://github.com/gtker/wow_messages/compare/wow_world_base-v0.2.0...wow_world_base-v0.3.0
 
 [0.2.0]: https://github.com/gtker/wow_messages/compare/wow_world_base-v0.1.1...wow_world_base-v0.2.0
 

@@ -1,0 +1,36 @@
+# enable / disable compiler optimizations (optimized builds implies no assert & no debug logs)
+WITH_OPTIMIZATIONS = YES
+
+# enable / disable address sanitizer
+WITH_ASAN = NO
+
+# enable / disable undefined behaviorsanitizer
+WITH_UBSAN = NO
+
+# enable / disable thread sanitizer
+WITH_TSAN = NO
+
+# enable / disable leak sanitizer
+WITH_LSAN = NO
+
+# enable / disable link time optimizations
+WITH_LTO = NO
+
+# enable / disable asserts
+WITH_ASSERT = NO
+
+# enable / disable debug rendering (aabb, collisions, light points, portals, bones)
+WITH_DEBUG_RENDERING = NO
+
+# enable / disable performance measurements
+WITH_PERFORMANCE = NO
+
+# enable / disable memory measurements
+WITH_MEMORY = NO
+
+# choose target platform (will change compiler & linked system libraries)
+# linux_64: use gcc
+# windows_64: use mingw
+TARGET = linux_64
+#TARGET = windows_64
+#TARGET = wasm

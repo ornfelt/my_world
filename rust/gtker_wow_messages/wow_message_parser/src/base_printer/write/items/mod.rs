@@ -29,6 +29,7 @@ use std::path::Path;
 
 pub struct GenericThing {
     pub entry: u32,
+    #[expect(dead_code)]
     pub extra_flags: i32,
     pub name: String,
     pub fields: Vec<Field>,
@@ -113,7 +114,6 @@ pub(crate) fn write_pub_use(
     optimizations: &Optimizations,
 ) {
     let mut s = Writer::new();
-    s.w("pub ");
 
     includes(
         &mut s,
@@ -123,6 +123,7 @@ pub(crate) fn write_pub_use(
         ImportFrom::ItemPubUse,
         ty_name,
         optimizations,
+        true,
     );
     lib_functions(&mut s, ty_name, things);
 
