@@ -8,6 +8,8 @@ https://git.sr.ht/~acazuc/fuse_mpq
 https://git.sr.ht/~acazuc/voxel
 https://git.sr.ht/~acazuc/wow_explorer
 https://git.sr.ht/~acazuc/jkssl
+https://github.com/gtker/wow_messages_c
+https://github.com/gtker/wow_srp_c
 
 # c#
 https://github.com/gtker/wow_srp_csharp
@@ -39,6 +41,7 @@ https://github.com/Anubisss/trinityjs-v8-scripting
 https://github.com/oiramario/wow_srp6
 https://github.com/gtker/wow_messages_python
 https://github.com/gtker/wow_db_sqlite
+https://github.com/gtker/wow_srp_python
 https://github.com/YunataSavior/TC_WOTLK_BossDropLootz
 
 # rust
@@ -51,3 +54,4 @@ https://github.com/gtker/namigator-rs
 https://github.com/gtker/warthog-wow
 https://github.com/gtker/wow_srp
 https://github.com/glkrlos/wowparser
+https://github.com/gtker/warthog-wow
