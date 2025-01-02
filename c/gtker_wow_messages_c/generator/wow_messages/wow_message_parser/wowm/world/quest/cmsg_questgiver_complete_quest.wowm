@@ -1,0 +1,7 @@
+#tag_all versions "1 2 3";
+
+cmsg CMSG_QUESTGIVER_COMPLETE_QUEST = 0x018A {
+    Guid guid;
+    u32 quest_id;
+}
+

@@ -1,0 +1,30 @@
+
+/// Seed used by the client to prove in [CMSG_AUTH_SESSION] that it has authenticated with the auth server.
+/// First thing sent when a client connects to the world server.
+/// This message is always unencrypted.
+smsg SMSG_AUTH_CHALLENGE = 0x1EC {
+    u32 server_seed;
+} {
+    versions = "1 2";
+}
+
+test SMSG_AUTH_CHALLENGE {
+    server_seed = 0xDEADBEEF;
+} [
+    0x00, 0x06, /* size */
+    0xEC, 0x01, /* opcode */
+    0xEF, 0xBE, 0xAD, 0xDE, /* server_seed */
+] {
+    versions = "1 2";
+}
+
+smsg SMSG_AUTH_CHALLENGE = 0x1EC {
+    /// TrinityCore/ArcEmu/mangostwo always set to 1.
+    /// TrinityCore/mangostwo: 1...31
+    u32 unknown1;
+    u32 server_seed;
+    /// Randomized values. Is not used at all by TrinityCore/mangostwo/ArcEmu.
+    u8[32] seed;
+} {
+    versions = "3.3.5";
+}

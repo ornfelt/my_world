@@ -1,0 +1,12 @@
+EKLAT_1.0 {
+	global:
+		_dl_close;
+		_dl_error;
+		_dl_iterate_phdr;
+		_dl_open;
+		_dl_sym;
+		_dl_tls_alloc;
+		_dl_tls_free;
+		_dl_tls_set;
+	local: *;
+};

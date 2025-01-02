@@ -1,0 +1,42 @@
+.TH cat 1 "September 5\, 2023"
+.SH NAME
+cat - concatenate files into stdout
+.SH SYNOPSIS
+.BR cat
+[-b] [-e] [-h] [-n] [-s] [-t] [-u] [-v] [FILES]
+.SH DESCRIPTION
+Concatenate files into stdout
+If no file is given, stdin will be used as input
+
+.BR -b
+	number nonempty lines
+
+.BR -e
+	implies -v, output a $ at the end of each line
+
+.BR -h
+	display help
+
+.BR -n
+	prefix lines by the line number
+
+.BR -s
+	don't display repeated empty lines
+
+.BR -t
+	implies -v, display tabs as ^I
+
+.BR -u
+	ignored
+
+.BR -v
+	use ^ and M- notation, except for LFD and TAB
+
+.SH RETURN VALUES
+.BR 0
+on success
+
+.BR 1
+on failure
+.SH AUTHOR
+Written by acazuc

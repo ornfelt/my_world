@@ -1,0 +1,158 @@
+use std::io::{Read, Write};
+
+/// Auto generated from the original `wowm` in file [`wow_message_parser/tests/impl_levels.wowm:251`](https://github.com/gtker/wow_messages/tree/main/wow_message_parser/tests/impl_levels.wowm#L251):
+/// ```text
+/// cmsg CMSG_TEST_OPTIONAL = 0x1137 {
+///     CString c_string;
+///     u8 b_u8;
+///     optional server {
+///         u8 optional_u8;
+///     }
+/// }
+/// ```
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]
+pub struct CMSG_TEST_OPTIONAL {
+    pub c_string: String,
+    pub b_u8: u8,
+    pub server: Option<CMSG_TEST_OPTIONAL_server>,
+}
+
+impl crate::private::Sealed for CMSG_TEST_OPTIONAL {}
+impl CMSG_TEST_OPTIONAL {
+    fn read_inner(mut r: &mut &[u8], body_size: u32) -> Result<Self, crate::errors::ParseErrorKind> {
+        if !(2..=258).contains(&body_size) {
+            return Err(crate::errors::ParseErrorKind::InvalidSize);
+        }
+
+        // c_string: CString
+        let c_string = {
+            let c_string = crate::util::read_c_string_to_vec(&mut r)?;
+            String::from_utf8(c_string)?
+        };
+
+        // b_u8: u8
+        let b_u8 = crate::util::read_u8_le(&mut r)?;
+
+        // optional server
+        let current_size = {
+            c_string.len() + 1 // c_string: CString
+            + 1 // b_u8: u8
+        };
+        let server = if current_size < body_size as usize {
+            // optional_u8: u8
+            let optional_u8 = crate::util::read_u8_le(&mut r)?;
+
+            Some(CMSG_TEST_OPTIONAL_server {
+                optional_u8,
+            })
+        } else {
+            None
+        };
+
+        Ok(Self {
+            c_string,
+            b_u8,
+            server,
+        })
+    }
+
+}
+
+impl crate::Message for CMSG_TEST_OPTIONAL {
+    const OPCODE: u32 = 0x1137;
+
+    #[cfg(feature = "print-testcase")]
+    fn message_name(&self) -> &'static str {
+        "CMSG_TEST_OPTIONAL"
+    }
+
+    #[cfg(feature = "print-testcase")]
+    fn to_test_case_string(&self) -> Option<String> {
+        use std::fmt::Write;
+        use crate::traits::Message;
+
+        let mut s = String::new();
+
+        writeln!(s, "test CMSG_TEST_OPTIONAL {{").unwrap();
+        // Members
+        writeln!(s, "    c_string = \"{}\";", self.c_string).unwrap();
+        writeln!(s, "    b_u8 = {};", self.b_u8).unwrap();
+        if let Some(server) = &self.server {
+            writeln!(s, "    optional_u8 = {};", server.optional_u8).unwrap();
+        }
+
+        writeln!(s, "}} [").unwrap();
+
+        let [a, b] = (u16::try_from(self.size() + 4).unwrap()).to_be_bytes();
+        writeln!(s, "    {a:#04X}, {b:#04X}, /* size */").unwrap();
+        let [a, b, c, d] = 4407_u32.to_le_bytes();
+        writeln!(s, "    {a:#04X}, {b:#04X}, {c:#04X}, {d:#04X}, /* opcode */").unwrap();
+        let mut bytes: Vec<u8> = Vec::new();
+        self.write_into_vec(&mut bytes).unwrap();
+        let mut bytes = bytes.into_iter();
+
+        crate::util::write_bytes(&mut s, &mut bytes, self.c_string.len() + 1, "c_string", "    ");
+        crate::util::write_bytes(&mut s, &mut bytes, 1, "b_u8", "    ");
+        if let Some(server) = &self.server {
+            crate::util::write_bytes(&mut s, &mut bytes, 1, "optional_u8", "    ");
+        }
+
+
+        writeln!(s, "] {{").unwrap();
+        writeln!(s, "    versions = \"{}\";", std::env::var("WOWM_TEST_CASE_WORLD_VERSION").unwrap_or("1.12".to_string())).unwrap();
+        writeln!(s, "}}\n").unwrap();
+
+        Some(s)
+    }
+
+    fn size_without_header(&self) -> u32 {
+        self.size() as u32
+    }
+
+    fn write_into_vec(&self, mut w: impl Write) -> Result<(), std::io::Error> {
+        // c_string: CString
+        // TODO: Guard against strings that are already null-terminated
+        assert_ne!(self.c_string.as_bytes().iter().next_back(), Some(&0_u8), "String `c_string` must not be null-terminated.");
+        w.write_all(self.c_string.as_bytes())?;
+        // Null terminator
+        w.write_all(&[0])?;
+
+        // b_u8: u8
+        w.write_all(&self.b_u8.to_le_bytes())?;
+
+        // optional server
+        if let Some(v) = &self.server {
+            // optional_u8: u8
+            w.write_all(&v.optional_u8.to_le_bytes())?;
+
+        }
+
+        Ok(())
+    }
+
+    fn read_body<S: crate::private::Sealed>(r: &mut &[u8], body_size: u32) -> Result<Self, crate::errors::ParseError> {
+        Self::read_inner(r, body_size).map_err(|a| crate::errors::ParseError::new(4407, "CMSG_TEST_OPTIONAL", body_size, a))
+    }
+
+}
+
+#[cfg(feature = "vanilla")]
+impl crate::vanilla::ClientMessage for CMSG_TEST_OPTIONAL {}
+
+impl CMSG_TEST_OPTIONAL {
+    pub(crate) fn size(&self) -> usize {
+        self.c_string.len() + 1 // c_string: CString
+        + 1 // b_u8: u8
+        + if let Some(server) = &self.server {
+            1 // optional_u8: u8
+        } else {
+            0
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]
+pub struct CMSG_TEST_OPTIONAL_server {
+    pub optional_u8: u8,
+}
+

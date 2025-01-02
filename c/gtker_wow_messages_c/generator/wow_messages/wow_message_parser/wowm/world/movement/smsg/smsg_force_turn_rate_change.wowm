@@ -1,0 +1,10 @@
+#tag_all versions "1.12 2 3";
+
+smsg SMSG_FORCE_TURN_RATE_CHANGE = 0x02DE {
+    PackedGuid guid;
+    /// cmangos/mangoszero/vmangos: set to 0
+    /// cmangos/mangoszero/vmangos: moveEvent, NUM_PMOVE_EVTS = 0x39
+    u32 move_event;
+    f32 speed;
+}
+

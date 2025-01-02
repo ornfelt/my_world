@@ -1,0 +1,17 @@
+/build
+/i386
+/amd64
+/arm
+/aarch64
+/riscv32
+/riscv64
+/mipsel
+/mips64el
+/*/i386
+/*/amd64
+/*/arm
+/*/aarch64
+/*/riscv32
+/*/riscv64
+/*/mipsel
+/*/mips64el

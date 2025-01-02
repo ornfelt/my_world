@@ -1,0 +1,5 @@
+VIRTIO_RNG_1.0 {
+	global:
+		kmod;
+	local: *;
+};

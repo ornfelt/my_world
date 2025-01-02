@@ -1,0 +1,5 @@
+VIRTIO_BLK_1.0 {
+	global:
+		kmod;
+	local: *;
+};

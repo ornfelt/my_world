@@ -1,0 +1,5 @@
+NET_UDP_1.0 {
+	global:
+		kmod;
+	local: *;
+};

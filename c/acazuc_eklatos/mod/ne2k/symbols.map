@@ -1,0 +1,5 @@
+NE2K_1.0 {
+	global:
+		kmod;
+	local: *;
+};

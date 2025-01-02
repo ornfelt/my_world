@@ -1,0 +1,7 @@
+EKLAT_1.0 {
+	global:
+		forkpty;
+		login_tty;
+		openpty;
+	local: *;
+};

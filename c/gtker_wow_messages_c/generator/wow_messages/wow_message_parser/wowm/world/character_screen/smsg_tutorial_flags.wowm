@@ -1,0 +1,23 @@
+#tag_all versions "1 2 3";
+
+/// Data for which tutorials the client has passed.
+/// All bits set means that all tutorials have been passed.
+/// Must be sent after [SMSG_LOGIN_VERIFY_WORLD] otherwise the client will SEGFAULT.
+smsg SMSG_TUTORIAL_FLAGS = 0xFD {
+    u32[8] tutorial_data;
+}
+
+test SMSG_TUTORIAL_FLAGS {
+    tutorial_data = [ 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, ];
+} [
+    0x00, 0x22, /* size */
+    0xFD, 0x00, /* opcode */
+    0xFF, 0xFF, 0xFF, 0xFF, /* tutorial_data0 */
+    0xFF, 0xFF, 0xFF, 0xFF, /* tutorial_data1 */
+    0xFF, 0xFF, 0xFF, 0xFF, /* tutorial_data2 */
+    0xFF, 0xFF, 0xFF, 0xFF, /* tutorial_data3 */
+    0xFF, 0xFF, 0xFF, 0xFF, /* tutorial_data4 */
+    0xFF, 0xFF, 0xFF, 0xFF, /* tutorial_data5 */
+    0xFF, 0xFF, 0xFF, 0xFF, /* tutorial_data6 */
+    0xFF, 0xFF, 0xFF, 0xFF, /* tutorial_data7 */
+]

@@ -1,0 +1,23 @@
+ZLIB_1.0 {
+	global:
+		adler32;
+		adler32_z;
+		crc32;
+		crc32_z;
+		deflate;
+		deflateEnd;
+		deflateInit;
+		gzbuffer;
+		gzclose;
+		gzdopen;
+		gzfread;
+		gzfwrite;
+		gzopen;
+		gzread;
+		gzwrite;
+		inflate;
+		inflateEnd;
+		inflateGetHeader;
+		inflateInit;
+	local: *;
+};

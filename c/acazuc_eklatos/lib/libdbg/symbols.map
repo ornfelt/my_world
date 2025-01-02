@@ -1,0 +1,12 @@
+DBG_1.0 {
+	global:
+		dbg_errno_from_name;
+		dbg_errno_get;
+		dbg_signal_from_name;
+		dbg_signal_get;
+		dbg_syscall_arg_print;
+		dbg_syscall_from_name;
+		dbg_syscall_get;
+		dbg_syscall_ret_print;
+	local: *;
+};

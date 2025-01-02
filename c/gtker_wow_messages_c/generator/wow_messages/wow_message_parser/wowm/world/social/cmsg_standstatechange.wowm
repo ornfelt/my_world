@@ -1,0 +1,16 @@
+/// Automatically sent by the client when it goes AFK.
+cmsg CMSG_STANDSTATECHANGE = 0x0101 {
+    (u32)UnitStandState animation_state;
+} {
+    versions = "1.12 2 3";
+}
+
+test CMSG_STANDSTATECHANGE {
+    animation_state = SIT;
+} [
+    0x00, 0x08, /* size */
+    0x01, 0x01, 0x00, 0x00, /* opcode */
+    0x01, 0x00, 0x00, 0x00, /* animation_state */
+] {
+    versions = "1.12";
+}

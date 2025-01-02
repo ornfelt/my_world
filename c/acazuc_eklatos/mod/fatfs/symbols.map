@@ -1,0 +1,5 @@
+FATFS_1.0 {
+	global:
+		kmod;
+	local: *;
+};

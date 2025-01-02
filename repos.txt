@@ -7,9 +7,15 @@ https://git.sr.ht/~acazuc/gfx
 https://git.sr.ht/~acazuc/fuse_mpq
 https://git.sr.ht/~acazuc/voxel
 https://git.sr.ht/~acazuc/wow_explorer
+https://git.sr.ht/~acazuc/jks
 https://git.sr.ht/~acazuc/jkssl
 https://github.com/gtker/wow_messages_c
 https://github.com/gtker/wow_srp_c
+https://git.sr.ht/~acazuc/jkgl
+https://git.sr.ht/~acazuc/jka
+https://git.sr.ht/~acazuc/tests
+https://git.sr.ht/~acazuc/eklatos
+https://git.sr.ht/~acazuc/jkx
 
 # c#
 https://github.com/gtker/wow_srp_csharp

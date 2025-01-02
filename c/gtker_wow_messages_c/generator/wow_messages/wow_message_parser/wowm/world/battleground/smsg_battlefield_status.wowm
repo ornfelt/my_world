@@ -1,0 +1,122 @@
+enum StatusId : u8 {
+    /// first status, should mean bg is not instance
+    NONE = 0;
+    /// means bg is empty and waiting for queue
+    WAIT_QUEUE = 1;
+    /// this means, that BG has already started and it is waiting for more players
+    WAIT_JOIN = 2;
+    /// means bg is running
+    IN_PROGRESS = 3;
+    /// means some faction has won BG and it is ending
+    WAIT_LEAVE = 4;
+} {
+    versions = "1 2 3";
+}
+
+smsg SMSG_BATTLEFIELD_STATUS = 0x2D4 {
+    /// vmangos: players can be in 3 queues at the same time (0..2)
+    u32 queue_slot;
+    Map map;
+    /* TODO CORRECT_LAYOUT: Is this really Map or Area?
+        Might also be something else (BG only maps).
+    */
+    if (map != EASTERN_KINGDOMS) {
+        BattlegroundBracket bracket;
+        u32 client_instance_id;
+        StatusId status_id;
+        if (status_id == WAIT_QUEUE) {
+            u32 average_wait_time_in_ms;
+            u32 time_in_queue_in_ms;
+        }
+        else if (status_id == WAIT_JOIN) {
+            u32 time_to_remove_in_queue_in_ms;
+        }
+        else if (status_id == IN_PROGRESS) {
+            u32 time_to_bg_autoleave_in_ms;
+            u32 time_to_bg_start_in_ms;
+        }
+    }
+} {
+    versions = "1.12";
+}
+
+/// mangosone treats `arena_type`, `unknown1`, `battleground_type_id`, and `unknown2` as one big u64 and does not send any fields after these if all fields are 0.
+smsg SMSG_BATTLEFIELD_STATUS = 0x2D4 {
+    /// vmangos: players can be in 3 queues at the same time (0..2)
+    u32 queue_slot;
+    ArenaType arena_type;
+    /// mangosone sets to 0x0D.
+    u8 unknown1;
+    BattlegroundType battleground_type;
+    /// mangosone sets to 0x1F90
+    u16 unknown2;
+    u32 client_instance_id;
+    Bool rated;
+    StatusId status_id;
+    if (status_id == WAIT_QUEUE) {
+        u32 average_wait_time_in_ms;
+        u32 time_in_queue_in_ms;
+    }
+    else if (status_id == WAIT_JOIN) {
+        u32 time_to_remove_in_queue_in_ms;
+    }
+    else if (status_id == IN_PROGRESS) {
+        u32 time_to_bg_autoleave_in_ms;
+        u32 time_to_bg_start_in_ms;
+    }
+} {
+    versions = "2.4.3";
+}
+
+enum ArenaType : u8 {
+    NOT_ARENA = 0;
+    TWO_VS_TWO = 2;
+    THREE_VS_THREE = 3;
+    FIVE_VS_FIVE = 5;
+} {
+    versions = "2 3";
+}
+
+enum ArenaFaction : u8 {
+    HORDE = 0;
+    ALLIANCE = 1;
+} {
+    versions = "2 3";
+}
+
+/// mangosone treats `arena_type`, `unknown1`, `battleground_type_id`, and `unknown2` as one big u64 and does not send any fields after these if all fields are 0.
+smsg SMSG_BATTLEFIELD_STATUS = 0x2D4 {
+    /// vmangos: players can be in 3 queues at the same time (0..2)
+    u32 queue_slot;
+    ArenaType arena_type;
+    /// azerothcore sets to 0x0E if it is arena, 0 otherwise.
+    u8 is_arena;
+    BattlegroundType battleground_type;
+    /// azerothcore sets to 0x1F90
+    u16 unknown1;
+    u8 minimum_level;
+    u8 maximum_level;
+    u32 client_instance_id;
+    Bool rated;
+    StatusId status_id;
+    if (status_id == WAIT_QUEUE) {
+        u32 average_wait_time_in_ms;
+        u32 time_in_queue_in_ms;
+    }
+    else if (status_id == WAIT_JOIN) {
+        Map map1;
+        /// azerothcore: 3.3.5 unknown
+        u64 unknown2;
+        u32 time_to_remove_in_queue_in_ms;
+    }
+    else if (status_id == IN_PROGRESS) {
+        Map map2;
+        /// azerothcore: 3.3.5 unknown
+        u64 unknown3;
+        u32 time_to_bg_autoleave_in_ms;
+        u32 time_to_bg_start_in_ms;
+        ArenaFaction faction;
+    }
+} {
+    versions = "3.3.5";
+}

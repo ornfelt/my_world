@@ -1,0 +1,923 @@
+enum SheatheType : u8 {
+    NONE = 0;
+    MAIN_HAND = 1;
+    OFF_HAND = 2;
+    LARGE_WEAPON_LEFT = 3;
+    LARGE_WEAPON_RIGHT = 4;
+    HIP_WEAPON_LEFT = 5;
+    HIP_WEAPON_RIGHT = 6;
+    SHIELD = 7;
+} {
+    rust_base_type = "true";
+    versions = "1 2 3";
+}
+
+enum BagFamily : u8 {
+    NONE = 0;
+    ARROWS = 1;
+    BULLETS = 2;
+    SOUL_SHARDS = 3;
+    UNKNOWN4 = 4;
+    UNKNOWN5 = 5;
+    HERBS = 6;
+    ENCHANTING_SUPPLIES = 7;
+    ENGINEERING_SUPPLIES = 8;
+    KEYS = 9;
+} {
+    versions = "1.12";
+    rust_base_type = "true";
+}
+
+enum SpellTriggerType : u8 {
+    ON_USE = 0;
+    ON_EQUIP = 1;
+    CHANCE_ON_HIT = 2;
+} {
+    rust_base_type = "true";
+    versions = "1";
+}
+
+struct ItemSpells {
+    Spell spell;   
+    (u32)SpellTriggerType spell_trigger;
+    /// let the database control the sign here. negative means that the item should be consumed once the charges are consumed.
+    i32 spell_charges;
+    i32 spell_cooldown;
+    u32 spell_category;
+    i32 spell_category_cooldown;
+} {
+    rust_base_type = "true";
+    versions = "1";
+}
+
+/// azerothcore: `ItemSpelltriggerType` 5 might have changed on 2.4.3/3.0.3: Such auras will be applied on item pickup and removed on item loss - maybe on the other hand the item is destroyed if the aura is removed ('removed on death' of spell 57348 makes me think so)
+enum SpellTriggerType : u8 {
+    ON_USE = 0;
+    ON_EQUIP = 1;
+    CHANCE_ON_HIT = 2;
+    /// cmangos-tbc: Only used by 23442, Glowing Sanctified Crystal which is used for a Hellfire Peninsula quest.
+    /// Unknown why exactly it does not use the normal triggers.
+    SERVER_SIDE_SCRIPT = 3;
+    SOULSTONE = 4;
+    NO_EQUIP_COOLDOWN = 5;
+    LEARN_SPELL_ID = 6;
+} {
+    rust_base_type = "true";
+    versions = "2 3";
+}
+
+struct ItemSpells {
+    Spell spell;   
+    (u32)SpellTriggerType spell_trigger;
+    /// let the database control the sign here. negative means that the item should be consumed once the charges are consumed.
+    i32 spell_charges;
+    i32 spell_cooldown;
+    u32 spell_category;
+    i32 spell_category_cooldown;
+} {
+    rust_base_type = "true";
+    versions = "2 3";
+}
+
+struct ItemDamageType {
+    f32 damage_minimum;
+    f32 damage_maximum;
+    (u32)SpellSchool school;
+} {
+    rust_base_type = "true";
+    versions = "1 2 3";
+}
+
+enum ItemStatType : u8 {
+    MANA = 0;
+    HEALTH = 1;
+    AGILITY = 3;
+    STRENGTH = 4;
+    INTELLECT = 5;
+    SPIRIT = 6;
+    STAMINA = 7;
+} {
+    rust_base_type = "true";
+    versions = "1";
+}
+
+struct ItemStat {
+    (u32)ItemStatType stat_type;
+    i32 value;
+} {
+    rust_base_type = "true";
+    versions = "1";
+}
+
+flag ItemFlag : u32 {
+    NONE = 0x00000000;
+    /// not used
+    NO_PICKUP = 0x00000001;
+    CONJURED = 0x00000002;
+    /// affect only non container items that can be 'open' for loot. It or lockid set enable for client show 'Right click to open'. See also `ITEM_DYNFLAG_UNLOCKED`
+    LOOTABLE = 0x00000004;
+    /// can't repeat old note: appears red icon (like when item durability==0)
+    DEPRECATED = 0x00000010;
+    /// used for totem. Item can not be destroyed, except by using spell (item can be reagent for spell and then allowed)
+    INDESTRUCTIBLE = 0x00000020;
+    /// ? old note: usable
+    PLAYER_CAST = 0x00000040;
+    NO_EQUIP_COOLDOWN = 0x00000080;
+    INT_BONUS_INSTEAD = 0x00000100;
+    /// used or not used wrapper
+    WRAPPER = 0x00000200;
+    /// ignore bag space at new item creation?
+    IGNORE_BAG_SPACE = 0x00000400;
+    /// determines if item is party loot or not
+    PARTY_LOOT = 0x00000800;
+    /// guild charter
+    CHARTER = 0x00002000;
+    /// Only readable items have this (but not all)
+    HAS_TEXT = 0x00004000;
+    NO_DISENCHANT = 0x00008000;
+    REAL_DURATION = 0x00010000;
+    NO_CREATOR = 0x00020000;
+} {
+    rust_base_type = "true";
+    versions = "1.12";
+}
+
+enum PageTextMaterial : u8 {
+    NONE = 0;
+    PARCHMENT = 1;
+    STONE = 2;
+    MARBLE = 3;
+    SILVER = 4;
+    BRONZE = 5;
+    VALENTINE = 6;
+} {
+    rust_base_type = "true";
+    versions = "1.12";
+}
+
+enum PageTextMaterial : u8 {
+    NONE = 0;
+    PARCHMENT = 1;
+    STONE = 2;
+    MARBLE = 3;
+    SILVER = 4;
+    BRONZE = 5;
+    VALENTINE = 6;
+    ILLIDAN = 7;
+} {
+    rust_base_type = "true";
+    versions = "2.4.3 3";
+}
+
+smsg SMSG_ITEM_QUERY_SINGLE_RESPONSE = 0x0058 {
+    Item item;
+    optional found {
+        ItemClassAndSubClass class_and_sub_class;
+        CString name1;
+        CString name2;
+        CString name3;
+        CString name4;
+        /// id from ItemDisplayInfo.dbc
+        u32 display_id;
+        (u32)ItemQuality quality;
+        ItemFlag flags;
+        Gold buy_price;
+        Gold sell_price;
+        (u32)InventoryType inventory_type;
+        AllowedClass allowed_class;
+        AllowedRace allowed_race;
+        Level32 item_level;
+        Level32 required_level;
+        (u32)Skill required_skill;
+        u32 required_skill_rank;
+        Spell required_spell;
+        u32 required_honor_rank;
+        u32 required_city_rank;
+        (u32)Faction required_faction;
+        /// cmangos/vmangos/mangoszero: send value only if reputation faction id setted ( needed for some items)
+        u32 required_faction_rank;
+        u32 max_count;
+        u32 stackable;
+        u32 container_slots;
+        ItemStat[10] stats;
+        ItemDamageType[5] damages;
+        i32 armor;
+        i32 holy_resistance;
+        i32 fire_resistance;
+        i32 nature_resistance;
+        i32 frost_resistance;
+        i32 shadow_resistance;
+        i32 arcane_resistance;
+        u32 delay;
+        u32 ammo_type;
+        f32 ranged_range_modification;
+        ItemSpells[5] spells;
+        (u32)Bonding bonding;
+        CString description;
+        u32 page_text;
+        Language language;
+        (u32)PageTextMaterial page_text_material;
+        /// cmangos/vmangos/mangoszero: id from QuestCache.wdb
+        u32 start_quest;
+        u32 lock_id;
+        /// cmangos/vmangos/mangoszero: id from Material.dbc
+        u32 material;
+        (u32)SheatheType sheathe_type;
+        /// cmangos/vmangos/mangoszero: id from ItemRandomProperties.dbc
+        u32 random_property;
+        u32 block;
+        (u32)ItemSet item_set;
+        u32 max_durability;
+        Area area;
+        Map map;
+        (u32)BagFamily bag_family;
+    }
+} {
+    versions = "1.12";
+}
+
+test SMSG_ITEM_QUERY_SINGLE_RESPONSE {
+    item = 7230;
+    class_and_sub_class = TWO_HANDED_MACE;
+    name1 = "Smite's Mighty Hammer";
+    name2 = "";
+    name3 = "";
+    name4 = "";
+    display_id = 19610;
+    quality = RARE;
+    flags = NONE;
+    buy_price = 15515;
+    sell_price = 3103;
+    inventory_type = TWO_HANDED_WEAPON;
+    allowed_class = WARRIOR | PALADIN | HUNTER | ROGUE | PRIEST | SHAMAN | MAGE | WARLOCK | DRUID;
+    allowed_race = HUMAN | ORC | DWARF | NIGHT_ELF | UNDEAD | TAUREN | GNOME | TROLL | GOBLIN;
+    item_level = 23;
+    required_level = 18;
+    required_skill = NONE;
+    required_skill_rank = 0;
+    required_spell = 0;
+    required_honor_rank = 0;
+    required_city_rank = 0;
+    required_faction = NONE;
+    required_faction_rank = 0;
+    max_count = 0;
+    stackable = 1;
+    container_slots = 0;
+    stats = [
+        {
+            stat_type = MANA;
+            value = 0;
+        },
+        {
+            stat_type = HEALTH;
+            value = 0;
+        },
+        {
+            stat_type = STRENGTH;
+            value = 11;
+        },
+        {
+            stat_type = AGILITY;
+            value = 4;
+        },
+        {
+            stat_type = STAMINA;
+            value = 0;
+        },
+        {
+            stat_type = INTELLECT;
+            value = 0;
+        },
+        {
+            stat_type = SPIRIT;
+            value = 0;
+        },
+        {
+            stat_type = MANA;
+            value = 0;
+        },
+        {
+            stat_type = MANA;
+            value = 0;
+        },
+        {
+            stat_type = MANA;
+            value = 0;
+        },
+    ];
+    damages = [
+        {
+            damage_minimum = 55.0;
+            damage_maximum = 83.0;
+            school = NORMAL;
+        },
+        {
+            damage_minimum = 0.0;
+            damage_maximum = 0.0;
+            school = NORMAL;
+        },
+        {
+            damage_minimum = 0.0;
+            damage_maximum = 0.0;
+            school = NORMAL;
+        },
+        {
+            damage_minimum = 0.0;
+            damage_maximum = 0.0;
+            school = NORMAL;
+        },
+        {
+            damage_minimum = 0.0;
+            damage_maximum = 0.0;
+            school = NORMAL;
+        },
+    ];
+    armor = 0;
+    holy_resistance = 0;
+    fire_resistance = 0;
+    nature_resistance = 0;
+    frost_resistance = 0;
+    shadow_resistance = 0;
+    arcane_resistance = 0;
+    delay = 3500;
+    ammo_type = 0;
+    ranged_range_modification = 0.0;
+    spells = [
+        {
+            spell = 0;
+            spell_trigger = ON_USE;
+            spell_charges = 0;
+            spell_cooldown = 0;
+            spell_category = 0;
+            spell_category_cooldown = 0;
+        },
+        {
+            spell = 0;
+            spell_trigger = ON_USE;
+            spell_charges = 0;
+            spell_cooldown = 0;
+            spell_category = 0;
+            spell_category_cooldown = 0;
+        },
+        {
+            spell = 0;
+            spell_trigger = ON_USE;
+            spell_charges = 0;
+            spell_cooldown = 0;
+            spell_category = 0;
+            spell_category_cooldown = 0;
+        },
+        {
+            spell = 0;
+            spell_trigger = ON_USE;
+            spell_charges = 0;
+            spell_cooldown = 0;
+            spell_category = 0;
+            spell_category_cooldown = 0;
+        },
+        {
+            spell = 0;
+            spell_trigger = ON_USE;
+            spell_charges = 0;
+            spell_cooldown = 0;
+            spell_category = 0;
+            spell_category_cooldown = 0;
+        },
+    ];
+    bonding = PICK_UP;
+    description = "";
+    page_text = 0;
+    language = UNIVERSAL;
+    page_text_material = NONE;
+    start_quest = 0;
+    lock_id = 0;
+    material = 2;
+    sheathe_type = MAIN_HAND;
+    random_property = 0;
+    block = 0;
+    item_set = NONE;
+    max_durability = 80;
+    area = NONE;
+    map = EASTERN_KINGDOMS;
+    bag_family = NONE;
+} [
+    0x01, 0xE0, /* size */
+    0x58, 0x00, /* opcode */
+    0x3E, 0x1C, 0x00, 0x00, /* item */
+    0x02, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00, /* class_and_sub_class */
+    0x53, 0x6D, 0x69, 0x74, 0x65, 0x27, 0x73, 0x20, 0x4D, 0x69, 0x67, 0x68, 0x74, 0x79, 0x20, 0x48, 0x61, 0x6D, 0x6D, 0x65, 0x72, 0x00, /* name1 */
+    0x00, /* name2 */
+    0x00, /* name3 */
+    0x00, /* name4 */
+    0x9A, 0x4C, 0x00, 0x00, /* display_id */
+    0x03, 0x00, 0x00, 0x00, /* quality */
+    0x00, 0x00, 0x00, 0x00, /* flags */
+    0x9B, 0x3C, 0x00, 0x00, /* buy_price */
+    0x1F, 0x0C, 0x00, 0x00, /* sell_price */
+    0x11, 0x00, 0x00, 0x00, /* inventory_type */
+    0xDF, 0x05, 0x00, 0x00, /* allowed_class */
+    0xFF, 0x01, 0x00, 0x00, /* allowed_race */
+    0x17, 0x00, 0x00, 0x00, /* item_level */
+    0x12, 0x00, 0x00, 0x00, /* required_level */
+    0x00, 0x00, 0x00, 0x00, /* required_skill */
+    0x00, 0x00, 0x00, 0x00, /* required_skill_rank */
+    0x00, 0x00, 0x00, 0x00, /* required_spell */
+    0x00, 0x00, 0x00, 0x00, /* required_honor_rank */
+    0x00, 0x00, 0x00, 0x00, /* required_city_rank */
+    0x00, 0x00, 0x00, 0x00, /* required_faction */
+    0x00, 0x00, 0x00, 0x00, /* required_faction_rank */
+    0x00, 0x00, 0x00, 0x00, /* max_count */
+    0x01, 0x00, 0x00, 0x00, /* stackable */
+    0x00, 0x00, 0x00, 0x00, /* container_slots */
+    /* stats: ItemStat[10] start */
+    /* stats: ItemStat[10] 0 start */
+        0x00, 0x00, 0x00, 0x00, /* stat_type */
+        0x00, 0x00, 0x00, 0x00, /* value */
+    /* stats: ItemStat[10] 0 end */
+    /* stats: ItemStat[10] 1 start */
+        0x01, 0x00, 0x00, 0x00, /* stat_type */
+        0x00, 0x00, 0x00, 0x00, /* value */
+    /* stats: ItemStat[10] 1 end */
+    /* stats: ItemStat[10] 2 start */
+        0x04, 0x00, 0x00, 0x00, /* stat_type */
+        0x0B, 0x00, 0x00, 0x00, /* value */
+    /* stats: ItemStat[10] 2 end */
+    /* stats: ItemStat[10] 3 start */
+        0x03, 0x00, 0x00, 0x00, /* stat_type */
+        0x04, 0x00, 0x00, 0x00, /* value */
+    /* stats: ItemStat[10] 3 end */
+    /* stats: ItemStat[10] 4 start */
+        0x07, 0x00, 0x00, 0x00, /* stat_type */
+        0x00, 0x00, 0x00, 0x00, /* value */
+    /* stats: ItemStat[10] 4 end */
+    /* stats: ItemStat[10] 5 start */
+        0x05, 0x00, 0x00, 0x00, /* stat_type */
+        0x00, 0x00, 0x00, 0x00, /* value */
+    /* stats: ItemStat[10] 5 end */
+    /* stats: ItemStat[10] 6 start */
+        0x06, 0x00, 0x00, 0x00, /* stat_type */
+        0x00, 0x00, 0x00, 0x00, /* value */
+    /* stats: ItemStat[10] 6 end */
+    /* stats: ItemStat[10] 7 start */
+        0x00, 0x00, 0x00, 0x00, /* stat_type */
+        0x00, 0x00, 0x00, 0x00, /* value */
+    /* stats: ItemStat[10] 7 end */
+    /* stats: ItemStat[10] 8 start */
+        0x00, 0x00, 0x00, 0x00, /* stat_type */
+        0x00, 0x00, 0x00, 0x00, /* value */
+    /* stats: ItemStat[10] 8 end */
+    /* stats: ItemStat[10] 9 start */
+        0x00, 0x00, 0x00, 0x00, /* stat_type */
+        0x00, 0x00, 0x00, 0x00, /* value */
+    /* stats: ItemStat[10] 9 end */
+    /* stats: ItemStat[10] end */
+    /* damages: ItemDamageType[5] start */
+    /* damages: ItemDamageType[5] 0 start */
+        0x00, 0x00, 0x5C, 0x42, /* damage_minimum */
+        0x00, 0x00, 0xA6, 0x42, /* damage_maximum */
+        0x00, 0x00, 0x00, 0x00, /* school */
+    /* damages: ItemDamageType[5] 0 end */
+    /* damages: ItemDamageType[5] 1 start */
+        0x00, 0x00, 0x00, 0x00, /* damage_minimum */
+        0x00, 0x00, 0x00, 0x00, /* damage_maximum */
+        0x00, 0x00, 0x00, 0x00, /* school */
+    /* damages: ItemDamageType[5] 1 end */
+    /* damages: ItemDamageType[5] 2 start */
+        0x00, 0x00, 0x00, 0x00, /* damage_minimum */
+        0x00, 0x00, 0x00, 0x00, /* damage_maximum */
+        0x00, 0x00, 0x00, 0x00, /* school */
+    /* damages: ItemDamageType[5] 2 end */
+    /* damages: ItemDamageType[5] 3 start */
+        0x00, 0x00, 0x00, 0x00, /* damage_minimum */
+        0x00, 0x00, 0x00, 0x00, /* damage_maximum */
+        0x00, 0x00, 0x00, 0x00, /* school */
+    /* damages: ItemDamageType[5] 3 end */
+    /* damages: ItemDamageType[5] 4 start */
+        0x00, 0x00, 0x00, 0x00, /* damage_minimum */
+        0x00, 0x00, 0x00, 0x00, /* damage_maximum */
+        0x00, 0x00, 0x00, 0x00, /* school */
+    /* damages: ItemDamageType[5] 4 end */
+    /* damages: ItemDamageType[5] end */
+    0x00, 0x00, 0x00, 0x00, /* armor */
+    0x00, 0x00, 0x00, 0x00, /* holy_resistance */
+    0x00, 0x00, 0x00, 0x00, /* fire_resistance */
+    0x00, 0x00, 0x00, 0x00, /* nature_resistance */
+    0x00, 0x00, 0x00, 0x00, /* frost_resistance */
+    0x00, 0x00, 0x00, 0x00, /* shadow_resistance */
+    0x00, 0x00, 0x00, 0x00, /* arcane_resistance */
+    0xAC, 0x0D, 0x00, 0x00, /* delay */
+    0x00, 0x00, 0x00, 0x00, /* ammo_type */
+    0x00, 0x00, 0x00, 0x00, /* ranged_range_modification */
+    /* spells: ItemSpells[5] start */
+    /* spells: ItemSpells[5] 0 start */
+        0x00, 0x00, 0x00, 0x00, /* spell */
+        0x00, 0x00, 0x00, 0x00, /* spell_trigger */
+        0x00, 0x00, 0x00, 0x00, /* spell_charges */
+        0x00, 0x00, 0x00, 0x00, /* spell_cooldown */
+        0x00, 0x00, 0x00, 0x00, /* spell_category */
+        0x00, 0x00, 0x00, 0x00, /* spell_category_cooldown */
+    /* spells: ItemSpells[5] 0 end */
+    /* spells: ItemSpells[5] 1 start */
+        0x00, 0x00, 0x00, 0x00, /* spell */
+        0x00, 0x00, 0x00, 0x00, /* spell_trigger */
+        0x00, 0x00, 0x00, 0x00, /* spell_charges */
+        0x00, 0x00, 0x00, 0x00, /* spell_cooldown */
+        0x00, 0x00, 0x00, 0x00, /* spell_category */
+        0x00, 0x00, 0x00, 0x00, /* spell_category_cooldown */
+    /* spells: ItemSpells[5] 1 end */
+    /* spells: ItemSpells[5] 2 start */
+        0x00, 0x00, 0x00, 0x00, /* spell */
+        0x00, 0x00, 0x00, 0x00, /* spell_trigger */
+        0x00, 0x00, 0x00, 0x00, /* spell_charges */
+        0x00, 0x00, 0x00, 0x00, /* spell_cooldown */
+        0x00, 0x00, 0x00, 0x00, /* spell_category */
+        0x00, 0x00, 0x00, 0x00, /* spell_category_cooldown */
+    /* spells: ItemSpells[5] 2 end */
+    /* spells: ItemSpells[5] 3 start */
+        0x00, 0x00, 0x00, 0x00, /* spell */
+        0x00, 0x00, 0x00, 0x00, /* spell_trigger */
+        0x00, 0x00, 0x00, 0x00, /* spell_charges */
+        0x00, 0x00, 0x00, 0x00, /* spell_cooldown */
+        0x00, 0x00, 0x00, 0x00, /* spell_category */
+        0x00, 0x00, 0x00, 0x00, /* spell_category_cooldown */
+    /* spells: ItemSpells[5] 3 end */
+    /* spells: ItemSpells[5] 4 start */
+        0x00, 0x00, 0x00, 0x00, /* spell */
+        0x00, 0x00, 0x00, 0x00, /* spell_trigger */
+        0x00, 0x00, 0x00, 0x00, /* spell_charges */
+        0x00, 0x00, 0x00, 0x00, /* spell_cooldown */
+        0x00, 0x00, 0x00, 0x00, /* spell_category */
+        0x00, 0x00, 0x00, 0x00, /* spell_category_cooldown */
+    /* spells: ItemSpells[5] 4 end */
+    /* spells: ItemSpells[5] end */
+    0x01, 0x00, 0x00, 0x00, /* bonding */
+    0x00, /* description */
+    0x00, 0x00, 0x00, 0x00, /* page_text */
+    0x00, 0x00, 0x00, 0x00, /* language */
+    0x00, 0x00, 0x00, 0x00, /* page_text_material */
+    0x00, 0x00, 0x00, 0x00, /* start_quest */
+    0x00, 0x00, 0x00, 0x00, /* lock_id */
+    0x02, 0x00, 0x00, 0x00, /* material */
+    0x01, 0x00, 0x00, 0x00, /* sheathe_type */
+    0x00, 0x00, 0x00, 0x00, /* random_property */
+    0x00, 0x00, 0x00, 0x00, /* block */
+    0x00, 0x00, 0x00, 0x00, /* item_set */
+    0x50, 0x00, 0x00, 0x00, /* max_durability */
+    0x00, 0x00, 0x00, 0x00, /* area */
+    0x00, 0x00, 0x00, 0x00, /* map */
+    0x00, 0x00, 0x00, 0x00, /* bag_family */
+] {
+    versions = "1.12";
+}
+
+
+struct ItemStat {
+    u32 stat_type;
+    i32 value;
+} {
+    rust_base_type = "true";
+    versions = "2 3";
+}
+
+struct ItemSocket {
+    u32 color;
+    u32 content;
+} {
+    rust_base_type = "true";
+    versions = "2.4.3 3";
+}
+
+flag BagFamily : u32 {
+    NONE = 0x00000000;
+    ARROWS = 0x00000001;
+    BULLETS = 0x00000002;
+    SOUL_SHARDS = 0x00000004;
+    LEATHERWORKING_SUPPLIES = 0x00000008;
+    INSCRIPTION_SUPPLIES = 0x00000010;
+    HERBS = 0x00000020;
+    ENCHANTING_SUPPLIES = 0x00000040;
+    ENGINEERING_SUPPLIES = 0x00000080;
+    KEYS = 0x00000100;
+    GEMS = 0x00000200;
+    MINING_SUPPLIES = 0x00000400;
+    SOULBOUND_EQUIPMENT = 0x00000800;
+    VANITY_PETS = 0x00001000;
+    CURRENCY_TOKENS = 0x00002000;
+    QUEST_ITEMS = 0x00004000;
+} {
+    versions = "2.4.3 3";
+    rust_base_type = "true";
+}
+
+flag ItemFlag : u32 {
+    /// not used
+    NO_PICKUP = 0x00000001;
+    /// items created by spells with `SPELL_EFFECT_CREATE_ITEM`
+    CONJURED = 0x00000002;
+    /// affect only non container items that can be 'open' for loot. It or lockid set enable for client show 'Right click to open'. See also `ITEM_DYNFLAG_UNLOCKED`
+    LOOTABLE = 0x00000004;
+    /// can't repeat old note: appears red icon (like when item durability==0)
+    DEPRECATED = 0x00000010;
+    /// used for totem. Item can not be destroyed, except by using spell (item can be reagent for spell and then allowed)
+    INDESTRUCTIBLE = 0x00000020;
+    /// ? old note: usable
+    PLAYER_CAST = 0x00000040;
+    /// items without an equip cooldown (and usually a _USABLE flag)
+    NO_EQUIP_COOLDOWN = 0x00000080;
+    /// saw this on item 47115, 49295...
+    INT_BONUS_INSTEAD = 0x00000100;
+    /// used or not used wrapper
+    WRAPPER = 0x00000200;
+    /// ignore bag space at new item creation?
+    IGNORE_BAG_SPACE = 0x00000400;
+    /// items which can be looted by all party members
+    PARTY_LOOT = 0x00000800;
+    /// arena/guild charter
+    CHARTER = 0x00002000;
+    /// readable letter items
+    LETTER = 0x00004000;
+    NO_DISENCHANT = 0x00008000;
+    REAL_DURATION = 0x00010000;
+    NO_CREATOR = 0x00020000;
+    /// item can have prospecting loot (in fact some items expected have empty loot)
+    PROSPECTABLE = 0x00040000;
+    /// custom server side check, in client added in 2.x
+    UNIQUE_EQUIPPED = 0x00080000;
+    IGNORE_FOR_AURAS = 0x00100000;
+    /// Item can be used during arena match
+    IGNORE_DEFAULT_ARENA_RESTRICTIONS = 0x00200000;
+    /// Some Thrown weapons have it (and only Thrown) but not all
+    NO_DURABILITY_LOSS = 0x00400000;
+    SPECIAL_USE = 0x00800000;
+} {
+    rust_base_type = "true";
+    versions = "2.4.3";
+}
+
+smsg SMSG_ITEM_QUERY_SINGLE_RESPONSE = 0x0058 {
+    Item item;
+    optional found {
+        ItemClassAndSubClass class_and_sub_class;
+        /// mangosone: new 2.0.3, not exist in wdb cache?
+        /// mangosone sets to -1.
+        /// azerothcore: < 0: id from ItemSubClass.dbc, used to override weapon sound from actual sub class
+        u32 sound_override_sub_class;
+        CString name1;
+        CString name2;
+        CString name3;
+        CString name4;
+        /// id from ItemDisplayInfo.dbc
+        u32 display_id;
+        (u32)ItemQuality quality;
+        ItemFlag flags;
+        Gold buy_price;
+        Gold sell_price;
+        (u32)InventoryType inventory_type;
+        AllowedClass allowed_class;
+        AllowedRace allowed_race;
+        u32 item_level;
+        Level32 required_level;
+        (u32)Skill required_skill;
+        u32 required_skill_rank;
+        Spell required_spell;
+        u32 required_honor_rank;
+        u32 required_city_rank;
+        (u32)Faction required_faction;
+        /// cmangos/vmangos/mangoszero: send value only if reputation faction id setted ( needed for some items)
+        u32 required_faction_rank;
+        u32 max_count;
+        u32 stackable;
+        u32 container_slots;
+        ItemStat[10] stats;
+        ItemDamageType[5] damages;
+        i32 armor;
+        i32 holy_resistance;
+        i32 fire_resistance;
+        i32 nature_resistance;
+        i32 frost_resistance;
+        i32 shadow_resistance;
+        i32 arcane_resistance;
+        u32 delay;
+        u32 ammo_type;
+        f32 ranged_range_modification;
+        ItemSpells[5] spells;
+        (u32)Bonding bonding;
+        CString description;
+        u32 page_text;
+        (u32)Language language;
+        (u32)PageTextMaterial page_text_material;
+        /// cmangos/vmangos/mangoszero: id from QuestCache.wdb
+        u32 start_quest;
+        u32 lock_id;
+        /// cmangos/vmangos/mangoszero: id from Material.dbc
+        u32 material;
+        (u32)SheatheType sheathe_type;
+        /// cmangos/vmangos/mangoszero: id from ItemRandomProperties.dbc
+        u32 random_property;
+        u32 block;
+        (u32)ItemSet item_set;
+        u32 max_durability;
+        Area area;
+        Map map;
+        BagFamily bag_family;
+        /// mangosone: id from TotemCategory.dbc
+        u32 totem_category;
+        ItemSocket[3] sockets;
+        u32 socket_bonus;
+        u32 gem_properties;
+        u32 required_disenchant_skill;
+        f32 armor_damage_modifier;
+        /// mangosone: added in 2.4.2.8209, duration (seconds)
+        Seconds duration;
+    }
+} {
+    versions = "2.4.3";
+}
+
+flag ItemFlag : u32 {
+    NO_PICKUP                         = 0x00000001;
+    /// Conjured item
+    CONJURED = 0x00000002;
+    /// Item can be right clicked to open for loot
+    LOOTABLE = 0x00000004;
+    /// Makes green 'Heroic' text appear on item
+    HEROIC_TOOLTIP = 0x00000008;
+    /// Cannot equip or use
+    DEPRECATED = 0x00000010;
+    /// Item can not be destroyed, except by using spell (item can be reagent for spell)
+    INDESTRUCTIBLE = 0x00000020;
+    /// Item's spells are castable by players
+    PLAYER_CAST = 0x00000040;
+    /// No default 30 seconds cooldown when equipped
+    NO_EQUIP_COOLDOWN = 0x00000080;
+    MULTI_LOOT_QUEST = 0x00000100;
+    /// Item can wrap other items
+    WRAPPER = 0x00000200;
+    USES_RESOURCES = 0x00000400;
+    /// Looting this item does not remove it from available loot
+    MULTI_DROP = 0x00000800;
+    /// Item can be returned to vendor for its original cost (extended cost)
+    ITEM_PURCHASE_RECORD = 0x00001000;
+    /// Item is guild or arena charter
+    CHARTER = 0x00002000;
+    /// Only readable items have this (but not all)
+    HAS_TEXT = 0x00004000;
+    NO_DISENCHANT = 0x00008000;
+    REAL_DURATION = 0x00010000;
+    NO_CREATOR = 0x00020000;
+    /// Item can be prospected
+    IS_PROSPECTABLE = 0x00040000;
+    /// You can only equip one of these
+    UNIQUE_EQUIPPED = 0x00080000;
+    IGNORE_FOR_AURAS = 0x00100000;
+    /// Item can be used during arena match
+    IGNORE_DEFAULT_ARENA_RESTRICTIONS = 0x00200000;
+    /// Some Thrown weapons have it (and only Thrown) but not all
+    NO_DURABILITY_LOSS = 0x00400000;
+    /// Item can be used in shapeshift forms
+    USE_WHEN_SHAPESHIFTED = 0x00800000;
+    HAS_QUEST_GLOW = 0x01000000;
+    /// Profession recipes: can only be looted if you meet requirements and don't already know it
+    HIDE_UNUSABLE_RECIPE = 0x02000000;
+    /// Item cannot be used in arena
+    NOT_USEABLE_IN_ARENA = 0x04000000;
+    /// Item binds to account and can be sent only to your own characters
+    IS_BOUND_TO_ACCOUNT = 0x08000000;
+    /// Spell is cast ignoring reagents
+    NO_REAGENT_COST = 0x10000000;
+    /// Item can be milled
+    IS_MILLABLE = 0x20000000;
+    REPORT_TO_GUILD_CHAT = 0x40000000;
+    NO_PROGRESSIVE_LOOT = 0x80000000;
+} {
+    rust_base_type = "true";
+    versions = "3.3.5";
+}
+
+flag ItemFlag2 : u32 {
+    FACTION_HORDE                            = 0x00000001;
+    FACTION_ALLIANCE                         = 0x00000002;
+    /// when item uses extended cost, gold is also required
+    DONT_IGNORE_BUY_PRICE                    = 0x00000004;
+    CLASSIFY_AS_CASTER                       = 0x00000008;
+    CLASSIFY_AS_PHYSICAL                     = 0x00000010;
+    EVERYONE_CAN_ROLL_NEED                   = 0x00000020;
+    NO_TRADE_BIND_ON_ACQUIRE                 = 0x00000040;
+    CAN_TRADE_BIND_ON_ACQUIRE                = 0x00000080;
+    CAN_ONLY_ROLL_GREED                      = 0x00000100;
+    CASTER_WEAPON                            = 0x00000200;
+    DELETE_ON_LOGIN                          = 0x00000400;
+    INTERNAL_ITEM                            = 0x00000800;
+    NO_VENDOR_VALUE                          = 0x00001000;
+    SHOW_BEFORE_DISCOVERED                   = 0x00002000;
+    OVERRIDE_GOLD_COST                       = 0x00004000;
+    IGNORE_DEFAULT_RATED_BG_RESTRICTIONS     = 0x00008000;
+    NOT_USABLE_IN_RATED_BG                   = 0x00010000;
+    BNET_ACCOUNT_TRADE_OK                    = 0x00020000;
+    CONFIRM_BEFORE_USE                       = 0x00040000;
+    REEVALUATE_BONDING_ON_TRANSFORM          = 0x00080000;
+    NO_TRANSFORM_ON_CHARGE_DEPLETION         = 0x00100000;
+    NO_ALTER_ITEM_VISUAL                     = 0x00200000;
+    NO_SOURCE_FOR_ITEM_VISUAL                = 0x00400000;
+    IGNORE_QUALITY_FOR_ITEM_VISUAL_SOURCE    = 0x00800000;
+    NO_DURABILITY                            = 0x01000000;
+    ROLE_TANK                                = 0x02000000;
+    ROLE_HEALER                              = 0x04000000;
+    ROLE_DAMAGE                              = 0x08000000;
+    CAN_DROP_IN_CHALLENGE_MODE               = 0x10000000;
+    NEVER_STACK_IN_LOOT_UI                   = 0x20000000;
+    DISENCHANT_TO_LOOT_TABLE                 = 0x40000000;
+    USED_IN_A_TRADESKILL                     = 0x80000000;
+} {
+    rust_base_type = "true";
+    versions = "3.3.5";
+}
+
+smsg SMSG_ITEM_QUERY_SINGLE_RESPONSE = 0x0058 {
+    Item item;
+    optional found {
+        ItemClassAndSubClass class_and_sub_class;
+        /// mangosone: new 2.0.3, not exist in wdb cache?
+        /// mangosone sets to -1.
+        /// azerothcore: < 0: id from ItemSubClass.dbc, used to override weapon sound from actual sub class
+        u32 sound_override_sub_class;
+        CString name1;
+        CString name2;
+        CString name3;
+        CString name4;
+        /// id from ItemDisplayInfo.dbc
+        u32 display_id;
+        (u32)ItemQuality quality;
+        ItemFlag flags;
+        ItemFlag2 flags2;
+        Gold buy_price;
+        Gold sell_price;
+        (u32)InventoryType inventory_type;
+        AllowedClass allowed_class;
+        AllowedRace allowed_race;
+        u32 item_level;
+        Level32 required_level;
+        (u32)Skill required_skill;
+        u32 required_skill_rank;
+        Spell required_spell;
+        u32 required_honor_rank;
+        u32 required_city_rank;
+        (u32)Faction required_faction;
+        /// cmangos/vmangos/mangoszero: send value only if reputation faction id setted ( needed for some items)
+        u32 required_faction_rank;
+        u32 max_count;
+        u32 stackable;
+        u32 container_slots;
+        u32 amount_of_stats;
+        ItemStat[amount_of_stats] stats;
+        u32 scaling_stats_entry;
+        u32 scaling_stats_flag;
+        ItemDamageType[2] damages;
+        i32 armor;
+        i32 holy_resistance;
+        i32 fire_resistance;
+        i32 nature_resistance;
+        i32 frost_resistance;
+        i32 shadow_resistance;
+        i32 arcane_resistance;
+        u32 delay;
+        u32 ammo_type;
+        f32 ranged_range_modification;
+        ItemSpells[5] spells;
+        (u32)Bonding bonding;
+        CString description;
+        u32 page_text;
+        (u32)Language language;
+        (u32)PageTextMaterial page_text_material;
+        /// cmangos/vmangos/mangoszero: id from QuestCache.wdb
+        u32 start_quest;
+        u32 lock_id;
+        /// cmangos/vmangos/mangoszero: id from Material.dbc
+        u32 material;
+        (u32)SheatheType sheathe_type;
+        /// cmangos/vmangos/mangoszero: id from ItemRandomProperties.dbc
+        u32 random_property;
+        u32 random_suffix;
+        u32 block;
+        (u32)ItemSet item_set;
+        u32 max_durability;
+        Area area;
+        Map map;
+        BagFamily bag_family;
+        /// mangosone: id from TotemCategory.dbc
+        u32 totem_category;
+        ItemSocket[3] sockets;
+        u32 socket_bonus;
+        u32 gem_properties;
+        u32 required_disenchant_skill;
+        f32 armor_damage_modifier;
+        /// mangosone: added in 2.4.2.8209, duration (seconds)
+        Seconds duration;
+        u32 item_limit_category;
+        /// mangosone: HolidayId - points to HolidayNames.dbc
+        u32 holiday_id;
+    }
+} {
+    versions = "3.3.5";
+}
+

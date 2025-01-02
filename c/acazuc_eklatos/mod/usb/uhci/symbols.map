@@ -1,0 +1,5 @@
+UHCI_1.0 {
+	global:
+		kmod;
+	local: *;
+};

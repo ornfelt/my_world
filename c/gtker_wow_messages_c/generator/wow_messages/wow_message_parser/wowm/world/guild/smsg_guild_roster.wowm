@@ -1,0 +1,91 @@
+enum GuildMemberStatus : u8 {
+    OFFLINE = 0;
+    ONLINE = 1;
+} {
+    versions = "1 2 3";
+}
+
+struct GuildMember {
+    Guid guid;
+    GuildMemberStatus status;
+    CString name;
+    u32 rank;
+    Level level;
+    Class class;
+    Area area;
+    if (status == OFFLINE) {
+        f32 time_offline;
+    }
+    CString public_note;
+    CString officer_note;
+} {
+    versions = "1.12";
+}
+smsg SMSG_GUILD_ROSTER = 0x008A {
+    u32 amount_of_members;
+    CString motd;
+    CString guild_info;
+    u32 amount_of_rights;
+    u32[amount_of_rights] rights;
+    GuildMember[amount_of_members] members;
+} {
+    versions = "1.12";
+}
+
+struct GuildMember {
+    Guid guid;
+    GuildMemberStatus status;
+    CString name;
+    u32 rank;
+    Level level;
+    Class class;
+    /// mangosone: new 2.4.0
+    /// Possibly gender
+    u8 unknown1;
+    Area area;
+    if (status == OFFLINE) {
+        f32 time_offline;
+    }
+    CString public_note;
+    CString officer_note;
+} {
+    versions = "2.4.3";
+}
+
+struct GuildMember {
+    Guid guid;
+    /// arcemu: high guid
+    u32 unknown;
+    GuildMemberStatus status;
+    CString name;
+    u32 rank;
+    Level level;
+    Class class;
+    Gender gender;
+    Area area;
+    if (status == OFFLINE) {
+        f32 time_offline;
+    }
+    CString public_note;
+    CString officer_note;
+} {
+    versions = "3.3.5";
+}
+
+struct GuildRights {
+    u32 rights;
+    Gold money_per_day;
+    GuildBankRights[6] bank_tab_rights;
+} {
+    versions = "2.4.3 3";
+}
+smsg SMSG_GUILD_ROSTER = 0x008A {
+    u32 amount_of_members;
+    CString motd;
+    CString guild_info;
+    u32 amount_of_rights;
+    GuildRights[amount_of_rights] rights;
+    GuildMember[amount_of_members] members;
+} {
+    paste_versions = "2.4.3 3.3.5";
+}

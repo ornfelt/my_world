@@ -1,0 +1,5 @@
+XLIB_1.0 {
+	global:
+		XGetXCBConnection;
+	local: *;
+};

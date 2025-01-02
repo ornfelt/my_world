@@ -1,0 +1,17 @@
+smsg MSG_SET_DUNGEON_DIFFICULTY_Server = 0x329 {
+    (u32)DungeonDifficulty difficulty;
+    /// ArcEmu hardcodes this to 1
+    u32 unknown1;
+    Bool32 is_in_group;
+} {
+    versions = "2.4.3 3";
+}
+
+cmsg MSG_SET_DUNGEON_DIFFICULTY_Client = 0x329 {
+    (u32)DungeonDifficulty difficulty;
+} {
+    versions = "2.4.3 3";
+}
+
+
+

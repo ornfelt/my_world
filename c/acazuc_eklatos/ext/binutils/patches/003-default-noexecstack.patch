@@ -1,0 +1,10 @@
+--- ld/ldmain.c
++++ ld/ldmain.c
+@@ -359,6 +359,7 @@
+   link_info.pei386_auto_import = -1;
+   link_info.spare_dynamic_tags = 5;
+   link_info.path_separator = ':';
++  link_info.noexecstack = true;
+ #ifdef DEFAULT_FLAG_COMPRESS_DEBUG
+   config.compress_debug = DEFAULT_COMPRESSED_DEBUG_ALGORITHM;
+ #endif

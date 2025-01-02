@@ -1,0 +1,23 @@
+# Software Information
+display_name = "Nintendo - NES (emu_nes)"
+authors = "acazuc"
+supported_extensions = "nes"
+corename = "emu_nes"
+display_version = "v0.1.0"
+categories = "Emulator"
+license = "BSDv2"
+permissions = ""
+
+# Hardware Information
+manufacturer = "Nintendo"
+systemname = "Nintendo Entertainment System"
+systemid = "nes"
+
+# Libretro Features
+database = "Nintendo - Nintendo Entertainment System"
+supports_no_game = "false"
+
+# Firmware / BIOS
+firmware_count = 0
+
+description = "Simple NES emulator"

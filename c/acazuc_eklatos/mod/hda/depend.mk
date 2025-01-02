@@ -1,0 +1,1 @@
+hda: snd pci

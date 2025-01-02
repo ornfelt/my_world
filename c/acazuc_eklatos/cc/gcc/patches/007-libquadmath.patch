@@ -1,0 +1,59 @@
+--- libquadmath/configure
++++ libquadmath/configure
+@@ -5839,6 +5839,9 @@
+   # as canadian for Windows hosts.
+   lt_cv_deplibs_check_method=pass_all
+   ;;
++eklat*)
++  lt_cv_deplibs_check_method=pass_all
++  ;;
+ esac
+ 
+ fi
+@@ -8468,6 +8471,9 @@
+   openbsd*)
+     with_gnu_ld=no
+     ;;
++  eklat*)
++    link_all_deplibs=no
++    ;;
+   esac
+ 
+   ld_shlibs=yes
+@@ -9521,6 +9527,9 @@
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    eklat*)
++      ;;
++
+     *)
+       ld_shlibs=no
+       ;;
+@@ -10466,6 +10475,14 @@
+       ;;
+   esac
+   ;;
++eklat*)
++  version_type=linux
++  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}${major} ${libname}${shared_ext}'
++  soname_spec='${libname}${release}${shared_ext}$major'
++  shlibpath_var=LD_LIBRARY_PATH
++  hardcode_into_libs=yes
++  hardcode_libdir_flag_spec='${wl}-rpath ${wl}$objdir'
++  ;;
+ *)
+   dynamic_linker=no
+   ;;
+@@ -10698,6 +10715,11 @@
+ 
+     ;;
+ 
++  eklat*)
++    lt_cv_dlopen="dlopen"
++    lt_cv_dlopen_libs="-ldl"
++    ;;
++
+   *)
+     ac_fn_c_check_func "$LINENO" "shl_load" "ac_cv_func_shl_load"
+ if test "x$ac_cv_func_shl_load" = xyes; then :

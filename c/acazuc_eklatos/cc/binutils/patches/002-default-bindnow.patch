@@ -1,0 +1,144 @@
+--- ld/configure
++++ ld/configure
+@@ -850,6 +850,7 @@
+ enable_default_compressed_debug_sections_algorithm
+ enable_new_dtags
+ enable_relro
++enable_bindnow
+ enable_textrel_check
+ enable_separate_code
+ enable_mark_plt
+@@ -1544,6 +1545,7 @@
+                           --enable-compressed-debug-sections.
+   --enable-new-dtags      set DT_RUNPATH instead of DT_RPATH by default]
+   --enable-relro          enable -z relro in ELF linker by default
++  --enable-bindnow        enable -z now in ELF linker by default
+   --enable-textrel-check=[yes|no|warning|error]
+                           enable DT_TEXTREL check in ELF linker
+   --enable-separate-code  enable -z separate-code in ELF linker by default
+@@ -15663,6 +15665,17 @@
+ esac
+ fi
+ 
++# Decide if -z now should be enabled in ELF linker by default.
++ac_default_ld_z_now=unset
++# Provide a configure time option to override our default.
++# Check whether --enable-bindnow was given.
++if test "${enable_bindnow+set}" = set; then :
++  enableval=$enable_bindnow; case "${enableval}" in
++  yes)  ac_default_ld_z_now=1 ;;
++  no)  ac_default_ld_z_now=0 ;;
++esac
++fi
++
+ # Decide if DT_TEXTREL check should be enabled in ELF linker.
+ ac_default_ld_textrel_check=unset
+ # Check whether --enable-textrel-check was given.
+@@ -19345,6 +19358,15 @@
+ _ACEOF
+ 
+ 
++if test "${ac_default_ld_z_now}" = unset; then
++  ac_default_ld_z_bindnow=0
++fi
++
++cat >>confdefs.h <<_ACEOF
++#define DEFAULT_LD_Z_NOW $ac_default_ld_z_now
++_ACEOF
++
++
+ ac_default_ld_textrel_check_warning=0
+ case "${ac_default_ld_textrel_check}" in
+   unset|no)
+--- ld/ldmain.c
++++ ld/ldmain.c
+@@ -342,6 +342,10 @@
+   link_info.textrel_check = DEFAULT_LD_TEXTREL_CHECK;
+   link_info.emit_hash = DEFAULT_EMIT_SYSV_HASH;
+   link_info.emit_gnu_hash = DEFAULT_EMIT_GNU_HASH;
++#if DEFAULT_LD_Z_NOW
++  link_info.flags |= (bfd_vma) DF_BIND_NOW;
++  link_info.flags_1 |= DF_1_NOW;
++#endif
+   link_info.callbacks = &link_callbacks;
+   link_info.input_bfds_tail = &link_info.input_bfds;
+   /* SVR4 linkers seem to set DT_INIT and DT_FINI based on magic _init
+--- ld/config.in
++++ ld/config.in
+@@ -56,6 +56,9 @@
+    default. */
+ #undef DEFAULT_LD_Z_SEPARATE_CODE
+ 
++/* Define to 1 if you want to enable -z now in ELF linker by default. */
++#undef DEFAULT_LD_Z_NOW
++
+ /* Define to 1 if you want to set DT_RUNPATH instead of DT_RPATH by default.
+    */
+ #undef DEFAULT_NEW_DTAGS
+--- gold/config.in
++++ gold/config.in
+@@ -16,6 +16,9 @@
+ /* Define to 1 if you want to enable -z relro in ELF linker by default. */
+ #undef DEFAULT_LD_Z_RELRO
+ 
++/* Define to 1 if you want to enable -z now in ELF linker by default. */
++#undef DEFAULT_LD_Z_NOW
++
+ /* Define to 1 if translation of program messages to the user's native
+    language is requested. */
+ #undef ENABLE_NLS
+--- gold/options.h
++++ gold/options.h
+@@ -1516,7 +1516,7 @@
+ 	      NULL);
+   DEFINE_bool(noexecstack, options::DASH_Z, '\0', false,
+ 	      N_("Mark output as not requiring executable stack"), NULL);
+-  DEFINE_bool(now, options::DASH_Z, '\0', false,
++  DEFINE_bool(now, options::DASH_Z, '\0', DEFAULT_LD_Z_NOW,
+ 	      N_("Mark object for immediate function binding"),
+ 	      NULL);
+   DEFINE_bool(origin, options::DASH_Z, '\0', false,
+--- gold/configure
++++ gold/configure
+@@ -857,6 +857,7 @@
+ enable_gold
+ enable_plugins
+ enable_relro
++enable_bindnow
+ enable_targets
+ enable_default_hash_style
+ with_lib_path
+@@ -1527,6 +1528,7 @@
+   --enable-gold[=ARG]     build gold [ARG={default,yes,no}]
+   --enable-plugins        Enable support for plugins
+   --enable-relro          enable -z relro in ELF linker by default
++  --enable-bindnow        enable -z now in ELF linker by default
+   --enable-targets        alternative target configurations
+   --enable-default-hash-style={sysv,gnu,both}
+                           use this default hash style
+@@ -5198,6 +5200,25 @@
+ _ACEOF
+ 
+ 
++# Decide if -z now should be enabled in ELF linker by default.
++ac_default_ld_z_now=unset
++# Provide a configure time option to override our default.
++# Check whether --enable-bindnow was given.
++if test "${enable_bindnow+set}" = set; then :
++  enableval=$enable_bindnow; case "${enableval}" in
++  yes)  ac_default_ld_z_now=1 ;;
++  no)  ac_default_ld_z_now=0 ;;
++esac
++fi
++if test "${ac_default_ld_z_now}" = unset; then
++  ac_default_ld_z_now=1
++fi
++
++cat >>confdefs.h <<_ACEOF
++#define DEFAULT_LD_Z_NOW $ac_default_ld_z_now
++_ACEOF
++
++
+ # Check whether --enable-targets was given.
+ if test "${enable_targets+set}" = set; then :
+   enableval=$enable_targets; case "${enableval}" in

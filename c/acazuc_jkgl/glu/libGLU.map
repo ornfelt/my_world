@@ -1,0 +1,8 @@
+GLU_1.0 {
+	global:
+		gluPerspective;
+};
+
+JKGL_1.0 {
+	local: *;
+};

@@ -1,0 +1,9 @@
+SND_1.0 {
+	global:
+		kmod;
+		snd_alloc;
+		snd_fill_buf;
+		snd_free;
+		snd_read;
+	local: *;
+};

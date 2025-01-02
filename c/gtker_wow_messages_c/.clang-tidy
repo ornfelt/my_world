@@ -1,0 +1,9 @@
+---
+Checks: 'clang-diagnostic-*,clang-analyzer-*,performance-*,-clang-analyzer-optin.core.EnumCastOutOfRange,-clang-analyzer-deadcode.DeadStores,-performance-move-const-arg'
+WarningsAsErrors: '*'
+HeaderFilterRegex: ''
+CheckOptions:
+  - key: llvm-else-after-return.WarnOnConditionVariables
+    value: 'false'
+...
+

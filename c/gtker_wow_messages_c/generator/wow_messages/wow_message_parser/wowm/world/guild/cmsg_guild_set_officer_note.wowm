@@ -1,0 +1,8 @@
+#tag_all versions "1 2 3";
+
+cmsg CMSG_GUILD_SET_OFFICER_NOTE = 0x0235 {
+    CString player_name;
+    /// vmangos: Max length 31
+    CString note;
+}
+

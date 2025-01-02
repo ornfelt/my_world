@@ -1,0 +1,16 @@
+#tag_all versions "1 2 3";
+
+enum PetEnabled : u8 {
+    ENABLED = 0x8;
+    DISABLED = 0x0;
+}
+
+smsg SMSG_PET_MODE = 0x017A {
+    Guid guid;
+    PetReactState react_state;
+    PetCommandState command_state;
+    /// vmangos sets to 0.
+    u8 unknown1;
+    PetEnabled pet_enabled;
+}
+

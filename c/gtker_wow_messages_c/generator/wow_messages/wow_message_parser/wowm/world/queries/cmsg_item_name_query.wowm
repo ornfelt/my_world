@@ -1,0 +1,7 @@
+#tag_all versions "1 2 3";
+
+cmsg CMSG_ITEM_NAME_QUERY = 0x02C4 {
+    Item item;
+    Guid guid;
+}
+

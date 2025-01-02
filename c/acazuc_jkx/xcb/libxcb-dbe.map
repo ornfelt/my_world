@@ -1,0 +1,7 @@
+XCB_1.0 {
+	global:
+		xcb_dbe_id;
+		xcb_dbe_query_version;
+		xcb_dbe_query_version_reply;
+	local: *;
+};

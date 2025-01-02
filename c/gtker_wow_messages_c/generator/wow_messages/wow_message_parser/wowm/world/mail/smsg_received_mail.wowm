@@ -1,0 +1,7 @@
+#tag_all versions "1 2 3";
+
+/// cmangos/vmangos/mangoszero: deliver undelivered mail
+smsg SMSG_RECEIVED_MAIL = 0x0285 {
+    /// cmangos/vmangos sends 0 as u32, mangoszero sends 0 as f32
+    u32 unknown1;
+}

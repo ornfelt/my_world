@@ -1,0 +1,17 @@
+XCB_1.0 {
+	global:
+		xcb_render_composite;
+		xcb_render_composite_checked;
+		xcb_render_create_picture;
+		xcb_render_create_picture_checked;
+		xcb_render_fill_rectangles;
+		xcb_render_fill_rectangles_checked;
+		xcb_render_id;
+		xcb_render_query_pict_formats;
+		xcb_render_query_pict_formats_formats;
+		xcb_render_query_pict_formats_formats_length;
+		xcb_render_query_pict_formats_reply;
+		xcb_render_query_version;
+		xcb_render_query_version_reply;
+	local: *;
+};

@@ -1,0 +1,109 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "base-preset",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "hidden": true,
+      "generator": "Ninja",
+      "errors": {
+        "dev": true,
+        "deprecated": true
+      },
+      "cacheVariables": {
+        "CMAKE_C_STANDARD": "90",
+        "CMAKE_C_STANDARD_REQUIRED": true,
+        "CMAKE_C_EXTENSIONS": false,
+        "CMAKE_CXX_STANDARD": "11",
+        "CMAKE_CXX_STANDARD_REQUIRED": true,
+        "CMAKE_CXX_EXTENSIONS": false,
+        "CMAKE_COMPILE_WARNING_AS_ERROR": true,
+        "BUILD_TESTING": true,
+        "BUILD_EXAMPLES": true,
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "gcc",
+      "inherits": [
+        "base-preset"
+      ],
+      "cacheVariables": {
+        "CMAKE_C_FLAGS_INIT": "-Wall -Wpedantic -Wextra -Wunused-function -fsanitize=address,undefined -fsanitize-undefined-trap-on-error",
+        "CMAKE_CXX_FLAGS_INIT": "-Wall -Wpedantic -Wextra -Wunused-function -fsanitize=address,undefined -fsanitize-undefined-trap-on-error",
+        "CMAKE_C_CLANG_TIDY": "clang-tidy",
+        "CMAKE_CXX_CLANG_TIDY": "clang-tidy"
+      }
+    },
+    {
+      "name": "clang",
+      "inherits": [
+        "base-preset"
+      ],
+      "cacheVariables": {
+        "CMAKE_C_FLAGS_INIT": "-Wall -Wpedantic -Wextra -Wunused-function -fsanitize=address,undefined -fsanitize-undefined-trap-on-error",
+        "CMAKE_CXX_FLAGS_INIT": "-Wall -Wpedantic -Wextra -Wunused-function -fsanitize=address,undefined -fsanitize-undefined-trap-on-error"
+      }
+    },
+    {
+      "name": "cl",
+      "inherits": [
+        "base-preset"
+      ],
+      "cacheVariables": {
+        "CMAKE_C_FLAGS_INIT": "/W4",
+        "CMAKE_CXX_FLAGS_INIT": "/W4",
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "gcc",
+      "configurePreset": "gcc"
+    },
+    {
+      "name": "clang",
+      "configurePreset": "clang"
+    },
+    {
+      "name": "cl",
+      "configurePreset": "cl"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "gcc",
+      "configurePreset": "gcc",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error",
+        "stopOnFailure": true
+      }
+    },
+    {
+      "name": "clang",
+      "configurePreset": "clang",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error",
+        "stopOnFailure": true
+      }
+    },
+    {
+      "name": "cl",
+      "configurePreset": "cl",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error",
+        "stopOnFailure": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+cmsg CMSG_CONTACT_LIST = 0x0066 {
+    /// Sent back in [SMSG_CONTACT_LIST].
+    u32 flags;
+} {
+    versions = "2.4.3 3";
+}

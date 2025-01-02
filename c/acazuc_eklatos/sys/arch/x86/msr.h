@@ -1,0 +1,116 @@
+#ifndef X86_MSR_H
+#define X86_MSR_H
+
+/*
+ * Intel® 64 and IA-32 Architectures Software Developer’s Manual 
+ * Volume 4: Model-Specific Registers
+ */
+
+#define IA32_P5_MC_ADDR               0x0
+#define IA32_P5_MC_TYPE               0x1
+#define IA32_MONITOR_FILTER_SIZE      0x6
+#define IA32_TIME_STAMP_COUNTER       0x10
+#define IA32_PLATFORM_ID              0x17
+#define IA32_APIC_BASE                0x1B
+#define IA32_FEATURE_CONTROL          0x3A
+#define IA32_TSC_ADJUST               0x3B
+#define IA32_SPEC_CTRL                0x48
+#define IA32_PRED_CMD                 0x49
+#define IA32_BIOS_UPDT_TRIG           0x79
+#define IA32_BIOS_SIGN_ID             0x8B
+#define IA32_SGXLEPUBKEYHASH0         0x8C
+#define IA32_SGXLEPUBKEYHASH1         0x8D
+#define IA32_SGXLEPUBKEYHASH2         0x8E
+#define IA32_SGXLEPUBKEYHASH3         0x8F
+#define IA32_SMM_MONITOR_CTL          0x9B
+#define IA32_SMBASE                   0x9E
+#define IA32_PMC0                     0xC1
+#define IA32_PMC1                     0xC2
+#define IA32_PMC2                     0xC3
+#define IA32_PMC3                     0xC4
+#define IA32_PMC4                     0xC5
+#define IA32_PMC5                     0xC6
+#define IA32_PMC6                     0xC7
+#define IA32_PMC7                     0xC8
+#define IA32_CORE_CAPABILITIES        0xCF
+#define IA32_UMWAIT_CONTROL           0xE1
+#define IA32_MPERF                    0xE7
+#define IA32_APERF                    0xE8
+#define IA32_MTRRCAP                  0xFE
+#define IA32_ARCH_CAPABILITIES        0x10A
+#define IA32_FLUSH_CMD                0x10B
+#define IA32_SYSENTER_CS              0x174
+#define IA32_SYSENTER_ESP             0x175
+#define IA32_SYSENTER_EIP             0x176
+#define IA32_MCG_CAP                  0x179
+#define IA32_MCG_STATUS               0x17A
+#define IA32_MCG_CTL                  0x17B
+#define IA32_PERFEVTSEL0              0x186
+#define IA32_PERFEVTSEL1              0x187
+#define IA32_PERFEVTSEL2              0x188
+#define IA32_PERFEVTSEL3              0x189
+#define IA32_PERF_STATUS              0x198
+#define IA32_PERF_CTL                 0x199
+#define IA32_CLOCK_MODULATION         0x19A
+#define IA32_THERM_INTERRUPT          0x19B
+#define IA32_THERM_STATUS             0x19C
+#define IA32_MISC_ENABLE              0x1A0
+#define IA32_ENERGY_PERF_BIAS         0x1B0
+#define IA32_PACKAGE_THERM_STATUS     0x1B1
+#define IA32_PACKAGE_THERM_INTERRUPT  0x1B2
+#define IA32_DEBUGCTL                 0x1D9
+#define IA32_SMRR_PHYSBASE            0x1F2
+#define IA32_SMRR_PHYSMASK            0x1F3
+#define IA32_PLATFORM_DCA_CAP         0x1F8
+#define IA32_CPU_DCA_CAP              0x1F9
+#define IA32_DCA_0_CAP                0x1FA
+#define IA32_MTRR_PHYSBASE0           0x200
+#define IA32_MTRR_PHYSMASK0           0x201
+#define IA32_MTRR_PHYSBASE1           0x202
+#define IA32_MTRR_PHYSMASK1           0x203
+#define IA32_MTRR_PHYSBASE2           0x204
+#define IA32_MTRR_PHYSMASK2           0x205
+#define IA32_MTRR_PHYSBASE3           0x206
+#define IA32_MTRR_PHYSMASK3           0x207
+#define IA32_MTRR_PHYSBASE4           0x208
+#define IA32_MTRR_PHYSMASK4           0x209
+#define IA32_MTRR_PHYSBASE5           0x20A
+#define IA32_MTRR_PHYSMASK5           0x20B
+#define IA32_MTRR_PHYSBASE6           0x20C
+#define IA32_MTRR_PHYSMASK6           0x20D
+#define IA32_MTRR_PHYSBASE7           0x20E
+#define IA32_MTRR_PHYSMASK7           0x20F
+#define IA32_MTRR_PHYSBASE8           0x210
+#define IA32_MTRR_PHYSMASK8           0x211
+#define IA32_MTRR_PHYSBASE9           0x212
+#define IA32_MTRR_PHYSMASK9           0x213
+/* XXX */
+#define IA32_PAT                      0x277
+/* XXX */
+#define IA32_PM_ENABLE                0x770
+#define IA32_HWP_CAPABILITIES         0x771
+#define IA32_HWP_REQUEST_PKG          0x772
+#define IA32_HWP_INTERRUPT            0x773
+#define IA32_HWP_REQUEST              0x774
+#define IA32_HWP_PECI_REQUEST_INFO    0x775
+#define IA32_HWP_STATUS               0x776
+/* XXX */
+#define MSR_KVM_WALL_CLOCK_NEW        0x4B564D00
+#define MSR_KVM_SYSTEM_TIME_NEW       0x4B564D01
+#define MSR_KVM_ASYNC_PF_EN           0x4B564D02
+#define MSR_KVM_STEAL_TIME            0x4B564D03
+#define MSR_KVM_EOI_EN                0x4B564D04
+#define MSR_KVM_POLL_CONTROL          0x4B564D05
+#define MSR_KVM_ASYNC_PF_INT          0x4B564D06
+#define MSR_KVM_ASYNC_PF_ACK          0x4B564D07
+/* XXX */
+#define MSR_EFER                      0xC0000080
+#define MSR_STAR                      0xC0000081
+#define MSR_LSTAR                     0xC0000082
+#define MSR_CSTAR                     0xC0000083
+#define MSR_SF_MASK                   0xC0000084
+#define MSR_FS_BASE                   0xC0000100
+#define MSR_GS_BASE                   0xC0000101
+#define MSR_KERNEL_GS_BASE            0xC0000102
+
+#endif

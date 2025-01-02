@@ -1,0 +1,9 @@
+H261_1.0 {
+	global:
+		h261_decode_frame;
+		h261_free;
+		h261_get_err;
+		h261_init_io;
+		h261_new;
+	local: *;
+};

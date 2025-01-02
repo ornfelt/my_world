@@ -1,0 +1,251 @@
+/// Auto generated from the original `wowm` in file [`wow_message_parser/tests/impl_levels.wowm:12`](https://github.com/gtker/wow_messages/tree/main/wow_message_parser/tests/impl_levels.wowm#L12):
+/// ```text
+/// flag SimpleFlag : u8 {
+///     ZERO = 0;
+///     ONE = 1;
+///     TWO = 2;
+/// }
+/// ```
+#[derive(Debug, PartialEq, Eq, Hash, Ord, PartialOrd, Copy, Clone, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(transparent))]
+pub struct SimpleFlag {
+    inner: u8,
+}
+
+#[cfg(feature = "print-testcase")]
+impl SimpleFlag {
+    #[allow(clippy::missing_const_for_fn)]
+    pub fn as_test_case_value(&self) -> String {
+        let mut s = String::new();
+        let mut first = true;
+        if self.is_empty() {
+            use std::fmt::Write;
+            if !first {
+                write!(s, " | ").unwrap();
+            }
+            write!(s, "ZERO").unwrap();
+            first = false;
+        }
+        if self.is_one() {
+            use std::fmt::Write;
+            if !first {
+                write!(s, " | ").unwrap();
+            }
+            write!(s, "ONE").unwrap();
+            first = false;
+        }
+        if self.is_two() {
+            use std::fmt::Write;
+            if !first {
+                write!(s, " | ").unwrap();
+            }
+            write!(s, "TWO").unwrap();
+            first = false;
+        }
+        s
+    }
+
+}
+
+impl SimpleFlag {
+    pub const fn new(inner: u8) -> Self {
+        Self { inner }
+    }
+
+    pub const ZERO: u8 = 0x00;
+    pub const ONE: u8 = 0x01;
+    pub const TWO: u8 = 0x02;
+
+    pub const fn empty() -> Self {
+        Self { inner: 0 }
+    }
+
+    pub const fn is_empty(&self) -> bool {
+        self.inner == 0
+    }
+
+    pub const fn all() -> Self {
+        Self {
+            inner: Self::ZERO
+                | Self::ONE
+                | Self::TWO
+        }
+    }
+
+    pub const fn is_one(&self) -> bool {
+        (self.inner & Self::ONE) != 0
+    }
+
+    pub const fn new_one() -> Self {
+        Self { inner: Self::ONE }
+    }
+
+    pub fn set_one(&mut self) -> Self {
+        self.inner |= Self::ONE;
+        *self
+    }
+
+    pub fn clear_one(&mut self) -> Self {
+        self.inner &= Self::ONE.reverse_bits();
+        *self
+    }
+
+    pub const fn is_two(&self) -> bool {
+        (self.inner & Self::TWO) != 0
+    }
+
+    pub const fn new_two() -> Self {
+        Self { inner: Self::TWO }
+    }
+
+    pub fn set_two(&mut self) -> Self {
+        self.inner |= Self::TWO;
+        *self
+    }
+
+    pub fn clear_two(&mut self) -> Self {
+        self.inner &= Self::TWO.reverse_bits();
+        *self
+    }
+
+    pub const fn as_int(&self) -> u8 {
+        self.inner
+    }
+
+}
+
+impl std::fmt::UpperHex for SimpleFlag {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::UpperHex::fmt(&self.inner, f)
+    }
+}
+
+impl std::fmt::LowerHex for SimpleFlag {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::LowerHex::fmt(&self.inner, f)
+    }
+}
+
+impl std::fmt::Octal for SimpleFlag {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Octal::fmt(&self.inner, f)
+    }
+}
+
+impl std::fmt::Binary for SimpleFlag {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Binary::fmt(&self.inner, f)
+    }
+}
+
+impl std::ops::BitAnd for SimpleFlag {
+    type Output = Self;
+    fn bitand(self, rhs: Self) -> Self::Output {
+        Self { inner: self.inner.bitand(rhs.inner), }
+    }
+}
+
+impl std::ops::BitAndAssign for SimpleFlag {
+    fn bitand_assign(&mut self, rhs: Self) {
+        self.inner.bitand_assign(rhs.inner)
+    }
+}
+
+impl std::ops::BitOr for SimpleFlag {
+    type Output = Self;
+    fn bitor(self, rhs: Self) -> Self::Output {
+        Self { inner: self.inner.bitor(rhs.inner), }
+    }
+}
+
+impl std::ops::BitOrAssign for SimpleFlag {
+    fn bitor_assign(&mut self, rhs: Self) {
+        self.inner.bitor_assign(rhs.inner)
+    }
+}
+
+impl std::ops::BitXor for SimpleFlag {
+    type Output = Self;
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        Self { inner: self.inner.bitxor(rhs.inner), }
+    }
+}
+
+impl std::ops::BitXorAssign for SimpleFlag {
+    fn bitxor_assign(&mut self, rhs: Self) {
+        self.inner.bitxor_assign(rhs.inner)
+    }
+}
+
+impl From<u8> for SimpleFlag {
+    fn from(value: u8) -> Self {
+        Self::new(value)
+    }
+}
+
+impl TryFrom<u16> for SimpleFlag {
+    type Error = u16;
+    fn try_from(value: u16) -> Result<Self, Self::Error> {
+        let a = TryInto::<u8>::try_into(value).ok().ok_or(value)?;
+        Ok(Self::new(a))
+    }
+}
+
+impl TryFrom<u32> for SimpleFlag {
+    type Error = u32;
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        let a = TryInto::<u8>::try_into(value).ok().ok_or(value)?;
+        Ok(Self::new(a))
+    }
+}
+
+impl TryFrom<u64> for SimpleFlag {
+    type Error = u64;
+    fn try_from(value: u64) -> Result<Self, Self::Error> {
+        let a = TryInto::<u8>::try_into(value).ok().ok_or(value)?;
+        Ok(Self::new(a))
+    }
+}
+
+impl From<i8> for SimpleFlag {
+    fn from(value: i8) -> Self {
+        Self::new(u8::from_le_bytes(value.to_le_bytes()))
+    }
+}
+
+impl TryFrom<i16> for SimpleFlag {
+    type Error = i16;
+    fn try_from(value: i16) -> Result<Self, Self::Error> {
+        let v = u16::from_le_bytes(value.to_le_bytes());
+        let a = TryInto::<u8>::try_into(v).ok().ok_or(value)?;
+        Ok(Self::new(a))
+    }
+}
+
+impl TryFrom<i32> for SimpleFlag {
+    type Error = i32;
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
+        let v = u32::from_le_bytes(value.to_le_bytes());
+        let a = TryInto::<u8>::try_into(v).ok().ok_or(value)?;
+        Ok(Self::new(a))
+    }
+}
+
+impl TryFrom<i64> for SimpleFlag {
+    type Error = i64;
+    fn try_from(value: i64) -> Result<Self, Self::Error> {
+        let v = u64::from_le_bytes(value.to_le_bytes());
+        let a = TryInto::<u8>::try_into(v).ok().ok_or(value)?;
+        Ok(Self::new(a))
+    }
+}
+
+impl TryFrom<usize> for SimpleFlag {
+    type Error = usize;
+    fn try_from(value: usize) -> Result<Self, Self::Error> {
+        let a = TryInto::<u8>::try_into(value).ok().ok_or(value)?;
+        Ok(Self::new(a))
+    }
+}
+

@@ -1,0 +1,404 @@
+--- config.sub
++++ config.sub
+@@ -1749,7 +1749,7 @@
+ 	     | onefs* | tirtos* | phoenix* | fuchsia* | redox* | bme* \
+ 	     | midnightbsd* | amdhsa* | unleashed* | emscripten* | wasi* \
+ 	     | nsk* | powerunix* | genode* | zvmoe* | qnx* | emx* | zephyr* \
+-	     | fiwix* )
++	     | fiwix* | eklat* )
+ 		;;
+ 	# This one is extra strict with allowed versions
+ 	sco3.2v2 | sco3.2v[4-9]* | sco5v6*)
+--- gcc/config.gcc
++++ gcc/config.gcc
+@@ -1165,6 +1165,13 @@
+       ;;
+   esac
+   ;;
++*-*-eklat*)
++  extra_options="$extra_options eklat.opt"
++  gas=yes
++  gnu_ld=yes
++  #default_use_cxa_atexit=yes
++  use_gcc_stdint=provide
++  ;;
+ *-*-elf|arc*-*-elf*)
+   # Assume that newlib is being used and so __cxa_atexit is provided.
+   default_use_cxa_atexit=yes
+@@ -1279,6 +1286,11 @@
+         tm_file="${tm_file} vx-common.h vxworks.h aarch64/aarch64-vxworks.h"
+         tmake_file="${tmake_file} aarch64/t-aarch64 aarch64/t-aarch64-vxworks"
+         ;;
++aarch64*-*-eklat*)
++	tm_file="${tm_file} elfos.h newlib-stdint.h eklat.h"
++	tm_file="${tm_file} aarch64/aarch64-elf.h aarch64/aarch64-errata.h aarch64/aarch64-eklat.h"
++	tmake_file="${tmake_file} aarch64/t-aarch64 aarch64/t-aarch64-eklat"
++	;;
+ alpha*-*-linux*)
+ 	tm_file="elfos.h ${tm_file} alpha/elf.h alpha/linux.h alpha/linux-elf.h glibc-stdint.h"
+ 	tmake_file="${tmake_file} alpha/t-linux alpha/t-alpha"
+@@ -1468,7 +1480,7 @@
+ 	tmake_file="${tmake_file} arm/t-arm arm/t-bpabi arm/t-phoenix"
+ 	target_cpu_cname="arm7tdmi"
+ 	;;
+-arm*-*-eabi* | arm*-*-symbianelf* | arm*-*-rtems* | arm*-*-fuchsia*)
++arm*-*-eabi* | arm*-*-symbianelf* | arm*-*-rtems* | arm*-*-fuchsia* | arm*-*-eklat*)
+ 	case ${target} in
+ 	arm*eb-*-eabi*)
+ 	  tm_defines="${tm_defines} TARGET_BIG_ENDIAN_DEFAULT=1"
+@@ -1499,6 +1511,11 @@
+ 	  tmake_file="${tmake_file} arm/t-symbian"
+ 	  target_cpu_cname="arm10tdmi"
+ 	  ;;
++	arm*-*-eklat*)
++	  tm_file="$tm_file newlib-stdint.h eklat.h"
++	  tmake_file="${tmake_file} arm/t-bpabi"
++	  default_use_cxa_atexit=no
++	  ;;
+ 	esac
+ 	tm_file="${tm_file} arm/aout.h arm/arm.h"
+ 	;;
+@@ -1926,6 +1938,12 @@
+ 	tmake_file="${tmake_file} ${cpu_type}/t-darwin64-biarch t-slibgcc"
+ 	tm_file="${cpu_type}/darwin64-biarch.h ${tm_file} "
+ 	;;
++i[34567]86-*-eklat*)
++	tm_file="${tm_file} i386/unix.h i386/att.h elfos.h newlib-stdint.h i386/i386elf.h eklat.h"
++	;;
++x86_64-*-eklat*)
++	tm_file="${tm_file} i386/unix.h i386/att.h elfos.h newlib-stdint.h i386/i386elf.h eklat.h i386/x86-64.h"
++	;;
+ i[34567]86-*-elfiamcu)
+ 	tm_file="${tm_file} i386/unix.h i386/att.h elfos.h newlib-stdint.h i386/iamcu.h"
+ 	;;
+@@ -2547,6 +2570,20 @@
+ 	gcc_cv_initfini_array=yes
+ 	with_tls=${with_tls:-trad}
+ 	;;
++riscv*-*-eklat*)
++	tm_file="${tm_file} elfos.h newlib-stdint.h riscv/elf.h eklat.h"
++	tmake_file="${tmake_file} riscv/t-riscv"
++	gnu_ld=yes
++	gas=yes
++	case $target in
++	riscv32be-*|riscv64be-*)
++		tm_defines="${tm_defines} TARGET_BIG_ENDIAN_DEFAULT=1"
++		;;
++	esac
++	# Force .init_array support.  The configure script cannot always
++	# automatically detect that GAS supports it, yet we require it.
++	gcc_cv_initfini_array=yes
++	;;
+ 
+ loongarch*-*-linux*)
+ 	tm_file="elfos.h gnu-user.h linux.h linux-android.h glibc-stdint.h ${tm_file}"
+--- /dev/null
++++ gcc/config/eklat.h
+@@ -0,0 +1,61 @@
++/* Base configuration file for all Eklat targets.
++   Copyright (C) 1999-2023 Free Software Foundation, Inc.
++
++This file is part of GCC.
++
++GCC is free software; you can redistribute it and/or modify
++it under the terms of the GNU General Public License as published by
++the Free Software Foundation; either version 3, or (at your option)
++any later version.
++
++GCC is distributed in the hope that it will be useful,
++but WITHOUT ANY WARRANTY; without even the implied warranty of
++MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++GNU General Public License for more details.
++
++You should have received a copy of the GNU General Public License
++along with GCC; see the file COPYING3.  If not see
++<http://www.gnu.org/licenses/>.  */
++
++#undef TARGET_EKLAT
++#define TARGET_EKLAT 1
++ 
++#undef LIB_SPEC
++#define LIB_SPEC "%{pthread:-lpthread} -lc"
++ 
++#undef STARTFILE_SPEC
++#define STARTFILE_SPEC "%{!shared:crt0.o%s} crti.o%s"
++ 
++#define EKLAT_ENDFILE_SPEC "crtn.o%s"
++#undef ENDFILE_SPEC
++#define ENDFILE_SPEC EKLAT_ENDFILE_SPEC
++
++#undef TARGET_OS_CPP_BUILTINS
++#define TARGET_OS_CPP_BUILTINS()      \
++  do {                                \
++    builtin_define ("__eklat__");     \
++    builtin_define ("__unix__");      \
++    builtin_assert ("system=eklat");  \
++    builtin_assert ("system=unix");   \
++    builtin_assert ("system=posix");  \
++  } while(0);
++
++#define EKLAT_TARGET_LINK_SPEC "%{shared:-shared} \
++                                %{static:-static} \
++                                %{!shared: \
++                                  %{!static: \
++                                    %{rdynamic:-export-dynamic} \
++                                    -dynamic-linker /lib/ld.so \
++                                  } \
++                                }"
++
++#undef LINK_SPEC
++#define LINK_SPEC EKLAT_TARGET_LINK_SPEC
++
++#undef STANDARD_STARTFILE_PREFIX
++#define STANDARD_STARTFILE_PREFIX "/usr/lib/"
++
++#undef TARGET_LIBC_HAS_FUNCTION
++#define TARGET_LIBC_HAS_FUNCTION eklat_libc_has_function
++
++#undef SIZE_TYPE
++#define SIZE_TYPE (LONG_TYPE_SIZE == 64 ? "long unsigned int" : "unsigned int")
+--- /dev/null
++++ gcc/config/aarch64/aarch64-eklat.h
+@@ -0,0 +1,39 @@
++/* Definitions for AArch64 running Eklat
++   Copyright (C) 2016-2023 Free Software Foundation, Inc.
++
++   This file is part of GCC.
++
++   GCC is free software; you can redistribute it and/or modify it
++   under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 3, or (at your option)
++   any later version.
++
++   GCC is distributed in the hope that it will be useful, but
++   WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with GCC; see the file COPYING3.  If not see
++   <http://www.gnu.org/licenses/>.  */
++
++#ifndef GCC_AARCH64_EKLAT_H
++#define GCC_AARCH64_EKLAT_H
++
++#undef  SUBTARGET_EXTRA_LINK_SPEC
++#define SUBTARGET_EXTRA_LINK_SPEC " -maarch64eklat"
++
++#undef LINK_SPEC
++#define LINK_SPEC EKLAT_TARGET_LINK_SPEC AARCH64_ERRATA_LINK_SPEC
++
++#define GNU_USER_TARGET_MATHFILE_SPEC \
++  "%{Ofast|ffast-math|funsafe-math-optimizations:%{!shared:crtfastmath.o%s}}"
++
++#undef ENDFILE_SPEC
++#define ENDFILE_SPEC \
++    GNU_USER_TARGET_MATHFILE_SPEC " " \
++    EKLAT_ENDFILE_SPEC
++
++#define TARGET_ASM_FILE_END file_end_indicate_exec_stack
++
++#endif  /* GCC_AARCH64_EKLAT_H */
+--- /dev/null
++++ gcc/config/aarch64/t-aarch64-eklat
+@@ -0,0 +1,21 @@
++# Machine description for AArch64 architecture.
++#  Copyright (C) 2016-2023 Free Software Foundation, Inc.
++#
++#  This file is part of GCC.
++#
++#  GCC is free software; you can redistribute it and/or modify it
++#  under the terms of the GNU General Public License as published by
++#  the Free Software Foundation; either version 3, or (at your option)
++#  any later version.
++#
++#  GCC is distributed in the hope that it will be useful, but
++#  WITHOUT ANY WARRANTY; without even the implied warranty of
++#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++#  General Public License for more details.
++#
++#  You should have received a copy of the GNU General Public License
++#  along with GCC; see the file COPYING3.  If not see
++#  <http://www.gnu.org/licenses/>.
++
++LIB1ASMSRC   = aarch64/lib1funcs.asm
++LIB1ASMFUNCS = _aarch64_sync_cache_range
+--- /dev/null
++++ gcc/config/eklat.opt
+@@ -0,0 +1,38 @@
++; Options for systems using eklat.h.
++
++; Copyright (C) 2011-2023 Free Software Foundation, Inc.
++;
++; This file is part of GCC.
++;
++; GCC is free software; you can redistribute it and/or modify it under
++; the terms of the GNU General Public License as published by the Free
++; Software Foundation; either version 3, or (at your option) any later
++; version.
++;
++; GCC is distributed in the hope that it will be useful, but WITHOUT ANY
++; WARRANTY; without even the implied warranty of MERCHANTABILITY or
++; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++; for more details.
++;
++; You should have received a copy of the GNU General Public License
++; along with GCC; see the file COPYING3.  If not see
++; <http://www.gnu.org/licenses/>.
++
++; See the GCC internals manual (options.texi) for a description of
++; this file's format.
++
++; Please try to keep this file in ASCII collating order.
++
++posix
++Driver
++
++profile
++Driver
++
++pthread
++Driver
++
++rdynamic
++Driver
++
++; This comment is to ensure we retain the blank line above.
+--- /dev/null
++++ gcc/config/eklat.opt.urls
+@@ -0,0 +1,9 @@
++; Autogenerated by regenerate-opt-urls.py from gcc/config/eklat.opt and generated HTML
++
++; skipping UrlSuffix for 'pthread' due to multiple URLs:
++;   duplicate: 'gcc/Link-Options.html#index-pthread-1'
++;   duplicate: 'gcc/Preprocessor-Options.html#index-pthread'
++
++rdynamic
++UrlSuffix(gcc/Link-Options.html#index-rdynamic)
++
+--- fixincludes/mkfixinc.sh
++++ fixincludes/mkfixinc.sh
+@@ -20,6 +20,7 @@
+     powerpcle-*-eabisim* | \
+     powerpcle-*-eabi* | \
+     *-*-vxworks7* | \
++    *-eklat* | \
+     *-musl* )
+ 	#  IF there is no include fixing,
+ 	#  THEN create a no-op fixer and exit
+--- gcc/configure
++++ gcc/configure
+@@ -16526,6 +16526,9 @@
+   # as canadian for Windows hosts.
+   lt_cv_deplibs_check_method=pass_all
+   ;;
++eklat*)
++  lt_cv_deplibs_check_method=pass_all
++  ;;
+ esac
+ 
+ fi
+@@ -19148,6 +19151,9 @@
+   openbsd*)
+     with_gnu_ld=no
+     ;;
++  eklat*)
++    link_all_deplibs=no
++    ;;
+   esac
+ 
+   ld_shlibs=yes
+@@ -19438,6 +19444,9 @@
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    eklat*)
++      ;;
++
+     *)
+       if $LD --help 2>&1 | $GREP ': supported targets:.* elf' > /dev/null; then
+ 	archive_cmds='$CC -shared $libobjs $deplibs $compiler_flags ${wl}-soname $wl$soname -o $lib'
+@@ -21134,6 +21143,14 @@
+       ;;
+   esac
+   ;;
++eklat*)
++  version_type=linux
++  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}${major} ${libname}${shared_ext}'
++  soname_spec='${libname}${release}${shared_ext}$major'
++  shlibpath_var=LD_LIBRARY_PATH
++  hardcode_into_libs=yes
++  hardcode_libdir_flag_spec='${wl}-rpath ${wl}$objdir'
++  ;;
+ *)
+   dynamic_linker=no
+   ;;
+@@ -21363,6 +21380,11 @@
+ 
+     ;;
+ 
++  eklat*)
++    lt_cv_dlopen="dlopen"
++    lt_cv_dlopen_libs="-ldl"
++    ;;
++
+   *)
+     ac_fn_c_check_func "$LINENO" "shl_load" "ac_cv_func_shl_load"
+ if test "x$ac_cv_func_shl_load" = xyes; then :
+@@ -23296,6 +23318,11 @@
+         ld_shlibs_CXX=yes
+         ;;
+ 
++      eklat*)
++        ld_shlibs_CXX=yes
++        hardcode_libdir_flag_spec_CXX='${wl}-rpath ${wl}$objdir'
++        ;;
++
+       *)
+         # FIXME: insert proper C++ library support
+         ld_shlibs_CXX=no
+@@ -24860,6 +24887,14 @@
+       ;;
+   esac
+   ;;
++eklat*)
++  version_type=linux
++  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}${major} ${libname}${shared_ext}'
++  soname_spec='${libname}${release}${shared_ext}$major'
++  shlibpath_var=LD_LIBRARY_PATH
++  hardcode_into_libs=yes
++  hardcode_libdir_flag_spec='${wl}-rpath ${wl}$objdir'
++  ;;
+ *)
+   dynamic_linker=no
+   ;;
+@@ -35007,7 +35007,7 @@
+ $as_echo "$ld_relro_support" >&6; }
+ 
+ case $target_os in
+-linux* | gnu*)
++linux* | gnu* | eklat*)
+   # -fhardened is only supported on GNU/Linux.
+   fhardened_support=yes
+   ;;
+--- gcc/config.host
++++ gcc/config.host
+@@ -100,7 +100,7 @@
+ 
+ case ${host} in
+   aarch64*-*-freebsd* | aarch64*-*-linux* | aarch64*-*-fuchsia* |\
+-  aarch64*-*-darwin*)
++  aarch64*-*-darwin* | aarch64*-*-eklat*)
+     case ${target} in
+       aarch64*-*-*)
+ 	host_extra_gcc_objs="driver-aarch64.o"
+@@ -108,7 +108,8 @@
+ 	;;
+     esac
+     ;;
+-  arm*-*-freebsd* | arm*-*-netbsd* | arm*-*-linux* | arm*-*-fuchsia*)
++  arm*-*-freebsd* | arm*-*-netbsd* | arm*-*-linux* | arm*-*-fuchsia* |\
++  arm*-*-eklat*)
+     case ${target} in
+       arm*-*-*)
+ 	host_extra_gcc_objs="driver-arm.o"

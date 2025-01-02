@@ -1,0 +1,6 @@
+cmsg CMSG_AUTOEQUIP_ITEM = 0x010A {
+    u8 source_bag;
+    u8 source_slot;
+} {
+    versions = "1 2 3";
+}

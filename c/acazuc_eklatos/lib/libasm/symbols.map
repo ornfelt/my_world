@@ -1,0 +1,6 @@
+LIBASM_1.0 {
+	global:
+		asm_riscv_disas;
+		asm_x86_disas;
+	local: *;
+};

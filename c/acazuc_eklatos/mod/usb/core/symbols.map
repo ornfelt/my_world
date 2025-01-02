@@ -1,0 +1,16 @@
+USB_1.0 {
+	global:
+		kmod;
+		usb_ctrl_transfer;
+		usb_device_alloc;
+		usb_device_probe;
+		usb_intr_pipe_alloc;
+		usb_intr_pipe_free;
+		usb_intr_transfer;
+		usb_isoc_pipe_alloc;
+		usb_isoc_pipe_free;
+		usb_isoc_transfer;
+		usb_register_itf_probes;
+		usb_use_interface;
+	local: *;
+};

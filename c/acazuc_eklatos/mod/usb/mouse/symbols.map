@@ -1,0 +1,5 @@
+USB_MOUSE_1.0 {
+	global:
+		kmod;
+	local: *;
+};

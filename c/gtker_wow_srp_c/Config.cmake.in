@@ -1,0 +1,9 @@
+@PACKAGE_INIT@
+
+get_filename_component(PACKAGE_PREFIX_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../" ABSOLUTE)
+
+@STATIC_LIBRARY_INIT@
+
+@SHARED_LIBRARY_INIT@
+
+include("${CMAKE_CURRENT_LIST_DIR}/WowSrpTargets.cmake")

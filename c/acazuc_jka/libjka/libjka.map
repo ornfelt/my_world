@@ -1,0 +1,10 @@
+JKA_1.0 {
+	global:
+		jka_stream_bandpass_new;
+		jka_stream_delete;
+		jka_stream_highpass_new;
+		jka_stream_lowpass_new;
+		jka_stream_resample_new;
+		jka_stream_wave_new;
+	local: *;
+};

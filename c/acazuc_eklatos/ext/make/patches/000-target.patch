@@ -1,0 +1,11 @@
+--- src/makeint.h
++++ src/makeint.h
+@@ -671,7 +671,7 @@
+ /* We omit these declarations on non-POSIX systems which define _POSIX_VERSION,
+    because such systems often declare them in header files anyway.  */
+ 
+-#if !defined (__GNU_LIBRARY__) && !defined (POSIX) && !defined (_POSIX_VERSION) && !defined(WINDOWS32)
++#if !defined(__eklat__) && !defined (__GNU_LIBRARY__) && !defined (POSIX) && !defined (_POSIX_VERSION) && !defined(WINDOWS32)
+ 
+ # ifndef VMS
+ long int lseek ();

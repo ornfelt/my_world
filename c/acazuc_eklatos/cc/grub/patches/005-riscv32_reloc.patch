@@ -1,0 +1,11 @@
+--- util/grub-mkimagexx.c
++++ util/grub-mkimagexx.c
+@@ -1310,7 +1310,7 @@
+ 		  */
+ 
+ 		 sym_addr += addend;
+-		 off = sym_addr - target_section_addr - offset - image_target->vaddr_offset;
++		 off = (grub_uint64_t)sym_addr - target_section_addr - offset - (grub_uint64_t)image_target->vaddr_offset;
+ 
+ 		 switch (ELF_R_TYPE (info))
+ 		   {

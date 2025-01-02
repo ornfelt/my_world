@@ -1,0 +1,582 @@
+--- include/multiboot2.h
++++ include/multiboot2.h
+@@ -78,6 +78,7 @@
+ 
+ #define MULTIBOOT2_ARCHITECTURE_I386  0
+ #define MULTIBOOT2_ARCHITECTURE_MIPS32  4
++#define MULTIBOOT2_ARCHITECTURE_AARCH64 8
+ #define MULTIBOOT_HEADER_TAG_OPTIONAL 1
+ 
+ #define MULTIBOOT_LOAD_PREFERENCE_NONE 0
+--- /dev/null
++++ grub-core/lib/arm64/relocator.c
+@@ -0,0 +1,167 @@
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2024  Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>;.
++ *
++ */
++#include <grub/mm.h>
++#include <grub/misc.h>
++
++#include <grub/types.h>
++#include <grub/types.h>
++#include <grub/err.h>
++#include <grub/cache.h>
++
++#include <grub/arm64/relocator.h>
++#include <grub/relocator_private.h>
++
++/* Defines to simplify creating machine code instructions */
++
++#define AARCH64_INSTR_MOVZ	0xd2800000
++#define AARCH64_INSTR_MOVK	0xf2800000
++#define AARCH64_INSTR_BR	0xd61f0000
++#define AARCH64_INSTR_NOP	0xd503201f
++
++#define AARCH64_INSTR_SHIFT_16 1 << 21
++#define AARCH64_INSTR_SHIFT_32 2 << 21
++#define AARCH64_INSTR_SHIFT_48 3 << 21
++
++extern grub_uint8_t grub_relocator_forward_start;
++extern grub_uint8_t grub_relocator_forward_end;
++extern grub_uint8_t grub_relocator_backward_start;
++extern grub_uint8_t grub_relocator_backward_end;
++extern grub_uint32_t grub_relocator_check_endian;
++
++#define REGW_SIZEOF (4 * sizeof (grub_uint32_t))
++#define JUMP_SIZEOF (2 * sizeof (grub_uint32_t))
++
++#define RELOCATOR_SRC_SIZEOF(x) (&grub_relocator_##x##_end \
++				 - &grub_relocator_##x##_start)
++#define RELOCATOR_SIZEOF(x) (RELOCATOR_SRC_SIZEOF(x) \
++			     + REGW_SIZEOF * 3)
++
++grub_size_t grub_relocator_align = sizeof (grub_uint32_t);
++grub_size_t grub_relocator_forward_size;
++grub_size_t grub_relocator_backward_size;
++grub_size_t grub_relocator_jumper_size = JUMP_SIZEOF + REGW_SIZEOF;
++
++void
++grub_cpu_relocator_init (void)
++{
++  grub_relocator_forward_size = RELOCATOR_SIZEOF (forward);
++  grub_relocator_backward_size = RELOCATOR_SIZEOF (backward);
++}
++
++static void
++write_reg (int regn, grub_uint64_t val, void **target)
++{
++  grub_uint16_t hword;
++
++  hword = val >> 48 & 0xFFFF;
++  *(grub_uint32_t *) *target = AARCH64_INSTR_MOVZ | AARCH64_INSTR_SHIFT_48 | (hword << 5) | regn;
++  *target = ((grub_uint32_t *) *target) + 1;
++
++  hword = val >> 32 & 0xFFFF;
++  *(grub_uint32_t *) *target = AARCH64_INSTR_MOVK | AARCH64_INSTR_SHIFT_32 | (hword << 5) | regn;
++  *target = ((grub_uint32_t *) *target) + 1;
++
++  hword = val >> 16 & 0xFFFF;
++  *(grub_uint32_t *) *target = AARCH64_INSTR_MOVK | AARCH64_INSTR_SHIFT_16 | (hword << 5) | regn;
++  *target = ((grub_uint32_t *) *target) + 1;
++
++  hword = val >> 0 & 0xFFFF;
++  *(grub_uint32_t *) *target = AARCH64_INSTR_MOVK | (hword << 5) | regn;
++  *target = ((grub_uint32_t *) *target) + 1;
++}
++
++static void
++write_jump (int regn, void **target)
++{
++  /* br x(regn) */
++  *(grub_uint32_t *) *target = AARCH64_INSTR_BR | (regn << 5);
++  *target = ((grub_uint32_t *) *target) + 1;
++
++  /* nop.  */
++  *(grub_uint32_t *) *target = AARCH64_INSTR_NOP;
++  *target = ((grub_uint32_t *) *target) + 1;
++}
++
++void
++grub_cpu_relocator_jumper (void *rels, grub_addr_t addr)
++{
++  write_reg (8, addr, &rels);
++  write_jump (8, &rels);
++}
++
++void
++grub_cpu_relocator_backward (void *ptr, void *src, void *dest,
++			     grub_size_t size)
++{
++  write_reg (8, (grub_uint64_t) src, &ptr);
++  write_reg (9, (grub_uint64_t) dest, &ptr);
++  write_reg (10, (grub_uint64_t) size, &ptr);
++
++  grub_memcpy (ptr, &grub_relocator_backward_start,
++	       RELOCATOR_SRC_SIZEOF (backward));
++}
++
++void
++grub_cpu_relocator_forward (void *ptr, void *src, void *dest,
++			    grub_size_t size)
++{
++  write_reg (8, (grub_uint64_t) src, &ptr);
++  write_reg (9, (grub_uint64_t) dest, &ptr);
++  write_reg (10, (grub_uint64_t) size, &ptr);
++
++  grub_memcpy (ptr, &grub_relocator_forward_start, 
++	       RELOCATOR_SRC_SIZEOF (forward));
++}
++
++grub_err_t
++grub_relocator64_boot (struct grub_relocator *rel,
++		       struct grub_relocator64_state state)
++{
++  grub_relocator_chunk_t ch;
++  void *ptr;
++  grub_err_t err;
++  void *relst;
++  grub_size_t relsize;
++  grub_size_t stateset_size = 32 * REGW_SIZEOF + JUMP_SIZEOF;
++  unsigned i;
++
++  err = grub_relocator_alloc_chunk_align (rel, &ch, 0,
++					  (0xffffffff - stateset_size)
++					  + 1, stateset_size,
++					  sizeof (grub_uint32_t),
++					  GRUB_RELOCATOR_PREFERENCE_NONE, 0);
++  if (err)
++    return err;
++
++  ptr = get_virtual_current_address (ch);
++  for (i = 0; i < 32; i++)
++    write_reg (i, state.x[i], &ptr);
++  write_jump (8, &ptr);
++
++  err = grub_relocator_prepare_relocs (rel, get_physical_target_address(ch), &relst, &relsize);
++  if (err)
++    return err;
++
++  grub_arch_sync_caches ((void *) relst, relsize);
++
++  ((void (*) (void)) relst) ();
++
++  /* Not reached.  */
++  return GRUB_ERR_NONE;
++}
+--- /dev/null
++++ grub-core/lib/arm64/relocator_asm.S
+@@ -0,0 +1,52 @@
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2024  Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>;.
++ */
++
++#include <grub/symbol.h>
++
++	.p2align	4	/* force 16-byte alignment */
++
++VARIABLE (grub_relocator_forward_start)
++
++copycont1:
++	ldrb w11, [x8]
++	strb w11, [x9]
++	add x8, x8, #1
++	add x9, x9, #1
++	subs x10, x10, #1
++	bne copycont1
++
++VARIABLE (grub_relocator_forward_end)
++
++	.p2align	4	/* force 16-byte alignment */
++
++VARIABLE (grub_relocator_backward_start)
++
++	add x9, x9, x10
++	add x8, x8, x10
++	sub x9, x9, #1
++	sub x8, x8, #1
++
++copycont2:
++	ldrb w11, [x8]
++	strb w11, [x9]
++	sub x8, x8, #1
++	sub x9, x9, #1
++	subs x10, x10, #1
++	bne copycont2
++
++VARIABLE (grub_relocator_backward_end)
+--- /dev/null
++++ include/grub/arm64/relocator.h
+@@ -0,0 +1,38 @@
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2024 Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>;.
++ */
++
++#ifndef GRUB_RELOCATOR_CPU_HEADER
++#define GRUB_RELOCATOR_CPU_HEADER	1
++
++#include <grub/types.h>
++#include <grub/err.h>
++#include <grub/relocator.h>
++
++struct grub_relocator64_state
++{
++  grub_uint64_t x[32];
++};
++
++grub_err_t
++grub_relocator64_boot (struct grub_relocator *rel,
++		       struct grub_relocator64_state state);
++
++#define grub_relocator64_efi_boot grub_relocator64_boot
++#define grub_relocator64_efi_state grub_relocator64_state
++
++#endif /* ! GRUB_RELOCATOR_CPU_HEADER */
+--- /dev/null
++++ grub-core/mmap/arm64/uppermem.c
+@@ -0,0 +1,72 @@
++/* Compute amount of lower and upper memory till the first hole. */
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2024  Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>;.
++ */
++
++#include <grub/memory.h>
++#include <grub/mm.h>
++#include <grub/misc.h>
++#include <grub/cpu/memory.h>
++
++/* Helper for grub_mmap_get_lower.  */
++static int
++lower_hook (grub_uint64_t addr, grub_uint64_t size, grub_memory_type_t type,
++	    void *data)
++{
++  grub_uint64_t *lower = data;
++
++  if (type != GRUB_MEMORY_AVAILABLE)
++    return 0;
++  if (addr == 0)
++    *lower = size;
++  return 0;
++}
++
++grub_uint64_t
++grub_mmap_get_lower (void)
++{
++  grub_uint64_t lower = 0;
++
++  grub_mmap_iterate (lower_hook, &lower);
++  if (lower > GRUB_ARCH_LOWMEMMAXSIZE)
++    lower = GRUB_ARCH_LOWMEMMAXSIZE;
++  return lower;
++}
++
++/* Helper for grub_mmap_get_upper.  */
++static int
++upper_hook (grub_uint64_t addr, grub_uint64_t size, grub_memory_type_t type,
++	    void *data)
++{
++  grub_uint64_t *upper = data;
++
++  if (type != GRUB_MEMORY_AVAILABLE)
++    return 0;
++  if (addr <= GRUB_ARCH_HIGHMEMPSTART && addr + size
++      > GRUB_ARCH_HIGHMEMPSTART)
++    *upper = addr + size - GRUB_ARCH_HIGHMEMPSTART;
++  return 0;
++}
++
++grub_uint64_t
++grub_mmap_get_upper (void)
++{
++  grub_uint64_t upper = 0;
++
++  grub_mmap_iterate (upper_hook, &upper);
++  return upper;
++}
+--- /dev/null
++++ include/grub/arm64/memory.h
+@@ -0,0 +1,60 @@
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2024 Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>;.
++ */
++
++#ifndef GRUB_MEMORY_CPU_HEADER
++#define GRUB_MEMORY_CPU_HEADER	1
++
++#ifndef ASM_FILE
++#include <grub/symbol.h>
++#include <grub/err.h>
++#include <grub/types.h>
++#endif
++
++#define GRUB_ARCH_LOWMEMVSTART 0x80000000
++#define GRUB_ARCH_LOWMEMPSTART 0x00000000
++#define GRUB_ARCH_LOWMEMMAXSIZE 0x10000000
++#define GRUB_ARCH_HIGHMEMPSTART 0x10000000
++
++#ifndef ASM_FILE
++
++typedef grub_addr_t grub_phys_addr_t;
++
++static inline grub_phys_addr_t
++grub_vtop (void *a)
++{
++  return (grub_phys_addr_t) a;
++}
++
++static inline void *
++grub_map_memory (grub_phys_addr_t a, grub_size_t size __attribute__ ((unused)))
++{
++  return (void *) a;
++}
++
++static inline void
++grub_unmap_memory (void *a __attribute__ ((unused)),
++		   grub_size_t size __attribute__ ((unused)))
++{
++}
++
++grub_uint64_t grub_mmap_get_lower (void);
++grub_uint64_t grub_mmap_get_upper (void);
++
++#endif
++
++#endif
+--- grub-core/loader/multiboot.c
++++ grub-core/loader/multiboot.c
+@@ -127,7 +128,7 @@
+ }
+
+ #ifdef GRUB_MACHINE_EFI
+-#ifdef __x86_64__
++#if defined (__x86_64__) || defined (__aarch64__)
+ #define grub_relocator_efi_boot		grub_relocator64_efi_boot
+ #define grub_relocator_efi_state	grub_relocator64_efi_state
+ #endif
+@@ -133,6 +141,14 @@
+ #endif
+ #endif
+ 
++#if defined(__aarch64__)
++#define grub_relocator_boot	grub_relocator64_boot
++#define grub_relocator_state	grub_relocator64_state
++#else
++#define grub_relocator_boot	grub_relocator32_boot
++#define grub_relocator_state	grub_relocator32_state
++#endif
++
+ #ifdef grub_relocator_efi_boot
+ static void
+ efi_boot (struct grub_relocator *rel,
+@@ -159,15 +175,15 @@
+ 
+ #if defined (__i386__) || defined (__x86_64__)
+ static void
+-normal_boot (struct grub_relocator *rel, struct grub_relocator32_state state)
++normal_boot (struct grub_relocator *rel, struct grub_relocator_state state)
+ {
+-  grub_relocator32_boot (rel, state, 0);
++  grub_relocator_boot (rel, state, 0);
+ }
+ #else
+ static void
+-normal_boot (struct grub_relocator *rel, struct grub_relocator32_state state)
++normal_boot (struct grub_relocator *rel, struct grub_relocator_state state)
+ {
+-  grub_relocator32_boot (rel, state);
++  grub_relocator_boot (rel, state);
+ }
+ #endif
+ 
+@@ -177,9 +193,9 @@
+   grub_err_t err;
+ 
+ #ifdef GRUB_USE_MULTIBOOT2
+-  struct grub_relocator32_state state = MULTIBOOT2_INITIAL_STATE;
++  struct grub_relocator_state state = MULTIBOOT2_INITIAL_STATE;
+ #else
+-  struct grub_relocator32_state state = MULTIBOOT_INITIAL_STATE;
++  struct grub_relocator_state state = MULTIBOOT_INITIAL_STATE;
+ #endif
+   state.MULTIBOOT_ENTRY_REGISTER = GRUB_MULTIBOOT (payload_eip);
+ 
+--- grub-core/loader/multiboot_mbi2.c
++++ grub-core/loader/multiboot_mbi2.c
+@@ -902,7 +902,7 @@
+       }
+   }
+
+-#if defined (GRUB_MACHINE_EFI) && defined (__x86_64__)
++#if defined (GRUB_MACHINE_EFI) && (defined (__x86_64__) || defined (__aarch64__))
+   {
+     struct multiboot_tag_efi64 *tag = (struct multiboot_tag_efi64 *) ptrorig;
+     tag->type = MULTIBOOT_TAG_TYPE_EFI64;
+@@ -1001,7 +1001,7 @@
+       }
+ #endif
+
+-#ifdef __x86_64__
++#if defined ( __x86_64__) || defined (__aarch64__)
+       {
+ 	struct multiboot_tag_efi64_ih *tag = (struct multiboot_tag_efi64_ih *) ptrorig;
+ 	tag->type = MULTIBOOT_TAG_TYPE_EFI64_IH;
+--- /dev/null
++++ include/grub/arm64/multiboot.h
+@@ -0,0 +1,51 @@
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2024  Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>;.
++ */
++
++#ifndef GRUB_MULTIBOOT_CPU_HEADER
++#define GRUB_MULTIBOOT_CPU_HEADER	1
++
++#define MULTIBOOT2_INITIAL_STATE  { .x[0] = MULTIBOOT2_BOOTLOADER_MAGIC, \
++    .x[2] = 0,								  \
++    .x[3] = 0,								  \
++    }
++#define MULTIBOOT_INITIAL_STATE  { .x[0] = MULTIBOOT_BOOTLOADER_MAGIC, \
++    .x[2] = 0,								\
++    .x[3] = 0,								\
++    }
++#define MULTIBOOT_ENTRY_REGISTER x[8]
++#define MULTIBOOT_MBI_REGISTER x[1]
++#define MULTIBOOT2_ARCHITECTURE_CURRENT MULTIBOOT2_ARCHITECTURE_AARCH64
++
++#ifdef GRUB_MACHINE_EFI
++
++#define MULTIBOOT_EFI_INITIAL_STATE  { .x[0] = MULTIBOOT_BOOTLOADER_MAGIC, \
++    .x[2] = 0,								    \
++    .x[3] = 0,								    \
++    }
++#define MULTIBOOT2_EFI_INITIAL_STATE  { .x[0] = MULTIBOOT2_BOOTLOADER_MAGIC, \
++    .x[2] = 0,								      \
++    .x[3] = 0,								      \
++    }
++#define MULTIBOOT_EFI_ENTRY_REGISTER x[8]
++#define MULTIBOOT_EFI_MBI_REGISTER x[1]
++
++#endif /* GRUB_MACHINE_EFI */
++
++#define MULTIBOOT_ELF64_MACHINE EM_AARCH64
++
++#endif /* ! GRUB_MULTIBOOT_CPU_HEADER */
+--- grub-core/Makefile.core.def
++++ grub-core/Makefile.core.def
+@@ -1708,6 +1708,8 @@
+   x86_64_xen = lib/x86_64/xen/relocator.S;
+   xen = lib/i386/relocator_common_c.c;
+   x86_64_efi = lib/x86_64/efi/relocator.c;
++  arm64_efi = lib/arm64/relocator.c;
++  arm64_efi = lib/arm64/relocator_asm.S;
+ 
+   extra_dist = lib/i386/relocator_common.S;
+   extra_dist = kern/powerpc/cache_flush.S;
+@@ -1717,6 +1719,7 @@
+   enable = x86;
+   enable = i386_xen_pvh;
+   enable = xen;
++  enable = arm64_efi;
+ };
+ 
+ module = {
+@@ -1818,6 +1821,7 @@
+   enable = x86;
+   enable = i386_xen_pvh;
+   enable = mips;
++  enable = arm64_efi;
+ };
+ 
+ module = {
+@@ -1945,6 +1949,8 @@
+ 
+   mips = mmap/mips/uppermem.c;
+ 
++  arm64_efi = mmap/arm64/uppermem.c;
++
+   enable = x86;
+   enable = i386_xen_pvh;
+   enable = ia64_efi;

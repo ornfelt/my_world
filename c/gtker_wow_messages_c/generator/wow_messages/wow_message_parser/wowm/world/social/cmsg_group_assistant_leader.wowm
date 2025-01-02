@@ -1,0 +1,7 @@
+#tag_all versions "1 2 3";
+
+cmsg CMSG_GROUP_ASSISTANT_LEADER = 0x028F {
+    Guid guid;
+    Bool set_assistant;
+}
+

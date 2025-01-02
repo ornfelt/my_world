@@ -1,0 +1,11 @@
+--- src/Makefile.in
++++ src/Makefile.in
+@@ -402,7 +402,7 @@
+   uceil_log2.c ui_div.c ui_ui_sub.c \
+   radius.c balls.c
+ 
+-libmpc_la_LIBADD = @LTLIBOBJS@
++libmpc_la_LIBADD = @LTLIBOBJS@ -lm
+ all: all-am
+ 
+ .SUFFIXES:

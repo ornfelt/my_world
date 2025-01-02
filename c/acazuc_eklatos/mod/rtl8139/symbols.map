@@ -1,0 +1,5 @@
+RTL8139_1.0 {
+	global:
+		kmod;
+	local: *;
+};

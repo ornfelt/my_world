@@ -1,0 +1,34 @@
+--- grub-core/loader/multiboot_elfxx.c
++++ grub-core/loader/multiboot_elfxx.c
+@@ -55,14 +55,21 @@
+ static int
+ CONCAT(grub_multiboot_is_elf, XX) (void *buffer)
+ {
++#if (defined(MULTIBOOT_LOAD_ELF32) && defined(MULTIBOOT_ELF32_MACHINE)) \
++ || (defined(MULTIBOOT_LOAD_ELF64) && defined(MULTIBOOT_ELF64_MACHINE))
+   Elf_Ehdr *ehdr = (Elf_Ehdr *) buffer;
+ 
+   return ehdr->e_ident[EI_CLASS] == ELFCLASSXX;
++#else
++  return 0;
++#endif
+ }
+ 
+ static grub_err_t
+ CONCAT(grub_multiboot_load_elf, XX) (mbi_load_data_t *mld)
+ {
++#if (defined(MULTIBOOT_LOAD_ELF32) && defined(MULTIBOOT_ELF32_MACHINE)) \
++ || (defined(MULTIBOOT_LOAD_ELF64) && defined(MULTIBOOT_ELF64_MACHINE))
+   Elf_Ehdr *ehdr = (Elf_Ehdr *) mld->buffer;
+   char *phdr_base;
+   grub_err_t err;
+@@ -325,6 +332,9 @@
+ #undef phdr
+ 
+   return grub_errno;
++#else
++  return grub_error (GRUB_ERR_UNKNOWN_OS, N_("this ELF file is not of supported"));
++#endif
+ }
+ 
+ #undef XX

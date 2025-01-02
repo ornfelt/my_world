@@ -1,0 +1,9 @@
+/// Used in `LiquidType.dbc`.
+enum OceanType : u8 {
+    FIRE = 0;
+    SLIME = 2;
+    WATER = 3;
+} {
+    versions = "1.12";
+    non_network_type = "true";
+}

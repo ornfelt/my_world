@@ -1,0 +1,22 @@
+--- gnulib-local/lib/libxml/xmlversion.in.h
++++ gnulib-local/lib/libxml/xmlversion.in.h
+@@ -302,7 +302,7 @@
+  *
+  * Whether iconv support is available
+  */
+-#if 1
++#if 0
+ #define LIBXML_ICONV_ENABLED
+ #endif
+ 
+--- gettext-tools/gnulib-lib/libxml/xmlversion.in.h
++++ gettext-tools/gnulib-lib/libxml/xmlversion.in.h
+@@ -302,7 +302,7 @@
+  *
+  * Whether iconv support is available
+  */
+-#if 1
++#if 0
+ #define LIBXML_ICONV_ENABLED
+ #endif
+ 

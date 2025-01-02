@@ -1,0 +1,66 @@
+--- libgcc/config.host
++++ libgcc/config.host
+@@ -465,6 +465,14 @@
+ 	tmake_file="${tmake_file} ${cpu_type}/t-softfp t-softfp t-crtfm"
+ 	tmake_file="${tmake_file} t-dfprules"
+ 	;;
++aarch64*-*-eklat)
++	extra_parts="$extra_parts crtbegin.o crtend.o crti.o crtn.o"
++	extra_parts="$extra_parts crtfastmath.o"
++	tmake_file="${tmake_file} ${cpu_type}/t-aarch64"
++	tmake_file="${tmake_file} ${cpu_type}/t-lse t-slibgcc-libgcc"
++	tmake_file="${tmake_file} ${cpu_type}/t-softfp t-softfp t-crtfm"
++	md_unwind_header=aarch64/aarch64-unwind.h
++	;;
+ alpha*-*-linux*)
+ 	tmake_file="${tmake_file} alpha/t-alpha alpha/t-ieee t-crtfm alpha/t-linux"
+ 	extra_parts="$extra_parts crtfastmath.o"
+@@ -578,6 +586,15 @@
+ 	extra_parts="$extra_parts crtfastmath.o"
+ 	unwind_header=config/arm/unwind-arm.h
+ 	;;
++arm*-*-eklat*)
++	extra_parts="$extra_parts crtbegin.o crtend.o crti.o crtn.o"
++	extra_parts="$extra_parts crtfastmath.o"
++	tmake_file="${tmake_file} arm/t-arm arm/t-elf t-fixedpoint-gnu-prefix"
++	tmake_file="${tmake_file} arm/t-bpabi t-crtfm"
++	tmake_file="${tmake_file} t-softfp-sfdf t-softfp-excl arm/t-softfp t-softfp"
++	tm_file="${tm_file} arm/bpabi-lib.h"
++	unwind_header=config/arm/unwind-arm.h
++	;;
+ avr-*-*)
+ 	# Make HImode functions for AVR
+ 	tmake_file="${cpu_type}/t-avr t-fpbit"
+@@ -796,6 +813,10 @@
+ 	tm_file="${tm_file} i386/elf-lib.h"
+ 	md_unwind_header=i386/gnu-unwind.h
+ 	;;
++i[34567]86-*-eklat*)
++	extra_parts="$extra_parts crti.o crtbegin.o crtend.o crtn.o"
++	tmake_file="$tmake_file i386/t-crtstuff t-crtstuff-pic t-libgcc-pic"
++	;;
+ x86_64-*-linux*)
+ 	extra_parts="$extra_parts crtprec32.o crtprec64.o crtprec80.o crtfastmath.o"
+ 	tmake_file="${tmake_file} i386/t-crtpc t-crtfm i386/t-crtstuff t-dfprules"
+@@ -814,6 +835,10 @@
+ 	tm_file="${tm_file} i386/elf-lib.h"
+ 	md_unwind_header=i386/gnu-unwind.h
+ 	;;
++x86_64-*-eklat*)
++	extra_parts="$extra_parts crti.o crtbegin.o crtend.o crtn.o"
++	tmake_file="$tmake_file i386/t-crtstuff t-crtstuff-pic t-libgcc-pic"
++	;;
+ i[34567]86-pc-msdosdjgpp*)
+ 	;;
+ i[34567]86-*-lynxos*)
+@@ -1356,6 +1381,10 @@
+ 	tmake_file="${tmake_file} riscv/t-crtstuff riscv/t-softfp${host_address} t-softfp riscv/t-elf riscv/t-elf${host_address} t-slibgcc-libgcc"
+ 	extra_parts="$extra_parts crtbegin.o crtend.o crti.o crtn.o crtendS.o crtbeginT.o"
+ 	;;
++riscv*-*-eklat*)
++	tmake_file="${tmake_file} riscv/t-softfp${host_address} t-softfp riscv/t-elf riscv/t-elf${host_address} t-slibgcc-libgcc"
++	extra_parts="$extra_parts crtbegin.o crtend.o crti.o crtn.o"
++	;;
+ riscv*-*-*)
+ 	tmake_file="${tmake_file} riscv/t-softfp${host_address} t-softfp riscv/t-elf riscv/t-elf${host_address}"
+ 	extra_parts="$extra_parts crtbegin.o crtend.o crti.o crtn.o"

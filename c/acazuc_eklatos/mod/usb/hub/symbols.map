@@ -1,0 +1,5 @@
+USB_HUB_1.0 {
+	global:
+		kmod;
+	local: *;
+};

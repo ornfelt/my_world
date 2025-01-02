@@ -1,0 +1,19 @@
+JPEG_1.0 {
+	global:
+		jpeg_free;
+		jpeg_get_err;
+		jpeg_get_info;
+		jpeg_get_thumbnail;
+		jpeg_init_io;
+		jpeg_new;
+		jpeg_read_data;
+		jpeg_read_headers;
+		jpeg_set_info;
+		jpeg_set_quality;
+		jpeg_set_restart_interval;
+		jpeg_set_subsampling;
+		jpeg_set_thumbnail;
+		jpeg_write_data;
+		jpeg_write_headers;
+	local: *;
+};

@@ -1,0 +1,13 @@
+smsg SMSG_DEFENSE_MESSAGE = 0x033B { /* Opcode different from the rest */
+    Area area;
+    SizedCString message;
+} {
+    versions = "1.12";
+}
+
+smsg SMSG_DEFENSE_MESSAGE = 0x033A { /* Opcode different from the rest */
+    Area area;
+    SizedCString message;
+} {
+    paste_versions = "2.4.3 3.3.5";
+}

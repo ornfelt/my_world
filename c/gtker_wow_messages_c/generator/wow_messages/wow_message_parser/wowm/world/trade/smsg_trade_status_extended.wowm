@@ -1,0 +1,80 @@
+struct TradeSlot {
+    /// cmangos/vmangos/mangoszero: sets to index of array
+    u8 trade_slot_number;
+    Item item;
+    u32 display_id;
+    u32 stack_count;
+    Bool32 wrapped;
+    Guid gift_wrapper;
+    u32 enchantment;
+    Guid item_creator;
+    u32 spell_charges;
+    u32 item_suffix_factor;
+    u32 item_random_properties_id;
+    u32 lock_id;
+    u32 max_durability;
+    u32 durability;
+} {
+    versions = "1.12";
+}
+
+smsg SMSG_TRADE_STATUS_EXTENDED = 0x0121 {
+    /// cmangos/vmangos/mangoszero: send trader or own trade windows state (last need for proper show spell apply to non-trade slot)
+    Bool self_player;
+        /* TODO NARROW_TYPE Maybe an enum for maximum values? */
+    /// cmangos/vmangos/mangoszero: sets to 7
+    /// cmangos/vmangos/mangoszero: trade slots count/number?, = next field in most cases
+    u32 trade_slot_count1;
+    /* TODO NARROW_TYPE Maybe an enum for maximum values? */
+    /// cmangos/vmangos/mangoszero: sets to 7
+    /// cmangos/vmangos/mangoszero: trade slots count/number?, = prev field in most cases
+    u32 trade_slot_count2;
+    Gold money_in_trade;
+    Spell spell_on_lowest_slot;
+    /// vmangos/cmangos/mangoszero: All set to same as trade_slot_count* (7), unsure which determines how big this is. Unused slots are 0.
+    TradeSlot[7] trade_slots;
+} {
+    versions = "1.12";
+}
+
+struct TradeSlot {
+    /// cmangos/vmangos/mangoszero: sets to index of array
+    u8 trade_slot_number;
+    Item item;
+    u32 display_id;
+    u32 stack_count;
+    Bool32 wrapped;
+    Guid gift_wrapper;
+    u32 enchantment;
+    u32[3] enchantments_slots;
+    Guid item_creator;
+    u32 spell_charges;
+    u32 item_suffix_factor;
+    u32 item_random_properties_id;
+    u32 lock_id;
+    u32 max_durability;
+    u32 durability;
+} {
+    versions = "2.4.3 3";
+}
+
+smsg SMSG_TRADE_STATUS_EXTENDED = 0x0121 {
+    /// cmangos/vmangos/mangoszero: send trader or own trade windows state (last need for proper show spell apply to non-trade slot)
+    Bool self_player;
+    /// added in 2.4.0, this value must be equal to value from TRADE_STATUS_OPEN_WINDOW status packet (different value for different players to block multiple trades?)
+    u32 trade_id;
+    /* TODO NARROW_TYPE Maybe an enum for maximum values? */
+    /// cmangos/vmangos/mangoszero: sets to 7
+    /// cmangos/vmangos/mangoszero: trade slots count/number?, = next field in most cases
+    u32 trade_slot_count1;
+    /* TODO NARROW_TYPE Maybe an enum for maximum values? */
+    /// cmangos/vmangos/mangoszero: sets to 7
+    /// cmangos/vmangos/mangoszero: trade slots count/number?, = prev field in most cases
+    u32 trade_slot_count2;
+    Gold money_in_trade;
+    Spell spell_on_lowest_slot;
+    /// vmangos/cmangos/mangoszero: All set to same as trade_slot_count* (7), unsure which determines how big this is. Unused slots are 0.
+    TradeSlot[7] trade_slots;
+} {
+    versions = "2.4.3 3";
+}

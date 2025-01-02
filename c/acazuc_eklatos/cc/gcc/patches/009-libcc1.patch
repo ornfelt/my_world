@@ -1,0 +1,86 @@
+--- libcc1/configure
++++ libcc1/configure
+@@ -5841,6 +5841,9 @@
+   # as canadian for Windows hosts.
+   lt_cv_deplibs_check_method=pass_all
+   ;;
++eklat*)
++  lt_cv_deplibs_check_method=pass_all
++  ;;
+ esac
+ 
+ fi
+@@ -8463,6 +8466,9 @@
+   openbsd*)
+     with_gnu_ld=no
+     ;;
++  eklat*)
++    link_all_deplibs=no
++    ;;
+   esac
+ 
+   ld_shlibs=yes
+@@ -9507,6 +9513,9 @@
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    eklat*)
++      ;;
++
+     *)
+       ld_shlibs=no
+       ;;
+@@ -10449,6 +10458,14 @@
+       ;;
+   esac
+   ;;
++eklat*)
++  version_type=linux
++  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}${major} ${libname}${shared_ext}'
++  soname_spec='${libname}${release}${shared_ext}$major'
++  shlibpath_var=LD_LIBRARY_PATH
++  hardcode_into_libs=yes
++  hardcode_libdir_flag_spec='${wl}-rpath ${wl}$objdir'
++  ;;
+ *)
+   dynamic_linker=no
+   ;;
+@@ -10678,6 +10695,11 @@
+ 
+     ;;
+ 
++  eklat*)
++    lt_cv_dlopen="dlopen"
++    lt_cv_dlopen_libs="-ldl"
++    ;;
++
+   *)
+     ac_fn_c_check_func "$LINENO" "shl_load" "ac_cv_func_shl_load"
+ if test "x$ac_cv_func_shl_load" = xyes; then :
+@@ -13017,6 +13039,11 @@
+         ld_shlibs_CXX=yes
+         ;;
+ 
++      eklat*)
++        ld_shlibs_CXX=yes
++        hardcode_libdir_flag_spec_CXX='${wl}-rpath ${wl}$objdir'
++        ;;
++
+       *)
+         # FIXME: insert proper C++ library support
+         ld_shlibs_CXX=no
+@@ -14581,6 +14608,14 @@
+       ;;
+   esac
+   ;;
++eklat*)
++  version_type=linux
++  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}${major} ${libname}${shared_ext}'
++  soname_spec='${libname}${release}${shared_ext}$major'
++  shlibpath_var=LD_LIBRARY_PATH
++  hardcode_into_libs=yes
++  hardcode_libdir_flag_spec='${wl}-rpath ${wl}$objdir'
++  ;;
+ *)
+   dynamic_linker=no
+   ;;

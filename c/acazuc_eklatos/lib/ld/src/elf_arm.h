@@ -1,0 +1,12 @@
+#include "elf_32.h"
+
+#define ELFEM EM_ARM
+
+#define R_NONE         R_ARM_NONE
+#define R_RELATIVE32   R_ARM_RELATIVE
+#define R_JMP_SLOT32   R_ARM_JUMP_SLOT
+#define R_GLOB_DAT32   R_ARM_GLOB_DAT
+#define R_ABS32        R_ARM_ABS32
+#define R_TLS_DTPMOD32 R_ARM_TLS_DTPMOD32
+#define R_TLS_DTPOFF32 R_ARM_TLS_DTPOFF32
+#define R_TLS_TPOFF32  R_ARM_TLS_TPOFF32

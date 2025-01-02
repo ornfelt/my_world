@@ -1,0 +1,6 @@
+cmake-*
+.idea
+__pycache__/
+venv
+build/
+CMakeUserPresets.json

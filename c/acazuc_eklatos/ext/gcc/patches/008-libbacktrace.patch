@@ -1,0 +1,32 @@
+--- libbacktrace/configure
++++ libbacktrace/configure
+@@ -6584,6 +6584,9 @@
+   # as canadian for Windows hosts.
+   lt_cv_deplibs_check_method=pass_all
+   ;;
++eklat*)
++  lt_cv_deplibs_check_method=pass_all
++  ;;
+ esac
+ 
+ fi
+@@ -9207,6 +9210,9 @@
+   openbsd*)
+     with_gnu_ld=no
+     ;;
++  eklat*)
++    link_all_deplibs=no
++    ;;
+   esac
+ 
+   ld_shlibs=yes
+@@ -10251,6 +10257,9 @@
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    eklat*)
++      ;;
++
+     *)
+       ld_shlibs=no
+       ;;

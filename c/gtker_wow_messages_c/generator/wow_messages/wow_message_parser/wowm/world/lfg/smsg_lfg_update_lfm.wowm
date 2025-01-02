@@ -1,0 +1,8 @@
+smsg SMSG_LFG_UPDATE_LFM = 0x036D {
+    LfgUpdateLookingForMore looking_for_more;
+    if (looking_for_more == LOOKING_FOR_MORE) {
+        LfgData data;
+    }
+} {
+    versions = "2.4.3";
+}

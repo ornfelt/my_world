@@ -1,0 +1,7 @@
+parse
+y.tab.*
+*.o
+*.swp
+*.swo
+lex.yy.*
+y.output

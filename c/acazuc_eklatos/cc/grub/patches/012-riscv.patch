@@ -1,0 +1,878 @@
+--- include/multiboot2.h
++++ include/multiboot2.h
+@@ -80,6 +80,8 @@
+ #define MULTIBOOT2_ARCHITECTURE_MIPS32  4
+ #define MULTIBOOT2_ARCHITECTURE_AARCH64 8
+ #define MULTIBOOT2_ARCHITECTURE_ARM32 9
++#define MULTIBOOT2_ARCHITECTURE_RISCV64 10
++#define MULTIBOOT2_ARCHITECTURE_RISCV32 11
+ #define MULTIBOOT_HEADER_TAG_OPTIONAL 1
+ 
+ #define MULTIBOOT_LOAD_PREFERENCE_NONE 0
+--- /dev/null
++++ grub-core/lib/riscv/relocator.c
+@@ -0,0 +1,204 @@
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2024  Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>;.
++ *
++ */
++#include <grub/mm.h>
++#include <grub/misc.h>
++
++#include <grub/types.h>
++#include <grub/types.h>
++#include <grub/err.h>
++#include <grub/cache.h>
++
++#if __riscv_xlen == 64
++#include <grub/riscv64/relocator.h>
++#else
++#include <grub/riscv32/relocator.h>
++#endif
++#include <grub/relocator_private.h>
++
++#define CONCAT(a,b)     CONCAT_(a, b)
++#define CONCAT_(a,b)    a ## b
++
++/* Defines to simplify creating machine code instructions */
++
++#define RV32I_INSTR_JALR	0x00000067
++#define RV32I_INSTR_AUIPC	0x00000017
++#define RV32I_INSTR_ADDI	0x00000013
++#define RV32I_INSTR_LW		0x00002003
++#define RV64I_INSTR_LD		0x00003003
++
++#define RISCV_REG_T0	5
++#define RISCV_REG_T6	31
++#define RISCV_REG_A1	11
++
++extern grub_uint8_t grub_relocator_forward_start;
++extern grub_uint8_t grub_relocator_forward_end;
++extern grub_uint8_t grub_relocator_forward_regs;
++extern grub_uint8_t grub_relocator_backward_start;
++extern grub_uint8_t grub_relocator_backward_end;
++extern grub_uint8_t grub_relocator_backward_regs;
++extern grub_uint32_t grub_relocator_check_endian;
++
++#define REGW_SIZEOF (1 * sizeof (grub_size_t) + sizeof (grub_uint32_t))
++#define JUMP_SIZEOF (3 * sizeof (grub_uint32_t))
++
++#define RELOCATOR_SIZEOF(x) (&grub_relocator_##x##_end \
++			     - &grub_relocator_##x##_start)
++#define RELOCATOR_REGS_OFFSET(x) (&grub_relocator_##x##_regs \
++				  - &grub_relocator_##x##_start)
++
++grub_size_t grub_relocator_align = sizeof (grub_uint32_t);
++grub_size_t grub_relocator_forward_size;
++grub_size_t grub_relocator_backward_size;
++grub_size_t grub_relocator_jumper_size = JUMP_SIZEOF + REGW_SIZEOF;
++
++void
++grub_cpu_relocator_init (void)
++{
++  grub_relocator_forward_size = RELOCATOR_SIZEOF (forward);
++  grub_relocator_backward_size = RELOCATOR_SIZEOF (backward);
++}
++
++#if __riscv_xlen == 64
++static void
++write_u64 (grub_uint64_t val, void **target)
++{
++  *(grub_uint64_t *) *target = val;
++  *target = ((grub_uint64_t *) *target) + 1;
++}
++#endif
++
++static void
++write_u32 (grub_uint32_t val, void **target)
++{
++  *(grub_uint32_t *) *target = val;
++  *target = ((grub_uint32_t *) *target) + 1;
++}
++
++static void
++write_imm (grub_size_t val, void **target)
++{
++#if __riscv_xlen == 64
++  write_u64 (val, target);
++#else
++  write_u32 (val, target);
++#endif
++}
++
++static void
++read_reg (grub_uint8_t rd, grub_uint8_t rs, grub_uint16_t off, void **target)
++{
++#if __riscv_xlen == 64
++  /* ld rd, off(rs) */
++  write_u32 (RV64I_INSTR_LD | (rd << 7) | (rs << 15) | (off << 20), target);
++#else
++  /* lw rd, off(rs) */
++  write_u32 (RV32I_INSTR_LW | (rd << 7) | (rs << 15) | (off << 20), target);
++#endif
++}
++
++void
++grub_cpu_relocator_jumper (void *rels, grub_addr_t addr)
++{
++  /* auipc t0, 0 */
++  write_u32 (RV32I_INSTR_AUIPC | (RISCV_REG_T0 << 7), &rels);
++
++  /* addi t0, t0, 16 */
++  write_u32 (RV32I_INSTR_ADDI | (RISCV_REG_T0 << 7) | (RISCV_REG_T0 << 15) | (16 << 20), &rels);
++
++  read_reg (RISCV_REG_T0, RISCV_REG_T0, 0, &rels);
++
++  /* jr t0 */
++  write_u32 (RV32I_INSTR_JALR | (RISCV_REG_T0 << 15), &rels);
++
++  /* immediate value */
++  write_imm (addr, &rels);
++}
++
++void
++grub_cpu_relocator_backward (void *ptr, void *src, void *dest,
++			     grub_size_t size)
++{
++  grub_memcpy (ptr, &grub_relocator_backward_start,
++	       RELOCATOR_SIZEOF (backward));
++  ptr = (grub_uint8_t *) ptr + RELOCATOR_REGS_OFFSET (backward);
++  write_imm ((grub_size_t) src, &ptr);
++  write_imm ((grub_size_t) dest, &ptr);
++  write_imm ((grub_size_t) size, &ptr);
++}
++
++void
++grub_cpu_relocator_forward (void *ptr, void *src, void *dest,
++			    grub_size_t size)
++{
++  grub_memcpy (ptr, &grub_relocator_forward_start,
++	       RELOCATOR_SIZEOF (forward));
++  ptr = (grub_uint8_t *) ptr + RELOCATOR_REGS_OFFSET (forward);
++  write_imm ((grub_size_t) src, &ptr);
++  write_imm ((grub_size_t) dest, &ptr);
++  write_imm ((grub_size_t) size, &ptr);
++}
++
++grub_err_t
++CONCAT(CONCAT(grub_relocator, __riscv_xlen), _boot) (struct grub_relocator *rel,
++		       struct CONCAT(CONCAT(grub_relocator, __riscv_xlen), _state) state)
++{
++  grub_relocator_chunk_t ch;
++  void *ptr;
++  grub_err_t err;
++  void *relst;
++  grub_size_t relsize;
++  grub_size_t stateset_size = 32 * REGW_SIZEOF + JUMP_SIZEOF;
++  unsigned i;
++
++  err = grub_relocator_alloc_chunk_align (rel, &ch, 0,
++					  (0xffffffff - stateset_size)
++					  + 1, stateset_size,
++					  sizeof (grub_uint32_t),
++					  GRUB_RELOCATOR_PREFERENCE_NONE, 0);
++  if (err)
++    return err;
++
++  ptr = get_virtual_current_address (ch);
++
++  /* auipc t6, 0 */
++  write_u32 (RV32I_INSTR_AUIPC | (RISCV_REG_T6 << 7), &ptr);
++
++  /* addi t6, t6, 140 */
++  write_u32 (RV32I_INSTR_ADDI | (RISCV_REG_T6 << 7) | (RISCV_REG_T6 << 15) | (140 << 20), &ptr);
++
++  for (i = 0; i < 32; i++)
++    read_reg (i, RISCV_REG_T6, i * __riscv_xlen / 8, &ptr);
++
++  /* jalr zero, a1, 0 */
++  write_u32 (RV32I_INSTR_JALR | (RISCV_REG_A1 << 15), &ptr);
++
++  for (i = 0; i < 32; i++)
++    write_imm (state.x[i], &ptr);
++
++  err = grub_relocator_prepare_relocs (rel, get_physical_target_address(ch), &relst, &relsize);
++  if (err)
++    return err;
++
++  grub_arch_sync_caches ((void *) relst, relsize);
++
++  ((void (*) (void)) relst) ();
++
++  /* Not reached.  */
++  return GRUB_ERR_NONE;
++}
+--- /dev/null
++++ grub-core/lib/riscv/relocator_asm.S
+@@ -0,0 +1,82 @@
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2024  Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>;.
++ */
++
++#include <grub/symbol.h>
++
++#if __riscv_xlen == 64
++#define LOAD_IDX(reg, idx)	ld reg, (idx*8)(t3)
++#else
++#define LOAD_IDX(reg, idx)	lw reg, (idx*4)(t3)
++#endif
++
++	.p2align	4	/* force 16-byte alignment */
++
++VARIABLE (grub_relocator_forward_start)
++
++	j copybegin1
++
++	.p2align	4
++
++VARIABLE (grub_relocator_forward_regs)
++	.skip __riscv_xlen / 8 * 3
++
++copybegin1:
++	la t3, grub_relocator_forward_regs
++	LOAD_IDX(t0, 0)
++	LOAD_IDX(t1, 1)
++	LOAD_IDX(t2, 2)
++
++copycont1:
++	lb t3, (t0)
++	sb t3, (t1)
++	addi t0, t0, 1
++	addi t1, t1, 1
++	addi t2, t2, -1
++	bnez t2, copycont1
++
++VARIABLE (grub_relocator_forward_end)
++
++	.p2align	4	/* force 16-byte alignment */
++
++VARIABLE (grub_relocator_backward_start)
++
++	j copybegin2
++
++	.p2align	4
++
++VARIABLE (grub_relocator_backward_regs)
++	.skip __riscv_xlen / 8 * 3
++
++copybegin2:
++	la t3, grub_relocator_backward_regs
++	LOAD_IDX(t0, 0)
++	LOAD_IDX(t1, 1)
++	LOAD_IDX(t2, 2)
++
++	add t0, t0, t2
++	add t1, t1, t2
++
++copycont2:
++	addi t0, t0, -1
++	addi t1, t1, -1
++	lb t3, (t0)
++	sb t3, (t1)
++	addi t2, t2, -1
++	bnez t2, copycont2
++
++VARIABLE (grub_relocator_backward_end)
+--- /dev/null
++++ include/grub/riscv64/relocator.h
+@@ -0,0 +1,38 @@
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2024 Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>;.
++ */
++
++#ifndef GRUB_RELOCATOR_CPU_HEADER
++#define GRUB_RELOCATOR_CPU_HEADER	1
++
++#include <grub/types.h>
++#include <grub/err.h>
++#include <grub/relocator.h>
++
++struct grub_relocator64_state
++{
++  grub_uint64_t x[32];
++};
++
++grub_err_t
++grub_relocator64_boot (struct grub_relocator *rel,
++		       struct grub_relocator64_state state);
++
++#define grub_relocator64_efi_boot grub_relocator64_boot
++#define grub_relocator64_efi_state grub_relocator64_state
++
++#endif /* ! GRUB_RELOCATOR_CPU_HEADER */
+--- /dev/null
++++ include/grub/riscv32/relocator.h
+@@ -0,0 +1,38 @@
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2024 Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>;.
++ */
++
++#ifndef GRUB_RELOCATOR_CPU_HEADER
++#define GRUB_RELOCATOR_CPU_HEADER	1
++
++#include <grub/types.h>
++#include <grub/err.h>
++#include <grub/relocator.h>
++
++struct grub_relocator32_state
++{
++  grub_uint32_t x[32];
++};
++
++grub_err_t
++grub_relocator32_boot (struct grub_relocator *rel,
++		       struct grub_relocator32_state state);
++
++#define grub_relocator32_efi_boot grub_relocator32_boot
++#define grub_relocator32_efi_state grub_relocator32_state
++
++#endif /* ! GRUB_RELOCATOR_CPU_HEADER */
+--- /dev/null
++++ grub-core/mmap/riscv64/uppermem.c
+@@ -0,0 +1,72 @@
++/* Compute amount of lower and upper memory till the first hole. */
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2024  Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>;.
++ */
++
++#include <grub/memory.h>
++#include <grub/mm.h>
++#include <grub/misc.h>
++#include <grub/cpu/memory.h>
++
++/* Helper for grub_mmap_get_lower.  */
++static int
++lower_hook (grub_uint64_t addr, grub_uint64_t size, grub_memory_type_t type,
++	    void *data)
++{
++  grub_uint64_t *lower = data;
++
++  if (type != GRUB_MEMORY_AVAILABLE)
++    return 0;
++  if (addr == 0)
++    *lower = size;
++  return 0;
++}
++
++grub_uint64_t
++grub_mmap_get_lower (void)
++{
++  grub_uint64_t lower = 0;
++
++  grub_mmap_iterate (lower_hook, &lower);
++  if (lower > GRUB_ARCH_LOWMEMMAXSIZE)
++    lower = GRUB_ARCH_LOWMEMMAXSIZE;
++  return lower;
++}
++
++/* Helper for grub_mmap_get_upper.  */
++static int
++upper_hook (grub_uint64_t addr, grub_uint64_t size, grub_memory_type_t type,
++	    void *data)
++{
++  grub_uint64_t *upper = data;
++
++  if (type != GRUB_MEMORY_AVAILABLE)
++    return 0;
++  if (addr <= GRUB_ARCH_HIGHMEMPSTART && addr + size
++      > GRUB_ARCH_HIGHMEMPSTART)
++    *upper = addr + size - GRUB_ARCH_HIGHMEMPSTART;
++  return 0;
++}
++
++grub_uint64_t
++grub_mmap_get_upper (void)
++{
++  grub_uint64_t upper = 0;
++
++  grub_mmap_iterate (upper_hook, &upper);
++  return upper;
++}
+--- /dev/null
++++ grub-core/mmap/riscv32/uppermem.c
+@@ -0,0 +1,72 @@
++/* Compute amount of lower and upper memory till the first hole. */
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2024  Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>;.
++ */
++
++#include <grub/memory.h>
++#include <grub/mm.h>
++#include <grub/misc.h>
++#include <grub/cpu/memory.h>
++
++/* Helper for grub_mmap_get_lower.  */
++static int
++lower_hook (grub_uint64_t addr, grub_uint64_t size, grub_memory_type_t type,
++	    void *data)
++{
++  grub_uint64_t *lower = data;
++
++  if (type != GRUB_MEMORY_AVAILABLE)
++    return 0;
++  if (addr == 0)
++    *lower = size;
++  return 0;
++}
++
++grub_uint64_t
++grub_mmap_get_lower (void)
++{
++  grub_uint64_t lower = 0;
++
++  grub_mmap_iterate (lower_hook, &lower);
++  if (lower > GRUB_ARCH_LOWMEMMAXSIZE)
++    lower = GRUB_ARCH_LOWMEMMAXSIZE;
++  return lower;
++}
++
++/* Helper for grub_mmap_get_upper.  */
++static int
++upper_hook (grub_uint64_t addr, grub_uint64_t size, grub_memory_type_t type,
++	    void *data)
++{
++  grub_uint64_t *upper = data;
++
++  if (type != GRUB_MEMORY_AVAILABLE)
++    return 0;
++  if (addr <= GRUB_ARCH_HIGHMEMPSTART && addr + size
++      > GRUB_ARCH_HIGHMEMPSTART)
++    *upper = addr + size - GRUB_ARCH_HIGHMEMPSTART;
++  return 0;
++}
++
++grub_uint64_t
++grub_mmap_get_upper (void)
++{
++  grub_uint64_t upper = 0;
++
++  grub_mmap_iterate (upper_hook, &upper);
++  return upper;
++}
+--- /dev/null
++++ include/grub/riscv64/memory.h
+@@ -0,0 +1,60 @@
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2024 Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>;.
++ */
++
++#ifndef GRUB_MEMORY_CPU_HEADER
++#define GRUB_MEMORY_CPU_HEADER	1
++
++#ifndef ASM_FILE
++#include <grub/symbol.h>
++#include <grub/err.h>
++#include <grub/types.h>
++#endif
++
++#define GRUB_ARCH_LOWMEMVSTART 0x80000000
++#define GRUB_ARCH_LOWMEMPSTART 0x00000000
++#define GRUB_ARCH_LOWMEMMAXSIZE 0x10000000
++#define GRUB_ARCH_HIGHMEMPSTART 0x10000000
++
++#ifndef ASM_FILE
++
++typedef grub_addr_t grub_phys_addr_t;
++
++static inline grub_phys_addr_t
++grub_vtop (void *a)
++{
++  return (grub_phys_addr_t) a;
++}
++
++static inline void *
++grub_map_memory (grub_phys_addr_t a, grub_size_t size __attribute__ ((unused)))
++{
++  return (void *) a;
++}
++
++static inline void
++grub_unmap_memory (void *a __attribute__ ((unused)),
++		   grub_size_t size __attribute__ ((unused)))
++{
++}
++
++grub_uint64_t grub_mmap_get_lower (void);
++grub_uint64_t grub_mmap_get_upper (void);
++
++#endif
++
++#endif
+--- /dev/null
++++ include/grub/riscv32/memory.h
+@@ -0,0 +1,60 @@
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2024 Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>;.
++ */
++
++#ifndef GRUB_MEMORY_CPU_HEADER
++#define GRUB_MEMORY_CPU_HEADER	1
++
++#ifndef ASM_FILE
++#include <grub/symbol.h>
++#include <grub/err.h>
++#include <grub/types.h>
++#endif
++
++#define GRUB_ARCH_LOWMEMVSTART 0x80000000
++#define GRUB_ARCH_LOWMEMPSTART 0x00000000
++#define GRUB_ARCH_LOWMEMMAXSIZE 0x10000000
++#define GRUB_ARCH_HIGHMEMPSTART 0x10000000
++
++#ifndef ASM_FILE
++
++typedef grub_addr_t grub_phys_addr_t;
++
++static inline grub_phys_addr_t
++grub_vtop (void *a)
++{
++  return (grub_phys_addr_t) a;
++}
++
++static inline void *
++grub_map_memory (grub_phys_addr_t a, grub_size_t size __attribute__ ((unused)))
++{
++  return (void *) a;
++}
++
++static inline void
++grub_unmap_memory (void *a __attribute__ ((unused)),
++		   grub_size_t size __attribute__ ((unused)))
++{
++}
++
++grub_uint64_t grub_mmap_get_lower (void);
++grub_uint64_t grub_mmap_get_upper (void);
++
++#endif
++
++#endif
+--- grub-core/loader/multiboot.c
++++ grub-core/loader/multiboot.c
+@@ -135,9 +135,12 @@
+ }
+
+ #ifdef GRUB_MACHINE_EFI
+-#if defined (__x86_64__) || defined (__aarch64__)
++#if defined (__x86_64__) || defined (__aarch64__) || (defined (__riscv) && __riscv_xlen == 64)
+ #define grub_relocator_efi_boot		grub_relocator64_efi_boot
+ #define grub_relocator_efi_state	grub_relocator64_efi_state
++#elif (defined (__riscv) && __riscv_xlen == 32)
++#define grub_relocator_efi_boot		grub_relocator32_efi_boot
++#define grub_relocator_efi_state	grub_relocator32_efi_state
+ #endif
+ #endif
+ 
+@@ -141,7 +141,7 @@
+ #endif
+ #endif
+ 
+-#if defined(__aarch64__)
++#if defined(__aarch64__) || (defined (__riscv) && __riscv_xlen == 64)
+ #define grub_relocator_boot	grub_relocator64_boot
+ #define grub_relocator_state	grub_relocator64_state
+ #else
+--- grub-core/loader/multiboot_mbi2.c
++++ grub-core/loader/multiboot_mbi2.c
+@@ -902,7 +902,7 @@
+       }
+   }
+
+-#if defined (GRUB_MACHINE_EFI) && (defined (__x86_64__) || defined (__aarch64__))
++#if defined (GRUB_MACHINE_EFI) && (defined (__x86_64__) || defined (__aarch64__) || (defined (__riscv) && __riscv_xlen == 64))
+   {
+     struct multiboot_tag_efi64 *tag = (struct multiboot_tag_efi64 *) ptrorig;
+     tag->type = MULTIBOOT_TAG_TYPE_EFI64;
+@@ -913,7 +913,7 @@
+   }
+ #endif
+ 
+-#if defined (GRUB_MACHINE_EFI) && (defined (__i386__) || defined (__arm__))
++#if defined (GRUB_MACHINE_EFI) && (defined (__i386__) || defined (__arm__) || (defined (__riscv) && __riscv_xlen == 32))
+   {
+     struct multiboot_tag_efi32 *tag = (struct multiboot_tag_efi32 *) ptrorig;
+     tag->type = MULTIBOOT_TAG_TYPE_EFI32;
+@@ -1001,7 +1001,7 @@
+       }
+ #endif
+
+-#if defined ( __x86_64__) || defined (__aarch64__)
++#if defined ( __x86_64__) || defined (__aarch64__) || (defined (__riscv) && __riscv_xlen == 64)
+       {
+ 	struct multiboot_tag_efi64_ih *tag = (struct multiboot_tag_efi64_ih *) ptrorig;
+ 	tag->type = MULTIBOOT_TAG_TYPE_EFI64_IH;
+--- /dev/null
++++ include/grub/riscv64/multiboot.h
+@@ -0,0 +1,51 @@
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2024  Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>;.
++ */
++
++#ifndef GRUB_MULTIBOOT_CPU_HEADER
++#define GRUB_MULTIBOOT_CPU_HEADER	1
++
++#define MULTIBOOT2_INITIAL_STATE  { .x[10] = MULTIBOOT2_BOOTLOADER_MAGIC, \
++    .x[11] = 0,							   \
++    .x[12] = 0,							   \
++    }
++#define MULTIBOOT_INITIAL_STATE  { .x[10] = MULTIBOOT_BOOTLOADER_MAGIC, \
++    .x[11] = 0,							 \
++    .x[12] = 0,							 \
++    }
++#define MULTIBOOT_ENTRY_REGISTER x[11]
++#define MULTIBOOT_MBI_REGISTER x[12]
++#define MULTIBOOT2_ARCHITECTURE_CURRENT MULTIBOOT2_ARCHITECTURE_RISCV64
++
++#ifdef GRUB_MACHINE_EFI
++
++#define MULTIBOOT_EFI_INITIAL_STATE  { .x[10] = MULTIBOOT_BOOTLOADER_MAGIC, \
++    .x[11] = 0,							     \
++    .x[12] = 0,							     \
++    }
++#define MULTIBOOT2_EFI_INITIAL_STATE  { .x[10] = MULTIBOOT2_BOOTLOADER_MAGIC, \
++    .x[11] = 0,							       \
++    .x[12] = 0,							       \
++    }
++#define MULTIBOOT_EFI_ENTRY_REGISTER x[11]
++#define MULTIBOOT_EFI_MBI_REGISTER x[12]
++
++#endif /* GRUB_MACHINE_EFI */
++
++#define MULTIBOOT_ELF64_MACHINE EM_RISCV
++
++#endif /* ! GRUB_MULTIBOOT_CPU_HEADER */
+--- /dev/null
++++ include/grub/riscv32/multiboot.h
+@@ -0,0 +1,51 @@
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2024  Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>;.
++ */
++
++#ifndef GRUB_MULTIBOOT_CPU_HEADER
++#define GRUB_MULTIBOOT_CPU_HEADER	1
++
++#define MULTIBOOT2_INITIAL_STATE  { .x[10] = MULTIBOOT2_BOOTLOADER_MAGIC, \
++    .x[11] = 0,							   \
++    .x[12] = 0,							   \
++    }
++#define MULTIBOOT_INITIAL_STATE  { .x[10] = MULTIBOOT_BOOTLOADER_MAGIC, \
++    .x[11] = 0,							 \
++    .x[12] = 0,							 \
++    }
++#define MULTIBOOT_ENTRY_REGISTER x[11]
++#define MULTIBOOT_MBI_REGISTER x[12]
++#define MULTIBOOT2_ARCHITECTURE_CURRENT MULTIBOOT2_ARCHITECTURE_RISCV32
++
++#ifdef GRUB_MACHINE_EFI
++
++#define MULTIBOOT_EFI_INITIAL_STATE  { .x[10] = MULTIBOOT_BOOTLOADER_MAGIC, \
++    .x[11] = 0,							     \
++    .x[12] = 0,							     \
++    }
++#define MULTIBOOT2_EFI_INITIAL_STATE  { .x[10] = MULTIBOOT2_BOOTLOADER_MAGIC, \
++    .x[11] = 0,							       \
++    .x[12] = 0,							       \
++    }
++#define MULTIBOOT_EFI_ENTRY_REGISTER x[11]
++#define MULTIBOOT_EFI_MBI_REGISTER x[12]
++
++#endif /* GRUB_MACHINE_EFI */
++
++#define MULTIBOOT_ELF32_MACHINE EM_RISCV
++
++#endif /* ! GRUB_MULTIBOOT_CPU_HEADER */
+--- grub-core/Makefile.core.def
++++ grub-core/Makefile.core.def
+@@ -1712,6 +1712,10 @@
+   arm64_efi = lib/arm64/relocator_asm.S;
+   arm_efi = lib/arm/relocator.c;
+   arm_efi = lib/arm/relocator_asm.S;
++  riscv64_efi = lib/riscv/relocator.c;
++  riscv64_efi = lib/riscv/relocator_asm.S;
++  riscv32_efi = lib/riscv/relocator.c;
++  riscv32_efi = lib/riscv/relocator_asm.S;
+ 
+   extra_dist = lib/i386/relocator_common.S;
+   extra_dist = kern/powerpc/cache_flush.S;
+@@ -1725,6 +1729,8 @@
+   enable = xen;
+   enable = arm64_efi;
+   enable = arm_efi;
++  enable = riscv64_efi;
++  enable = riscv32_efi;
+ };
+ 
+ module = {
+@@ -1829,6 +1832,8 @@
+   enable = mips;
+   enable = arm64_efi;
+   enable = arm_efi;
++  enable = riscv64_efi;
++  enable = riscv32_efi;
+ };
+ 
+ module = {
+@@ -1961,6 +1965,10 @@
+ 
+   arm_efi = mmap/arm/uppermem.c;
+ 
++  riscv64_efi = mmap/riscv64/uppermem.c;
++
++  riscv32_efi = mmap/riscv32/uppermem.c;
++
+   enable = x86;
+   enable = i386_xen_pvh;
+   enable = ia64_efi;
+--- grub-core/kern/riscv/dl.c
++++ grub-core/kern/riscv/dl.c
+@@ -330,6 +330,10 @@
+ 
+ 	case R_RISCV_RELAX:
+ 	  break;
++
++	case R_RISCV_ALIGN:
++	  break;
++
+ 	default:
+ 	  {
+ 	    char rel_info[17]; /* log16(2^64) = 16, plus NUL. */

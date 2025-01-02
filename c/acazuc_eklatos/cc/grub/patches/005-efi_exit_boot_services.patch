@@ -1,0 +1,11 @@
+--- grub-core/loader/multiboot_mbi2.c
++++ grub-core/loader/multiboot_mbi2.c
+@@ -954,7 +954,7 @@
+   }
+ #endif
+ 
+-#ifdef GRUB_MACHINE_EFI
++#if defined(GRUB_MACHINE_EFI) && (defined (__i386__) || defined(__x86_64__))
+   {
+     struct multiboot_tag_efi_mmap *tag = (struct multiboot_tag_efi_mmap *) ptrorig;
+     grub_efi_uintn_t efi_desc_size;

@@ -1,0 +1,38 @@
+--- configure
++++ configure
+@@ -6540,6 +6540,9 @@
+ os2*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
++eklat*)
++  lt_cv_deplibs_check_method=pass_all
++  ;;
+ esac
+ 
+ fi
+@@ -11247,6 +11250,9 @@
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    eklat*)
++      ;;
++
+     *)
+       ld_shlibs=no
+       ;;
+@@ -12331,6 +12337,15 @@
+   shlibpath_var=LD_LIBRARY_PATH
+   ;;
+ 
++eklat*)
++  version_type=linux # correct to gnu/linux during the next big refactor
++  library_names_spec='$libname$release$shared_ext$versuffix $libname$release$shared_ext$major $libname$shared_ext'
++  soname_spec='$libname$release$shared_ext$major'
++  shlibpath_var=LD_LIBRARY_PATH
++  hardcode_into_libs=yes
++  hardcode_libdir_flag_spec=''
++  ;;
++
+ *)
+   dynamic_linker=no
+   ;;

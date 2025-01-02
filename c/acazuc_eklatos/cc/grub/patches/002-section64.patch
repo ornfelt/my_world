@@ -1,0 +1,84 @@
+--- include/multiboot2.h
++++ include/multiboot2.h
+@@ -63,6 +63,7 @@
+ #define MULTIBOOT_TAG_TYPE_EFI32_IH          19
+ #define MULTIBOOT_TAG_TYPE_EFI64_IH          20
+ #define MULTIBOOT_TAG_TYPE_LOAD_BASE_ADDR    21
++#define MULTIBOOT_TAG_TYPE_ELF64_SECTIONS       22
+ 
+ #define MULTIBOOT_HEADER_TAG_END  0
+ #define MULTIBOOT_HEADER_TAG_INFORMATION_REQUEST  1
+@@ -321,6 +322,18 @@
+   char sections[0];
+ };
+ 
++struct multiboot_tag_elf64_sections
++{
++  multiboot_uint32_t type;
++  multiboot_uint32_t size;
++  multiboot_uint32_t num;
++  multiboot_uint32_t entsize;
++  multiboot_uint32_t shndx;
++  multiboot_uint32_t reserved;
++  char sections[0];
++};
++
++
+ struct multiboot_tag_apm
+ {
+   multiboot_uint32_t type;
+--- grub-core/loader/multiboot_mbi2.c
++++ grub-core/loader/multiboot_mbi2.c
+@@ -186,6 +186,7 @@
+ 	      case MULTIBOOT_TAG_TYPE_EFI32_IH:
+ 	      case MULTIBOOT_TAG_TYPE_EFI64_IH:
+ 	      case MULTIBOOT_TAG_TYPE_LOAD_BASE_ADDR:
++	      case MULTIBOOT_TAG_TYPE_ELF64_SECTIONS:
+ 		break;
+
+ 	      default:
+@@ -445,7 +445,11 @@
+     + ALIGN_UP (sizeof (struct multiboot_tag_basic_meminfo),
+ 		MULTIBOOT_TAG_ALIGN)
+     + ALIGN_UP (sizeof (struct multiboot_tag_bootdev), MULTIBOOT_TAG_ALIGN)
++#if __SIZEOF_POINTER__ == 8 && !defined (__x86_64__)
++    + ALIGN_UP (sizeof (struct multiboot_tag_elf64_sections), MULTIBOOT_TAG_ALIGN)
++#else
+     + ALIGN_UP (sizeof (struct multiboot_tag_elf_sections), MULTIBOOT_TAG_ALIGN)
++#endif
+     + ALIGN_UP (elf_sec_entsize * elf_sec_num, MULTIBOOT_TAG_ALIGN)
+     + ALIGN_UP ((sizeof (struct multiboot_tag_mmap)
+ 		 + grub_multiboot2_get_mmap_count ()
+@@ -815,6 +820,24 @@
+ 	/ sizeof (grub_properly_aligned_t);
+     }
+
++#if __SIZEOF_POINTER__ == 8 && !defined (__x86_64__)
++
++  {
++    struct multiboot_tag_elf64_sections *tag
++      = (struct multiboot_tag_elf64_sections *) ptrorig;
++    tag->type = MULTIBOOT_TAG_TYPE_ELF64_SECTIONS;
++    tag->size = sizeof (struct multiboot_tag_elf64_sections)
++      + elf_sec_entsize * elf_sec_num;
++    grub_memcpy (tag->sections, elf_sections, elf_sec_entsize * elf_sec_num);
++    tag->num = elf_sec_num;
++    tag->entsize = elf_sec_entsize;
++    tag->shndx = elf_sec_shstrndx;
++               grub_memset (&(tag->reserved), 0, sizeof(multiboot_uint32_t));
++    ptrorig += ALIGN_UP (tag->size, MULTIBOOT_TAG_ALIGN)
++      / sizeof (grub_properly_aligned_t);
++  }
++
++#else
+   {
+     struct multiboot_tag_elf_sections *tag
+       = (struct multiboot_tag_elf_sections *) ptrorig;
+@@ -828,6 +834,7 @@
+     ptrorig += ALIGN_UP (tag->size, MULTIBOOT_TAG_ALIGN)
+       / sizeof (grub_properly_aligned_t);
+   }
++#endif
+
+   if (!keep_bs)
+     {

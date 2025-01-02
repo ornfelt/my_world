@@ -1,0 +1,6 @@
+#tag_all versions "1 2 3";
+
+cmsg CMSG_QUESTGIVER_HELLO = 0x0184 {
+    Guid guid;
+}
+

@@ -1,0 +1,25 @@
+[workspace]
+
+members = [
+    "wow_message_parser",
+    "wow_world_messages",
+    "wow_world_base",
+    "wow_login_messages",
+    "wow_items",
+    "wow_spells",
+    "examples/*",
+]
+
+resolver = "2"
+
+[workspace.package]
+license = "MIT OR Apache-2.0"
+edition = "2021"
+repository = "https://github.com/gtker/wow_messages"
+authors = ["Gtker <github@gtker.com"]
+
+[workspace.dependencies]
+[workspace.dependencies.wow_world_base]
+path = "wow_world_base"
+default-features = false
+version = "0.3.0"

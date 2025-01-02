@@ -1,0 +1,28 @@
+READLINE_1.0 {
+	global:
+		add_history;
+		add_history_time;
+		clear_history;
+		current_history;
+		free_history_entry;
+		history_get;
+		history_get_history_state;
+		history_get_time;
+		history_is_stifled;
+		history_list;
+		history_search;
+		history_search_pos;
+		history_search_prefix;
+		history_set_history_state;
+		history_set_pos;
+		history_total_bytes;
+		next_history;
+		previous_history;
+		remove_history;
+		replace_history_entry;
+		stifle_history;
+		unstifle_history;
+		using_history;
+		where_history;
+	local: *;
+};

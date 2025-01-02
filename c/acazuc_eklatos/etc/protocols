@@ -1,0 +1,11 @@
+ip 0 IP
+icmp 1 ICMP
+ipencap 4 IP-ENCAP
+tcp 6 TCP
+udp 17 UDP
+rdp 27 RDP
+ipv6 41 IPV6
+gre 47 GRE
+esp 50 ESP
+ah 51 AH
+sctp 132 SCTP

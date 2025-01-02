@@ -1,0 +1,16 @@
+/sys/eklatos.bin
+/eklatos.iso
+/obj
+/iso
+*\.swp
+*\.swo
+/disk.qcow2
+*\.tar
+*\.tar\.*
+/disk
+/config.mk
+/ext/native_automake_config.patch
+/ext/native_automake_configure.patch
+/*_flash?\.img
+/*_uboot.elf
+/*_fw_jump.bin

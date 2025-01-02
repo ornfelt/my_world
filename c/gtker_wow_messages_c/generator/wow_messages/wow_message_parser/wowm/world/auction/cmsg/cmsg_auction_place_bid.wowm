@@ -1,0 +1,8 @@
+#tag_all versions "1 2 3";
+
+cmsg CMSG_AUCTION_PLACE_BID = 0x025A {
+    Guid auctioneer;
+    u32 auction_id;
+    Gold price;
+}
+

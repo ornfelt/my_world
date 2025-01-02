@@ -1,0 +1,50 @@
+--- configure
++++ configure
+@@ -5331,6 +5331,10 @@
+ os2*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
++eklat*)
++  lt_cv_deplibs_check_method=pass_all
++  ;;
++
+ esac
+
+ fi
+@@ -8958,6 +8962,9 @@
+   linux* | k*bsd*-gnu | gnu*)
+     link_all_deplibs=no
+     ;;
++  eklat*)
++    link_all_deplibs=no
++    ;;
+   esac
+ 
+   ld_shlibs=yes
+@@ -10141,6 +10148,9 @@
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    eklat*)
++      ;;
++
+     *)
+       ld_shlibs=no
+       ;;
+@@ -11224,6 +11235,15 @@
+   shlibpath_var=LD_LIBRARY_PATH
+   ;;
+ 
++eklat*)
++  version_type=linux # correct to gnu/linux during the next big refactor
++  library_names_spec='$libname$release$shared_ext$versuffix $libname$release$shared_ext$major $libname$shared_ext'
++  soname_spec='$libname$release$shared_ext$major'
++  shlibpath_var=LD_LIBRARY_PATH
++  hardcode_into_libs=yes
++  hardcode_libdir_flag_spec='$wl-rpath $wl$objdir'
++  ;;
++
+ *)
+   dynamic_linker=no
+   ;;
+

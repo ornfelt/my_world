@@ -1,0 +1,30 @@
+[submodule "jkssl"]
+	path = ext/jkssl/jkssl
+	url = https://git.sr.ht/~acazuc/jkssl
+[submodule "emu_gb"]
+	path = ext/emu_gb/emu_gb
+	url = https://git.sr.ht/~acazuc/emu_gb
+[submodule "emu_gba"]
+	path = ext/emu_gba/emu_gba
+	url = https://git.sr.ht/~acazuc/emu_gba
+[submodule "emu_nes"]
+	path = ext/emu_nes/emu_nes
+	url = https://git.sr.ht/~acazuc/emu_nes
+[submodule "jkgl"]
+	path = ext/jkgl/jkgl
+	url = https://git.sr.ht/~acazuc/jkgl
+[submodule "jkx"]
+	path = ext/jkx/jkx
+	url = https://git.sr.ht/~acazuc/jkx
+[submodule "retrosef"]
+	path = ext/retrosef/retrosef
+	url = https://git.sr.ht/~acazuc/retrosef
+[submodule "emu_nds"]
+	path = ext/emu_nds/emu_nds
+	url = https://git.sr.ht/~acazuc/emu_nds
+[submodule "libm"]
+	path = lib/libm/src
+	url = https://git.sr.ht/~acazuc/libm
+[submodule "ext/jka/jka"]
+	path = ext/jka/jka
+	url = https://git.sr.ht/~acazuc/jka

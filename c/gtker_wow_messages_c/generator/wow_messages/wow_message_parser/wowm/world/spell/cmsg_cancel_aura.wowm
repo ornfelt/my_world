@@ -1,0 +1,6 @@
+#tag_all versions "1 2 3";
+
+cmsg CMSG_CANCEL_AURA = 0x0136 {
+    Spell id;
+}
+

@@ -1,0 +1,21 @@
+[package]
+name = "wow_srp_c"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "wow_srp"
+crate-type = ["cdylib", "staticlib"]
+
+[features]
+default = ["values", "client", "server", "tbc", "wrath", "vanilla"]
+values = []
+client = []
+server = []
+tbc = []
+vanilla = []
+wrath = []
+
+[dependencies]
+wow_srp = { version = "0.7.0", features = ["srp-default-math", "wrath-header", "tbc-header"] }

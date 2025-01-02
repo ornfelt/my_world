@@ -1,0 +1,6 @@
+#tag_all versions "1 2 3";
+
+cmsg CMSG_TRAINER_LIST = 0x01B0 {
+    Guid guid;
+}
+

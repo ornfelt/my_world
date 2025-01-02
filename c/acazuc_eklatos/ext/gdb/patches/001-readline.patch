@@ -1,0 +1,20 @@
+--- readline/readline/callback.c
++++ readline/readline/callback.c
+@@ -138,7 +138,7 @@
+ 
+   eof = 0;
+ 
+-  memcpy ((void *)olevel, (void *)_rl_top_level, sizeof (procenv_t));
++  memcpy ((void *)&olevel, (void *)&_rl_top_level, sizeof (procenv_t));
+ #if defined (HAVE_POSIX_SIGSETJMP)
+   jcode = sigsetjmp (_rl_top_level, 0);
+ #else
+@@ -148,7 +148,7 @@
+     {
+       (*rl_redisplay_function) ();
+       _rl_want_redisplay = 0;
+-      memcpy ((void *)_rl_top_level, (void *)olevel, sizeof (procenv_t));
++      memcpy ((void *)&_rl_top_level, (void *)&olevel, sizeof (procenv_t));
+       CALLBACK_READ_RETURN ();
+     }
+ 

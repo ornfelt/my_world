@@ -1,0 +1,13 @@
+/// Sent twice by the client when teleporting and logging out.
+cmsg CMSG_CANCEL_TRADE = 0x011C {} {
+    versions = "1.12 2 3.3.5";
+}
+
+test CMSG_CANCEL_TRADE {
+} [
+    0x00, 0x04, /* size */
+    0x1C, 0x01, 0x00, 0x00, /* opcode */
+] {
+    versions = "1.12";
+}
+

@@ -1,0 +1,19 @@
+--- configure
++++ configure
+@@ -6719,6 +6719,16 @@
+ 		fi
+ 		MK_SHARED_LIB='${LD} ${LDFLAGS} -d y -G -o $@'
+ 		;;
++	(eklat*)
++		test "$cf_cv_shlib_version" = auto && cf_cv_shlib_version=rel
++		if test "$cf_cv_shlib_version" = rel; then
++			cf_cv_shared_soname='`basename $@ .${REL_VERSION}`.${ABI_VERSION}'
++		else
++			cf_cv_shared_soname='`basename $@`'
++		fi
++		MK_SHARED_LIB='${CC} ${LDFLAGS} ${CFLAGS} -shared -Wl,-soname,'$cf_cv_shared_soname' -o $@'
++		CC_SHARED_OPTS='-fPIC'
++		;;
+ 	(*)
+ 		CC_SHARED_OPTS='unknown'
+ 		MK_SHARED_LIB='echo unknown'

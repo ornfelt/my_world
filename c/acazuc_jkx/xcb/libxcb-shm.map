@@ -1,0 +1,15 @@
+XCB_1.0 {
+	global:
+		xcb_shm_attach;
+		xcb_shm_attach_checked;
+		xcb_shm_detach;
+		xcb_shm_detach_checked;
+		xcb_shm_get_image;
+		xcb_shm_get_image_reply;
+		xcb_shm_id;
+		xcb_shm_put_image;
+		xcb_shm_put_image_checked;
+		xcb_shm_query_version;
+		xcb_shm_query_version_reply;
+	local: *;
+};

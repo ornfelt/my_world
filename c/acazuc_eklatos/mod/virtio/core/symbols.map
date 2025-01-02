@@ -1,0 +1,17 @@
+VIRTIO_1.0 {
+	global:
+		kmod;
+		virtio_dev_destroy;
+		virtio_dev_init;
+		virtio_dev_init_end;
+		virtio_dev_has_feature;
+		virtio_get_cfg;
+		virtq_destroy;
+		virtq_init;
+		virtq_notify;
+		virtq_on_irq;
+		virtq_poll;
+		virtq_send;
+		virtq_setup_irq;
+	local: *;
+};

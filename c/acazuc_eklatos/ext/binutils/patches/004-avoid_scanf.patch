@@ -1,0 +1,13 @@
+--- bfd/archive.c
++++ bfd/archive.c
+@@ -535,6 +535,10 @@
+   fmag_save = hdr.ar_fmag[0];
+   hdr.ar_fmag[0] = 0;
+   scan = sscanf (hdr.ar_size, "%" SCNu64, &parsed_size);
++  scan = 1; // no scanf in libc for the moment
++  parsed_size = 0;
++  for (size_t ii = 0; hdr.ar_size[ii] >= '0' && hdr.ar_size[ii] <= '9'; ++ii)
++  	parsed_size = parsed_size * 10 + (hdr.ar_size[ii] - '0');
+   hdr.ar_fmag[0] = fmag_save;
+   if (scan != 1)
+     {

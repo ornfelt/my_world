@@ -1,0 +1,34 @@
+smsg SMSG_LOOT_START_ROLL = 0x02A1 {
+    Guid creature;
+    u32 loot_slot;
+    Item item;
+    /// vmangos/mangoszero: not used ?
+    u32 item_random_suffix;
+    u32 item_random_property_id;
+    Milliseconds countdown_time;
+} {
+    versions = "1 2";
+}
+
+flag RollFlags : u8 {
+     PASS                 = 0x01;
+     NEED                 = 0x02;
+     GREED                = 0x04;
+     DISENCHANT           = 0x08;
+} {
+    versions = "3.3.5";
+}
+
+smsg SMSG_LOOT_START_ROLL = 0x02A1 {
+    Guid creature;
+    Map map;
+    u32 loot_slot;
+    Item item;
+    /// vmangos/mangoszero: not used ?
+    u32 item_random_suffix;
+    u32 item_random_property_id;
+    Milliseconds countdown_time;
+    RollFlags flags;
+} {
+    versions = "3.3.5";
+}

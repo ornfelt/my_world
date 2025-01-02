@@ -1,0 +1,979 @@
+#include <libelf.h>
+#include <string.h>
+
+const char *elf_ehdr_class_str(uint8_t v)
+{
+	switch (v)
+	{
+		case ELFCLASSNONE:
+			return "none";
+		case ELFCLASS32:
+			return "ELF32";
+		case ELFCLASS64:
+			return "ELF64";
+	}
+	return NULL;
+}
+
+const char *elf_ehdr_data_str(uint8_t v)
+{
+	switch (v)
+	{
+		case ELFDATANONE:
+			return "none";
+		case ELFDATA2LSB:
+			return "2's complement, little endian";
+		case ELFDATA2MSB:
+			return "2's complement, big endian";
+	}
+	return NULL;
+}
+
+const char *elf_ehdr_abi_str(uint8_t v)
+{
+	switch (v)
+	{
+		case ELFOSABI_NONE:
+			return "UNIX - System V";
+		case ELFOSABI_HPUX:
+			return "Hewlett-Packard HP-UX";
+		case ELFOSABI_NETBSD:
+			return "NetBSD";
+		case ELFOSABI_LINUX:
+			return "Linux";
+		case ELFOSABI_SOLARIS:
+			return "Sun Solaris";
+		case ELFOSABI_AIX:
+			return "AIX";
+		case ELFOSABI_IRIX:
+			return "IRIX";
+		case ELFOSABI_FREEBSD:
+			return "FreeBSD";
+		case ELFOSABI_TRU64:
+			return "Compaq TRU64";
+		case ELFOSABI_MODESTO:
+			return "Novell Modesto";
+		case ELFOSABI_OPENBSD:
+			return "OpenBSD";
+		case ELFOSABI_OPENVMS:
+			return "Open VMS";
+		case ELFOSABI_NSK:
+			return "Hewlett-Packard Non-Stop Kernel";
+	}
+	return NULL;
+}
+
+const char *elf_ehdr_type_str(uint16_t v)
+{
+	switch (v)
+	{
+		case ET_NONE:
+			return "NONE (None)";
+		case ET_REL:
+			return "REL (Relocatable file)";
+		case ET_EXEC:
+			return "EXEC (Executable file)";
+		case ET_DYN:
+			return "DYN (Shared object file)";
+		case ET_CORE:
+			return "CORE (Core file)";
+	}
+	return NULL;
+}
+
+const char *elf_ehdr_machine_str(uint16_t v)
+{
+	switch (v)
+	{
+		case EM_NONE:
+			return "None";
+		case EM_M32:
+			return "AT&T WE 32100";
+		case EM_SPARC:
+			return "SPARC";
+		case EM_386:
+			return "Intel 80386";
+		case EM_68K:
+			return "Motorola 68000";
+		case EM_88K:
+			return "Motorola 88000";
+		case EM_860:
+			return "Intel 80860";
+		case EM_MIPS:
+			return "MIPS 1";
+		case EM_MIPS_RS3_LE:
+			return "MIPS R3000";
+		case EM_ARM:
+			return "ARM";
+		case EM_X86_64:
+			return "Advanced Micro Devices X86-64";
+		case EM_AARCH64:
+			return "AArch64";
+		case EM_RISCV:
+			return "RISC-V";
+	}
+	return NULL;
+}
+
+const char *elf_phdr_type_str(uint32_t v)
+{
+	switch (v)
+	{
+#define TEST_PT(n) case PT_##n: return #n
+
+		TEST_PT(NULL);
+		TEST_PT(LOAD);
+		TEST_PT(DYNAMIC);
+		TEST_PT(INTERP);
+		TEST_PT(NOTE);
+		TEST_PT(SHLIB);
+		TEST_PT(PHDR);
+		TEST_PT(TLS);
+		TEST_PT(GNU_EH_FRAME);
+		TEST_PT(GNU_STACK);
+		TEST_PT(GNU_RELRO);
+		TEST_PT(EXIDX);
+		TEST_PT(RISCV_ATTRIBUTES);
+
+#undef TEST_PT
+	}
+	return NULL;
+}
+
+const char *elf_phdr_flags_str(uint8_t v)
+{
+	static const char str[8][4] =
+	{
+		"   ",
+		"  E",
+		" W ",
+		" WE",
+		"R  ",
+		"R E",
+		"RW ",
+		"RWE",
+	};
+	return str[v & 0x7];
+}
+
+const char *elf_shdr_type_str(uint32_t v)
+{
+	switch (v)
+	{
+#define TEST_SHT(n) case SHT_##n: return #n
+
+		TEST_SHT(NULL);
+		TEST_SHT(PROGBITS);
+		TEST_SHT(SYMTAB);
+		TEST_SHT(STRTAB);
+		TEST_SHT(RELA);
+		TEST_SHT(HASH);
+		TEST_SHT(DYNAMIC);
+		TEST_SHT(NOTE);
+		TEST_SHT(NOBITS);
+		TEST_SHT(REL);
+		TEST_SHT(SHLIB);
+		TEST_SHT(DYNSYM);
+		TEST_SHT(INIT_ARRAY);
+		TEST_SHT(FINI_ARRAY);
+		TEST_SHT(GNU_HASH);
+		TEST_SHT(VERDEF);
+		TEST_SHT(VERNEED);
+		TEST_SHT(VERSYM);
+		TEST_SHT(RISCV_ATTRIBUTES);
+
+#undef TEST_SHT
+	}
+	return NULL;
+}
+
+const char *elf_shdr_flags_str(char *buf, size_t size, uint32_t v)
+{
+#define TEST_FLAG(v, f, c) \
+do \
+{ \
+	if (!((v) & (f))) \
+		break; \
+	if (n >= size) \
+		break;\
+	buf[n++] = c; \
+} while (0)
+
+	size_t n = 0;
+	TEST_FLAG(v, SHF_WRITE, 'W');
+	TEST_FLAG(v, SHF_ALLOC, 'A');
+	TEST_FLAG(v, SHF_EXECINSTR, 'X');
+	TEST_FLAG(v, SHF_MERGE, 'M');
+	TEST_FLAG(v, SHF_STRINGS, 'S');
+	TEST_FLAG(v, SHF_INFO_LINK, 'I');
+	TEST_FLAG(v, SHF_LINK_ORDER, 'L');
+	TEST_FLAG(v, SHF_OS_NONCONFORMING, 'O');
+	TEST_FLAG(v, SHF_GROUP, 'G');
+	TEST_FLAG(v, SHF_TLS, 'T');
+	TEST_FLAG(v, SHF_COMPRESSED, 'C');
+
+	if (n < size)
+		buf[n] = '\0';
+	else if (n)
+		buf[n - 1] = '\0';
+
+	return buf;
+
+#undef TEST_FLAG
+}
+
+const char *elf_dyn_str(uint32_t v)
+{
+	switch (v)
+	{
+#define TEST_DT(n) case DT_##n: return #n
+
+		TEST_DT(NULL);
+		TEST_DT(NEEDED);
+		TEST_DT(PLTRELSZ);
+		TEST_DT(PLTGOT);
+		TEST_DT(HASH);
+		TEST_DT(STRTAB);
+		TEST_DT(SYMTAB);
+		TEST_DT(RELA);
+		TEST_DT(RELASZ);
+		TEST_DT(RELAENT);
+		TEST_DT(STRSZ);
+		TEST_DT(SYMENT);
+		TEST_DT(INIT);
+		TEST_DT(FINI);
+		TEST_DT(SONAME);
+		TEST_DT(RPATH);
+		TEST_DT(SYMBOLIC);
+		TEST_DT(REL);
+		TEST_DT(RELSZ);
+		TEST_DT(RELENT);
+		TEST_DT(PLTREL);
+		TEST_DT(DEBUG);
+		TEST_DT(TEXTREL);
+		TEST_DT(JMPREL);
+		TEST_DT(BIND_NOW);
+		TEST_DT(INIT_ARRAY);
+		TEST_DT(FINI_ARRAY);
+		TEST_DT(INIT_ARRAYSZ);
+		TEST_DT(FINI_ARRAYSZ);
+		TEST_DT(FLAGS);
+		TEST_DT(GNU_HASH);
+		TEST_DT(VERSYM);
+		TEST_DT(RELACOUNT);
+		TEST_DT(RELCOUNT);
+		TEST_DT(FLAGS_1);
+		TEST_DT(VERDEF);
+		TEST_DT(VERDEFNUM);
+		TEST_DT(VERNEED);
+		TEST_DT(VERNEEDNUM);
+
+#undef TEST_DT
+	}
+	return NULL;
+}
+
+const char *elf_dyn_flags_str(char *buf, size_t size, uint32_t v)
+{
+#define TEST_DF(name) \
+do \
+{ \
+	if (!(v & DF_##name)) \
+		break; \
+	if (first) \
+		first = 0; \
+	else \
+		strlcat(buf, ", ", size); \
+	strlcat(buf, #name, size); \
+} while (0)
+
+	int first = 1;
+	if (size)
+		buf[0] = '\0';
+	TEST_DF(ORIGIN);
+	TEST_DF(SYMBOLIC);
+	TEST_DF(TEXTREL);
+	TEST_DF(BIND_NOW);
+	TEST_DF(STATIC_TLS);
+	return buf;
+
+#undef TEST_DF
+}
+
+const char *elf_dyn_flags1_str(char *buf, size_t size, uint32_t v)
+{
+#define TEST_DF_1(name) \
+do \
+{ \
+	if (!(v & DF_1_##name)) \
+		break; \
+	if (first) \
+		first = 0; \
+	else \
+		strlcat(buf, ", ", size); \
+	strlcat(buf, #name, size); \
+} while (0)
+
+	int first = 1;
+	if (size)
+		buf[0] = '\0';
+	TEST_DF_1(NOW);
+	TEST_DF_1(GLOBAL);
+	TEST_DF_1(GROUP);
+	TEST_DF_1(NODELETE);
+	TEST_DF_1(LOADFLTR);
+	TEST_DF_1(INITFIRST);
+	TEST_DF_1(NOOPEN);
+	TEST_DF_1(ORIGIN);
+	TEST_DF_1(DIRECT);
+	TEST_DF_1(TRANS);
+	TEST_DF_1(INTERPOSE);
+	TEST_DF_1(NODEFLIB);
+	TEST_DF_1(NODUMP);
+	TEST_DF_1(CONFALT);
+	TEST_DF_1(ENDFILTEE);
+	TEST_DF_1(DISPRELDNE);
+	TEST_DF_1(DIPPRELPND);
+	TEST_DF_1(NODIRECT);
+	TEST_DF_1(IGNMULDEF);
+	TEST_DF_1(NOKSYMS);
+	TEST_DF_1(NOHDR);
+	TEST_DF_1(EDITED);
+	TEST_DF_1(NORELOC);
+	TEST_DF_1(SYMINTPOSE);
+	TEST_DF_1(GLOBAUDIT);
+	TEST_DF_1(SINGLETON);
+	TEST_DF_1(STUB);
+	TEST_DF_1(PIE);
+	TEST_DF_1(KMOD);
+	TEST_DF_1(WEAKFILTER);
+	TEST_DF_1(NOCOMMON);
+	return buf;
+
+#undef TEST_DF_1
+}
+
+const char *elf_stb_str(uint8_t v)
+{
+	switch (v)
+	{
+#define TEST_STB(n) case STB_##n: return #n
+
+		TEST_STB(LOCAL);
+		TEST_STB(GLOBAL);
+		TEST_STB(WEAK);
+
+#undef TEST_STB
+	}
+	return NULL;
+}
+
+const char *elf_stt_str(uint8_t v)
+{
+	switch (v)
+	{
+#define TEST_STT(n) case STT_##n: return #n
+
+		TEST_STT(NOTYPE);
+		TEST_STT(OBJECT);
+		TEST_STT(FUNC);
+		TEST_STT(SECTION);
+		TEST_STT(FILE);
+		TEST_STT(COMMON);
+		TEST_STT(TLS);
+
+#undef TEST_STT
+	}
+	return NULL;
+}
+
+const char *elf_stv_str(uint8_t v)
+{
+	switch (v)
+	{
+#define TEST_STV(n) case STV_##n: return #n
+
+		TEST_STV(DEFAULT);
+		TEST_STV(INTERNAL);
+		TEST_STV(HIDDEN);
+		TEST_STV(PROTECTED);
+
+#undef TEST_STV
+	}
+	return NULL;
+}
+
+const char *elf_r_str(uint32_t v)
+{
+	switch (v)
+	{
+#define TEST_R(n) case EM_##n: return #n;
+
+		TEST_R(386);
+		TEST_R(X86_64);
+		TEST_R(ARM);
+		TEST_R(AARCH64);
+		TEST_R(RISCV);
+		TEST_R(MIPS);
+		case EM_MIPS_RS3_LE:
+			return "MIPS";
+
+#undef TEST_R
+	}
+	return NULL;
+}
+
+const char *elf_r_386_str(uint32_t v)
+{
+	switch (v)
+	{
+#define TEST_R(n) case R_386_##n: return #n
+
+		TEST_R(NONE);
+		TEST_R(32);
+		TEST_R(PC32);
+		TEST_R(GOT32);
+		TEST_R(PLT32);
+		TEST_R(COPY);
+		TEST_R(GLOB_DAT);
+		TEST_R(JMP_SLOT);
+		TEST_R(RELATIVE);
+		TEST_R(GOTOFF);
+		TEST_R(GOTPC);
+		TEST_R(32PLT);
+		TEST_R(TLS_GD_PLT);
+		TEST_R(TLS_LDM_PLT);
+		TEST_R(TLS_TPOFF);
+		TEST_R(TLS_IE);
+		TEST_R(TLS_GOTIE);
+		TEST_R(TLS_LE);
+		TEST_R(TLS_GD);
+		TEST_R(TLS_LDM);
+		TEST_R(16);
+		TEST_R(PC16);
+		TEST_R(8);
+		TEST_R(PC8);
+		TEST_R(TLS_LDO_32);
+		TEST_R(TLS_DTPMOD32);
+		TEST_R(TLS_DTPOFF32);
+		TEST_R(TLS_TPOFF32);
+		TEST_R(SIZE32);
+
+#undef TEST_R
+	}
+	return NULL;
+}
+
+const char *elf_r_x86_64_str(uint32_t v)
+{
+	switch (v)
+	{
+#define TEST_R(n) case R_X86_64_##n: return #n
+
+		TEST_R(NONE);
+		TEST_R(64);
+		TEST_R(PC32);
+		TEST_R(GOT32);
+		TEST_R(PLT32);
+		TEST_R(COPY);
+		TEST_R(GLOB_DAT);
+		TEST_R(JUMP_SLOT);
+		TEST_R(RELATIVE);
+		TEST_R(GOTPCREL);
+		TEST_R(32);
+		TEST_R(32S);
+		TEST_R(16);
+		TEST_R(PC16);
+		TEST_R(8);
+		TEST_R(PC8);
+		TEST_R(DTPMOD64);
+		TEST_R(DTPOFF64);
+		TEST_R(TPOFF64);
+		TEST_R(TLSGD);
+		TEST_R(TLSLD);
+		TEST_R(DTPOFF32);
+		TEST_R(GOTTPOFF);
+		TEST_R(TPOFF32);
+		TEST_R(PC64);
+		TEST_R(GOTOFF64);
+		TEST_R(GOTPC32);
+		TEST_R(SIZE32);
+		TEST_R(SIZE64);
+		TEST_R(GOTPC32_TLSDESC);
+		TEST_R(TLSDESC_CALL);
+		TEST_R(TLSDESC);
+		TEST_R(IRELATIVE);
+		TEST_R(RELATIVE64);
+		TEST_R(GOTPCRELX);
+		TEST_R(REX_GOTPCRELX);
+
+#undef TEST_R
+	}
+	return NULL;
+}
+
+const char *elf_r_arm_str(uint32_t v)
+{
+	switch (v)
+	{
+#define TEST_R(n) case R_ARM_##n: return #n
+
+		TEST_R(NONE);
+		TEST_R(PC24);
+		TEST_R(ABS32);
+		TEST_R(REL32);
+		TEST_R(LDR_PC_G0);
+		TEST_R(ABS16);
+		TEST_R(ABS12);
+		TEST_R(THM_ABS5);
+		TEST_R(ABS8);
+		TEST_R(SBREL32);
+		TEST_R(THM_CALL);
+		TEST_R(THM_PC8);
+		TEST_R(BREL_ADJ);
+		TEST_R(TLS_DESC);
+		TEST_R(THM_SWI8);
+		TEST_R(XPC25);
+		TEST_R(THM_XPC22);
+		TEST_R(TLS_DTPMOD32);
+		TEST_R(TLS_DTPOFF32);
+		TEST_R(TLS_TPOFF32);
+		TEST_R(COPY);
+		TEST_R(GLOB_DAT);
+		TEST_R(JUMP_SLOT);
+		TEST_R(RELATIVE);
+		TEST_R(GOTOFF32);
+		TEST_R(BASE_PREL);
+		TEST_R(GOT_BREL);
+		TEST_R(PLT32);
+		TEST_R(CALL);
+		TEST_R(JUMP24);
+		TEST_R(THM_JUMP24);
+		TEST_R(BASE_ABS);
+		TEST_R(ALU_PCREL_7_0);
+		TEST_R(ALU_PCREL_15_8);
+		TEST_R(ALU_PCREL_23_15);
+		TEST_R(LDR_SBREL_11_0_NC);
+		TEST_R(ALU_SBREL_19_12_NC);
+		TEST_R(ALU_SBREL_27_20_CK);
+		TEST_R(TARGET1);
+		TEST_R(SBREL31);
+		TEST_R(V4BX);
+		TEST_R(TARGET2);
+		TEST_R(PREL31);
+		TEST_R(MOVW_ABS_NC);
+		TEST_R(MOVT_ABS);
+		TEST_R(MOVW_PREL_NC);
+		TEST_R(MOVT_PREL);
+		TEST_R(THM_MOVW_ABS_NC);
+		TEST_R(THM_MOVT_ABS);
+		TEST_R(THM_MOVW_PREL_NC);
+		TEST_R(THM_MOVT_PREL);
+		TEST_R(THM_JUMP19);
+		TEST_R(THM_JUMP6);
+		TEST_R(THM_ALU_PREL_11_0);
+		TEST_R(THM_PC12);
+		TEST_R(ABS32_NOI);
+		TEST_R(REL32_NOI);
+		TEST_R(ALU_PC_G0_NC);
+		TEST_R(ALU_PC_G0);
+		TEST_R(ALU_PC_G1_NC);
+		TEST_R(ALU_PC_G1);
+		TEST_R(ALU_PC_G2);
+		TEST_R(LDR_PC_G1);
+		TEST_R(LDR_PC_G2);
+		TEST_R(LDRS_PC_G0);
+		TEST_R(LDRS_PC_G1);
+		TEST_R(LDRS_PC_G2);
+		TEST_R(LDC_PC_G0);
+		TEST_R(LDC_PC_G1);
+		TEST_R(LDC_PC_G2);
+		TEST_R(ALU_SB_G0_NC);
+		TEST_R(ALU_SB_G0);
+		TEST_R(ALU_SB_G1_NC);
+		TEST_R(ALU_SB_G1);
+		TEST_R(ALU_SB_G2);
+		TEST_R(LDR_SB_G0);
+		TEST_R(LDR_SB_G1);
+		TEST_R(LDR_SB_G2);
+		TEST_R(LDRS_SB_G0);
+		TEST_R(LDRS_SB_G1);
+		TEST_R(LDRS_SB_G2);
+		TEST_R(LDC_SB_G0);
+		TEST_R(LDC_SB_G1);
+		TEST_R(LDC_SB_G2);
+		TEST_R(MOVW_BREL_NC);
+		TEST_R(MOVT_BREL);
+		TEST_R(MOVW_BREL);
+		TEST_R(THM_MOVW_BREL_NC);
+		TEST_R(THM_MOVT_BREL);
+		TEST_R(THM_MOVW_BREL);
+		TEST_R(TLS_GOTDESC);
+		TEST_R(TLS_CALL);
+		TEST_R(TLS_DESCSEQ);
+		TEST_R(THM_TLS_CALL);
+		TEST_R(PLT32_ABS);
+		TEST_R(GOT_ABS);
+		TEST_R(GOT_PREL);
+		TEST_R(GOT_BREL12);
+		TEST_R(GOTOFF12);
+		TEST_R(GOTRELAX);
+		TEST_R(GNU_VTENTRY);
+		TEST_R(GNU_VTINHERIT);
+		TEST_R(THM_JUMP11);
+		TEST_R(THM_JUMP8);
+		TEST_R(TLS_GD32);
+		TEST_R(TLS_LDM32);
+		TEST_R(TLS_LDO32);
+		TEST_R(TLS_IE32);
+		TEST_R(TLS_LE32);
+		TEST_R(TLS_LDO12);
+		TEST_R(TLS_LE12);
+		TEST_R(TLS_IE12GP);
+		TEST_R(PRIVATE_0);
+		TEST_R(PRIVATE_1);
+		TEST_R(PRIVATE_2);
+		TEST_R(PRIVATE_3);
+		TEST_R(PRIVATE_4);
+		TEST_R(PRIVATE_5);
+		TEST_R(PRIVATE_6);
+		TEST_R(PRIVATE_7);
+		TEST_R(PRIVATE_8);
+		TEST_R(PRIVATE_9);
+		TEST_R(PRIVATE_10);
+		TEST_R(PRIVATE_11);
+		TEST_R(PRIVATE_12);
+		TEST_R(PRIVATE_13);
+		TEST_R(PRIVATE_14);
+		TEST_R(PRIVATE_15);
+		TEST_R(ME_TOO);
+		TEST_R(THM_TLS_DESCSEQ16);
+		TEST_R(THM_TLS_DESCSEQ32);
+		TEST_R(THM_GOT_BREL12);
+		TEST_R(THM_ALU_ABS_G0_NC);
+		TEST_R(THM_ALU_ABS_G1_NC);
+		TEST_R(THM_ALU_ABS_G2_NC);
+		TEST_R(THM_ALU_ABS_G3);
+		TEST_R(THM_BF16);
+		TEST_R(THM_BF12);
+		TEST_R(THM_BF18);
+		TEST_R(IRELATIVE);
+		TEST_R(PRIVATE_16);
+		TEST_R(PRIVATE_17);
+		TEST_R(PRIVATE_18);
+		TEST_R(PRIVATE_19);
+		TEST_R(PRIVATE_20);
+		TEST_R(PRIVATE_21);
+		TEST_R(PRIVATE_22);
+		TEST_R(PRIVATE_23);
+		TEST_R(PRIVATE_24);
+		TEST_R(PRIVATE_25);
+		TEST_R(PRIVATE_26);
+		TEST_R(PRIVATE_27);
+		TEST_R(PRIVATE_28);
+		TEST_R(PRIVATE_29);
+		TEST_R(PRIVATE_30);
+		TEST_R(PRIVATE_31);
+
+#undef TEST_R
+	}
+	return NULL;
+}
+
+const char *elf_r_aarch64_str(uint32_t v)
+{
+	switch (v)
+	{
+#define TEST_R(n) case R_AARCH64_##n: return #n
+
+		TEST_R(NONE);
+		TEST_R(ABS64);
+		TEST_R(ABS32);
+		TEST_R(ABS16);
+		TEST_R(PREL64);
+		TEST_R(PREL32);
+		TEST_R(PREL16);
+		TEST_R(MOVW_UABS_G0);
+		TEST_R(MOVW_UABS_G0_NC);
+		TEST_R(MOVW_UABS_G1);
+		TEST_R(MOVW_UABS_G1_NC);
+		TEST_R(MOVW_UABS_G2);
+		TEST_R(MOVW_UABS_G2_NC);
+		TEST_R(MOVW_UABS_G3);
+		TEST_R(MOVW_SABS_G0);
+		TEST_R(MOVW_SABS_G1);
+		TEST_R(MOVW_SABS_G2);
+		TEST_R(LD_PREL_LO19);
+		TEST_R(ADR_PREL_LO21);
+		TEST_R(ADR_PREL_PG_HI21);
+		TEST_R(ADR_PREL_PG_HI21_NC);
+		TEST_R(ADD_ABS_LO12_NC);
+		TEST_R(LDST8_ABS_LO12_NC);
+		TEST_R(TSTBR14);
+		TEST_R(CONDBR19);
+		TEST_R(JUMP26);
+		TEST_R(CALL26);
+		TEST_R(LDST16_ABS_LO12_NC);
+		TEST_R(LDST32_ABS_LO12_NC);
+		TEST_R(LDST64_ABS_LO12_NC);
+		TEST_R(MOVW_PREL_G0);
+		TEST_R(MOVW_PREL_G0_NC);
+		TEST_R(MOVW_PREL_G1);
+		TEST_R(MOVW_PREL_G1_NC);
+		TEST_R(MOVW_PREL_G2);
+		TEST_R(MOVW_PREL_G2_NC);
+		TEST_R(MOVW_PREL_G3);
+		TEST_R(LDST128_ABS_LO12_NC);
+		TEST_R(MOVW_GOTOFF_G0);
+		TEST_R(MOVW_GOTOFF_G0_NC);
+		TEST_R(MOVW_GOTOFF_G1);
+		TEST_R(MOVW_GOTOFF_G1_NC);
+		TEST_R(MOVW_GOTOFF_G2);
+		TEST_R(MOVW_GOTOFF_G2_NC);
+		TEST_R(MOVW_GOTOFF_G3);
+		TEST_R(GOTREL64);
+		TEST_R(GOTREL32);
+		TEST_R(GOT_LD_PREL19);
+		TEST_R(LD64_GOTOFF_LO15);
+		TEST_R(ADR_GOT_PAGE);
+		TEST_R(LD64_GOT_LO12_NC);
+		TEST_R(LD64_GOTPAGE_LO15);
+		TEST_R(PLT32);
+		TEST_R(GOTPREL32);
+		TEST_R(TLSGD_ADR_PREL21);
+		TEST_R(TLSGD_ADR_PAGE21);
+		TEST_R(TLSGD_ADD_LO12_NC);
+		TEST_R(TLSGD_MOVW_G1);
+		TEST_R(TLSGD_MOVW_G0_NC);
+		TEST_R(TLSLD_ADR_PREL21);
+		TEST_R(TLSLD_ADR_PAGE21);
+		TEST_R(TLSLD_ADD_LO12_NC);
+		TEST_R(TLSLD_MOVW_G1);
+		TEST_R(TLSLD_MOVW_G0_NC);
+		TEST_R(TLSLD_LD_PREL19);
+		TEST_R(TLSLD_MOVW_DTPREL_G2);
+		TEST_R(TLSLD_MOVW_DTPREL_G1);
+		TEST_R(TLSLD_MOVW_DTPRLE_G1_NC);
+		TEST_R(TLSLD_MOVW_DTPRLE_G0);
+		TEST_R(TLSLD_MOVW_DTPRLE_G0_NC);
+		TEST_R(TLSLD_ADD_DTPREL_HI12);
+		TEST_R(TLSLD_ADD_DTPREL_LO12);
+		TEST_R(TLSLD_ADD_DTPREL_LO12_NC);
+		TEST_R(TLSLD_LDST8_DTPREL_LO12);
+		TEST_R(TLSLD_LDST8_DTPREL_LO12_NC);
+		TEST_R(TLSLD_LDST16_DTPREL_LO12);
+		TEST_R(TLSLD_LDST16_DTPREL_LO12_NC);
+		TEST_R(TLSLD_LDST32_DTPREL_LO12);
+		TEST_R(TLSLD_LDST32_DTPREL_LO12_NC);
+		TEST_R(TLSLD_LDST64_DTPREL_LO12);
+		TEST_R(TLSLD_LDST64_DTPREL_LO12_NC);
+		TEST_R(TLSIE_MOVW_GOTTPREL_G1);
+		TEST_R(TLSIE_MOVW_GOTTPREL_G0_NC);
+		TEST_R(TLSIE_ADR_GOTTPREL_PAGE21);
+		TEST_R(TLSIE_LD64_GOTTPREL_LO12_NC);
+		TEST_R(TLSIE_LD_GOTTPREL_PREL19);
+		TEST_R(TLSLE_MOVW_TPREL_G2);
+		TEST_R(TLSLE_MOVW_TPREL_G1);
+		TEST_R(TLSLE_MOVW_TPREL_G1_NC);
+		TEST_R(TLSLE_MOVW_TPREL_G0);
+		TEST_R(TLSLE_MOVW_TPREL_G0_NC);
+		TEST_R(TLSLE_ADD_TPREL_HI12);
+		TEST_R(TLSLE_ADD_TPREL_LO12);
+		TEST_R(TLSLE_ADD_TPREL_LO12_NC);
+		TEST_R(TLSLE_LDST8_TPREL_LO12);
+		TEST_R(TLSLE_LDST8_TPREL_LO12_NC);
+		TEST_R(TLSLE_LDST16_TPREL_LO12);
+		TEST_R(TLSLE_LDST16_TPREL_LO12_NC);
+		TEST_R(TLSLE_LDST32_TPREL_LO12);
+		TEST_R(TLSLE_LDST32_TPREL_LO12_NC);
+		TEST_R(TLSLE_LDST64_TPREL_LO12);
+		TEST_R(TLSLE_LDST64_TPREL_LO12_NC);
+		TEST_R(TLSDESC_LD_PREL19);
+		TEST_R(TLSDESC_ADR_PREL21);
+		TEST_R(TLSDSEC_ADR_PAGE21);
+		TEST_R(TLSDESC_LD64_LO12);
+		TEST_R(TLSDESC_ADD_LO12);
+		TEST_R(TLSDESC_OFF_G1);
+		TEST_R(TLSDESC_OFF_G0_NC);
+		TEST_R(TLSDESC_LDR);
+		TEST_R(TLSDESC_ADD);
+		TEST_R(TLSDESC_CALL);
+		TEST_R(TLSLE_LDST128_TPREL_LO12);
+		TEST_R(TLSLE_LDST128_TPREL_LO12_NC);
+		TEST_R(TLSLD_LDST128_DTPREL_LO12);
+		TEST_R(TLSLD_LDST128_DTPREL_LO12_NC);
+		TEST_R(AUTH_ABS64);
+		TEST_R(COPY);
+		TEST_R(GLOB_DAT);
+		TEST_R(JUMP_SLOT);
+		TEST_R(RELATIVE);
+		TEST_R(TLS_DTPMOD);
+		TEST_R(TLS_DTPREL);
+		TEST_R(TLS_TPREL);
+		TEST_R(TLSDESC);
+		TEST_R(IRELATIVE);
+		TEST_R(AUTH_RELATIVE);
+
+#undef TEST_R
+	}
+	return NULL;
+}
+
+const char *elf_r_riscv_str(uint32_t v)
+{
+	switch (v)
+	{
+#define TEST_R(n) case R_RISCV_##n: return #n
+
+		TEST_R(NONE);
+		TEST_R(32);
+		TEST_R(64);
+		TEST_R(RELATIVE);
+		TEST_R(COPY);
+		TEST_R(JUMP_SLOT);
+		TEST_R(TLS_DTPMOD32);
+		TEST_R(TLS_DTPMOD64);
+		TEST_R(TLS_DTPREL32);
+		TEST_R(TLS_DTPREL64);
+		TEST_R(TLS_TPREL32);
+		TEST_R(TLS_TPREL64);
+		TEST_R(TLS_TLSDESC);
+		TEST_R(BRANCH);
+		TEST_R(JAL);
+		TEST_R(CALL);
+		TEST_R(CALL_PLT);
+		TEST_R(GOT_HI20);
+		TEST_R(TLS_GOT_HI20);
+		TEST_R(TLS_GD_HI20);
+		TEST_R(PCREL_HI20);
+		TEST_R(PCREL_LO12_I);
+		TEST_R(PCREL_LO12_S);
+		TEST_R(HI20);
+		TEST_R(LO20_I);
+		TEST_R(LO12_S);
+		TEST_R(TPREL_HI20);
+		TEST_R(TPREL_LO12_I);
+		TEST_R(TPREL_LO12_S);
+		TEST_R(TPREL_ADD);
+		TEST_R(ADD8);
+		TEST_R(ADD16);
+		TEST_R(ADD32);
+		TEST_R(ADD64);
+		TEST_R(SUB8);
+		TEST_R(SUB16);
+		TEST_R(SUB32);
+		TEST_R(SUB64);
+		TEST_R(GOT32_PCREL);
+		TEST_R(ALIGN);
+		TEST_R(RVC_BRANCH);
+		TEST_R(RVC_JUMP);
+		TEST_R(RELAX);
+		TEST_R(SUB6);
+		TEST_R(SET6);
+		TEST_R(SET8);
+		TEST_R(SET16);
+		TEST_R(SET32);
+		TEST_R(32_PCREL);
+		TEST_R(IRELATIVE);
+		TEST_R(PLT32);
+		TEST_R(SET_ULEB128);
+		TEST_R(SUB_ULEB128);
+		TEST_R(TLSDESC_HI20);
+		TEST_R(TLSDESC_LOAD_LO12);
+		TEST_R(TLSDEC_ADD_LO12);
+		TEST_R(TLSDESC_CALL);
+
+#undef TEST_R
+	}
+	return NULL;
+}
+
+const char *elf_r_mips_str(uint32_t v)
+{
+	switch (v)
+	{
+#define TEST_R(n) case R_MIPS_##n: return #n
+
+	TEST_R(NONE);
+	TEST_R(16);
+	TEST_R(32);
+	TEST_R(REL_32);
+	TEST_R(26);
+	TEST_R(HI16);
+	TEST_R(LO16);
+	TEST_R(GPREL16);
+	TEST_R(LITERAL);
+	TEST_R(GOT16);
+	TEST_R(PC16);
+	TEST_R(CALL16);
+	TEST_R(GPREL32);
+	TEST_R(SHIFT5);
+	TEST_R(SHIFT6);
+	TEST_R(64);
+	TEST_R(GOT_DISP);
+	TEST_R(GOT_PAGE);
+	TEST_R(GOT_OFST);
+	TEST_R(GOT_HI16);
+	TEST_R(GOT_LO16);
+	TEST_R(SUB);
+	TEST_R(INSERT_A);
+	TEST_R(INSERT_B);
+	TEST_R(DELETE);
+	TEST_R(HIGHER);
+	TEST_R(HIGHEST);
+	TEST_R(CALL_HI16);
+	TEST_R(CALL_LO16);
+	TEST_R(SCN_DISP);
+	TEST_R(REL16);
+	TEST_R(ADD_IMMEDIATE);
+	TEST_R(PJUMP);
+	TEST_R(RELGOT);
+	TEST_R(JALR);
+	TEST_R(TLS_DTPMOD32);
+	TEST_R(TLS_DTPREL32);
+	TEST_R(TLS_DTPMOD64);
+	TEST_R(TLS_DTPREL64);
+	TEST_R(TLS_GD);
+	TEST_R(TLS_LDM);
+	TEST_R(TLS_DTPREL_HI16);
+	TEST_R(TLS_DTPREL_LO16);
+	TEST_R(TLS_GOTTPREL);
+	TEST_R(TLS_TPREL32);
+	TEST_R(TLS_TPREL64);
+	TEST_R(TLS_TPREL_HI16);
+	TEST_R(TLS_TPREL_LO16);
+	TEST_R(GLOB_DAT);
+	TEST_R(PC10);
+	TEST_R(COPY);
+	TEST_R(JUMP_SLOT);
+	TEST_R(PC32);
+	TEST_R(EH);
+
+#undef TEST_R
+	}
+	return NULL;
+}
+
+const char *elf_ver_flags_str(char *buf, size_t size, uint32_t v)
+{
+#define TEST_VER_FLAG(name) \
+do \
+{ \
+	if (!(v & VER_FLG_##name)) \
+		break; \
+	if (first) \
+		first = 0; \
+	else \
+		strlcat(buf, ", ", size); \
+	strlcat(buf, #name, size); \
+} while (0)
+
+	int first = 1;
+	if (size)
+		buf[0] = '\0';
+	TEST_VER_FLAG(BASE);
+	TEST_VER_FLAG(WEAK);
+	return buf;
+
+#undef TEST_VER_FLAG
+}

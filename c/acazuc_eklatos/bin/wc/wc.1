@@ -1,0 +1,35 @@
+.TH wc 1 "June 6\, 2024"
+.SH NAME
+wc - count the number of lines, words, characters and bytes
+.SH SYNOPSIS
+.BR wc
+[-c] [-h] [-l] [-m] [-w] [FILES]
+.SH DESCRIPTION
+Count the number of lines, words, characters and bytes of files
+If no file is given, stdin will be used as input
+If none of -c, -l, -m or -w given, default to -clw
+A line is a sequence of characters delimited by a newline
+A word is a sequence of charactesr delimited by a iswspace(3) character
+
+.BR -c
+	display the number of bytes
+
+.BR -h
+	display help
+
+.BR -l
+	display the number of lines
+
+.BR -m
+	display the number of characters
+
+.BR -w
+	display the number of words
+
+.SH RETURN VALUES
+.BR 0
+on success
+.BR 1
+on failure
+.SH AUTHOR
+Written by acazuc

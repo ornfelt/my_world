@@ -1,0 +1,12 @@
+EVDEV_1.0 {
+	global:
+		ev_send_key_event;
+		ev_send_mouse_event;
+		ev_send_pointer_event;
+		ev_send_scroll_event;
+		evdev_alloc;
+		evdev_free;
+		evdev_ref;
+		kmod;
+	local: *;
+};

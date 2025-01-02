@@ -1,0 +1,7 @@
+#tag_all versions "1 2 3";
+
+cmsg CMSG_TRAINER_BUY_SPELL = 0x01B2 {
+    Guid guid;
+    Spell id;
+}
+

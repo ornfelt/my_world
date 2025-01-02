@@ -1,0 +1,22 @@
+XLIB_1.0 {
+	global:
+		XdbeQueryExtension;
+		XRenderComposite;
+		XRenderCreatePicture;
+		XRenderFillRectangle;
+		XRenderFillRectangles;
+		XRenderFindFormat;
+		XRenderFindStandardFormat;
+		XRenderFindVisualFormat;
+		XRenderQueryExtension;
+		XRenderQueryFormats;
+		XRenderQueryVersion;
+		XShmAttach;
+		XShmCreateImage;
+		XShmDetach;
+		XShmGetImage;
+		XShmPutImage;
+		XShmQueryExtension;
+		XShmQueryVersion;
+	local: *;
+};

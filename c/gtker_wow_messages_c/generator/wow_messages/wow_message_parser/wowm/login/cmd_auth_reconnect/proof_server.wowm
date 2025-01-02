@@ -1,0 +1,79 @@
+/// Reply to [CMD_AUTH_RECONNECT_PROOF_Client].
+slogin CMD_AUTH_RECONNECT_PROOF_Server = 0x03 {
+    LoginResult result;
+} {
+    login_versions = "2";
+}
+
+test CMD_AUTH_RECONNECT_PROOF_Server {
+    result = SUCCESS;
+} [
+    0x03, /* Opcode */
+    0x00, /* result: SUCCESS (0) */
+] {
+    login_versions = "2";
+}
+
+test CMD_AUTH_RECONNECT_PROOF_Server {
+    result = SUCCESS_SURVEY;
+} [
+    0x03, /* Opcode */
+    0x0E, /* result: SUCCESS_SURVEY (14) */
+] {
+    login_versions = "2";
+}
+
+/// Reply to [CMD_AUTH_RECONNECT_PROOF_Client].
+slogin CMD_AUTH_RECONNECT_PROOF_Server = 0x03 {
+    LoginResult result;
+    u16 padding = 0;
+} {
+    login_versions = "5 6 7";
+}
+
+test CMD_AUTH_RECONNECT_PROOF_Server {
+    result = SUCCESS;
+} [
+    0x03, /* opcode */ 
+    0x00, /* result */
+    0x00, 0x00, /* padding */
+] {
+    login_versions = "5";
+}
+
+/// Reply to [CMD_AUTH_RECONNECT_PROOF_Client].
+slogin CMD_AUTH_RECONNECT_PROOF_Server = 0x03 {
+    LoginResult result;
+    u16 padding = 0;
+} {
+    login_versions = "8";
+}
+
+test CMD_AUTH_RECONNECT_PROOF_Server {
+    result = SUCCESS;
+} [
+    0x03, /* Opcode */
+    0x00, /* result: SUCCESS (0) */
+    0x00, 0x00, /* padding: 0 */
+] {
+    login_versions = "8";
+}
+
+test CMD_AUTH_RECONNECT_PROOF_Server {
+    result = SUCCESS_SURVEY;
+} [
+    0x03, /* Opcode */
+    0x0E, /* result: SUCCESS_SURVEY (14) */
+] {
+    login_versions = "2";
+}
+
+test CMD_AUTH_RECONNECT_PROOF_Server {
+    result = FAIL_LOCKED_ENFORCED;
+} [
+    0x03, /* Opcode */
+    0x10, /* result: FAIL_LOCKED_ENFORCED (16) */
+    0x00, 0x00, /* padding: 0 */
+] {
+    login_versions = "8";
+}

@@ -1,0 +1,8 @@
+EKLAT_1.0 {
+	global:
+		dlclose;
+		dlerror;
+		dlopen;
+		dlsym;
+	local: *;
+};

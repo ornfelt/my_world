@@ -1,0 +1,509 @@
+--- libsanitizer/configure
++++ libsanitizer/configure
+@@ -7426,6 +7426,9 @@
+   # as canadian for Windows hosts.
+   lt_cv_deplibs_check_method=pass_all
+   ;;
++eklat*)
++  lt_cv_deplibs_check_method=pass_all
++  ;;
+ esac
+ 
+ fi
+@@ -10048,6 +10051,9 @@
+   openbsd*)
+     with_gnu_ld=no
+     ;;
++  eklat*)
++    link_all_deplibs=no
++    ;;
+   esac
+ 
+   ld_shlibs=yes
+@@ -11092,6 +11098,9 @@
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    eklat*)
++      ;;
++
+     *)
+       ld_shlibs=no
+       ;;
+@@ -12034,6 +12043,15 @@
+       ;;
+   esac
+   ;;
++eklat*)
++  version_type=linux
++  need_lib_prefix=no
++  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}${major} ${libname}${shared_ext}'
++  soname_spec='${libname}${release}${shared_ext}$major'
++  shlibpath_var=LD_LIBRARY_PATH
++  hardcode_into_libs=yes
++  hardcode_libdir_flag_spec='${wl}-rpath ${wl}$objdir'
++  ;;
+ *)
+   dynamic_linker=no
+   ;;
+@@ -12263,6 +12281,11 @@
+ 
+     ;;
+ 
++  eklat*)
++    lt_cv_dlopen="dlopen"
++    lt_cv_dlopen_libs="-ldl"
++    ;;
++
+   *)
+     ac_fn_c_check_func "$LINENO" "shl_load" "ac_cv_func_shl_load"
+ if test "x$ac_cv_func_shl_load" = xyes; then :
+@@ -14196,6 +14219,11 @@
+         ld_shlibs_CXX=yes
+         ;;
+ 
++      eklat*)
++        ld_shlibs_CXX=yes
++        hardcode_libdir_flag_spec_CXX='${wl}-rpath ${wl}$objdir'
++        ;;
++
+       *)
+         # FIXME: insert proper C++ library support
+         ld_shlibs_CXX=no
+@@ -15760,6 +15788,14 @@
+       ;;
+   esac
+   ;;
++eklat*)
++  version_type=linux
++  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}${major} ${libame}${shared_ext}'
++  soname_spec='${libname}${release}${shared_ext}$major'
++  shlibpath_var=LD_LIBRARY_PATH
++  hardcode_into_libs=yes
++  hardcode_libdir_flag_spec='${wl}-rpath ${wl}$objdir'
++  ;;
+ *)
+   dynamic_linker=no
+   ;;
+--- libsanitizer/configure.tgt
++++ libsanitizer/configure.tgt
+@@ -85,6 +85,9 @@
+ 		TSAN_TARGET_DEPENDENT_OBJECTS=tsan_rtl_loongarch64.lo
+ 	fi
+ 	;;
++  i?86-*-eklat* | x86_64-*-eklat* | arm-*-eklat* | aarch64-*-eklat*)
++	UNSUPPORTED=1;
++	;;
+   *)
+ 	UNSUPPORTED=1
+ 	;;
+--- libsanitizer/sanitizer_common/sanitizer_platform.h
++++ libsanitizer/sanitizer_common/sanitizer_platform.h
+@@ -14,7 +14,7 @@
+ 
+ #if !defined(__linux__) && !defined(__FreeBSD__) && !defined(__NetBSD__) && \
+     !defined(__APPLE__) && !defined(_WIN32) && !defined(__Fuchsia__) &&     \
+-    !(defined(__sun__) && defined(__svr4__))
++    !defined(__eklat__) && !(defined(__sun__) && defined(__svr4__))
+ #  error "This operating system is not supported"
+ #endif
+ 
+@@ -55,6 +55,12 @@
+ #  define SANITIZER_SOLARIS 0
+ #endif
+ 
++#if defined(__eklat__)
++#  define SANITIZER_EKLAT 1
++# else
++#  define SANITIZER_EKLAT 0
++#endif
++
+ // - SANITIZER_APPLE: all Apple code
+ //   - TARGET_OS_OSX: macOS
+ //   - SANITIZER_IOS: devices (iOS and iOS-like)
+@@ -138,7 +144,7 @@
+ 
+ #define SANITIZER_POSIX                                     \
+   (SANITIZER_FREEBSD || SANITIZER_LINUX || SANITIZER_APPLE || \
+-   SANITIZER_NETBSD || SANITIZER_SOLARIS)
++   SANITIZER_NETBSD || SANITIZER_SOLARIS || SANITIZER_EKLAT)
+ 
+ #if __LP64__ || defined(_WIN64)
+ #  define SANITIZER_WORDSIZE 64
+--- libsanitizer/sanitizer_common/sanitizer_errno_codes.h
++++ libsanitizer/sanitizer_common/sanitizer_errno_codes.h
+@@ -21,11 +21,11 @@
+ 
+ namespace __sanitizer {
+ 
+-#define errno_ENOMEM 12
+-#define errno_EBUSY 16
+-#define errno_EINVAL 22
+-#define errno_ENAMETOOLONG 36
+-#define errno_ENOSYS 38
++#define errno_ENOMEM 49
++#define errno_EBUSY 10
++#define errno_EINVAL 28
++#define errno_ENAMETOOLONG 37
++#define errno_ENOSYS 55
+ 
+ // Those might not present or their value differ on different platforms.
+ extern const int errno_EOWNERDEAD;
+--- libsanitizer/sanitizer_common/sanitizer_platform_limits_posix.h
++++ libsanitizer/sanitizer_common/sanitizer_platform_limits_posix.h
+@@ -14,7 +14,7 @@
+ #ifndef SANITIZER_PLATFORM_LIMITS_POSIX_H
+ #define SANITIZER_PLATFORM_LIMITS_POSIX_H
+ 
+-#if SANITIZER_LINUX || SANITIZER_APPLE
++#if SANITIZER_LINUX || SANITIZER_APPLE || SANITIZER_EKLAT
+ 
+ #include "sanitizer_internal_defs.h"
+ #include "sanitizer_platform.h"
+@@ -574,6 +574,10 @@
+   // The size is determined by looking at sizeof of real sigset_t on linux.
+   uptr val[128 / sizeof(uptr)];
+ };
++#elif SANITIZER_EKLAT
++struct __sanitizer_sigset_t {
++	u8 val[8];
++};
+ #endif
+ 
+ struct __sanitizer_siginfo_pad {
+--- libsanitizer/sanitizer_common/sanitizer_procmaps.h
++++ libsanitizer/sanitizer_common/sanitizer_procmaps.h
+@@ -17,7 +17,7 @@
+ 
+ #if SANITIZER_LINUX || SANITIZER_FREEBSD || SANITIZER_NETBSD || \
+     SANITIZER_APPLE || SANITIZER_SOLARIS ||  \
+-    SANITIZER_FUCHSIA
++    SANITIZER_FUCHSIA || SANITIZER_EKLAT
+ 
+ #include "sanitizer_common.h"
+ #include "sanitizer_internal_defs.h"
+--- libsanitizer/sanitizer_common/sanitizer_linux.h
++++ libsanitizer/sanitizer_common/sanitizer_linux.h
+@@ -14,7 +14,7 @@
+ 
+ #include "sanitizer_platform.h"
+ #if SANITIZER_FREEBSD || SANITIZER_LINUX || SANITIZER_NETBSD ||                \
+-    SANITIZER_SOLARIS
++    SANITIZER_SOLARIS || SANITIZER_EKLAT
+ #include "sanitizer_common.h"
+ #include "sanitizer_internal_defs.h"
+ #include "sanitizer_platform_limits_freebsd.h"
+--- libsanitizer/sanitizer_common/sanitizer_internal_defs.h
++++ libsanitizer/sanitizer_common/sanitizer_internal_defs.h
+@@ -177,7 +177,8 @@
+ #if SANITIZER_FREEBSD || SANITIZER_NETBSD || SANITIZER_APPLE ||             \
+     (SANITIZER_SOLARIS && (defined(_LP64) || _FILE_OFFSET_BITS == 64)) || \
+     (SANITIZER_LINUX && !SANITIZER_GLIBC && !SANITIZER_ANDROID) ||        \
+-    (SANITIZER_LINUX && (defined(__x86_64__) || defined(__hexagon__)))
++    (SANITIZER_LINUX && (defined(__x86_64__) || defined(__hexagon__))) || \
++    SANITIZER_EKLAT
+ typedef u64 OFF_T;
+ #else
+ typedef uptr OFF_T;
+--- libsanitizer/interception/interception.h
++++ libsanitizer/interception/interception.h
+@@ -19,7 +19,7 @@
+ 
+ #if !SANITIZER_LINUX && !SANITIZER_FREEBSD && !SANITIZER_APPLE &&    \
+     !SANITIZER_NETBSD && !SANITIZER_WINDOWS && !SANITIZER_FUCHSIA && \
+-    !SANITIZER_SOLARIS
++    !SANITIZER_SOLARIS && !SANITIZER_EKLAT
+ #  error "Interception doesn't work on this operating system."
+ #endif
+ 
+@@ -353,7 +353,7 @@
+ #define INCLUDED_FROM_INTERCEPTION_LIB
+ 
+ #if SANITIZER_LINUX || SANITIZER_FREEBSD || SANITIZER_NETBSD || \
+-    SANITIZER_SOLARIS
++    SANITIZER_SOLARIS || SANITIZER_EKLAT
+ 
+ # include "interception_linux.h"
+ # define INTERCEPT_FUNCTION(func) INTERCEPT_FUNCTION_LINUX_OR_FREEBSD(func)
+--- libsanitizer/interception/interception_linux.h
++++ libsanitizer/interception/interception_linux.h
+@@ -12,7 +12,7 @@
+ //===----------------------------------------------------------------------===//
+ 
+ #if SANITIZER_LINUX || SANITIZER_FREEBSD || SANITIZER_NETBSD || \
+-    SANITIZER_SOLARIS
++    SANITIZER_SOLARIS || SANITIZER_EKLAT
+ 
+ #if !defined(INCLUDED_FROM_INTERCEPTION_LIB)
+ # error interception_linux.h should be included from interception library only
+--- libsanitizer/sanitizer_common/sanitizer_linux_libcdep.cpp
++++ libsanitizer/sanitizer_common/sanitizer_linux_libcdep.cpp
+@@ -14,7 +14,7 @@
+ #include "sanitizer_platform.h"
+ 
+ #if SANITIZER_FREEBSD || SANITIZER_LINUX || SANITIZER_NETBSD || \
+-    SANITIZER_SOLARIS
++    SANITIZER_SOLARIS || SANITIZER_EKLAT
+ 
+ #include "sanitizer_allocator_internal.h"
+ #include "sanitizer_atomic.h"
+--- libsanitizer/sanitizer_common/sanitizer_errno.h
++++ libsanitizer/sanitizer_common/sanitizer_errno.h
+@@ -29,6 +29,8 @@
+ #  define __errno_location ___errno
+ #elif SANITIZER_WINDOWS
+ #  define __errno_location _errno
++#elif SANITIZER_EKLAT
++#  define __errno_location __get_errno
+ #endif
+ 
+ extern "C" int *__errno_location();
+--- libsanitizer/sanitizer_common/sanitizer_linux.cpp
++++ libsanitizer/sanitizer_common/sanitizer_linux.cpp
+@@ -14,7 +14,7 @@
+ #include "sanitizer_platform.h"
+ 
+ #if SANITIZER_FREEBSD || SANITIZER_LINUX || SANITIZER_NETBSD || \
+-    SANITIZER_SOLARIS
++    SANITIZER_SOLARIS || SANITIZER_EKLAT
+ 
+ #include "sanitizer_common.h"
+ #include "sanitizer_flags.h"
+@@ -108,9 +108,13 @@
+ #define environ _environ
+ #endif
+ 
++#if SANITIZER_EKLAT
++#include <sys/uio.h>
++#endif
++
+ extern char **environ;
+ 
+-#if SANITIZER_LINUX
++#if SANITIZER_LINUX || SANITIZER_EKLAT
+ // <linux/time.h>
+ struct kernel_timeval {
+   long tv_sec;
+@@ -207,7 +211,10 @@
+ #if !SANITIZER_S390
+ uptr internal_mmap(void *addr, uptr length, int prot, int flags, int fd,
+                    u64 offset) {
+-#if SANITIZER_FREEBSD || SANITIZER_LINUX_USES_64BIT_SYSCALLS
++#if SANITIZER_EKLAT
++  return internal_syscall(SYSCALL(mmap), (uptr)addr, length, prot, flags, fd,
++                          offset ? &offset : 0);
++#elif SANITIZER_FREEBSD || SANITIZER_LINUX_USES_64BIT_SYSCALLS
+   return internal_syscall(SYSCALL(mmap), (uptr)addr, length, prot, flags, fd,
+                           offset);
+ #else
+@@ -244,7 +251,7 @@
+ }
+ 
+ uptr internal_open(const char *filename, int flags) {
+-#    if SANITIZER_LINUX
++#    if SANITIZER_LINUX || SANITIZER_EKLAT
+   return internal_syscall(SYSCALL(openat), AT_FDCWD, (uptr)filename, flags);
+ #else
+   return internal_syscall(SYSCALL(open), (uptr)filename, flags);
+@@ -252,7 +259,7 @@
+ }
+ 
+ uptr internal_open(const char *filename, int flags, u32 mode) {
+-#    if SANITIZER_LINUX
++#    if SANITIZER_LINUX || SANITIZER_EKLAT
+   return internal_syscall(SYSCALL(openat), AT_FDCWD, (uptr)filename, flags,
+                           mode);
+ #else
+@@ -262,22 +269,43 @@
+ 
+ uptr internal_read(fd_t fd, void *buf, uptr count) {
+   sptr res;
++#if SANITIZER_EKLAT
++  struct iovec iov;
++  iov.iov_base = buf;
++  iov.iov_len = count;
++  HANDLE_EINTR(res,
++               (sptr)internal_syscall(SYSCALL(readv), fd, (uptr)&iov, 1));
++#else
+   HANDLE_EINTR(res,
+                (sptr)internal_syscall(SYSCALL(read), fd, (uptr)buf, count));
++#endif
+   return res;
+ }
+ 
+ uptr internal_write(fd_t fd, const void *buf, uptr count) {
+   sptr res;
++#if SANITIZER_EKLAT
++  struct iovec iov;
++  iov.iov_base = buf;
++  iov.iov_len = count;
++  HANDLE_EINTR(res,
++               (sptr)internal_syscall(SYSCALL(writev), fd, (uptr)&iov, 1));
++#else
+   HANDLE_EINTR(res,
+                (sptr)internal_syscall(SYSCALL(write), fd, (uptr)buf, count));
++#endif
+   return res;
+ }
+ 
+ uptr internal_ftruncate(fd_t fd, uptr size) {
+   sptr res;
++#if SANITIZER_EKLAT
++  HANDLE_EINTR(res, (sptr)internal_syscall(SYSCALL(ftruncateat), fd, NULL,
++               &size, AT_EMPTY_PATH));
++#else
+   HANDLE_EINTR(res, (sptr)internal_syscall(SYSCALL(ftruncate), fd,
+                (OFF_T)size));
++#endif
+   return res;
+ }
+ 
+@@ -373,7 +401,7 @@
+ #endif
+ 
+ uptr internal_stat(const char *path, void *buf) {
+-#  if SANITIZER_FREEBSD
++#  if SANITIZER_FREEBSD || SANITIZER_EKLAT
+   return internal_syscall(SYSCALL(fstatat), AT_FDCWD, (uptr)path, (uptr)buf, 0);
+ #  elif SANITIZER_LINUX
+ #    if defined(__loongarch__)
+@@ -403,7 +431,7 @@
+ }
+ 
+ uptr internal_lstat(const char *path, void *buf) {
+-#  if SANITIZER_FREEBSD
++#  if SANITIZER_FREEBSD || SANITIZER_EKLAT
+   return internal_syscall(SYSCALL(fstatat), AT_FDCWD, (uptr)path, (uptr)buf,
+                           AT_SYMLINK_NOFOLLOW);
+ #  elif SANITIZER_LINUX
+@@ -435,7 +463,10 @@
+ }
+ 
+ uptr internal_fstat(fd_t fd, void *buf) {
+-#if SANITIZER_FREEBSD || SANITIZER_LINUX_USES_64BIT_SYSCALLS
++#if SANITIZER_EKLAT
++  return internal_syscall(SYSCALL(fstatatat), fd, (uptr)0, (uptr)buf,
++                          AT_EMPTY_PATH);
++#elif SANITIZER_FREEBSD || SANITIZER_LINUX_USES_64BIT_SYSCALLS
+ #if SANITIZER_MIPS64
+   // For mips64, fstat syscall fills buffer in the format of kernel_stat
+   struct kernel_stat kbuf;
+@@ -471,7 +502,7 @@
+ }
+ 
+ uptr internal_dup2(int oldfd, int newfd) {
+-#    if SANITIZER_LINUX
++#    if SANITIZER_LINUX || SANITIZER_EKLAT
+   return internal_syscall(SYSCALL(dup3), oldfd, newfd, 0);
+ #else
+   return internal_syscall(SYSCALL(dup2), oldfd, newfd);
+@@ -479,7 +510,7 @@
+ }
+ 
+ uptr internal_readlink(const char *path, char *buf, uptr bufsize) {
+-#    if SANITIZER_LINUX
++#    if SANITIZER_LINUX || SANITIZER_EKLAT
+   return internal_syscall(SYSCALL(readlinkat), AT_FDCWD, (uptr)path, (uptr)buf,
+                           bufsize);
+ #else
+@@ -488,7 +519,7 @@
+ }
+ 
+ uptr internal_unlink(const char *path) {
+-#    if SANITIZER_LINUX
++#    if SANITIZER_LINUX || SANITIZER_EKLAT
+   return internal_syscall(SYSCALL(unlinkat), AT_FDCWD, (uptr)path, 0);
+ #else
+   return internal_syscall(SYSCALL(unlink), (uptr)path);
+@@ -499,7 +530,7 @@
+ #  if (defined(__riscv) || defined(__loongarch__)) && defined(__linux__)
+   return internal_syscall(SYSCALL(renameat2), AT_FDCWD, (uptr)oldpath, AT_FDCWD,
+                           (uptr)newpath, 0);
+-#  elif SANITIZER_LINUX
++#  elif SANITIZER_LINUX || SANITIZER_EKLAT
+   return internal_syscall(SYSCALL(renameat), AT_FDCWD, (uptr)oldpath, AT_FDCWD,
+                           (uptr)newpath);
+ #  else
+@@ -520,8 +551,13 @@
+ 
+ uptr internal_execve(const char *filename, char *const argv[],
+                      char *const envp[]) {
++#if SANITIZER_EKLAT
++  return internal_syscall(SYSCALL(execveat), AT_FDCWD, (uptr)filename, (uptr)argv,
++                          (uptr)envp, 0);
++#else
+   return internal_syscall(SYSCALL(execve), (uptr)filename, (uptr)argv,
+                           (uptr)envp);
++#endif
+ }
+ #endif  // !SANITIZER_SOLARIS && !SANITIZER_NETBSD
+ 
+@@ -575,6 +611,8 @@
+ #elif SANITIZER_SOLARIS
+   (void)pid;
+   return thr_kill(tid, sig);
++#elif SANITIZER_EKLAT
++  return internal_syscall(SYSCALL(kill), pid, sig);
+ #endif
+ }
+ #endif
+@@ -602,7 +640,7 @@
+ // 'environ' array (on some others) and does not use libc. This function
+ // should be called first inside __asan_init.
+ const char *GetEnv(const char *name) {
+-#if SANITIZER_FREEBSD || SANITIZER_NETBSD || SANITIZER_SOLARIS
++#if SANITIZER_FREEBSD || SANITIZER_NETBSD || SANITIZER_SOLARIS || SANITIZER_EKLAT
+   if (::environ != 0) {
+     uptr NameLen = internal_strlen(name);
+     for (char **Env = ::environ; *Env != 0; Env++) {
+@@ -776,8 +814,12 @@
+ }
+ 
+ uptr internal_waitpid(int pid, int *status, int options) {
++#if SANITIZER_EKLAT
++  return internal_syscall(SYSCALL(waitpid), pid, (uptr)status, options);
++#else
+   return internal_syscall(SYSCALL(wait4), pid, (uptr)status, options,
+                           0 /* rusage */);
++#endif
+ }
+ 
+ uptr internal_getpid() {
+@@ -807,7 +849,7 @@
+ }
+ 
+ uptr internal_lseek(fd_t fd, OFF_T offset, int whence) {
+-  return internal_syscall(SYSCALL(lseek), fd, offset, whence);
++  return internal_syscall(SYSCALL(lseek), fd, (uptr)&offset, whence);
+ }
+ 
+ #if SANITIZER_LINUX
+@@ -834,6 +876,8 @@
+ #      else
+   return internal_syscall(SYSCALL(clone), SIGCHLD, 0);
+ #      endif
++#    elif SANITIZER_EKLAT
++  return internal_syscall(SYSCALL(clone), 0);
+ #    else
+   return internal_syscall(SYSCALL(fork));
+ #    endif
+@@ -925,7 +969,7 @@
+ 
+ uptr internal_sigprocmask(int how, __sanitizer_sigset_t *set,
+                           __sanitizer_sigset_t *oldset) {
+-#if SANITIZER_FREEBSD
++#if SANITIZER_FREEBSD || SANITIZER_EKLAT
+   return internal_syscall(SYSCALL(sigprocmask), how, set, oldset);
+ #else
+   __sanitizer_kernel_sigset_t *k_set = (__sanitizer_kernel_sigset_t *)set;
+--- libsanitizer/sanitizer_common/sanitizer_syscall_generic.inc
++++ libsanitizer/sanitizer_common/sanitizer_syscall_generic.inc
+@@ -13,7 +13,7 @@
+ // NetBSD uses libc calls directly
+ #if !SANITIZER_NETBSD
+ 
+-#if SANITIZER_FREEBSD || SANITIZER_APPLE || SANITIZER_SOLARIS
++#if SANITIZER_FREEBSD || SANITIZER_APPLE || SANITIZER_SOLARIS || SANITIZER_EKLAT
+ # define SYSCALL(name) SYS_ ## name
+ #else
+ # define SYSCALL(name) __NR_ ## name

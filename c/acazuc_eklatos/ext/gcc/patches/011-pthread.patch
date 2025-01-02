@@ -1,0 +1,22 @@
+--- gcc/Makefile.in
++++ gcc/Makefile.in
+@@ -1107,7 +1107,7 @@
+ ALL_COMPILERFLAGS = $(ALL_CXXFLAGS) $(PICFLAG)
+ 
+ # This is the variable to use when using $(LINKER).
+-ALL_LINKERFLAGS = $(ALL_CXXFLAGS) $(LD_PICFLAG)
++ALL_LINKERFLAGS = $(ALL_CXXFLAGS) $(LD_PICFLAG) -lpthread
+ 
+ # Build and host support libraries.
+ 
+--- c++tools/Makefile.in
++++ c++tools/Makefile.in
+@@ -99,7 +99,7 @@
+ CODYLIB = ../libcody/libcody.a
+ CXXINC += -I$(srcdir)/../libcody -I$(srcdir)/../include -I$(srcdir)/../gcc -I. -I../gcc
+ g++-mapper-server$(exeext): $(MAPPER.O) $(CODYLIB)
+-	+$(CXX) $(LDFLAGS) $(PICFLAG) $(LD_PICFLAG) -o $@ $^ $(LIBIBERTY) $(NETLIBS)
++	+$(CXX) $(LDFLAGS) $(PICFLAG) $(LD_PICFLAG) -o $@ $^ $(LIBIBERTY) $(NETLIBS) -lpthread
+ 
+ # copy to gcc dir so tests there can run
+ all::../gcc/g++-mapper-server$(exeext)

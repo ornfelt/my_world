@@ -1,0 +1,19 @@
+smsg SMSG_SPELLENERGIZELOG = 0x0151 {
+    PackedGuid victim;
+    PackedGuid caster;
+    Spell spell;
+    (u32)Power power;
+    u32 damage;
+} {
+    versions = "1 2";
+}
+
+smsg SMSG_SPELLENERGIZELOG = 0x0151 {
+    PackedGuid victim;
+    PackedGuid caster;
+    Spell spell;
+    (u32)Power power;
+    u32 damage;
+} {
+    versions = "3";
+}

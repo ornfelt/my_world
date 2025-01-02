@@ -1,0 +1,55 @@
+flag FactionFlag : u8 {
+    /// makes visible in client (set or can be set at interaction with target of this faction)
+    VISIBLE = 0x01;
+    /// enable AtWar-button in client. player controlled (except opposition team always war state), Flag only set on initial creation
+    AT_WAR = 0x02;
+    /// hidden faction from reputation pane in client (player can gain reputation, but this update not sent to client)
+    HIDDEN = 0x04;
+    /// always overwrite `FACTION_FLAG_VISIBLE` and hide faction in rep.list, used for hide opposite team factions
+    INVISIBLE_FORCED = 0x08;
+    /// always overwrite `FACTION_FLAG_AT_WAR`, used for prevent war with own team factions
+    PEACE_FORCED = 0x10;
+    /// player controlled, state stored in characters.data ( [CMSG_SET_FACTION_INACTIVE] )
+    INACTIVE = 0x20;
+    /// flag for the two competing outland factions
+    /// This is also present in vmangos for Vanilla, unsure if it's used.
+    RIVAL = 0x40;
+} {
+    versions = "1 2";
+}
+
+cmsg CMSG_SET_FACTION_ATWAR = 0x0125 {
+    Faction faction;
+    FactionFlag flags;
+} {
+    paste_versions = "1.12 2.4.3";
+}
+
+flag FactionFlag : u8 {
+    /// makes visible in client (set or can be set at interaction with target of this faction)
+    VISIBLE = 0x01;
+    /// enable AtWar-button in client. player controlled (except opposition team always war state), Flag only set on initial creation
+    AT_WAR = 0x02;
+    /// hidden faction from reputation pane in client (player can gain reputation, but this update not sent to client)
+    HIDDEN = 0x04;
+    /// always overwrite `FACTION_FLAG_VISIBLE` and hide faction in rep.list, used for hide opposite team factions
+    INVISIBLE_FORCED = 0x08;
+    /// always overwrite `FACTION_FLAG_AT_WAR`, used for prevent war with own team factions
+    PEACE_FORCED = 0x10;
+    /// player controlled, state stored in characters.data ( [CMSG_SET_FACTION_INACTIVE] )
+    INACTIVE = 0x20;
+    /// flag for the two competing outland factions
+    /// This is also present in vmangos for Vanilla, unsure if it's used.
+    RIVAL = 0x40;
+    /// horde and alliance home cities and their northrend allies have this flag
+    SPECIAL = 0x80;
+} {
+    versions = "3";
+}
+
+cmsg CMSG_SET_FACTION_ATWAR = 0x0125 {
+    Faction faction;
+    FactionFlag flags;
+} {
+    versions = "3.3.5";
+}

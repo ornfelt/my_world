@@ -1,0 +1,29 @@
+PCI_1.0 {
+	global:
+		pci_dev_read;
+		pci_dev_write;
+		pci_map;
+		pci_map_bar;
+		pci_probe;
+		pci_probe_progif;
+		pci_register_irq;
+		pci_r16;
+		pci_r16v;
+		pci_r32;
+		pci_r32v;
+		pci_r64;
+		pci_r64v;
+		pci_r8;
+		pci_r8v;
+		pci_unmap;
+		pci_unregister_irq;
+		pci_w16;
+		pci_w16v;
+		pci_w32;
+		pci_w32v;
+		pci_w64;
+		pci_w64v;
+		pci_w8;
+		pci_w8v;
+	local: *;
+};

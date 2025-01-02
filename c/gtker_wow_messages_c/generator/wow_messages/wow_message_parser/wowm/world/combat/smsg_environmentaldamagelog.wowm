@@ -1,0 +1,19 @@
+#tag_all versions "1 2 3";
+
+enum EnvironmentalDamageType : u8 {
+    EXHAUSTED = 0;
+    DROWNING = 1;
+    FALL = 2;
+    LAVA = 3;
+    SLIME = 4;
+    FIRE = 5;
+}
+
+smsg SMSG_ENVIRONMENTAL_DAMAGE_LOG = 0x01FC {
+    Guid guid;
+    EnvironmentalDamageType damage_type;
+    u32 damage;
+    u32 absorb;
+    u32 resist;
+}
+

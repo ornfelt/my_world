@@ -1,0 +1,62 @@
+ARCH = i386
+#ARCH = amd64
+#ARCH = arm
+#ARCH = aarch64
+#ARCH = riscv32
+#ARCH = riscv64
+#ARCH = mipsel
+#ARCH = mips64el
+
+KEYBOARD = qwerty
+
+WITH_RETRO_EMU = no
+
+WITH_JKGL = no
+WITH_JKSSL = no
+WITH_JKSSH = no
+WITH_JKX = no
+WITH_JKA = no
+
+WITH_BASH = no
+WITH_BINUTILS = no
+WITH_BISON = no
+WITH_DIFFUTILS = no
+WITH_FINDUTILS = no
+WITH_GCC = no
+WITH_GDB = no
+WITH_GREP = no
+WITH_GZIP = no
+WITH_LIBXML2 = no
+WITH_M4 = no
+WITH_MAKE = no
+WITH_NCURSES = no
+WITH_PATCH = no
+WITH_SED = no
+WITH_TAR = no
+WITH_TEXINFO = no
+WITH_XZ = no
+
+WITH_ASLR = yes
+WITH_STRIP = no
+WITH_LTO = yes
+
+WITH_QEMU_AUDIO = hda
+WITH_QEMU_NET = e1000
+WITH_QEMU_KBD = ps2
+WITH_QEMU_MOUSE = ps2
+WITH_QEMU_KVM = yes
+WITH_QEMU_GRAPHICS = none
+WITH_QEMU_CPU = 1
+WITH_QEMU_RAM = 1024
+WITH_QEMU_TPM = none
+
+WITH_SSE = yes
+WITH_SSE2 = yes
+WITH_SSE3 = yes
+WITH_SSSE3 = yes
+WITH_SSE41 = yes
+WITH_SSE42 = yes
+WITH_AVX = no
+WITH_AVX2 = no
+
+GNU_MIRROR_URL = https://ftp.gnu.org/pub/gnu

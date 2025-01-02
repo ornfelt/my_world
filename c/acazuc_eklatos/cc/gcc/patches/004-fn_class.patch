@@ -1,0 +1,32 @@
+--- gcc/targhooks.cc
++++ gcc/targhooks.cc
+@@ -1781,6 +1781,19 @@
+ 
+ extern bool default_new_address_profitable_p (rtx, rtx);
+ 
++bool
++eklat_libc_has_function (enum function_class fn_class,
++			 tree type ATTRIBUTE_UNUSED)
++{
++  if (fn_class == function_c94
++      || fn_class == function_c99_misc
++      || fn_class == function_c99_math_complex
++      || fn_class == function_sincos)
++    return true;
++
++  return false;
++}
++
+ 
+ /* The default implementation of TARGET_NEW_ADDRESS_PROFITABLE_P.  */
+ 
+--- gcc/targhooks.h
++++ gcc/targhooks.h
+@@ -221,6 +221,7 @@
+ extern bool no_c99_libc_has_function (enum function_class, tree);
+ extern bool gnu_libc_has_function (enum function_class, tree);
+ extern bool bsd_libc_has_function (enum function_class, tree);
++extern bool eklat_libc_has_function (enum function_class, tree);
+ extern unsigned default_fortify_source_default_level (void);
+ extern unsigned default_libm_function_max_error (unsigned, machine_mode, bool);
+ extern unsigned glibc_linux_libm_function_max_error (unsigned, machine_mode,

@@ -1,0 +1,23 @@
+FETCH_1.0 {
+	global:
+		fetchFreeURL;
+		fetchGet;
+		fetchGetFile;
+		fetchGetHTTP;
+		fetchGetURL;
+		fetchList;
+		fetchListFile;
+		fetchListHTTP;
+		fetchListURL;
+		fetchMakeURL;
+		fetchParseURL;
+		fetchPut;
+		fetchPutFile;
+		fetchPutHTTP;
+		fetchPutURL;
+		fetchStat;
+		fetchStatFile;
+		fetchStatHTTP;
+		fetchStatURL;
+	local: *;
+};

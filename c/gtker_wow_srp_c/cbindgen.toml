@@ -1,0 +1,10 @@
+[fn]
+prefix = "WOW_SRP_EXPORT"
+
+[defines]
+"feature = values" = "WOW_SRP_VALUES"
+"feature = wrath" = "WOW_SRP_WRATH"
+"feature = tbc" = "WOW_SRP_TBC"
+"feature = vanilla" = "WOW_SRP_VANILLA"
+"feature = server" = "WOW_SRP_SERVER"
+"feature = client" = "WOW_SRP_CLIENT"

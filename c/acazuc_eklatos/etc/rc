@@ -1,0 +1,33 @@
+#!/bin/sh
+
+echo -e "\e[1m"
+echo "       :::::::::: :::    ::: :::            ::: ::::::::::: ::::::::   ::::::::"
+echo "      :+:        :+:   :+:  :+:          :+: :+:   :+:    :+:    :+: :+:    :+:"
+echo "     +:+        +:+  +:+   +:+         +:+   +:+  +:+    +:+    +:+ +:+        "
+echo "    +#++:++#   +#++:++    +#+        +#++:++#++: +#+    +#+    +:+ +#++:++#++  "
+echo "   +#+        +#+  +#+   +#+        +#+     +#+ +#+    +#+    +#+        +#+   "
+echo "  #+#        #+#   #+#  #+#        #+#     #+# #+#    #+#    #+# #+#    #+#    "
+echo " ########## ###    ### ########## ###     ### ###     ########   ########      "
+echo -e "\e[0m"
+
+kmadd -b /usr/mod /usr/mod/*.kmod
+kmadd -b /usr/mod /usr/mod/*/*.kmod
+
+mkdir -p /home && mount -t ext2fs /dev/ata0p1 /home
+mkdir -p /boot && mount -t iso9660 /dev/vbd0p1 /boot
+mkdir -p /tmp && mount -t ramfs /dev/null /tmp
+mkdir -p /sys && mount -t sysfs /dev/null /sys
+mkdir -p /proc && mount -t procfs /dev/null /proc
+mkdir -p /var/run
+mkdir -p /root
+
+# XXX somehow iterate over available devices ?
+dhclient eth0 || dhclient vrt0
+named
+
+if [ -f /bin/xsrv -a -e /dev/fb0 ]
+then
+	mkdir -p /tmp/.X11-unix
+	nice -n -15 xsrv -d && \
+	env DISPLAY=:5 nice -n -14 xwm -d
+fi

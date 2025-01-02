@@ -1,0 +1,388 @@
+--- gettext-runtime/configure
++++ gettext-runtime/configure
+@@ -10795,6 +10795,9 @@
+ os2*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
++eklat*)
++  lt_cv_deplibs_check_method=pass_all
++  ;;
+ esac
+ 
+ fi
+@@ -15815,6 +15818,9 @@
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    eklat*)
++      ;;
++
+     *)
+       ld_shlibs=no
+       ;;
+@@ -16888,6 +16894,15 @@
+   shlibpath_var=LD_LIBRARY_PATH
+   ;;
+ 
++eklat*)
++  version_type=linux # correct to gnu/linux during the next big refactor
++  library_names_spec='$libname$release$shared_ext$versuffix $libname$release$shared_ext$major $libname$shared_ext'
++  soname_spec='$libname$release$shared_ext$major'
++  shlibpath_var=LD_LIBRARY_PATH
++  hardcode_into_libs=yes
++  hardcode_libdir_flag_spec=''
++  ;;
++
+ *)
+   dynamic_linker=no
+   ;;
+@@ -19178,6 +19193,9 @@
+         ld_shlibs_CXX=no
+         ;;
+ 
++      eklat*)
++        ;;
++
+       *)
+         # FIXME: insert proper C++ library support
+         ld_shlibs_CXX=no
+@@ -20878,6 +20896,15 @@
+   shlibpath_var=LD_LIBRARY_PATH
+   ;;
+ 
++eklat*)
++  version_type=linux # correct to gnu/linux during the next big refactor
++  library_names_spec='$libname$release$shared_ext$versuffix $libname$release$shared_ext$major $libname$shared_ext'
++  soname_spec='$libname$release$shared_ext$major'
++  shlibpath_var=LD_LIBRARY_PATH
++  hardcode_into_libs=yes
++  hardcode_libdir_flag_spec=''
++  ;;
++
+ *)
+   dynamic_linker=no
+   ;;
+@@ -39837,12 +39864,12 @@
+ printf "%s\n" "$gl_cv_func_free_preserves_errno" >&6; }
+ 
+   case $gl_cv_func_free_preserves_errno in
+-   *yes)
++   *)
+ 
+ printf "%s\n" "#define HAVE_FREE_POSIX 1" >>confdefs.h
+ 
+     ;;
+-   *) REPLACE_FREE=1 ;;
++   *dummy) REPLACE_FREE=1 ;;
+   esac
+ 
+ 
+@@ -44569,12 +44596,12 @@
+ printf "%s\n" "$gl_cv_func_free_preserves_errno" >&6; }
+ 
+   case $gl_cv_func_free_preserves_errno in
+-   *yes)
++   *)
+ 
+ printf "%s\n" "#define HAVE_FREE_POSIX 1" >>confdefs.h
+ 
+     ;;
+-   *) REPLACE_FREE=1 ;;
++   *dummy) REPLACE_FREE=1 ;;
+   esac
+ 
+ 
+--- gettext-tools/configure
++++ gettext-tools/configure
+@@ -14162,6 +14162,9 @@
+ os2*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
++eklat*)
++  lt_cv_deplibs_check_method=pass_all
++  ;;
+ esac
+ 
+ fi
+@@ -19182,6 +19185,9 @@
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    eklat*)
++      ;;
++
+     *)
+       ld_shlibs=no
+       ;;
+@@ -20255,6 +20261,15 @@
+   shlibpath_var=LD_LIBRARY_PATH
+   ;;
+ 
++eklat*)
++  version_type=linux # correct to gnu/linux during the next big refactor
++  library_names_spec='$libname$release$shared_ext$versuffix $libname$release$shared_ext$major $libname$shared_ext'
++  soname_spec='$libname$release$shared_ext$major'
++  shlibpath_var=LD_LIBRARY_PATH
++  hardcode_into_libs=yes
++  hardcode_libdir_flag_spec=''
++  ;;
++
+ *)
+   dynamic_linker=no
+   ;;
+@@ -22545,6 +22560,9 @@
+         ld_shlibs_CXX=no
+         ;;
+ 
++      eklat*)
++        ;;
++
+       *)
+         # FIXME: insert proper C++ library support
+         ld_shlibs_CXX=no
+@@ -24245,6 +24263,15 @@
+   shlibpath_var=LD_LIBRARY_PATH
+   ;;
+ 
++eklat*)
++  version_type=linux # correct to gnu/linux during the next big refactor
++  library_names_spec='$libname$release$shared_ext$versuffix $libname$release$shared_ext$major $libname$shared_ext'
++  soname_spec='$libname$release$shared_ext$major'
++  shlibpath_var=LD_LIBRARY_PATH
++  hardcode_into_libs=yes
++  hardcode_libdir_flag_spec=''
++  ;;
++
+ *)
+   dynamic_linker=no
+   ;;
+@@ -59762,12 +59789,12 @@
+ printf "%s\n" "$gl_cv_func_free_preserves_errno" >&6; }
+ 
+   case $gl_cv_func_free_preserves_errno in
+-   *yes)
++   *)
+ 
+ printf "%s\n" "#define HAVE_FREE_POSIX 1" >>confdefs.h
+ 
+     ;;
+-   *) REPLACE_FREE=1 ;;
++   *dummy) REPLACE_FREE=1 ;;
+   esac
+ 
+ 
+@@ -72782,12 +72809,12 @@
+ printf "%s\n" "$gl_cv_func_free_preserves_errno" >&6; }
+ 
+   case $gl_cv_func_free_preserves_errno in
+-   *yes)
++   *)
+ 
+ printf "%s\n" "#define HAVE_FREE_POSIX 1" >>confdefs.h
+ 
+     ;;
+-   *) REPLACE_FREE=1 ;;
++   *dummy) REPLACE_FREE=1 ;;
+   esac
+ 
+ 
+@@ -94940,12 +94967,12 @@
+ printf "%s\n" "$gl_cv_func_free_preserves_errno" >&6; }
+ 
+   case $gl_cv_func_free_preserves_errno in
+-   *yes)
++   *)
+ 
+ printf "%s\n" "#define HAVE_FREE_POSIX 1" >>confdefs.h
+ 
+     ;;
+-   *) REPLACE_FREE=1 ;;
++   *dummy) REPLACE_FREE=1 ;;
+   esac
+ 
+ 
+--- libtextstyle/configure
++++ libtextstyle/configure
+@@ -9762,6 +9762,9 @@
+ os2*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
++eklat*)
++  lt_cv_deplibs_check_method=pass_all
++  ;;
+ esac
+ 
+ fi
+@@ -14771,6 +14774,9 @@
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    eklat*)
++      ;;
++
+     *)
+       ld_shlibs=no
+       ;;
+@@ -15844,6 +15850,15 @@
+   shlibpath_var=LD_LIBRARY_PATH
+   ;;
+ 
++eklat*)
++  version_type=linux # correct to gnu/linux during the next big refactor
++  library_names_spec='$libname$release$shared_ext$versuffix $libname$release$shared_ext$major $libname$shared_ext'
++  soname_spec='$libname$release$shared_ext$major'
++  shlibpath_var=LD_LIBRARY_PATH
++  hardcode_into_libs=yes
++  hardcode_libdir_flag_spec=''
++  ;;
++
+ *)
+   dynamic_linker=no
+   ;;
+@@ -37634,12 +37649,12 @@
+ printf "%s\n" "$gl_cv_func_free_preserves_errno" >&6; }
+ 
+   case $gl_cv_func_free_preserves_errno in
+-   *yes)
++   *)
+ 
+ printf "%s\n" "#define HAVE_FREE_POSIX 1" >>confdefs.h
+ 
+     ;;
+-   *) REPLACE_FREE=1 ;;
++   *dummy) REPLACE_FREE=1 ;;
+   esac
+ 
+ 
+--- gettext-runtime/libasprintf/configure
++++ gettext-runtime/libasprintf/configure
+@@ -9381,6 +9381,9 @@
+ os2*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
++eklat*)
++  lt_cv_deplibs_check_method=pass_all
++  ;;
+ esac
+
+ fi
+@@ -14401,6 +14404,9 @@
+       hardcode_shlibpath_var=no
+       ;;
+
++    eklat*)
++      ;;
++
+     *)
+       ld_shlibs=no
+       ;;
+@@ -15474,6 +15480,15 @@
+   shlibpath_var=LD_LIBRARY_PATH
+   ;;
+
++eklat*)
++  version_type=linux # correct to gnu/linux during the next big refactor
++  library_names_spec='$libname$release$shared_ext$versuffix $libname$release$shared_ext$major $libname$shared_ext'
++  soname_spec='$libname$release$shared_ext$major'
++  shlibpath_var=LD_LIBRARY_PATH
++  hardcode_into_libs=yes
++  hardcode_libdir_flag_spec=''
++  ;;
++
+ *)
+   dynamic_linker=no
+   ;;
+@@ -17764,6 +17779,9 @@
+         ld_shlibs_CXX=no
+         ;;
+
++      eklat*)
++        ;;
++
+       *)
+         # FIXME: insert proper C++ library support
+         ld_shlibs_CXX=no
+@@ -19464,6 +19482,15 @@
+   shlibpath_var=LD_LIBRARY_PATH
+   ;;
+
++eklat*)
++  version_type=linux # correct to gnu/linux during the next big refactor
++  library_names_spec='$libname$release$shared_ext$versuffix $libname$release$shared_ext$major $libname$shared_ext'
++  soname_spec='$libname$release$shared_ext$major'
++  shlibpath_var=LD_LIBRARY_PATH
++  hardcode_into_libs=yes
++  hardcode_libdir_flag_spec=''
++  ;;
++
+ *)
+   dynamic_linker=no
+   ;;
+@@ -27280,12 +27307,12 @@
+ printf "%s\n" "$gl_cv_func_free_preserves_errno" >&6; }
+
+   case $gl_cv_func_free_preserves_errno in
+-   *yes)
++   *)
+
+ printf "%s\n" "#define HAVE_FREE_POSIX 1" >>confdefs.h
+
+     ;;
+-   *) REPLACE_FREE=1 ;;
++   *dummy) REPLACE_FREE=1 ;;
+   esac
+
+
+--- gettext-runtime/intl/configure
++++ gettext-runtime/intl/configure
+@@ -9120,6 +9120,9 @@
+ os2*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
++eklat*)
++  lt_cv_deplibs_check_method=pass_all
++  ;;
+ esac
+
+ fi
+@@ -14129,6 +14132,9 @@
+       hardcode_shlibpath_var=no
+       ;;
+
++    eklat*)
++      ;;
++
+     *)
+       ld_shlibs=no
+       ;;
+@@ -15202,6 +15208,15 @@
+   shlibpath_var=LD_LIBRARY_PATH
+   ;;
+
++eklat*)
++  version_type=linux # correct to gnu/linux during the next big refactor
++  library_names_spec='$libname$release$shared_ext$versuffix $libname$release$shared_ext$major $libname$shared_ext'
++  soname_spec='$libname$release$shared_ext$major'
++  shlibpath_var=LD_LIBRARY_PATH
++  hardcode_into_libs=yes
++  hardcode_libdir_flag_spec=''
++  ;;
++
+ *)
+   dynamic_linker=no
+   ;;
+@@ -32215,12 +32230,12 @@
+ printf "%s\n" "$gl_cv_func_free_preserves_errno" >&6; }
+
+   case $gl_cv_func_free_preserves_errno in
+-   *yes)
++   *)
+
+ printf "%s\n" "#define HAVE_FREE_POSIX 1" >>confdefs.h
+
+     ;;
+-   *) REPLACE_FREE=1 ;;
++   *dummy) REPLACE_FREE=1 ;;
+   esac
+
+

@@ -1,0 +1,11 @@
+--- libitm/configure.tgt
++++ libitm/configure.tgt
+@@ -146,7 +146,7 @@
+   *-*-gnu* | *-*-k*bsd*-gnu \
+   | *-*-netbsd* | *-*-freebsd* | *-*-openbsd* \
+   | *-*-solaris2* | *-*-sysv4* | *-*-hpux11* \
+-  | *-*-aix* | *-*-dragonfly*)
++  | *-*-aix* | *-*-dragonfly* | *-*-eklatt*) # require crt0 fix
+ 	# POSIX system.  The OS is supported.
+ 	;;
+ 
