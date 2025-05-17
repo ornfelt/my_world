@@ -10,7 +10,8 @@
 FILE *hostent_fp;
 int hostent_stayopen;
 
-struct hostent *next_hostent(void)
+struct hostent *
+next_hostent(void)
 {
 	static char hostent_name[256];
 	static struct in_addr hostent_addr;
@@ -18,6 +19,7 @@ struct hostent *next_hostent(void)
 	static struct hostent hostent;
 	size_t n = 0;
 	char *line = NULL;
+
 	while (getline(&line, &n, hostent_fp) > 0)
 	{
 		char *tmp = strchr(line, '#');

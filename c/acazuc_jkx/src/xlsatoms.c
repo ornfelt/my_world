@@ -3,17 +3,21 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-static int error_handler(Display *display, XErrorEvent *event)
+static int
+error_handler(Display *display, XErrorEvent *event)
 {
 	(void)display;
 	(void)event;
 	exit(EXIT_SUCCESS);
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
+	Display *display;
+
 	(void)argc;
-	Display *display = XOpenDisplay(NULL);
+	display = XOpenDisplay(NULL);
 	if (!display)
 	{
 		fprintf(stderr, "%s: failed to open display\n", argv[0]);

@@ -11,14 +11,16 @@ struct env
 	mode_t mode;
 };
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-m mode] name type major minor\n", progname);
 	printf("-m: the mode of the created node\n");
 	printf("type: 'b' for block device, 'c' for character device\n");
 }
 
-static int parse_mode(const char *progname, const char *str, mode_t *mode)
+static int
+parse_mode(const char *progname, const char *str, mode_t *mode)
 {
 	*mode = 0;
 	for (size_t i = 0; str[i]; ++i)
@@ -38,11 +40,13 @@ static int parse_mode(const char *progname, const char *str, mode_t *mode)
 	return 0;
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	unsigned long min;
 	unsigned long maj;
+	char *endptr;
 	int c;
 
 	memset(&env, 0, sizeof(env));
@@ -79,7 +83,6 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 	errno = 0;
-	char *endptr;
 	maj = strtoul(argv[optind + 2], &endptr, 0);
 	if (errno)
 	{
@@ -103,10 +106,12 @@ int main(int argc, char **argv)
 		fprintf(stderr, "%s: invalid operand\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	int res = mknod(argv[optind], env.mode, makedev(maj, min));
-	if (res)
+	if (mknod(argv[optind], env.mode, makedev(maj, min)) == -1)
 	{
-		fprintf(stderr, "%s: mknod: %s\n", argv[0], strerror(errno));
+		fprintf(stderr, "%s: mknod(%s): %s\n",
+		        argv[0],
+		        argv[optind],
+		        strerror(errno));
 		return EXIT_FAILURE;
 	}
 	return EXIT_SUCCESS;

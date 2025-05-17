@@ -2,7 +2,8 @@
 
 #include <unistd.h>
 
-int getpagesize(void)
+int
+getpagesize(void)
 {
 	return syscall0(SYS_getpagesize);
 }

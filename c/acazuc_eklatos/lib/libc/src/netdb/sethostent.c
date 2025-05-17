@@ -2,7 +2,8 @@
 
 #include <netdb.h>
 
-void sethostent(int stayopen)
+void
+sethostent(int stayopen)
 {
 	if (hostent_fp)
 		fclose(hostent_fp);

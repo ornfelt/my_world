@@ -18,32 +18,39 @@ struct env
 	int opt;
 };
 
-static int delete_chars(struct env *env)
+static int
+delete_chars(struct env *env)
 {
 	int c;
 
 	while ((c = getc_unlocked(stdin)) != EOF)
 	{
-		char *pos = memchr(env->set1, c, env->len1);
+		char *pos;
+
+		pos = memchr(env->set1, c, env->len1);
 		if (pos)
 			continue;
 		putc_unlocked(c, stdout);
 		if (ferror_unlocked(stdout))
 		{
-			fprintf(stderr, "%s: putc: %s\n", env->progname,
+			fprintf(stderr, "%s: putc: %s\n",
+			        env->progname,
 			        strerror(errno));
 			return 1;
 		}
 	}
 	if (ferror(stdin))
 	{
-		fprintf(stderr, "%s: getc: %s", env->progname, strerror(errno));
+		fprintf(stderr, "%s: getc: %s",
+		        env->progname,
+		        strerror(errno));
 		return 1;
 	}
 	return 0;
 }
 
-static int translate_chars(struct env *env)
+static int
+translate_chars(struct env *env)
 {
 	char *replace;
 	size_t len;
@@ -52,7 +59,8 @@ static int translate_chars(struct env *env)
 	replace = malloc(env->len1);
 	if (!replace)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", env->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
@@ -62,13 +70,16 @@ static int translate_chars(struct env *env)
 		replace[len] = replace[env->len2 - 1];
 	while ((c = getc_unlocked(stdin)) != EOF)
 	{
-		char *pos = memchr(env->set1, c, env->len1);
+		char *pos;
+
+		pos = memchr(env->set1, c, env->len1);
 		if (pos)
 			c = replace[pos - env->set1];
 		putc_unlocked(c, stdout);
 		if (ferror_unlocked(stdout))
 		{
-			fprintf(stderr, "%s: putc: %s\n", env->progname,
+			fprintf(stderr, "%s: putc: %s\n",
+			        env->progname,
 			        strerror(errno));
 			return 1;
 		}
@@ -76,21 +87,26 @@ static int translate_chars(struct env *env)
 	free(replace);
 	if (ferror(stdin))
 	{
-		fprintf(stderr, "%s: getc: %s", env->progname, strerror(errno));
+		fprintf(stderr, "%s: getc: %s",
+		        env->progname,
+		        strerror(errno));
 		return 1;
 	}
 	return 0;
 }
 
-static int add_set_char(struct env *env, char **set, size_t *len,
-                        size_t *size, char c)
+static int
+add_set_char(struct env *env, char **set, size_t *len, size_t *size, char c)
 {
 	if (*len + 1 >= *size)
 	{
-		char *dup = realloc(*set, *size * 2);
+		char *dup;
+
+		dup = realloc(*set, *size * 2);
 		if (!dup)
 		{
-			fprintf(stderr, "%s: malloc: %s\n", env->progname,
+			fprintf(stderr, "%s: malloc: %s\n",
+			        env->progname,
 			        strerror(errno));
 			return 1;
 		}
@@ -101,15 +117,19 @@ static int add_set_char(struct env *env, char **set, size_t *len,
 	return 0;
 }
 
-static int eval_set(struct env *env, const char *set, char **setp, size_t *lenp)
+static int
+eval_set(struct env *env, const char *set, char **setp, size_t *lenp)
 {
 	size_t len = strlen(set);
-	char *dup = malloc(32);
+	char *dup;
 	size_t dup_len = 0;
 	size_t dup_size = 32;
+
+	dup = malloc(dup_size);
 	if (!dup)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", env->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
@@ -230,7 +250,8 @@ static int eval_set(struct env *env, const char *set, char **setp, size_t *lenp)
 	return 0;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-c] [-d] [-h] [-t] SET1 [SET2]\n", progname);
 	printf("-c: match complement of SET1\n");
@@ -239,7 +260,8 @@ static void usage(const char *progname)
 	printf("-t: truncate SET1 to the length of SET2\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

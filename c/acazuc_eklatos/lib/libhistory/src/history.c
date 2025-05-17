@@ -6,23 +6,26 @@
 static HISTORY_STATE hist_state;
 static HISTORY_STATE *g_state;
 
-void using_history(void)
+void
+using_history(void)
 {
 	g_state = &hist_state;
 }
 
-HISTORY_STATE *history_get_history_state(void)
+HISTORY_STATE *
+history_get_history_state(void)
 {
 	return g_state;
 }
 
-void history_set_history_state(HISTORY_STATE *state)
+void
+history_set_history_state(HISTORY_STATE *state)
 {
 	g_state = state;
 }
 
-static HIST_ENTRY *entry_alloc(const char *line, const char *timestamp,
-                               histdata_t data)
+static HIST_ENTRY *
+entry_alloc(const char *line, const char *timestamp, histdata_t data)
 {
 	HIST_ENTRY *entry = malloc(sizeof(*entry));
 	if (!entry)
@@ -58,14 +61,16 @@ static HIST_ENTRY *entry_alloc(const char *line, const char *timestamp,
 	return entry;
 }
 
-static void entry_free(HIST_ENTRY *entry)
+static void
+entry_free(HIST_ENTRY *entry)
 {
 	free(entry->line);
 	free(entry->timestamp);
 	free(entry);
 }
 
-void add_history(const char *line)
+void
+add_history(const char *line)
 {
 	HIST_ENTRY *entry = entry_alloc(line, NULL, NULL);
 	if (!entry)
@@ -93,7 +98,8 @@ void add_history(const char *line)
 	g_state->entries[g_state->length] = NULL;
 }
 
-void add_history_time(const char *string)
+void
+add_history_time(const char *string)
 {
 	HIST_ENTRY *entry = history_get(g_state->length - 1);
 	if (!entry)
@@ -102,7 +108,8 @@ void add_history_time(const char *string)
 	entry->timestamp = strdup(string);
 }
 
-HIST_ENTRY *remove_history(int which)
+HIST_ENTRY *
+remove_history(int which)
 {
 	if (which < 0 || which >= g_state->length)
 		return NULL;
@@ -113,7 +120,8 @@ HIST_ENTRY *remove_history(int which)
 	return entry;
 }
 
-histdata_t free_history_entry(int which)
+histdata_t
+free_history_entry(int which)
 {
 	HIST_ENTRY *entry = remove_history(which);
 	if (!entry)
@@ -123,8 +131,8 @@ histdata_t free_history_entry(int which)
 	return data;
 }
 
-HIST_ENTRY *replace_history_entry(int which, const char *line,
-                                  histdata_t data)
+HIST_ENTRY *
+replace_history_entry(int which, const char *line, histdata_t data)
 {
 	if (which < 0 || which >= g_state->length)
 		return NULL;
@@ -134,7 +142,8 @@ HIST_ENTRY *replace_history_entry(int which, const char *line,
 	return entry;
 }
 
-void clear_history(void)
+void
+clear_history(void)
 {
 	for (int i = 0; i < g_state->length; ++i)
 		entry_free(g_state->entries[i]);
@@ -143,7 +152,8 @@ void clear_history(void)
 	g_state->length = 0;
 }
 
-void stifle_history(int max)
+void
+stifle_history(int max)
 {
 	if (max < 0)
 		max = 0;
@@ -177,7 +187,8 @@ void stifle_history(int max)
 	g_state->flags |= HS_STIFLED;
 }
 
-int unstifle_history(void)
+int
+unstifle_history(void)
 {
 	if (!(g_state->flags & HS_STIFLED))
 		return -1;
@@ -185,41 +196,48 @@ int unstifle_history(void)
 	return g_state->size;
 }
 
-int history_is_stifled(void)
+int
+history_is_stifled(void)
 {
 	return g_state->flags & HS_STIFLED;
 }
 
-HIST_ENTRY **history_list(void)
+HIST_ENTRY **
+history_list(void)
 {
 	return g_state->entries;
 }
 
-int where_history(void)
+int
+where_history(void)
 {
 	return g_state->offset;
 }
 
-HIST_ENTRY *current_history(void)
+HIST_ENTRY *
+current_history(void)
 {
 	return g_state->entries[g_state->offset];
 }
 
-HIST_ENTRY *history_get(int offset)
+HIST_ENTRY *
+history_get(int offset)
 {
 	if (offset < 0 || offset >= g_state->length)
 		return NULL;
 	return g_state->entries[offset];
 }
 
-time_t history_get_time(HIST_ENTRY *entry)
+time_t
+history_get_time(HIST_ENTRY *entry)
 {
 	(void)entry;
 	/* XXX */
 	return 0;
 }
 
-int history_total_bytes(void)
+int
+history_total_bytes(void)
 {
 	int sum = 0;
 	for (int i = 0; i < g_state->length; ++i)
@@ -231,7 +249,8 @@ int history_total_bytes(void)
 	return sum;
 }
 
-int history_set_pos(int pos)
+int
+history_set_pos(int pos)
 {
 	if (pos < 0 || pos >= g_state->length)
 		return -1;
@@ -239,7 +258,8 @@ int history_set_pos(int pos)
 	return 0;
 }
 
-HIST_ENTRY *previous_history(void)
+HIST_ENTRY *
+previous_history(void)
 {
 	if (g_state->offset <= 0)
 		return NULL;
@@ -247,7 +267,8 @@ HIST_ENTRY *previous_history(void)
 	return g_state->entries[g_state->offset];
 }
 
-HIST_ENTRY *next_history(void)
+HIST_ENTRY *
+next_history(void)
 {
 	if (g_state->offset >= g_state->length)
 		return NULL;
@@ -255,7 +276,8 @@ HIST_ENTRY *next_history(void)
 	return g_state->entries[g_state->offset];
 }
 
-static int entry_match(HIST_ENTRY *entry, const char *string)
+static int
+entry_match(HIST_ENTRY *entry, const char *string)
 {
 	if (!entry->line)
 		return -1;
@@ -265,12 +287,14 @@ static int entry_match(HIST_ENTRY *entry, const char *string)
 	return it - entry->line;
 }
 
-int history_search(const char *string, int direction)
+int
+history_search(const char *string, int direction)
 {
 	return history_search_pos(string, direction, g_state->offset);
 }
 
-int history_search_prefix(const char *string, int direction)
+int
+history_search_prefix(const char *string, int direction)
 {
 	if (direction >= 0)
 	{
@@ -301,7 +325,8 @@ int history_search_prefix(const char *string, int direction)
 	return -1;
 }
 
-int history_search_pos(const char *string, int direction, int pos)
+int
+history_search_pos(const char *string, int direction, int pos)
 {
 	if (direction >= 0)
 	{

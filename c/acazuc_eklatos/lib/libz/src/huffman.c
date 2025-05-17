@@ -3,7 +3,8 @@
 
 #include <zlib.h>
 
-void huffman_generate(struct huffman *huff, uint8_t *sizes, uint32_t count)
+void
+huffman_generate(struct huffman *huff, uint8_t *sizes, uint32_t count)
 {
 	huff->count = count;
 	for (size_t i = 0; i <= MAX_BITS; ++i)
@@ -31,7 +32,8 @@ void huffman_generate(struct huffman *huff, uint8_t *sizes, uint32_t count)
 	}
 }
 
-int huffman_decode(struct bitstream *bs, struct huffman *huff)
+int
+huffman_decode(struct bitstream *bs, struct huffman *huff)
 {
 	uint16_t value = 0;
 	uint32_t pos = 0;

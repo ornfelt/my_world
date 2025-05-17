@@ -1,9 +1,11 @@
 #include <stdlib.h>
 #include <signal.h>
 
-void abort(void)
+void
+abort(void)
 {
 	sigset_t set;
+
 	sigemptyset(&set);
 	sigaddset(&set, SIGABRT);
 	sigprocmask(SIG_UNBLOCK, &set, NULL);

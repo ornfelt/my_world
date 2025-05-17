@@ -2,7 +2,8 @@
 
 #include <netdb.h>
 
-void endhostent(void)
+void
+endhostent(void)
 {
 	if (!hostent_fp)
 		return;

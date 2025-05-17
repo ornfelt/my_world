@@ -3,9 +3,13 @@
 #include <fetch.h>
 #include <ctype.h>
 
-struct url *fetchMakeURL(const char *scheme, const char *host,
-                         int port, const char *doc, const char *user,
-                         const char *pwd)
+struct url *
+fetchMakeURL(const char *scheme,
+             const char *host,
+             int port,
+             const char *doc,
+             const char *user,
+             const char *pwd)
 {
 	if (port < 0 || port > UINT16_MAX)
 		return NULL;
@@ -33,7 +37,8 @@ struct url *fetchMakeURL(const char *scheme, const char *host,
 	return url;
 }
 
-struct url *fetchParseURL(const char *str)
+struct url *
+fetchParseURL(const char *str)
 {
 	if (!str)
 		return NULL;
@@ -102,7 +107,8 @@ err:
 	return NULL;
 }
 
-void fetchFreeURL(struct url *url)
+void
+fetchFreeURL(struct url *url)
 {
 	if (!url)
 		return;

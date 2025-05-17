@@ -2,12 +2,15 @@
 
 #include <stdio.h>
 
-FILE *fopencookie(void *cookie, const char *mode, cookie_io_functions_t *funcs)
+FILE *
+fopencookie(void *cookie, const char *mode, cookie_io_functions_t *funcs)
 {
+	FILE *fp;
 	int flags;
+
 	if (!parse_flags(mode, &flags))
 		return NULL;
-	FILE *fp = mkfp();
+	fp = mkfp();
 	if (!fp)
 		return NULL;
 	fp->mode = flags;

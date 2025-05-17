@@ -2,7 +2,8 @@
 
 #include <grp.h>
 
-struct group *getgrent(void)
+struct group *
+getgrent(void)
 {
 	if (!grent_fp)
 	{

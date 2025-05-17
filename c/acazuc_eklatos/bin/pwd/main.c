@@ -10,15 +10,18 @@ struct env
 	int logical;
 };
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-L] [-P]\n", progname);
 	printf("-L: print logical cwd\n");
 	printf("-P: print physical cwd\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
+	char path[MAXPATHLEN];
 	struct env env;
 	int c;
 
@@ -46,7 +49,6 @@ int main(int argc, char **argv)
 		puts(pwd);
 		return EXIT_SUCCESS;
 	}
-	char path[MAXPATHLEN];
 	if (!getcwd(path, sizeof(path)))
 		return EXIT_FAILURE;
 	puts(path);

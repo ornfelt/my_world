@@ -3,18 +3,18 @@ include $(MAKEDIR)/env.mk
 export KERNEL = yes
 
 DIRS = ac97 \
-       em \
        evdev \
-       ext2fs \
-       fatfs \
+       fs/ext2 \
+       fs/fat \
+       fs/iso9660 \
        hda \
-       iso9660 \
-       ne2k \
        net/tcp \
        net/udp \
+       nic/em \
+       nic/ne2k \
+       nic/rtl8139 \
+       nic/rtl8169 \
        pci \
-       rtl8139 \
-       rtl8169 \
        snd \
        usb/audio \
        usb/core \

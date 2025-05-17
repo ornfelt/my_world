@@ -16,7 +16,8 @@ struct env
 	mode_t mode;
 };
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-v] [-h] [-m mode] [-p] DIRS\n", progname);
 	printf("-v: display each created directory\n");
@@ -25,27 +26,34 @@ static void usage(const char *progname)
 	printf("-p: no error if directory already exists, create parent directories\n");
 }
 
-static int create_parents(struct env *env, const char *path)
+static int
+create_parents(struct env *env, const char *path)
 {
 	const char *it = path;
+
 	while (*it == '/')
 		it++;
 	it = strchr(it, '/');
 	while (it)
 	{
 		char tmp[MAXPATHLEN];
+
 		snprintf(tmp, sizeof(tmp), "%.*s", (int)(it - path), path);
 		if (mkdir(tmp, env->mode) == -1)
 		{
 			if (errno != EEXIST)
 			{
 				fprintf(stderr, "%s: mkdir(%s): %s\n",
-				        env->progname, tmp, strerror(errno));
+				        env->progname,
+				        tmp,
+				        strerror(errno));
 				return 1;
 			}
 		}
 		if (env->opt & OPT_v)
-			printf("%s: created directory '%s'\n", env->progname, tmp);
+			printf("%s: created directory '%s'\n",
+			       env->progname,
+			       tmp);
 		while (*it == '/')
 			it++;
 		it = strchr(it + 1, '/');
@@ -53,7 +61,8 @@ static int create_parents(struct env *env, const char *path)
 	return 0;
 }
 
-static int create_dir(struct env *env, const char *path)
+static int
+create_dir(struct env *env, const char *path)
 {
 	if (mkdir(path, env->mode) == -1)
 	{
@@ -79,7 +88,8 @@ end:
 	return 0;
 }
 
-static int parse_mode(const char *progname, const char *str, mode_t *mode)
+static int
+parse_mode(const char *progname, const char *str, mode_t *mode)
 {
 	*mode = 0;
 	for (size_t i = 0; str[i]; ++i)
@@ -99,7 +109,8 @@ static int parse_mode(const char *progname, const char *str, mode_t *mode)
 	return 0;
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

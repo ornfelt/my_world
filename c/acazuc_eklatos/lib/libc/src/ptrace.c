@@ -4,7 +4,8 @@
 
 #include <stdarg.h>
 
-long ptrace(enum __ptrace_request request, ...)
+long
+ptrace(enum __ptrace_request request, ...)
 {
 	va_list va_arg;
 	va_start(va_arg, request);

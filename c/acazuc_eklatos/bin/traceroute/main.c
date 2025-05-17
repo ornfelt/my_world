@@ -41,7 +41,8 @@ struct packet
 	char data[56];
 };
 
-static int resolve_destination(struct env *env)
+static int
+resolve_destination(struct env *env)
 {
 	struct addrinfo *res;
 	struct addrinfo hints;
@@ -55,15 +56,19 @@ static int resolve_destination(struct env *env)
 	ret = getaddrinfo(env->destination, NULL, &hints, &res);
 	if (ret)
 	{
-		fprintf(stderr, "%s: unknown host: %s\n", env->progname,
+		fprintf(stderr, "%s: unknown host: %s\n",
+		        env->progname,
 		        gai_strerror(ret));
 		return 1;
 	}
 	memset(tmp, 0, sizeof(tmp));
-	if (!inet_ntop(AF_INET, &((struct sockaddr_in*)res->ai_addr)->sin_addr,
-	               tmp, sizeof(tmp)))
+	if (!inet_ntop(AF_INET,
+	               &((struct sockaddr_in*)res->ai_addr)->sin_addr,
+	               tmp,
+	               sizeof(tmp)))
 	{
-		fprintf(stderr, "%s: unknown host: %s\n", env->progname,
+		fprintf(stderr, "%s: unknown host: %s\n",
+		        env->progname,
 		        env->destination);
 		freeaddrinfo(res);
 		return 1;
@@ -71,7 +76,8 @@ static int resolve_destination(struct env *env)
 	env->ip = strdup(tmp);
 	if (!env->ip)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", env->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        env->progname,
 		        strerror(errno));
 		freeaddrinfo(res);
 		return 1;
@@ -80,7 +86,8 @@ static int resolve_destination(struct env *env)
 	env->addr = malloc(res->ai_addrlen);
 	if (!env->addr)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", env->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        env->progname,
 		        strerror(errno));
 		freeaddrinfo(res);
 		return 1;
@@ -90,7 +97,8 @@ static int resolve_destination(struct env *env)
 	return 0;
 }
 
-static int create_socket(struct env *env)
+static int
+create_socket(struct env *env)
 {
 	struct timeval tv;
 	int val;
@@ -98,7 +106,8 @@ static int create_socket(struct env *env)
 	env->socket = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
 	if (env->socket == -1)
 	{
-		fprintf(stderr, "%s: socket: %s\n", env->progname,
+		fprintf(stderr, "%s: socket: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
@@ -107,7 +116,8 @@ static int create_socket(struct env *env)
 	               sizeof(val)) == -1)
 	{
 		fprintf(stderr, "%s: setsockopt(IP_HDRINCL): %s\n",
-		        env->progname, strerror(errno));
+		        env->progname,
+		        strerror(errno));
 		return 1;
 	}
 	tv.tv_sec = 1;
@@ -129,7 +139,8 @@ static int create_socket(struct env *env)
 	return 0;
 }
 
-static uint16_t ip_checksum(const void *addr, size_t len)
+static uint16_t
+ip_checksum(const void *addr, size_t len)
 {
 	uint64_t result;
 	uint16_t *tmp;
@@ -148,7 +159,8 @@ static uint16_t ip_checksum(const void *addr, size_t len)
 	return (~((uint16_t)result));
 }
 
-static int run_packet(struct env *env)
+static int
+run_packet(struct env *env)
 {
 	struct packet packet;
 	int finished = 0;
@@ -193,13 +205,15 @@ static int run_packet(struct env *env)
 		if (sendto(env->socket, &packet, sizeof(packet), 0,
 		           env->addr, env->addrlen) == -1)
 		{
-			fprintf(stderr, "%s: sendto: %s\n", env->progname,
+			fprintf(stderr, "%s: sendto: %s\n",
+			        env->progname,
 			        strerror(errno));
 			return -1;
 		}
 		if (clock_gettime(CLOCK_MONOTONIC, &ts_sent))
 		{
-			fprintf(stderr, "%s: clock_gettime: %s\n", env->progname,
+			fprintf(stderr, "%s: clock_gettime: %s\n",
+			        env->progname,
 			        strerror(errno));
 			return -1;
 		}
@@ -210,7 +224,8 @@ static int run_packet(struct env *env)
 			if (errno != EAGAIN && errno != EWOULDBLOCK)
 			{
 				fprintf(stderr, "%s: recvfrom: %s\n",
-				        env->progname, strerror(errno));
+				        env->progname,
+				        strerror(errno));
 				return -1;
 			}
 			printf(" *");
@@ -219,7 +234,8 @@ static int run_packet(struct env *env)
 		}
 		if (clock_gettime(CLOCK_MONOTONIC, &ts_recv))
 		{
-			fprintf(stderr, "%s: clock_gettime: %s\n", env->progname,
+			fprintf(stderr, "%s: clock_gettime: %s\n",
+			        env->progname,
 			        strerror(errno));
 			return -1;
 		}
@@ -249,13 +265,15 @@ static int run_packet(struct env *env)
 	return 0;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-h] HOST\n", progname);
 	printf("-h: display this help\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;
@@ -289,7 +307,8 @@ int main(int argc, char **argv)
 	 || create_socket(&env))
 		return EXIT_FAILURE;
 	printf("traceroute to %s (%s), 30 hops max, 60 byte packets\n",
-	       env.destination, env.ip);
+	       env.destination,
+	       env.ip);
 	while (1)
 	{
 		switch (run_packet(&env))

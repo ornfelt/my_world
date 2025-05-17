@@ -4,11 +4,14 @@
 #include <errno.h>
 #include <grp.h>
 
-struct group *fgetgrent(FILE *fp)
+struct group *
+fgetgrent(FILE *fp)
 {
 	char *line = NULL;
 	size_t line_size = 0;
-	ssize_t res = getline(&line, &line_size, fp);
+	ssize_t res;
+
+	res = getline(&line, &line_size, fp);
 	if (res < 0 && errno)
 	{
 		errno = res;

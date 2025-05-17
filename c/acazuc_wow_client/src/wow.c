@@ -23,6 +23,7 @@
 #include "gx/wmo.h"
 #include "gx/blp.h"
 #include "gx/m2.h"
+#include "gx/gx.h"
 
 #include "snd/snd.h"
 
@@ -30,7 +31,6 @@
 
 #include "performance.h"
 #include "lagometer.h"
-#include "graphics.h"
 #include "shaders.h"
 #include "wow_lua.h"
 #include "camera.h"
@@ -527,12 +527,12 @@ static bool setup_network(struct wow *wow)
 	return true;
 }
 
-static bool setup_graphics(struct wow *wow)
+static bool setup_gx(struct wow *wow)
 {
-	wow->graphics = graphics_new();
-	if (!wow->graphics)
+	wow->gx = gx_new(wow->device);
+	if (!wow->gx)
 	{
-		LOG_ERROR("failed to setup graphics");
+		LOG_ERROR("failed to setup gx");
 		return false;
 	}
 	return true;
@@ -603,20 +603,19 @@ static bool setup_wdb(struct wow *wow)
 		LOG_ERROR("failed to create wdb");
 		return false;
 	}
-	wdb_load(g_wow->wdb);
+	wdb_load(wow->wdb);
 	return true;
 }
 
-static bool setup_render_passes(struct wow *wow)
+static bool
+setup_render_passes(struct wow *wow)
 {
-	LOG_INFO("loading MSAA render target");
 	wow->post_process.msaa = render_target_new(8);
 	if (!wow->post_process.msaa)
 	{
 		LOG_ERROR("failed to load MSAA render target");
 		return false;
 	}
-	LOG_INFO("loading dummy render target");
 	wow->post_process.dummy1 = render_target_new(0);
 	if (!wow->post_process.dummy1)
 	{
@@ -629,7 +628,12 @@ static bool setup_render_passes(struct wow *wow)
 		LOG_ERROR("failed to load dummy render target 2");
 		return false;
 	}
-	LOG_INFO("loading chromaber render pass");
+	wow->post_process.shadow = render_target_new(0);
+	if (!wow->post_process.shadow)
+	{
+		LOG_ERROR("failed to load shadow render target");
+		return false;
+	}
 	wow->post_process.chromaber = chromaber_render_pass_new();
 	if (!wow->post_process.chromaber)
 	{
@@ -639,7 +643,6 @@ static bool setup_render_passes(struct wow *wow)
 #if 0
 	wow->post_process.chromaber->enabled = true;
 #endif
-	LOG_INFO("loading sharpen render pass");
 	wow->post_process.sharpen = sharpen_render_pass_new();
 	if (!wow->post_process.sharpen)
 	{
@@ -649,7 +652,6 @@ static bool setup_render_passes(struct wow *wow)
 #if 0
 	wow->post_process.sharpen->enabled = true;
 #endif
-	LOG_INFO("loading glow render pass");
 	wow->post_process.glow = glow_render_pass_new();
 	if (!wow->post_process.glow)
 	{
@@ -659,7 +661,6 @@ static bool setup_render_passes(struct wow *wow)
 #if 0
 	wow->post_process.glow->enabled = true;
 #endif
-	LOG_INFO("loading sobel render pass");
 	wow->post_process.sobel = sobel_render_pass_new();
 	if (!wow->post_process.sobel)
 	{
@@ -669,7 +670,6 @@ static bool setup_render_passes(struct wow *wow)
 #if 0
 	wow->post_process.ssao->enabled = true;
 #endif
-	LOG_INFO("loading SSAO render pass");
 	wow->post_process.ssao = ssao_render_pass_new();
 	if (!wow->post_process.ssao)
 	{
@@ -679,7 +679,6 @@ static bool setup_render_passes(struct wow *wow)
 #if 0
 	wow->post_process.ssao->enabled = true;
 #endif
-	LOG_INFO("loading FXAA render pass");
 	wow->post_process.fxaa = fxaa_render_pass_new();
 	if (!wow->post_process.fxaa)
 	{
@@ -689,7 +688,6 @@ static bool setup_render_passes(struct wow *wow)
 #if 0
 	wow->post_process.fxaa->enabled = true;
 #endif
-	LOG_INFO("loading FSAA render pass");
 	wow->post_process.fsaa = fsaa_render_pass_new();
 	if (!wow->post_process.fsaa)
 	{
@@ -699,7 +697,6 @@ static bool setup_render_passes(struct wow *wow)
 #if 0
 	wow->post_process.fsaa->enabled = true;
 #endif
-	LOG_INFO("loading cel render pass");
 	wow->post_process.cel = cel_render_pass_new();
 	if (!wow->post_process.cel)
 	{
@@ -709,7 +706,6 @@ static bool setup_render_passes(struct wow *wow)
 #if 0
 	wow->post_process.cel->enabled = true;
 #endif
-	LOG_INFO("loading bloom render pass");
 	wow->post_process.bloom = bloom_render_pass_new();
 	if (!wow->post_process.bloom)
 	{
@@ -719,6 +715,12 @@ static bool setup_render_passes(struct wow *wow)
 #if 0
 	wow->post_process.bloom->enabled = true;
 #endif
+	wow->post_process.death = death_render_pass_new();
+	if (!wow->post_process.death)
+	{
+		LOG_ERROR("failed to load death render pass");
+		return false;
+	}
 	return true;
 }
 
@@ -726,6 +728,7 @@ static void cleanup_render_passes(struct wow *wow)
 {
 	render_target_delete(wow->post_process.dummy1);
 	render_target_delete(wow->post_process.dummy2);
+	render_target_delete(wow->post_process.shadow);
 	render_target_delete(wow->post_process.msaa);
 	render_pass_delete(wow->post_process.sharpen);
 	render_pass_delete(wow->post_process.bloom);
@@ -735,20 +738,6 @@ static void cleanup_render_passes(struct wow *wow)
 	render_pass_delete(wow->post_process.fxaa);
 	render_pass_delete(wow->post_process.fsaa);
 	render_pass_delete(wow->post_process.cel);
-}
-
-static void dirty_render_passes(struct wow *wow)
-{
-	if (wow->post_process.ssao)
-		wow->post_process.ssao->dirty_size = true;
-	if (wow->post_process.bloom)
-		wow->post_process.bloom->dirty_size = true;
-	if (wow->post_process.msaa)
-		wow->post_process.msaa->dirty_size = true;
-	if (wow->post_process.dummy1)
-		wow->post_process.dummy1->dirty_size = true;
-	if (wow->post_process.dummy2)
-		wow->post_process.dummy2->dirty_size = true;
 }
 
 static bool setup_dbc(struct wow *wow)
@@ -1085,7 +1074,7 @@ static void loop(struct wow *wow)
 			performance_dump();
 			performance_reset();
 #endif
-			wdb_save(g_wow->wdb);
+			wdb_save(wow->wdb);
 			last_fps = nanotime();
 			char title[64];
 			snprintf(title, sizeof(title), "%" PRId64 "fps", fps);
@@ -1318,17 +1307,17 @@ static int wow_main(struct wow *wow, int argc, char **argv)
 		return EXIT_FAILURE;
 	if (!setup_cache(wow))
 		return EXIT_FAILURE;
+	if (!setup_loader(wow))
+		return EXIT_FAILURE;
 	if (!setup_gfx(wow, windowing, renderer))
 		return EXIT_FAILURE;
 	if (!setup_shaders(wow))
 		return EXIT_FAILURE;
-	if (!setup_graphics(wow))
+	if (!setup_gx(wow))
 		return EXIT_FAILURE;
 	if (!setup_render_passes(wow))
 		return EXIT_FAILURE;
 	if (!setup_frames(wow))
-		return EXIT_FAILURE;
-	if (!setup_loader(wow))
 		return EXIT_FAILURE;
 	if (!setup_dbc(wow))
 		return EXIT_FAILURE;
@@ -1422,7 +1411,7 @@ static int wow_main(struct wow *wow, int argc, char **argv)
 	cache_print(wow->cache);
 	cache_delete(wow->cache);
 	shaders_delete(wow->shaders);
-	graphics_delete(wow->graphics);
+	gx_delete(wow->gx);
 	/* XXX: wait for async end */
 	gfx_device_tick(wow->device); /* finish gc cycle */
 	camera_delete(wow->cameras[0]);
@@ -1450,7 +1439,6 @@ static void resize_callback(struct gfx_window *window, struct gfx_resize_event *
 	struct wow *wow = window->userdata;
 	wow->render_width = event->width;
 	wow->render_height = event->height;
-	dirty_render_passes(wow);
 	if ((wow->wow_opt & WOW_OPT_RENDER_INTERFACE) && wow->interface)
 		interface_on_window_resized(wow->interface, event);
 }
@@ -1463,13 +1451,13 @@ static void key_down_callback(struct gfx_window *window, struct gfx_key_event *e
 		if (interface_on_key_down(wow->interface, event))
 			return;
 	}
-#define RENDER_OPT_FLIP(id) \
+#define GX_OPT_FLIP(id) \
 do \
 { \
-	if (wow->render_opt & id) \
-		wow->render_opt &= ~id; \
+	if (wow->gx->opt & id) \
+		wow->gx->opt &= ~id; \
 	else \
-		wow->render_opt |= id; \
+		wow->gx->opt |= id; \
 } while (0)
 
 #define WOW_OPT_FLIP(id) \
@@ -1491,55 +1479,55 @@ do \
 			gfx_window_ungrab_cursor(wow->window);
 			return;
 		case GFX_KEY_LBRACKET:
-			RENDER_OPT_FLIP(RENDER_OPT_M2_COLLISIONS);
-			RENDER_OPT_FLIP(RENDER_OPT_WMO_COLLISIONS);
+			GX_OPT_FLIP(GX_OPT_M2_COLLISIONS);
+			GX_OPT_FLIP(GX_OPT_WMO_COLLISIONS);
 			return;
 		case GFX_KEY_RBRACKET:
-			RENDER_OPT_FLIP(RENDER_OPT_COLLISIONS);
+			GX_OPT_FLIP(GX_OPT_COLLISIONS);
 			return;
 		case GFX_KEY_P:
-			RENDER_OPT_FLIP(RENDER_OPT_WMO_PORTALS);
+			GX_OPT_FLIP(GX_OPT_WMO_PORTALS);
 			return;
 		case GFX_KEY_O:
-			RENDER_OPT_FLIP(RENDER_OPT_WMO_AABB);
+			GX_OPT_FLIP(GX_OPT_WMO_AABB);
 			return;
 		case GFX_KEY_I:
-			RENDER_OPT_FLIP(RENDER_OPT_M2_AABB);
+			GX_OPT_FLIP(GX_OPT_M2_AABB);
 			return;
 		case GFX_KEY_L:
-			RENDER_OPT_FLIP(RENDER_OPT_WMO);
+			GX_OPT_FLIP(GX_OPT_WMO);
 			return;
 		case GFX_KEY_K:
-			RENDER_OPT_FLIP(RENDER_OPT_M2);
+			GX_OPT_FLIP(GX_OPT_M2);
 			return;
 		case GFX_KEY_J:
-			RENDER_OPT_FLIP(RENDER_OPT_M2_RIBBONS);
-			RENDER_OPT_FLIP(RENDER_OPT_M2_PARTICLES);
+			GX_OPT_FLIP(GX_OPT_M2_RIBBONS);
+			GX_OPT_FLIP(GX_OPT_M2_PARTICLES);
 			break;
 		case GFX_KEY_Y:
-			RENDER_OPT_FLIP(RENDER_OPT_WMO_LIGHTS);
-			RENDER_OPT_FLIP(RENDER_OPT_M2_LIGHTS);
+			GX_OPT_FLIP(GX_OPT_WMO_LIGHTS);
+			GX_OPT_FLIP(GX_OPT_M2_LIGHTS);
 			return;
 		case GFX_KEY_T:
-			RENDER_OPT_FLIP(RENDER_OPT_TAXI);
+			GX_OPT_FLIP(GX_OPT_TAXI);
 			return;
 		case GFX_KEY_R:
-			RENDER_OPT_FLIP(RENDER_OPT_ADT_AABB);
-			RENDER_OPT_FLIP(RENDER_OPT_MCNK_AABB);
-			RENDER_OPT_FLIP(RENDER_OPT_MCLQ_AABB);
-			RENDER_OPT_FLIP(RENDER_OPT_WDL_AABB);
+			GX_OPT_FLIP(GX_OPT_ADT_AABB);
+			GX_OPT_FLIP(GX_OPT_MCNK_AABB);
+			GX_OPT_FLIP(GX_OPT_MCLQ_AABB);
+			GX_OPT_FLIP(GX_OPT_WDL_AABB);
 			return;
 		case GFX_KEY_F:
-			RENDER_OPT_FLIP(RENDER_OPT_FOG);
+			GX_OPT_FLIP(GX_OPT_FOG);
 			return;
 		case GFX_KEY_U:
-			RENDER_OPT_FLIP(RENDER_OPT_M2_BONES);
+			GX_OPT_FLIP(GX_OPT_M2_BONES);
 			return;
 		case GFX_KEY_Z:
-			RENDER_OPT_FLIP(RENDER_OPT_WDL);
+			GX_OPT_FLIP(GX_OPT_WDL);
 			return;
 		case GFX_KEY_X:
-			RENDER_OPT_FLIP(RENDER_OPT_MCLQ);
+			GX_OPT_FLIP(GX_OPT_MCLQ);
 			return;
 		case GFX_KEY_V:
 			wow->post_process.glow->enabled = !wow->post_process.glow->enabled;
@@ -1552,8 +1540,8 @@ do \
 			render_target_set_enabled(wow->post_process.msaa, !wow->post_process.msaa->enabled);
 			return;
 		case GFX_KEY_M:
-			RENDER_OPT_FLIP(RENDER_OPT_MESH);
-			graphics_build_world_rasterizer_states(wow->graphics);
+			GX_OPT_FLIP(GX_OPT_MESH);
+			gx_build_rasterizer_states(wow->gx);
 			return;
 		case GFX_KEY_COMMA:
 			wow->post_process.sobel->enabled = !wow->post_process.sobel->enabled;
@@ -1582,7 +1570,7 @@ do \
 			wow->view_camera->view_distance -= CHUNK_WIDTH * (event->mods & GFX_KEY_MOD_CONTROL ? 10 : 1) * (event->mods & GFX_KEY_MOD_SHIFT ? 5 : 1);
 			return;
 		case GFX_KEY_HOME:
-			RENDER_OPT_FLIP(RENDER_OPT_DYN_WATER);
+			GX_OPT_FLIP(GX_OPT_DYN_WATER);
 			break;
 		case GFX_KEY_INSERT:
 			WOW_OPT_FLIP(WOW_OPT_M2_TRACK_BSEARCH);
@@ -1644,19 +1632,17 @@ do \
 			wow->fsaa -= 0.1;
 			if (wow->fsaa <= 0.1)
 				wow->fsaa = 0.1;
-			dirty_render_passes(wow);
 			break;
 		case GFX_KEY_6:
 			wow->fsaa += 0.1;
 			if (wow->fsaa > 4.0)
 				wow->fsaa = 4.0;
-			dirty_render_passes(wow);
 			break;
 		case GFX_KEY_7:
-			RENDER_OPT_FLIP(RENDER_OPT_GROUND_EFFECT);
+			GX_OPT_FLIP(GX_OPT_GROUND_EFFECT);
 			break;
 		case GFX_KEY_8:
-			RENDER_OPT_FLIP(RENDER_OPT_DYN_SHADOW);
+			GX_OPT_FLIP(GX_OPT_DYN_SHADOW);
 			break;
 		default:
 			break;
@@ -1694,6 +1680,30 @@ static void char_callback(struct gfx_window *window, struct gfx_char_event *even
 	}
 }
 
+static void
+update_mouse_camera(struct wow *wow)
+{
+	bool right_down;
+	bool left_down;
+
+	left_down = gfx_is_mouse_button_down(wow->window, GFX_MOUSE_BUTTON_LEFT);
+	right_down = gfx_is_mouse_button_down(wow->window, GFX_MOUSE_BUTTON_RIGHT);
+	wow->view_camera->move_unit = right_down;
+	if (!left_down && !right_down)
+	{
+		wow->wow_opt &= ~WOW_OPT_FOCUS_3D;
+		gfx_window_ungrab_cursor(wow->window);
+	}
+	else
+	{
+		if (!(wow->wow_opt & WOW_OPT_FOCUS_3D))
+		{
+			wow->wow_opt |= WOW_OPT_FOCUS_3D;
+			gfx_window_grab_cursor(wow->window);
+		}
+	}
+}
+
 static void mouse_down_callback(struct gfx_window *window, struct gfx_mouse_event *event)
 {
 	struct wow *wow = window->userdata;
@@ -1702,38 +1712,22 @@ static void mouse_down_callback(struct gfx_window *window, struct gfx_mouse_even
 		if (interface_on_mouse_down(wow->interface, event))
 			return;
 	}
-	if (!(wow->wow_opt & WOW_OPT_FOCUS_3D))
-	{
-		wow->view_camera->move_unit = false;
-		switch (event->button)
-		{
-			case GFX_MOUSE_BUTTON_RIGHT:
-				wow->view_camera->move_unit = true;
-				/* FALLTHROUGH */
-			case GFX_MOUSE_BUTTON_LEFT:
-				wow->wow_opt |= WOW_OPT_FOCUS_3D;
-				gfx_window_grab_cursor(wow->window);
-				break;
-			default:
-				break;
-		}
-	}
+	update_mouse_camera(wow);
+	if (event->button == 3)
+		wow->view_camera->autorun = !wow->view_camera->autorun;
 }
 
 static void mouse_up_callback(struct gfx_window *window, struct gfx_mouse_event *event)
 {
 	struct wow *wow = window->userdata;
+
 	if ((wow->wow_opt & WOW_OPT_RENDER_INTERFACE) && wow->interface)
 	{
 		if (interface_on_mouse_up(wow->interface, event))
 			return;
 	}
-	if ((event->button == GFX_MOUSE_BUTTON_LEFT || event->button == GFX_MOUSE_BUTTON_RIGHT) && (wow->wow_opt & WOW_OPT_FOCUS_3D))
-	{
-		wow->view_camera->move_unit = false;
-		wow->wow_opt &= ~WOW_OPT_FOCUS_3D;
-		gfx_window_ungrab_cursor(wow->window);
-	}
+	if (wow->wow_opt & WOW_OPT_FOCUS_3D)
+		update_mouse_camera(wow);
 }
 
 static void mouse_move_callback(struct gfx_window *window, struct gfx_pointer_event *event)
@@ -1911,21 +1905,6 @@ int main(int argc, char **argv)
 	strcpy(g_wow->locale, "frFR");
 	g_wow->anisotropy = 16;
 	g_wow->fsaa = 1;
-	g_wow->render_opt |= RENDER_OPT_MCNK;
-	g_wow->render_opt |= RENDER_OPT_MCLQ;
-	g_wow->render_opt |= RENDER_OPT_WMO;
-	g_wow->render_opt |= RENDER_OPT_WDL;
-	g_wow->render_opt |= RENDER_OPT_M2;
-	g_wow->render_opt |= RENDER_OPT_FOG;
-	g_wow->render_opt |= RENDER_OPT_WMO_LIQUIDS;
-	g_wow->render_opt |= RENDER_OPT_SKYBOX;
-	g_wow->render_opt |= RENDER_OPT_M2_PARTICLES;
-	g_wow->render_opt |= RENDER_OPT_M2_RIBBONS;
-	g_wow->render_opt |= RENDER_OPT_GROUND_EFFECT;
-	g_wow->render_opt |= RENDER_OPT_DYN_SHADOW;
-#if 0
-	g_wow->render_opt |= RENDER_OPT_SSR;
-#endif
 	g_wow->wow_opt |= WOW_OPT_RENDER_INTERFACE;
 	g_wow->wow_opt |= WOW_OPT_AABB_OPTIMIZE;
 	g_wow->wow_opt |= WOW_OPT_RENDER_GUI;

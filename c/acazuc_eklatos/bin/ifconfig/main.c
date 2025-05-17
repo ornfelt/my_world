@@ -21,7 +21,8 @@ struct env
 	int sock;
 };
 
-static const char *flags_str(uint16_t flags)
+static const char *
+flags_str(uint16_t flags)
 {
 	static char buf[1024];
 
@@ -50,7 +51,8 @@ do \
 	return buf;
 }
 
-static void print_netif_stats(struct env *env, const char *name)
+static void
+print_netif_stats(struct env *env, const char *name)
 {
 	char path[MAXPATHLEN];
 	char *line = NULL;
@@ -69,9 +71,11 @@ static void print_netif_stats(struct env *env, const char *name)
 	{
 		if (!strncmp(line, "rx_packets:", 11))
 		{
+			uint64_t rx_packets;
 			char *endptr;
+
 			errno = 0;
-			uint64_t rx_packets = strtoull(&line[11], &endptr, 10);
+			rx_packets = strtoull(&line[11], &endptr, 10);
 			if (errno || (*endptr && *endptr != '\n'))
 			{
 				fprintf(stderr, "%s: invalid rx packets format\n",
@@ -82,9 +86,11 @@ static void print_netif_stats(struct env *env, const char *name)
 		}
 		else if (!strncmp(line, "rx_bytes:", 9))
 		{
+			uint64_t rx_bytes;
 			char *endptr;
+
 			errno = 0;
-			uint64_t rx_bytes = strtoull(&line[9], &endptr, 10);
+			rx_bytes = strtoull(&line[9], &endptr, 10);
 			if (errno || (*endptr && *endptr != '\n'))
 			{
 				fprintf(stderr, "%s: invalid rx bytes format\n",
@@ -95,9 +101,11 @@ static void print_netif_stats(struct env *env, const char *name)
 		}
 		else if (!strncmp(line, "rx_errors:", 10))
 		{
+			uint64_t rx_errors;
 			char *endptr;
+
 			errno = 0;
-			uint64_t rx_errors = strtoull(&line[10], &endptr, 10);
+			rx_errors = strtoull(&line[10], &endptr, 10);
 			if (errno || (*endptr && *endptr != '\n'))
 			{
 				fprintf(stderr, "%s: invalid rx errors format\n",
@@ -108,9 +116,11 @@ static void print_netif_stats(struct env *env, const char *name)
 		}
 		else if (!strncmp(line, "tx_packets:", 11))
 		{
+			uint64_t tx_packets;
 			char *endptr;
+
 			errno = 0;
-			uint64_t tx_packets = strtoull(&line[11], &endptr, 10);
+			tx_packets = strtoull(&line[11], &endptr, 10);
 			if (errno || (*endptr && *endptr != '\n'))
 			{
 				fprintf(stderr, "%s: invalid tx packets format\n",
@@ -121,9 +131,11 @@ static void print_netif_stats(struct env *env, const char *name)
 		}
 		else if (!strncmp(line, "tx_bytes:", 9))
 		{
+			uint64_t tx_bytes;
 			char *endptr;
+
 			errno = 0;
-			uint64_t tx_bytes = strtoull(&line[9], &endptr, 10);
+			tx_bytes = strtoull(&line[9], &endptr, 10);
 			if (errno || (*endptr && *endptr != '\n'))
 			{
 				fprintf(stderr, "%s: invalid tx bytes format\n",
@@ -134,9 +146,11 @@ static void print_netif_stats(struct env *env, const char *name)
 		}
 		else if (!strncmp(line, "tx_errors:", 10))
 		{
+			uint64_t tx_errors;
 			char *endptr;
+
 			errno = 0;
-			uint64_t tx_errors = strtoull(&line[10], &endptr, 10);
+			tx_errors = strtoull(&line[10], &endptr, 10);
 			if (errno || (*endptr && *endptr != '\n'))
 			{
 				fprintf(stderr, "%s: invalid tx errors format\n",
@@ -152,14 +166,15 @@ end:
 		fclose(fp);
 }
 
-static int print_netif(struct env *env, struct ifaddrs *addr,
-                       const char *name)
+static int
+print_netif(struct env *env, struct ifaddrs *addr, const char *name)
 {
+	struct ifreq ifr;
+
 	for (; addr; addr = addr->ifa_next)
 	{
 		if (strcmp(addr->ifa_name, name))
 			continue;
-		struct ifreq ifr;
 		printf("%s: flags=%u<%s>\n", addr->ifa_name, addr->ifa_flags,
 		       flags_str(addr->ifa_flags));
 		if (addr->ifa_addr)
@@ -245,9 +260,11 @@ static int print_netif(struct env *env, struct ifaddrs *addr,
 	return 0;
 }
 
-static int print_interfaces(struct env *env)
+static int
+print_interfaces(struct env *env)
 {
 	struct ifaddrs *addrs;
+
 	if (getifaddrs(&addrs) == -1)
 	{
 		fprintf(stderr, "%s: getifaddrs: %s\n", env->progname,
@@ -258,6 +275,7 @@ static int print_interfaces(struct env *env)
 	{
 		bool found = false;
 		struct ifaddrs *tmp = addrs;
+
 		while (tmp != addr)
 		{
 			if (!strcmp(tmp->ifa_name, addr->ifa_name))
@@ -277,7 +295,8 @@ static int print_interfaces(struct env *env)
 	return 0;
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 

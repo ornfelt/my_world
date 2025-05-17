@@ -6,7 +6,8 @@
 #include <kmod.h>
 #include <std.h>
 
-static inline void print_common_cfg(struct uio *uio, struct pci_map *common_cfg)
+static inline void
+print_common_cfg(struct uio *uio, struct pci_map *common_cfg)
 {
 	uprintf(uio, "msix_config: 0x%" PRIx16 "\n",
 	        pci_r16(common_cfg, VIRTIO_C_MSIX_CONFIG));
@@ -18,7 +19,8 @@ static inline void print_common_cfg(struct uio *uio, struct pci_map *common_cfg)
 	        pci_r8(common_cfg, VIRTIO_C_CONFIG_GENERATION));
 }
 
-static int get_pci_cap(struct pci_device *device, uint8_t cfg_type, uint8_t *ptr)
+static int
+get_pci_cap(struct pci_device *device, uint8_t cfg_type, uint8_t *ptr)
 {
 	if (!(device->header.status & (1 << 4)))
 		return -EXDEV;
@@ -36,7 +38,8 @@ static int get_pci_cap(struct pci_device *device, uint8_t cfg_type, uint8_t *ptr
 	return 0;
 }
 
-int virtio_dev_has_feature(struct virtio_dev *dev, uint32_t feature)
+int
+virtio_dev_has_feature(struct virtio_dev *dev, uint32_t feature)
 {
 	uint32_t off = feature / 32;
 	uint32_t idx = feature % 32;
@@ -44,7 +47,8 @@ int virtio_dev_has_feature(struct virtio_dev *dev, uint32_t feature)
 	return !!(pci_r32(dev->common_cfg, VIRTIO_C_DEVICE_FEATURE) & (1 << idx));
 }
 
-static void enable_feature(struct virtio_dev *dev, uint32_t feature)
+static void
+enable_feature(struct virtio_dev *dev, uint32_t feature)
 {
 	uint32_t off = feature / 32;
 	uint32_t idx = feature % 32;
@@ -53,8 +57,12 @@ static void enable_feature(struct virtio_dev *dev, uint32_t feature)
 	pci_w32(dev->common_cfg, VIRTIO_C_DRIVER_FEATURE, value | (1 << idx));
 }
 
-int virtio_get_cfg(struct pci_device *device, uint8_t cfg_type,
-                   struct pci_map **cfg, size_t len, uint8_t *ptrp)
+int
+virtio_get_cfg(struct pci_device *device,
+               uint8_t cfg_type,
+               struct pci_map **cfg,
+               size_t len,
+               uint8_t *ptrp)
 {
 	uint8_t ptr;
 	int ret = get_pci_cap(device, cfg_type, &ptr);
@@ -86,7 +94,8 @@ int virtio_get_cfg(struct pci_device *device, uint8_t cfg_type,
 	return 0;
 }
 
-static int init_queues(struct virtio_dev *dev)
+static int
+init_queues(struct virtio_dev *dev)
 {
 	dev->queues_nb = pci_r16(dev->common_cfg, VIRTIO_C_NUM_QUEUES);
 	if (!dev->queues_nb)
@@ -104,20 +113,28 @@ static int init_queues(struct virtio_dev *dev)
 	return 0;
 }
 
-static int setup_notify(struct virtio_dev *dev)
+static int
+setup_notify(struct virtio_dev *dev)
 {
 	uint8_t ptr;
-	int ret = virtio_get_cfg(dev->device, VIRTIO_PCI_CAP_NOTIFY_CFG,
-	                         &dev->notify_cfg, 0, &ptr);
+	int ret;
+
+	ret = virtio_get_cfg(dev->device,
+	                     VIRTIO_PCI_CAP_NOTIFY_CFG,
+	                     &dev->notify_cfg,
+	                     0,
+	                     &ptr);
 	if (ret)
 		return ret;
 	dev->notify_multiplier = pci_dev_read(dev->device, ptr + 0x10);
 	return 0;
 }
 
-static void int_handler(void *userptr)
+static void
+int_handler(void *userptr)
 {
 	struct virtio_dev *dev = userptr;
+
 	if (dev->irq_handle.type != IRQ_MSIX)
 	{
 		uint8_t status = pci_r8(dev->isr_cfg, 0);
@@ -137,20 +154,28 @@ static void int_handler(void *userptr)
 	}
 }
 
-void virtio_dev_init_end(struct virtio_dev *dev)
+void 
+virtio_dev_init_end(struct virtio_dev *dev)
 {
-	pci_w8(dev->common_cfg, VIRTIO_C_DEVICE_STATUS,
+	pci_w8(dev->common_cfg,
+	       VIRTIO_C_DEVICE_STATUS,
 	       VIRTIO_S_ACKNOWLEDGE | VIRTIO_S_DRIVER | VIRTIO_S_FEATURES_OK | VIRTIO_S_DRIVER_OK);
 }
 
-int virtio_dev_init(struct virtio_dev *dev, struct pci_device *device,
-                    const uint8_t *features, size_t features_count)
+int
+virtio_dev_init(struct virtio_dev *dev,
+                struct pci_device *device,
+                const uint8_t *features,
+                size_t features_count)
 {
 	int ret;
 
 	dev->device = device;
-	ret = virtio_get_cfg(device, VIRTIO_PCI_CAP_COMMON_CFG,
-	                     &dev->common_cfg, 0x34, NULL);
+	ret = virtio_get_cfg(device,
+	                     VIRTIO_PCI_CAP_COMMON_CFG,
+	                     &dev->common_cfg,
+	                     0x34,
+	                     NULL);
 	if (ret)
 		return ret;
 	pci_w8(dev->common_cfg, VIRTIO_C_DEVICE_STATUS, 0);
@@ -210,7 +235,8 @@ int virtio_dev_init(struct virtio_dev *dev, struct pci_device *device,
 	return 0;
 }
 
-void virtio_dev_destroy(struct virtio_dev *dev)
+void
+virtio_dev_destroy(struct virtio_dev *dev)
 {
 	for (size_t i = 0; i < dev->queues_nb; ++i)
 		virtq_destroy(&dev->queues[i]);
@@ -221,16 +247,19 @@ void virtio_dev_destroy(struct virtio_dev *dev)
 	free(dev->queues);
 }
 
-static int init(void)
+static int
+init(void)
 {
 	return 0;
 }
 
-static void fini(void)
+static void
+fini(void)
 {
 }
 
-struct kmod_info kmod =
+struct kmod_info
+kmod =
 {
 	.magic = KMOD_MAGIC,
 	.version = 1,

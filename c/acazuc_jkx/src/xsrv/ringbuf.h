@@ -25,34 +25,38 @@ size_t ringbuf_read_size(const struct ringbuf *ringbuf);
 size_t ringbuf_contiguous_read_size(const struct ringbuf *ringbuf);
 size_t ringbuf_read_rollback(struct ringbuf *ringbuf, size_t size);
 
-static inline void *ringbuf_write_ptr(const struct ringbuf *ringbuf)
+static inline void *
+ringbuf_write_ptr(const struct ringbuf *ringbuf)
 {
 	return (uint8_t*)ringbuf->data + ringbuf->write_pos;
 }
 
-static inline size_t ringbuf_next_write_pos(const struct ringbuf *ringbuf,
-                                            size_t size)
+static inline size_t
+ringbuf_next_write_pos(const struct ringbuf *ringbuf, size_t size)
 {
 	return (ringbuf->write_pos + size) % ringbuf->size;
 }
 
-static inline void ringbuf_advance_write(struct ringbuf *ringbuf, size_t size)
+static inline void
+ringbuf_advance_write(struct ringbuf *ringbuf, size_t size)
 {
 	ringbuf->write_pos = ringbuf_next_write_pos(ringbuf, size);
 }
 
-static inline const void *ringbuf_read_ptr(const struct ringbuf *ringbuf)
+static inline const void *
+ringbuf_read_ptr(const struct ringbuf *ringbuf)
 {
 	return (uint8_t*)ringbuf->data + ringbuf->read_pos;
 }
 
-static inline size_t ringbuf_next_read_pos(const struct ringbuf *ringbuf,
-                                           size_t size)
+static inline size_t
+ringbuf_next_read_pos(const struct ringbuf *ringbuf, size_t size)
 {
 	return (ringbuf->read_pos + size) % ringbuf->size;
 }
 
-static inline void ringbuf_advance_read(struct ringbuf *ringbuf, size_t size)
+static inline void
+ringbuf_advance_read(struct ringbuf *ringbuf, size_t size)
 {
 	ringbuf->read_pos = ringbuf_next_read_pos(ringbuf, size);
 }

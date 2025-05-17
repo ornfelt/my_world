@@ -26,7 +26,6 @@ struct font_model;
 struct jks_array;
 struct interface;
 struct lagometer;
-struct graphics;
 struct gx_frame;
 struct jks_hmap;
 struct shaders;
@@ -46,6 +45,7 @@ struct dbc;
 struct snd;
 struct map;
 struct wdb;
+struct gx;
 
 enum wow_opt
 {
@@ -58,40 +58,6 @@ enum wow_opt
 	WOW_OPT_VSYNC             = (1 << 6),
 	WOW_OPT_GRAVITY           = (1 << 7),
 	WOW_OPT_M2_TRACK_BSEARCH  = (1 << 8),
-};
-
-enum render_opt
-{
-	RENDER_OPT_FOG            = (1 << 0),
-	RENDER_OPT_WDL            = (1 << 1),
-	RENDER_OPT_WDL_AABB       = (1 << 2),
-	RENDER_OPT_MESH           = (1 << 3),
-	RENDER_OPT_ADT_AABB       = (1 << 4),
-	RENDER_OPT_MCNK           = (1 << 5),
-	RENDER_OPT_MCNK_AABB      = (1 << 6),
-	RENDER_OPT_MCLQ           = (1 << 7),
-	RENDER_OPT_MCLQ_AABB      = (1 << 8),
-	RENDER_OPT_M2             = (1 << 9),
-	RENDER_OPT_M2_AABB        = (1 << 10),
-	RENDER_OPT_M2_BONES       = (1 << 11),
-	RENDER_OPT_M2_LIGHTS      = (1 << 12),
-	RENDER_OPT_M2_INSTANCED   = (1 << 13),
-	RENDER_OPT_M2_PARTICLES   = (1 << 14),
-	RENDER_OPT_M2_COLLISIONS  = (1 << 15),
-	RENDER_OPT_M2_RIBBONS     = (1 << 16),
-	RENDER_OPT_WMO            = (1 << 17),
-	RENDER_OPT_WMO_AABB       = (1 << 18),
-	RENDER_OPT_WMO_LIGHTS     = (1 << 19),
-	RENDER_OPT_WMO_PORTALS    = (1 << 20),
-	RENDER_OPT_WMO_LIQUIDS    = (1 << 21),
-	RENDER_OPT_WMO_COLLISIONS = (1 << 22),
-	RENDER_OPT_SSR            = (1 << 23),
-	RENDER_OPT_SKYBOX         = (1 << 24),
-	RENDER_OPT_COLLISIONS     = (1 << 25),
-	RENDER_OPT_TAXI           = (1 << 26),
-	RENDER_OPT_DYN_WATER      = (1 << 27),
-	RENDER_OPT_GROUND_EFFECT  = (1 << 28),
-	RENDER_OPT_DYN_SHADOW     = (1 << 29),
 };
 
 struct dbc_list
@@ -135,11 +101,13 @@ struct post_process
 {
 	struct render_target *dummy1;
 	struct render_target *dummy2;
+	struct render_target *shadow;
 	struct render_target *msaa;
 	struct render_pass *chromaber;
 	struct render_pass *sharpen;
 	struct render_pass *sobel;
 	struct render_pass *bloom;
+	struct render_pass *death;
 	struct render_pass *ssao;
 	struct render_pass *fxaa;
 	struct render_pass *glow;
@@ -155,7 +123,6 @@ struct trs_dir
 struct wow
 {
 	uint32_t wow_opt;
-	uint32_t render_opt;
 	struct wow_mpq_compound *mpq_compound;
 	struct map *map;
 	struct post_process post_process;
@@ -165,7 +132,7 @@ struct wow
 	struct gfx_window *window;
 	struct jks_hmap *objects; /* uint64_t, struct object* */
 	struct jks_hmap *trs; /* char*, struct trs_dir */
-	struct graphics *graphics;
+	struct gx *gx;
 	struct shaders *shaders;
 	struct camera *cameras[2];
 	struct loader *loader;

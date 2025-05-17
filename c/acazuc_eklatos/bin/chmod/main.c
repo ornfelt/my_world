@@ -18,44 +18,66 @@ struct env
 	mode_t mode;
 };
 
-static int change_mode(struct env *env, const char *file)
+static int change_mode(struct env *env, const char *file);
+
+static int
+change_recursive(struct env *env, const char *file)
+{
+	char path[MAXPATHLEN];
+	struct dirent *dirent;
+	DIR *dir;
+
+	dir = opendir(file);
+	if (!dir)
+	{
+		if (errno != ENOTDIR)
+		{
+			fprintf(stderr, "%s: opendir(%s): %s\n",
+			        env->progname,
+			        file,
+			        strerror(errno));
+			return 1;
+		}
+		return 0;
+	}
+	while ((dirent = readdir(dir)))
+	{
+		if (!strcmp(dirent->d_name, ".")
+		 || !strcmp(dirent->d_name, ".."))
+			continue;
+		if (snprintf(path, sizeof(path), "%s/%s", file, dirent->d_name) >= (int)sizeof(path))
+		{
+			fprintf(stderr, "%s: path too long\n",
+			        env->progname);
+			closedir(dir);
+			return 1;
+		}
+		if (change_mode(env, path))
+		{
+			closedir(dir);
+			return 1;
+		}
+	}
+	closedir(dir);
+	return 0;
+}
+
+static int
+change_mode(struct env *env, const char *file)
 {
 	if (env->opt & OPT_R)
 	{
-		DIR *dir = opendir(file);
-		if (dir)
-		{
-			struct dirent *dirent;
-			while ((dirent = readdir(dir)))
-			{
-				if (!strcmp(dirent->d_name, ".") || !strcmp(dirent->d_name, ".."))
-					continue;
-				char path[MAXPATHLEN];
-				if (snprintf(path, sizeof(path), "%s/%s", file, dirent->d_name) >= (int)sizeof(path))
-				{
-					fprintf(stderr, "%s: path too long\n", env->progname);
-					closedir(dir);
-					return 1;
-				}
-				if (change_mode(env, path))
-				{
-					closedir(dir);
-					return 1;
-				}
-			}
-			closedir(dir);
-		}
-		else if (errno != ENOTDIR)
-		{
-			fprintf(stderr, "%s: opendir: %s\n", env->progname, strerror(errno));
+		if (change_recursive(env, file))
 			return 1;
-		}
 	}
 	if (env->opt & OPT_h)
 	{
 		if (lchmod(file, env->mode) == -1)
 		{
-			fprintf(stderr, "%s: lchmod: %s\n", env->progname, strerror(errno));
+			fprintf(stderr, "%s: lchmod(%s): %s\n",
+			        env->progname,
+			        file,
+			        strerror(errno));
 			return 1;
 		}
 	}
@@ -63,14 +85,18 @@ static int change_mode(struct env *env, const char *file)
 	{
 		if (chmod(file, env->mode) == -1)
 		{
-			fprintf(stderr, "%s: chmod: %s\n", env->progname, strerror(errno));
+			fprintf(stderr, "%s: chmod(%s): %s\n",
+			        env->progname,
+			        file,
+			        strerror(errno));
 			return 1;
 		}
 	}
 	return 0;
 }
 
-static int parse_mode(const char *progname, const char *str, mode_t *mode)
+static int
+parse_mode(const char *progname, const char *str, mode_t *mode)
 {
 	*mode = 0;
 	for (size_t i = 0; str[i]; ++i)
@@ -90,14 +116,16 @@ static int parse_mode(const char *progname, const char *str, mode_t *mode)
 	return 0;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-h] [-R] mode FILES\n", progname);
 	printf("-h: don't dereference symbolic links\n");
 	printf("-R: recursive mode\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

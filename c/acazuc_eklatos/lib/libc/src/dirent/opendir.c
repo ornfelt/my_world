@@ -4,9 +4,12 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
-DIR *opendir(const char *name)
+DIR *
+opendir(const char *name)
 {
-	DIR *dir = malloc(sizeof(*dir));
+	DIR *dir;
+
+	dir = malloc(sizeof(*dir));
 	if (!dir)
 		return NULL;
 	dir->fd = open(name, O_RDONLY | O_DIRECTORY);

@@ -4,11 +4,13 @@ use crate::{
 use crate::header::{
     DbcHeader, HEADER_SIZE, parse_header,
 };
+use crate::util::StringCache;
 use crate::vanilla_tables::chr_races::ChrRacesKey;
 use std::io::Write;
 use wow_world_base::vanilla::Gender;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct CharHairTextures {
     pub rows: Vec<CharHairTexturesRow>,
 }
@@ -17,6 +19,8 @@ impl DbcTable for CharHairTextures {
     type Row = CharHairTexturesRow;
 
     const FILENAME: &'static str = "CharHairTextures.dbc";
+    const FIELD_COUNT: usize = 8;
+    const ROW_SIZE: usize = 32;
 
     fn rows(&self) -> &[Self::Row] { &self.rows }
     fn rows_mut(&mut self) -> &mut [Self::Row] { &mut self.rows }
@@ -26,19 +30,19 @@ impl DbcTable for CharHairTextures {
         b.read_exact(&mut header)?;
         let header = parse_header(&header)?;
 
-        if header.record_size != 32 {
+        if header.record_size != Self::ROW_SIZE as u32 {
             return Err(crate::DbcError::InvalidHeader(
                 crate::InvalidHeaderError::RecordSize {
-                    expected: 32,
+                    expected: Self::ROW_SIZE as u32,
                     actual: header.record_size,
                 },
             ));
         }
 
-        if header.field_count != 8 {
+        if header.field_count != Self::FIELD_COUNT as u32 {
             return Err(crate::DbcError::InvalidHeader(
                 crate::InvalidHeaderError::FieldCount {
-                    expected: 8,
+                    expected: Self::FIELD_COUNT as u32,
                     actual: header.field_count,
                 },
             ));
@@ -88,15 +92,10 @@ impl DbcTable for CharHairTextures {
         Ok(CharHairTextures { rows, })
     }
 
-    fn write(&self, b: &mut impl Write) -> Result<(), std::io::Error> {
-        let header = DbcHeader {
-            record_count: self.rows.len() as u32,
-            field_count: 8,
-            record_size: 32,
-            string_block_size: 1,
-        };
+    fn write(&self, w: &mut impl Write) -> Result<(), std::io::Error> {
+        let mut b = Vec::with_capacity(self.rows.len() * Self::ROW_SIZE);
 
-        b.write_all(&header.write_header())?;
+        let  string_cache = StringCache::new();
 
         for row in &self.rows {
             // id: primary_key (CharHairTextures) uint32
@@ -125,8 +124,17 @@ impl DbcTable for CharHairTextures {
 
         }
 
-        b.write_all(&[0_u8])?;
+        assert_eq!(b.len(), self.rows.len() * Self::ROW_SIZE);
+        let header = DbcHeader {
+            record_count: self.rows.len() as u32,
+            field_count: Self::FIELD_COUNT as u32,
+            record_size: Self::ROW_SIZE as u32,
+            string_block_size: string_cache.size(),
+        };
 
+        w.write_all(&header.write_header())?;
+        w.write_all(&b)?;
+        w.write_all(string_cache.buffer())?;
         Ok(())
     }
 
@@ -146,6 +154,7 @@ impl Indexable for CharHairTextures {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Hash, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct CharHairTexturesKey {
     pub id: u32
 }
@@ -225,6 +234,7 @@ impl TryFrom<isize> for CharHairTexturesKey {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct CharHairTexturesRow {
     pub id: CharHairTexturesKey,
     pub race: ChrRacesKey,
@@ -235,3 +245,22 @@ pub struct CharHairTexturesRow {
     pub unknown_padding: [u32; 2],
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::fs::File;
+    use std::io::Read;
+
+    #[test]
+    #[ignore = "requires DBC files"]
+    fn char_hair_textures() {
+        let mut file = File::open("../vanilla-dbc/CharHairTextures.dbc").expect("Failed to open DBC file");
+        let mut contents = Vec::new();
+        file.read_to_end(&mut contents).expect("Failed to read DBC file");
+        let actual = CharHairTextures::read(&mut contents.as_slice()).unwrap();
+        let mut v = Vec::with_capacity(contents.len());
+        actual.write(&mut v).unwrap();
+        let new = CharHairTextures::read(&mut v.as_slice()).unwrap();
+        assert_eq!(actual, new);
+    }
+}

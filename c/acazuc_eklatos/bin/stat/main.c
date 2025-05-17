@@ -8,7 +8,8 @@
 #include <pwd.h>
 #include <grp.h>
 
-static const char *uid_str(uid_t uid)
+static const char *
+uid_str(uid_t uid)
 {
 	struct passwd *pw = getpwuid(uid);
 	if (pw && pw->pw_name)
@@ -16,7 +17,8 @@ static const char *uid_str(uid_t uid)
 	return "unknown";
 }
 
-static const char *gid_str(gid_t gid)
+static const char *
+gid_str(gid_t gid)
 {
 	struct group *gr = getgrgid(gid);
 	if (gr && gr->gr_name)
@@ -24,7 +26,8 @@ static const char *gid_str(gid_t gid)
 	return "unknown";
 }
 
-static char get_perm_0(mode_t mode)
+static char
+get_perm_0(mode_t mode)
 {
 	if (S_ISLNK(mode))
 		return 'l';
@@ -41,7 +44,8 @@ static char get_perm_0(mode_t mode)
 	return '-';
 }
 
-static char get_perm_3(mode_t mode)
+static char
+get_perm_3(mode_t mode)
 {
 	if (mode & S_ISUID)
 		return mode & S_IXUSR ? 's' : 'S';
@@ -49,7 +53,8 @@ static char get_perm_3(mode_t mode)
 		return mode & S_IXUSR ? 'x' : '-';
 }
 
-static char get_perm_6(mode_t mode)
+static char
+get_perm_6(mode_t mode)
 {
 	if (mode & S_ISGID)
 		return mode & S_IXGRP ? 's' : 'S';
@@ -57,7 +62,8 @@ static char get_perm_6(mode_t mode)
 		return mode & S_IXGRP ? 'x' : '-';
 }
 
-static char get_perm_9(mode_t mode)
+static char
+get_perm_9(mode_t mode)
 {
 	if (mode & S_ISVTX)
 		return mode & S_IXOTH ? 't' : 'T';
@@ -65,7 +71,8 @@ static char get_perm_9(mode_t mode)
 		return mode & S_IXOTH ? 'x' : '-';
 }
 
-static const char *mode_str(mode_t mode)
+static const char *
+mode_str(mode_t mode)
 {
 	static char buf[11];
 	buf[0] = get_perm_0(mode);
@@ -82,21 +89,26 @@ static const char *mode_str(mode_t mode)
 	return buf;
 }
 
-static const char *time_str(struct timespec *ts)
+static const char *
+time_str(struct timespec *ts)
 {
 	static char buf[1024];
 	struct tm tm;
+	size_t len;
 	time_t t = ts->tv_sec;
+
 	if (!localtime_r(&t, &tm))
 		return NULL;
 	if (!strftime(buf, sizeof(buf), "%F %T", &tm))
 		return NULL;
-	size_t len = strlen(buf);
-	snprintf(&buf[len], sizeof(buf) - len, ".%09lld", (long long)ts->tv_nsec);
+	len = strlen(buf);
+	snprintf(&buf[len], sizeof(buf) - len, ".%09lld",
+	         (long long)ts->tv_nsec);
 	return buf;
 }
 
-static const char *type_str(mode_t mode)
+static const char *
+type_str(mode_t mode)
 {
 	if (S_ISREG(mode))
 		return "regular file";
@@ -115,9 +127,11 @@ static const char *type_str(mode_t mode)
 	return "unknown";
 }
 
-static int stat_file(const char *progname, const char *file)
+static int
+stat_file(const char *progname, const char *file)
 {
 	struct stat st;
+
 	if (stat(file, &st) == -1)
 	{
 		fprintf(stderr, "%s: stat: %s\n", progname, strerror(errno));
@@ -141,7 +155,8 @@ static int stat_file(const char *progname, const char *file)
 	return 0;
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	if (argc < 2)
 	{

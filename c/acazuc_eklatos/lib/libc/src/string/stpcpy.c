@@ -4,7 +4,8 @@
 
 #include <string.h>
 
-char *stpcpy(char *d, const char *s)
+char *
+stpcpy(char *d, const char *s)
 {
 	size_t i = 0;
 	while (((size_t)s + i) % sizeof(size_t))
@@ -34,7 +35,8 @@ char *stpcpy(char *d, const char *s)
 	return &d[i];
 }
 
-char *__stpcpy_chk(char *d, const char *s, size_t ds)
+char *
+__stpcpy_chk(char *d, const char *s, size_t ds)
 {
 	size_t n = strlcpy(d, s, ds);
 	if (n >= ds)

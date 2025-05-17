@@ -1,6 +1,7 @@
 #include <ctype.h>
 
-int isalnum(int c)
+int
+isalnum(int c)
 {
 	return (c >= 'a' && c <= 'z')
 	    || (c >= 'A' && c <= 'Z')

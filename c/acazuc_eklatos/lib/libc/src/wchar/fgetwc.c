@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include <wchar.h>
 
-wint_t fgetwc(FILE *fp)
+wint_t
+fgetwc(FILE *fp)
 {
+	wint_t ret;
+
 	flockfile(fp);
-	wint_t ret = getwc_unlocked(fp);
+	ret = getwc_unlocked(fp);
 	funlockfile(fp);
 	return ret;
 }

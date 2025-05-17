@@ -4,7 +4,8 @@
 #include <errno.h>
 #include <stdio.h>
 
-int execvp(const char *file, char * const argv[])
+int
+execvp(const char *file, char * const argv[])
 {
 	if (strchr(file, '/'))
 		return execv(file, argv);

@@ -4,6 +4,8 @@ use crate::{
 use crate::header::{
     DbcHeader, HEADER_SIZE, parse_header,
 };
+use crate::tys::WritableString;
+use crate::util::StringCache;
 use crate::vanilla_tables::cinematic_sequences::CinematicSequencesKey;
 use crate::vanilla_tables::creature_display_info::CreatureDisplayInfoKey;
 use crate::vanilla_tables::creature_type::CreatureTypeKey;
@@ -16,6 +18,7 @@ use wow_world_base::vanilla::{
 };
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ChrRaces {
     pub rows: Vec<ChrRacesRow>,
 }
@@ -24,6 +27,8 @@ impl DbcTable for ChrRaces {
     type Row = ChrRacesRow;
 
     const FILENAME: &'static str = "ChrRaces.dbc";
+    const FIELD_COUNT: usize = 29;
+    const ROW_SIZE: usize = 116;
 
     fn rows(&self) -> &[Self::Row] { &self.rows }
     fn rows_mut(&mut self) -> &mut [Self::Row] { &mut self.rows }
@@ -33,19 +38,19 @@ impl DbcTable for ChrRaces {
         b.read_exact(&mut header)?;
         let header = parse_header(&header)?;
 
-        if header.record_size != 116 {
+        if header.record_size != Self::ROW_SIZE as u32 {
             return Err(crate::DbcError::InvalidHeader(
                 crate::InvalidHeaderError::RecordSize {
-                    expected: 116,
+                    expected: Self::ROW_SIZE as u32,
                     actual: header.record_size,
                 },
             ));
         }
 
-        if header.field_count != 29 {
+        if header.field_count != Self::FIELD_COUNT as u32 {
             return Err(crate::DbcError::InvalidHeader(
                 crate::InvalidHeaderError::FieldCount {
-                    expected: 29,
+                    expected: Self::FIELD_COUNT as u32,
                     actual: header.field_count,
                 },
             ));
@@ -169,17 +174,11 @@ impl DbcTable for ChrRaces {
         Ok(ChrRaces { rows, })
     }
 
-    fn write(&self, b: &mut impl Write) -> Result<(), std::io::Error> {
-        let header = DbcHeader {
-            record_count: self.rows.len() as u32,
-            field_count: 29,
-            record_size: 116,
-            string_block_size: self.string_block_size(),
-        };
+    fn write(&self, w: &mut impl Write) -> Result<(), std::io::Error> {
+        let mut b = Vec::with_capacity(self.rows.len() * Self::ROW_SIZE);
 
-        b.write_all(&header.write_header())?;
+        let mut string_cache = StringCache::new();
 
-        let mut string_index = 1;
         for row in &self.rows {
             // id: primary_key (ChrRaces) uint32
             b.write_all(&row.id.id.to_le_bytes())?;
@@ -200,13 +199,7 @@ impl DbcTable for ChrRaces {
             b.write_all(&(row.female_display.id as u32).to_le_bytes())?;
 
             // client_prefix: string_ref
-            if !row.client_prefix.is_empty() {
-                b.write_all(&(string_index as u32).to_le_bytes())?;
-                string_index += row.client_prefix.len() + 1;
-            }
-            else {
-                b.write_all(&(0_u32).to_le_bytes())?;
-            }
+            b.write_all(&string_cache.add_string(&row.client_prefix).to_le_bytes())?;
 
             // speed_modifier: float
             b.write_all(&row.speed_modifier.to_le_bytes())?;
@@ -233,45 +226,36 @@ impl DbcTable for ChrRaces {
             b.write_all(&row.unknown2.to_le_bytes())?;
 
             // client_file_path: string_ref
-            if !row.client_file_path.is_empty() {
-                b.write_all(&(string_index as u32).to_le_bytes())?;
-                string_index += row.client_file_path.len() + 1;
-            }
-            else {
-                b.write_all(&(0_u32).to_le_bytes())?;
-            }
+            b.write_all(&string_cache.add_string(&row.client_file_path).to_le_bytes())?;
 
             // cinematic_sequence: foreign_key (CinematicSequences) uint32
             b.write_all(&(row.cinematic_sequence.id as u32).to_le_bytes())?;
 
             // name: string_ref_loc
-            b.write_all(&row.name.string_indices_as_array(&mut string_index))?;
+            b.write_all(&row.name.string_indices_as_array(&mut string_cache))?;
 
             // facial_hair_customisation: string_ref[2]
             for i in &row.facial_hair_customisation {
-                if !i.is_empty() {
-                    b.write_all(&(string_index as u32).to_le_bytes())?;
-                    string_index += i.len() + 1;
-                }
-                else {
-                    b.write_all(&(0_u32).to_le_bytes())?;
-                }
+                b.write_all(&string_cache.add_string(i).to_le_bytes())?;
             }
 
 
             // hair_customisation: string_ref
-            if !row.hair_customisation.is_empty() {
-                b.write_all(&(string_index as u32).to_le_bytes())?;
-                string_index += row.hair_customisation.len() + 1;
-            }
-            else {
-                b.write_all(&(0_u32).to_le_bytes())?;
-            }
+            b.write_all(&string_cache.add_string(&row.hair_customisation).to_le_bytes())?;
 
         }
 
-        self.write_string_block(b)?;
+        assert_eq!(b.len(), self.rows.len() * Self::ROW_SIZE);
+        let header = DbcHeader {
+            record_count: self.rows.len() as u32,
+            field_count: Self::FIELD_COUNT as u32,
+            record_size: Self::ROW_SIZE as u32,
+            string_block_size: string_cache.size(),
+        };
 
+        w.write_all(&header.write_header())?;
+        w.write_all(&b)?;
+        w.write_all(string_cache.buffer())?;
         Ok(())
     }
 
@@ -290,43 +274,8 @@ impl Indexable for ChrRaces {
     }
 }
 
-impl ChrRaces {
-    fn write_string_block(&self, b: &mut impl Write) -> Result<(), std::io::Error> {
-        b.write_all(&[0])?;
-
-        for row in &self.rows {
-            if !row.client_prefix.is_empty() { b.write_all(row.client_prefix.as_bytes())?; b.write_all(&[0])?; };
-            if !row.client_file_path.is_empty() { b.write_all(row.client_file_path.as_bytes())?; b.write_all(&[0])?; };
-            row.name.string_block_as_array(b)?;
-            for s in &row.facial_hair_customisation {
-                if !s.is_empty() { b.write_all(s.as_bytes())?; b.write_all(&[0])?; };
-            }
-
-            if !row.hair_customisation.is_empty() { b.write_all(row.hair_customisation.as_bytes())?; b.write_all(&[0])?; };
-        }
-
-        Ok(())
-    }
-
-    fn string_block_size(&self) -> u32 {
-        let mut sum = 1;
-        for row in &self.rows {
-            if !row.client_prefix.is_empty() { sum += row.client_prefix.len() + 1; };
-            if !row.client_file_path.is_empty() { sum += row.client_file_path.len() + 1; };
-            sum += row.name.string_block_size();
-            for s in &row.facial_hair_customisation {
-                if !s.is_empty() { sum += s.len() + 1; };
-            }
-
-            if !row.hair_customisation.is_empty() { sum += row.hair_customisation.len() + 1; };
-        }
-
-        sum as u32
-    }
-
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Hash, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ChrRacesKey {
     pub id: u32
 }
@@ -406,6 +355,7 @@ impl TryFrom<isize> for ChrRacesKey {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ChrRacesRow {
     pub id: ChrRacesKey,
     pub flags: CharacterRaceFlags,
@@ -429,3 +379,22 @@ pub struct ChrRacesRow {
     pub hair_customisation: String,
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::fs::File;
+    use std::io::Read;
+
+    #[test]
+    #[ignore = "requires DBC files"]
+    fn chr_races() {
+        let mut file = File::open("../vanilla-dbc/ChrRaces.dbc").expect("Failed to open DBC file");
+        let mut contents = Vec::new();
+        file.read_to_end(&mut contents).expect("Failed to read DBC file");
+        let actual = ChrRaces::read(&mut contents.as_slice()).unwrap();
+        let mut v = Vec::with_capacity(contents.len());
+        actual.write(&mut v).unwrap();
+        let new = ChrRaces::read(&mut v.as_slice()).unwrap();
+        assert_eq!(actual, new);
+    }
+}

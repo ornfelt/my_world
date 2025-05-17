@@ -9,9 +9,14 @@
 static TAILQ_HEAD(, usb_device) devices = TAILQ_HEAD_INITIALIZER(devices); /* XXX lock */
 static TAILQ_HEAD(, usb_itf_probe_list) itf_probes = TAILQ_HEAD_INITIALIZER(itf_probes); /* XXX lock */
 
-ssize_t usb_ctrl_transfer(struct usb_device *device, uint8_t type,
-                          uint8_t request, uint16_t value, uint16_t index,
-                          void *data, size_t size)
+ssize_t
+usb_ctrl_transfer(struct usb_device *device,
+                  uint8_t type,
+                  uint8_t request,
+                  uint16_t value,
+                  uint16_t index,
+                  void *data,
+                  size_t size)
 {
 	struct usb_request *req;
 	uintptr_t req_addr;
@@ -36,8 +41,12 @@ ssize_t usb_ctrl_transfer(struct usb_device *device, uint8_t type,
 	return ret;
 }
 
-static ssize_t get_descriptor(struct usb_device *device, uint16_t value,
-                              uint16_t index, void *data, size_t size)
+static ssize_t
+get_descriptor(struct usb_device *device,
+               uint16_t value,
+               uint16_t index,
+               void *data,
+               size_t size)
 {
 	return usb_ctrl_transfer(device,
 	                         USB_REQ_DST_DEVICE | USB_REQ_TYPE_STANDARD | USB_REQ_DEV_TO_HOST,
@@ -45,7 +54,8 @@ static ssize_t get_descriptor(struct usb_device *device, uint16_t value,
 	                         value, index, data, size);
 }
 
-static ssize_t set_address(struct usb_device *device, uint8_t address)
+static ssize_t
+set_address(struct usb_device *device, uint8_t address)
 {
 	return usb_ctrl_transfer(device,
 	                         USB_REQ_DST_DEVICE | USB_REQ_TYPE_STANDARD | USB_REQ_HOST_TO_DEV,
@@ -53,7 +63,8 @@ static ssize_t set_address(struct usb_device *device, uint8_t address)
 	                         address, 0, NULL, 0);
 }
 
-static ssize_t set_configuration(struct usb_device *device, uint8_t configuration)
+static ssize_t
+set_configuration(struct usb_device *device, uint8_t configuration)
 {
 	return usb_ctrl_transfer(device,
 	                         USB_REQ_DST_DEVICE | USB_REQ_TYPE_STANDARD | USB_REQ_HOST_TO_DEV,
@@ -61,8 +72,8 @@ static ssize_t set_configuration(struct usb_device *device, uint8_t configuratio
 	                         configuration, 0, NULL, 0);
 }
 
-ssize_t usb_use_interface(struct usb_device *device,
-                          struct usb_interface *interface)
+ssize_t
+usb_use_interface(struct usb_device *device, struct usb_interface *interface)
 {
 	return usb_ctrl_transfer(device,
 	                         USB_REQ_DST_INTERFACE | USB_REQ_TYPE_STANDARD | USB_REQ_HOST_TO_DEV,
@@ -71,18 +82,20 @@ ssize_t usb_use_interface(struct usb_device *device,
 	                         interface->desc.interface, NULL, 0);
 }
 
-int usb_intr_transfer(struct usb_intr_pipe *pipe)
+int
+usb_intr_transfer(struct usb_intr_pipe *pipe)
 {
 	return pipe->device->hcd->op->intr_transfer(pipe);
 }
 
-int usb_isoc_transfer(struct usb_isoc_pipe *pipe)
+int
+usb_isoc_transfer(struct usb_isoc_pipe *pipe)
 {
 	return pipe->device->hcd->op->isoc_transfer(pipe);
 }
 
-static void print_usb_device_desc(struct uio *uio,
-                                  const struct usb_device_desc *desc)
+static void
+print_usb_device_desc(struct uio *uio, const struct usb_device_desc *desc)
 {
 	uprintf(uio, "length: %u\n", desc->length);
 	uprintf(uio, "type: %u\n", desc->type);
@@ -100,8 +113,8 @@ static void print_usb_device_desc(struct uio *uio,
 	uprintf(uio, "configurations_count: %u\n", desc->configurations_count);
 }
 
-static void print_usb_endpoint_desc(struct uio *uio,
-                                    const struct usb_endpoint_desc *desc)
+static void
+print_usb_endpoint_desc(struct uio *uio, const struct usb_endpoint_desc *desc)
 {
 	uprintf(uio, "length: %u\n", desc->length);
 	uprintf(uio, "type: %u\n", desc->type);
@@ -111,8 +124,11 @@ static void print_usb_endpoint_desc(struct uio *uio,
 	uprintf(uio, "interval: %u\n", desc->interval);
 }
 
-static int get_language(struct usb_device *device, char *str, uint8_t index,
-                        uint16_t langid)
+static int
+get_language(struct usb_device *device,
+             char *str,
+             uint8_t index,
+             uint16_t langid)
 {
 	uint8_t buf[256];
 	uint8_t length;
@@ -154,7 +170,8 @@ static int get_language(struct usb_device *device, char *str, uint8_t index,
 	return 0;
 }
 
-static int get_languages(struct usb_device *device)
+static int
+get_languages(struct usb_device *device)
 {
 	struct
 	{
@@ -221,7 +238,8 @@ static int get_languages(struct usb_device *device)
 	return 0;
 }
 
-static int get_device_descriptor(struct usb_device *device)
+static int
+get_device_descriptor(struct usb_device *device)
 {
 	ssize_t ret;
 
@@ -252,7 +270,8 @@ static int get_device_descriptor(struct usb_device *device)
 	return 0;
 }
 
-static int get_configurations(struct usb_device *device)
+static int
+get_configurations(struct usb_device *device)
 {
 	ssize_t ret;
 
@@ -287,15 +306,17 @@ static int get_configurations(struct usb_device *device)
 	return 0;
 }
 
-static void interface_free(struct usb_interface *interface)
+static void
+interface_free(struct usb_interface *interface)
 {
 	struct usb_descriptor *descriptor;
+	struct usb_endpoint *endpoint;
+
 	while ((descriptor = TAILQ_FIRST(&interface->descriptors)))
 	{
 		TAILQ_REMOVE(&interface->descriptors, descriptor, chain);
 		free(descriptor);
 	}
-	struct usb_endpoint *endpoint;
 	while ((endpoint = TAILQ_FIRST(&interface->endpoints)))
 	{
 		TAILQ_REMOVE(&interface->endpoints, endpoint, chain);
@@ -304,7 +325,8 @@ static void interface_free(struct usb_interface *interface)
 	free(interface);
 }
 
-static void interfaces_free(struct usb_interface_head *interfaces)
+static void
+interfaces_free(struct usb_interface_head *interfaces)
 {
 	struct usb_interface *interface;
 	while ((interface = TAILQ_FIRST(interfaces)))
@@ -314,9 +336,12 @@ static void interfaces_free(struct usb_interface_head *interfaces)
 	}
 }
 
-static int parse_interface(struct usb_device *device, const uint8_t *buf,
-                           size_t size, size_t *buf_pos,
-                           struct usb_interface **interfacep)
+static int
+parse_interface(struct usb_device *device,
+                const uint8_t *buf,
+                size_t size,
+                size_t *buf_pos,
+                struct usb_interface **interfacep)
 {
 	struct usb_interface *interface = NULL;
 	struct usb_interface_desc *desc;
@@ -413,7 +438,8 @@ err:
 	return ret;
 }
 
-static int select_configuration(struct usb_device *device, uint8_t confid)
+static int
+select_configuration(struct usb_device *device, uint8_t confid)
 {
 	struct usb_configuration_desc *configuration;
 	struct usb_interface_head interfaces;
@@ -475,9 +501,10 @@ err:
 	return ret;
 }
 
-static int itf_probe_list_matches(const struct usb_interface *interface,
-                                  const struct usb_itf_probe *probes,
-                                  size_t count)
+static int
+itf_probe_list_matches(const struct usb_interface *interface,
+                       const struct usb_itf_probe *probes,
+                       size_t count)
 {
 	for (size_t i = 0; i < count; ++i)
 	{
@@ -489,7 +516,8 @@ static int itf_probe_list_matches(const struct usb_interface *interface,
 	return -EINVAL;
 }
 
-void usb_device_free(struct usb_device *device)
+void
+usb_device_free(struct usb_device *device)
 {
 	if (!device)
 		return;
@@ -500,8 +528,10 @@ void usb_device_free(struct usb_device *device)
 	free(device);
 }
 
-int usb_device_alloc(struct usb_hcd *hcd, enum usb_speed speed,
-                     struct usb_device **devicep)
+int
+usb_device_alloc(struct usb_hcd *hcd,
+                 enum usb_speed speed,
+                 struct usb_device **devicep)
 {
 	struct usb_device *device;
 	uint8_t addr;
@@ -584,7 +614,8 @@ err:
 	return ret;
 }
 
-void usb_device_probe(struct usb_device *device)
+void
+usb_device_probe(struct usb_device *device)
 {
 	if (TAILQ_EMPTY(&itf_probes))
 		return;
@@ -606,8 +637,11 @@ void usb_device_probe(struct usb_device *device)
 	}
 }
 
-int usb_register_itf_probes(const struct usb_itf_probe *probes, size_t count,
-                            usb_itf_probe_t probe, void *userdata)
+int
+usb_register_itf_probes(const struct usb_itf_probe *probes,
+                        size_t count,
+                        usb_itf_probe_t probe,
+                        void *userdata)
 {
 	struct usb_itf_probe_list *probe_list = NULL;
 	struct usb_device *device;
@@ -640,11 +674,13 @@ int usb_register_itf_probes(const struct usb_itf_probe *probes, size_t count,
 	return 0;
 }
 
-int usb_intr_pipe_alloc(struct usb_device *device,
-                        struct usb_endpoint *endpoint,
-                        size_t size, usb_intr_pipe_fn_t fn,
-                        void *userdata,
-                        struct usb_intr_pipe **pipep)
+int
+usb_intr_pipe_alloc(struct usb_device *device,
+                    struct usb_endpoint *endpoint,
+                    size_t size,
+                    usb_intr_pipe_fn_t fn,
+                    void *userdata,
+                    struct usb_intr_pipe **pipep)
 {
 	struct usb_intr_pipe *pipe = NULL;
 	int ret;
@@ -676,7 +712,8 @@ err:
 	return ret;
 }
 
-void usb_intr_pipe_free(struct usb_intr_pipe *pipe)
+void
+usb_intr_pipe_free(struct usb_intr_pipe *pipe)
 {
 	if (!pipe)
 		return;
@@ -684,11 +721,12 @@ void usb_intr_pipe_free(struct usb_intr_pipe *pipe)
 	free(pipe);
 }
 
-int usb_isoc_pipe_alloc(struct usb_device *device,
-                        struct usb_endpoint *endpoint,
-                        usb_isoc_pipe_fn_t fn,
-                        void *userdata,
-                        struct usb_isoc_pipe **pipep)
+int
+usb_isoc_pipe_alloc(struct usb_device *device,
+                    struct usb_endpoint *endpoint,
+                    usb_isoc_pipe_fn_t fn,
+                    void *userdata,
+                    struct usb_isoc_pipe **pipep)
 {
 	struct usb_isoc_pipe *pipe = NULL;
 	int ret;
@@ -718,7 +756,8 @@ err:
 	return ret;
 }
 
-void usb_isoc_pipe_free(struct usb_isoc_pipe *pipe)
+void
+usb_isoc_pipe_free(struct usb_isoc_pipe *pipe)
 {
 	if (!pipe)
 		return;
@@ -726,16 +765,19 @@ void usb_isoc_pipe_free(struct usb_isoc_pipe *pipe)
 	free(pipe);
 }
 
-int init(void)
+int
+init(void)
 {
 	return 0;
 }
 
-void fini(void)
+void
+fini(void)
 {
 }
 
-struct kmod_info kmod =
+struct kmod_info
+kmod =
 {
 	.magic = KMOD_MAGIC,
 	.version = 1,

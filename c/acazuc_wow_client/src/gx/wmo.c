@@ -3,8 +3,8 @@
 #include "gx/frame.h"
 #include "gx/wmo.h"
 #include "gx/m2.h"
+#include "gx/gx.h"
 
-#include "performance.h"
 #include "shaders.h"
 #include "camera.h"
 #include "loader.h"
@@ -321,7 +321,6 @@ void gx_wmo_render(struct gx_wmo *wmo, struct gx_frame *frame)
 	{
 		struct gx_wmo_instance *instance = *JKS_ARRAY_GET(&wmo_frame->to_render, i, struct gx_wmo_instance*);
 		struct gx_wmo_instance_frame *instance_frame = &instance->frames[frame->id];
-		PERFORMANCE_BEGIN(WMO_RENDER_DATA);
 		struct shader_wmo_model_block model_block;
 		model_block.v = *(struct mat4f*)&frame->view_v;
 		model_block.mv = instance_frame->mv;
@@ -329,7 +328,6 @@ void gx_wmo_render(struct gx_wmo *wmo, struct gx_frame *frame)
 		if (!instance_frame->uniform_buffer.handle.u64)
 			gfx_create_buffer(g_wow->device, &instance_frame->uniform_buffer, GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_wmo_model_block), GFX_BUFFER_STREAM);
 		gfx_set_buffer_data(&instance_frame->uniform_buffer, &model_block, sizeof(model_block), 0);
-		PERFORMANCE_END(WMO_RENDER_DATA);
 	}
 	for (size_t i = 0; i < wmo->groups.size; ++i)
 		gx_wmo_group_render(*JKS_ARRAY_GET(&wmo->groups, i, struct gx_wmo_group*), frame, &wmo_frame->to_render);
@@ -719,7 +717,7 @@ void gx_wmo_instance_add_to_render(struct gx_wmo_instance *instance, struct gx_f
 	if (!gx_wmo_flag_set(instance->parent, GX_WMO_FLAG_IN_RENDER_LIST))
 		gx_frame_add_wmo(frame, instance->parent);
 #ifdef WITH_DEBUG_RENDERING
-	if (g_wow->render_opt & RENDER_OPT_WMO_AABB)
+	if (g_wow->gx->opt & GX_OPT_WMO_AABB)
 		gx_aabb_add_to_render(&instance->gx_aabb, frame, &frame->view_vp);
 #endif
 	for (size_t i = 0; i < instance->parent->groups.size; ++i)
@@ -733,7 +731,7 @@ void gx_wmo_instance_add_to_render(struct gx_wmo_instance *instance, struct gx_f
 		struct gx_wmo_group_instance *group_instance = JKS_ARRAY_GET(&instance->groups, i, struct gx_wmo_group_instance);
 		if (!group_instance || group_instance->frames[frame->id].culled)
 			continue;
-		if (g_wow->render_opt & RENDER_OPT_WMO_AABB)
+		if (g_wow->gx->opt & GX_OPT_WMO_AABB)
 		{
 			if (group->wow_flags & WOW_MOGP_FLAGS_INDOOR)
 				gx_aabb_set_color(&group_instance->gx_aabb, &(struct vec4f){0, 1, 1, 1});
@@ -748,9 +746,7 @@ void gx_wmo_instance_add_to_render(struct gx_wmo_instance *instance, struct gx_f
 		}
 #endif
 	}
-	PERFORMANCE_BEGIN(WMO_PORTALS_CULL);
 	gx_wmo_instance_cull_portal(instance, frame);
-	PERFORMANCE_END(WMO_PORTALS_CULL);
 }
 
 void gx_wmo_instance_set_mat(struct gx_wmo_instance *instance, const struct mat4f *m)

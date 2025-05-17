@@ -2,7 +2,8 @@
 
 #include <grp.h>
 
-void endgrent(void)
+void
+endgrent(void)
 {
 	if (!grent_fp)
 		return;

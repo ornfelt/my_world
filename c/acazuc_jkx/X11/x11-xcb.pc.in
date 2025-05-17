@@ -1,0 +1,13 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: X11-xcb
+Description: X library xcb interface
+URL: https://git.sr.ht/~acazuc/jkx
+Version: @VERSION@
+
+Cflags: -I${includedir}
+Libs: -L${libdir} -lX11-xcb
+Requires: x11 xcb

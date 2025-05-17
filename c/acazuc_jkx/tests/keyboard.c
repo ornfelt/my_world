@@ -3,7 +3,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-static const char *mod_names[] =
+static const char *
+mod_names[] =
 {
 	"Shift",
 	"Lock",
@@ -15,22 +16,29 @@ static const char *mod_names[] =
 	"Mod5",
 };
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
+	XModifierKeymap *modmap;
+	XKeyboardState state;
+	Display *display;
+	KeySym *syms;
+	int keysyms_per_keycode;
+	int min_keycode;
+	int max_keycode;
+
 	(void)argc;
-	Display *display = XOpenDisplay(NULL);
+	display = XOpenDisplay(NULL);
 	if (!display)
 	{
 		fprintf(stderr, "%s: failed to open display\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	int min_keycode;
-	int max_keycode;
 	XDisplayKeycodes(display, &min_keycode, &max_keycode);
-	int keysyms_per_keycode;
-	KeySym *syms = XGetKeyboardMapping(display, min_keycode,
-	                                   max_keycode - min_keycode,
-	                                   &keysyms_per_keycode);
+	syms = XGetKeyboardMapping(display,
+	                           min_keycode,
+	                           max_keycode - min_keycode,
+	                           &keysyms_per_keycode);
 	if (!syms)
 	{
 		fprintf(stderr, "%s: failed to get keyboard syms\n", argv[0]);
@@ -44,7 +52,7 @@ int main(int argc, char **argv)
 		printf("\n");
 	}
 	printf("\n");
-	XModifierKeymap *modmap = XGetModifierMapping(display);
+	modmap = XGetModifierMapping(display);
 	if (!modmap)
 	{
 		fprintf(stderr, "%s: failed to get modifier mapping\n", argv[0]);
@@ -61,7 +69,6 @@ int main(int argc, char **argv)
 	}
 	printf("\n");
 	XFreeModifiermap(modmap);
-	XKeyboardState state;
 	if (!XGetKeyboardControl(display, &state))
 	{
 		fprintf(stderr, "%s: failed to get keyboard control\n", argv[0]);

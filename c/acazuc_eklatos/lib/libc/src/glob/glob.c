@@ -7,14 +7,18 @@
 #include <errno.h>
 #include <glob.h>
 
-static int push_entry(glob_t *globp, const char *str)
+static int
+push_entry(glob_t *globp, const char *str)
 {
-	size_t off = globp->gl_pathc + globp->gl_offs;
-	char *dup = strdup(str);
+	size_t off;
+	char **pathv;
+	char *dup;
+
+	dup = strdup(str);
 	if (!dup)
 		return 1;
-	char **pathv = realloc(globp->gl_pathv,
-	                       sizeof(*pathv) * (off + 2));
+	off = globp->gl_pathc + globp->gl_offs;
+	pathv = realloc(globp->gl_pathv, sizeof(*pathv) * (off + 2));
 	if (!pathv)
 	{
 		free(dup);
@@ -27,7 +31,8 @@ static int push_entry(glob_t *globp, const char *str)
 	return 0;
 }
 
-static int is_dir(DIR *dir, struct dirent *dirent)
+static int
+is_dir(DIR *dir, struct dirent *dirent)
 {
 	switch (dirent->d_type)
 	{
@@ -46,10 +51,17 @@ static int is_dir(DIR *dir, struct dirent *dirent)
 	}
 }
 
-static int glob_dir(char *buf, size_t buf_pos, char *pattern, int flags,
-                    int (*errfn)(const char *path, int err),
-                    glob_t *globp)
+static int
+glob_dir(char *buf,
+         size_t buf_pos,
+         char *pattern,
+         int flags,
+         int (*errfn)(const char *path, int err),
+         glob_t *globp)
 {
+	struct dirent *dirent;
+	DIR *dir;
+
 	while (pattern[0] == '/')
 	{
 		if (buf_pos + 1 >= MAXPATHLEN)
@@ -69,7 +81,7 @@ static int glob_dir(char *buf, size_t buf_pos, char *pattern, int flags,
 		return GLOB_NOSPACE;
 	/* XXX shortcut if no *?[] chars in name */
 	char old_sep = *next_pattern;
-	DIR *dir = opendir(buf_pos ? buf : ".");
+	dir = opendir(buf_pos ? buf : ".");
 	if (!dir)
 	{
 		if (errfn)
@@ -84,7 +96,6 @@ static int glob_dir(char *buf, size_t buf_pos, char *pattern, int flags,
 	int fnmatch_flags = FNM_PERIOD;
 	if (flags & GLOB_NOESCAPE)
 		fnmatch_flags |= FNM_NOESCAPE;
-	struct dirent *dirent;
 	while ((dirent = readdir(dir)))
 	{
 		*next_pattern = '\0';
@@ -150,17 +161,22 @@ static int glob_dir(char *buf, size_t buf_pos, char *pattern, int flags,
 	return 0;
 }
 
-static int str_cmp(const void *a, const void *b)
+static int
+str_cmp(const void *a, const void *b)
 {
 	return strcmp(*(char**)a, *(char**)b);
 }
 
-int glob(const char *pattern, int flags,
-         int (*errfn)(const char *path, int err),
-         glob_t *globp)
+int
+glob(const char *pattern,
+     int flags,
+     int (*errfn)(const char *path, int err),
+     glob_t *globp)
 {
 	char pattern_buf[MAXPATHLEN];
 	char buf[MAXPATHLEN];
+	int ret;
+
 	if (!(flags & GLOB_APPEND))
 	{
 		globp->gl_pathc = 0;
@@ -176,7 +192,7 @@ int glob(const char *pattern, int flags,
 	size_t org_pathc = globp->gl_pathc;
 	if (strlcpy(pattern_buf, pattern, sizeof(pattern_buf)) >= sizeof(pattern_buf))
 		return GLOB_NOSPACE;
-	int ret = glob_dir(buf, 0, pattern_buf, flags, errfn, globp);
+	ret = glob_dir(buf, 0, pattern_buf, flags, errfn, globp);
 	if (ret)
 		return ret;
 	if (globp->gl_pathc == org_pathc)

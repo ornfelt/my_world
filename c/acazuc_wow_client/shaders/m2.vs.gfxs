@@ -36,6 +36,9 @@ constant 1 model_block
 	mat4 v
 	mat4 mv
 	mat4 mvp
+	mat4 shadow_v
+	mat4 shadow_mv
+	mat4 shadow_mvp
 	ivec4 lights_count
 	light lights[4]
 	mat4 bone_mats[256]
@@ -48,6 +51,7 @@ constant 2 scene_block
 	vec4 diffuse_color
 	vec4 ambient_color
 	vec2 fog_range
+	int shadow
 }
 
 #define M2_VERTEX_DIFFUSE                   0x1
@@ -81,10 +85,25 @@ vs_output gfx_main(vs_input gfx_input)
 		position_fixed = mul(position_fixed, bone_mat);
 		normal_fixed = mul(normal_fixed, bone_mat);
 	}
+	mat4 mvp_mat;
+	mat4 mv_mat;
+	mat4 v_mat;
+	if (shadow != 0)
+	{
+		mvp_mat = shadow_mvp;
+		mv_mat = shadow_mv;
+		v_mat = shadow_v;
+	}
+	else
+	{
+		mvp_mat = mvp;
+		mv_mat = mv;
+		v_mat = v;
+	}
 	normal_fixed = normalize(normal_fixed);
-	gfx_output.gfx_position = mul(position_fixed, mvp);
-	gfx_output.position = mul(position_fixed, mv).xyz;
-	gfx_output.normal = normalize(mul(normal_fixed, mv).xyz);
+	gfx_output.gfx_position = mul(position_fixed, mvp_mat);
+	gfx_output.position = mul(position_fixed, mv_mat).xyz;
+	gfx_output.normal = normalize(mul(normal_fixed, mv_mat).xyz);
 	switch (combiners.x)
 	{
 		case M2_VERTEX_DIFFUSE:
@@ -116,7 +135,7 @@ vs_output gfx_main(vs_input gfx_input)
 	}
 	if (settings.y == 0)
 	{
-		vec3 light_dir = normalize(mul(-light_direction, v).xyz);
+		vec3 light_dir = normalize(mul(-light_direction, v_mat).xyz);
 		vec3 light_input = diffuse_color.xyz * clamp(dot(gfx_output.normal, light_dir), 0.0, 1.0) + ambient_color.xyz;
 		for (int i = 0; i < lights_count.x; ++i)
 		{

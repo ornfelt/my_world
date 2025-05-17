@@ -119,7 +119,8 @@ static const struct
 	{0x8086, 0x9BC8, "CometLake-S GT2 [UHD Graphics 630]"},
 };
 
-static const char *dev_name(uint16_t vendor, uint16_t device)
+static const char *
+dev_name(uint16_t vendor, uint16_t device)
 {
 	for (size_t i = 0; i < sizeof(devices_ref) / sizeof(*devices_ref); ++i)
 	{
@@ -130,13 +131,15 @@ static const char *dev_name(uint16_t vendor, uint16_t device)
 	return "";
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-h]\n", progname);
 	printf("-h: show this help\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	char *line = NULL;
 	size_t size = 0;
@@ -170,17 +173,37 @@ int main(int argc, char **argv)
 		uint8_t func;
 		uint16_t vendor;
 		uint16_t device;
-		if (sscanf(line, "%" SCNx16 ":%" SCNx8 ":%" SCNx8 ".%" SCNx8
-		                 " %" SCNx16 ":%" SCNx16,
-		                 &group, &bus, &slot, &func,
-		                 &vendor, &device) != 6)
+
+		if (sscanf(line,
+		           "%" SCNx16 ":"
+		           "%" SCNx8 ":"
+		           "%" SCNx8 "."
+		           "%" SCNx8 " "
+		           "%" SCNx16 ":"
+		           "%" SCNx16,
+		           &group,
+		           &bus,
+		           &slot,
+		           &func,
+		           &vendor,
+		           &device) != 6)
 		{
 			fprintf(stderr, "%s: invalid line\n", argv[0]);
 			return EXIT_FAILURE;
 		}
-		printf("%04" PRIx16 ":%02" PRIx8 ":%02" PRIx8 ".%01" PRIx8
-		       " %04" PRIx16 ":%04" PRIx16 " %s\n",
-		       group, bus, slot, func, vendor, device,
+		printf("%04" PRIx16 ":"
+		       "%02" PRIx8 ":"
+		       "%02" PRIx8 "."
+		       "%01" PRIx8 " "
+		       "%04" PRIx16 ":"
+		       "%04" PRIx16 " "
+		       "%s\n",
+		       group,
+		       bus,
+		       slot,
+		       func,
+		       vendor,
+		       device,
 		       dev_name(vendor, device));
 	}
 	if (ferror(fp))

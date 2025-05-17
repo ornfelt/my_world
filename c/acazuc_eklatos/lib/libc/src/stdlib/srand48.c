@@ -2,7 +2,8 @@
 
 #include <stdlib.h>
 
-void srand48(long seed)
+void
+srand48(long seed)
 {
 	rand48_a = 0x5DEECE66D;
 	rand48_c = 0xB;

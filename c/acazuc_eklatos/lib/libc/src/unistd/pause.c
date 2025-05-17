@@ -2,7 +2,8 @@
 
 #include <unistd.h>
 
-int pause(void)
+int
+pause(void)
 {
 	return syscall1(SYS_sigsuspend, 0);
 }

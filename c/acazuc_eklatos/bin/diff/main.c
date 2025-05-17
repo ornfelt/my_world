@@ -9,7 +9,8 @@ struct env
 	const char *progname;
 };
 
-static int diff_files(struct env *env, const char *file1, const char *file2)
+static int
+diff_files(struct env *env, const char *file1, const char *file2)
 {
 	FILE *fp1 = NULL;
 	FILE *fp2 = NULL;
@@ -73,12 +74,15 @@ end:
 	return ret;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-h] FILES\n", progname);
+	printf("-h: show this help\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

@@ -1,9 +1,9 @@
 #include "gx/collisions.h"
 #include "gx/frame.h"
+#include "gx/gx.h"
 
 #include "map/map.h"
 
-#include "graphics.h"
 #include "shaders.h"
 #include "memory.h"
 #include "camera.h"
@@ -107,7 +107,7 @@ void gx_collisions_render(struct gx_collisions *collisions, struct gx_frame *fra
 		initialize(collisions);
 	if (collisions_frame->points)
 		update(collisions, frame);
-	gfx_bind_attributes_state(g_wow->device, &collisions_frame->attributes_state, &g_wow->graphics->collisions_input_layout);
+	gfx_bind_attributes_state(g_wow->device, &collisions_frame->attributes_state, &g_wow->gx->collisions_input_layout);
 	struct shader_collisions_mesh_block mesh_block;
 	if (triangles)
 	{

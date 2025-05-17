@@ -1,7 +1,8 @@
 #include <unistd.h>
 #include <errno.h>
 
-long sysconf(int name)
+long
+sysconf(int name)
 {
 	/* XXX */
 	switch (name)

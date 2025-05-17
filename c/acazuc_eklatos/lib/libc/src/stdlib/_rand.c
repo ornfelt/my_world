@@ -7,7 +7,8 @@ uint64_t rand48_c = 0xB;
 static uint32_t random_val_default;
 uint32_t *random_val = &random_val_default;
 
-uint64_t rand48(uint16_t x[3])
+uint64_t
+rand48(uint16_t x[3])
 {
 	uint64_t v = ((uint64_t)x[0] << 0)
 	           | ((uint64_t)x[1] << 16)

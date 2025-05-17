@@ -5,13 +5,15 @@
 
 int fileno(FILE *fp)
 {
+	int ret;
+
 	if (!fp)
 	{
 		errno = EBADF;
 		return -1;
 	}
 	flockfile(fp);
-	int ret = fp->fd;
+	ret = fp->fd;
 	funlockfile(fp);
 	return ret;
 }

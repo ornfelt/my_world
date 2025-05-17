@@ -13,13 +13,15 @@ struct env
 	int opt;
 };
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-n] FILES\n", progname);
 	printf("-n: don't output newline after each file\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;
@@ -50,7 +52,9 @@ int main(int argc, char **argv)
 	for (int i = optind; i < argc; ++i)
 	{
 		char path[MAXPATHLEN];
-		int ret = readlink(argv[i], path, sizeof(path));
+		int ret;
+
+		ret = readlink(argv[i], path, sizeof(path));
 		if (ret < 0)
 		{
 			fprintf(stderr, "%s: readlink: %s\n", argv[0], strerror(errno));

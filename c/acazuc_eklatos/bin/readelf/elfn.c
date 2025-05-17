@@ -9,14 +9,16 @@ struct buf
 	size_t pos;
 };
 
-static void buf_init(struct buf *buf, void *data, size_t size)
+static void
+buf_init(struct buf *buf, void *data, size_t size)
 {
 	buf->data = data;
 	buf->size = size;
 	buf->pos = 0;
 }
 
-static int buf_u8(struct buf *buf, uint8_t *v)
+static int
+buf_u8(struct buf *buf, uint8_t *v)
 {
 	if (buf->pos + 1 > buf->size)
 		return 1;
@@ -25,7 +27,8 @@ static int buf_u8(struct buf *buf, uint8_t *v)
 	return 0;
 }
 
-static int buf_u16(struct buf *buf, uint16_t *v)
+static int
+buf_u16(struct buf *buf, uint16_t *v)
 {
 	if (buf->pos + 2 > buf->size)
 		return 1;
@@ -34,7 +37,8 @@ static int buf_u16(struct buf *buf, uint16_t *v)
 	return 0;
 }
 
-static int buf_u32(struct buf *buf, uint32_t *v)
+static int
+buf_u32(struct buf *buf, uint32_t *v)
 {
 	if (buf->pos + 4 > buf->size)
 		return 1;
@@ -43,7 +47,8 @@ static int buf_u32(struct buf *buf, uint32_t *v)
 	return 0;
 }
 
-static int buf_u64(struct buf *buf, uint64_t *v)
+static int
+buf_u64(struct buf *buf, uint64_t *v)
 {
 	if (buf->pos + 8 > buf->size)
 		return 1;
@@ -52,7 +57,8 @@ static int buf_u64(struct buf *buf, uint64_t *v)
 	return 0;
 }
 
-static int print_ehdr(ElfN_Ehdr *ehdr)
+static int
+print_ehdr(ElfN_Ehdr *ehdr)
 {
 	printf("ELF Header:\n");
 	printf("  Magic:  ");
@@ -80,7 +86,8 @@ static int print_ehdr(ElfN_Ehdr *ehdr)
 	return 0;
 }
 
-static int print_dyn(struct elfN *elf, const ElfN_Dyn *dyn)
+static int
+print_dyn(struct elfN *elf, const ElfN_Dyn *dyn)
 {
 	const char *name = elf_dyn_str(dyn->d_tag);
 	printf(" 0x%08" PRIxN " (%s)", dyn->d_tag, name);
@@ -163,10 +170,13 @@ static int print_dyn(struct elfN *elf, const ElfN_Dyn *dyn)
 	return 0;
 }
 
-static int print_dynamic_section(struct env *env, struct elfN *elf,
-                                 const ElfN_Shdr *shdr)
+static int
+print_dynamic_section(struct env *env,
+                      struct elfN *elf,
+                      const ElfN_Shdr *shdr)
 {
 	uint8_t *data;
+
 	if (elfN_read_section(elf, shdr, (void**)&data, NULL))
 	{
 		fprintf(stderr, "%s: failed to read section: %s\n",
@@ -175,7 +185,8 @@ static int print_dynamic_section(struct env *env, struct elfN *elf,
 	}
 	printf("\n");
 	printf("Dynamic section at offset 0x%" PRIxN " contains %" PRIdN " entries:\n",
-	       shdr->sh_offset, shdr->sh_size / shdr->sh_entsize);
+	       shdr->sh_offset,
+	       shdr->sh_size / shdr->sh_entsize);
 	printf(" %-10s %-28s %s\n", " Tag", " Type", " Name/Value");
 	for (ElfN_Off i = 0; i < shdr->sh_size; i += shdr->sh_entsize)
 	{
@@ -187,7 +198,8 @@ static int print_dynamic_section(struct env *env, struct elfN *elf,
 	return 0;
 }
 
-static int print_dynamic(struct env *env, struct elfN *elf)
+static int
+print_dynamic(struct env *env, struct elfN *elf)
 {
 	for (ElfN_Word i = 0; i < elfN_get_shnum(elf); ++i)
 	{
@@ -200,7 +212,8 @@ static int print_dynamic(struct env *env, struct elfN *elf)
 	return 0;
 }
 
-static const char *reloc_str(struct elfN *elf, uint32_t v)
+static const char *
+reloc_str(struct elfN *elf, uint32_t v)
 {
 	switch (elfN_get_ehdr(elf)->e_machine)
 	{
@@ -218,7 +231,8 @@ static const char *reloc_str(struct elfN *elf, uint32_t v)
 	return NULL;
 }
 
-static void print_rel_sym(struct elfN *elf, const ElfN_Rel *rel)
+static void
+print_rel_sym(struct elfN *elf, const ElfN_Rel *rel)
 {
 	ElfN_Word symidx = ELFN_R_SYM(rel->r_info);
 	if (!symidx)
@@ -229,10 +243,11 @@ static void print_rel_sym(struct elfN *elf, const ElfN_Rel *rel)
 	       elfN_get_dynstr_str(elf, sym->st_name));
 }
 
-static int print_rel_section(struct env *env, struct elfN *elf,
-                              const ElfN_Shdr *shdr)
+static int
+print_rel_section(struct env *env, struct elfN *elf, const ElfN_Shdr *shdr)
 {
 	uint8_t *data;
+
 	if (elfN_read_section(elf, shdr, (void**)&data, NULL))
 	{
 		fprintf(stderr, "%s: failed to read section: %s\n",
@@ -263,7 +278,8 @@ static int print_rel_section(struct env *env, struct elfN *elf,
 	return 0;
 }
 
-static void print_rela_sym(struct elfN *elf, const ElfN_Rela *rela)
+static void
+print_rela_sym(struct elfN *elf, const ElfN_Rela *rela)
 {
 	ElfN_Word symidx = ELFN_R_SYM(rela->r_info);
 	if (!symidx)
@@ -274,10 +290,11 @@ static void print_rela_sym(struct elfN *elf, const ElfN_Rela *rela)
 	       elfN_get_dynstr_str(elf, sym->st_name), rela->r_addend);
 }
 
-static int print_rela_section(struct env *env, struct elfN *elf,
-                              const ElfN_Shdr *shdr)
+static int
+print_rela_section(struct env *env, struct elfN *elf, const ElfN_Shdr *shdr)
 {
 	uint8_t *data;
+
 	if (elfN_read_section(elf, shdr, (void**)&data, NULL))
 	{
 		fprintf(stderr, "%s: failed to read section: %s\n",
@@ -308,7 +325,8 @@ static int print_rela_section(struct env *env, struct elfN *elf,
 	return 0;
 }
 
-static int print_relocations(struct env *env, struct elfN *elf)
+static int
+print_relocations(struct env *env, struct elfN *elf)
 {
 	for (ElfN_Word i = 0; i < elfN_get_shnum(elf); ++i)
 	{
@@ -328,8 +346,10 @@ static int print_relocations(struct env *env, struct elfN *elf)
 	return 0;
 }
 
-static int print_symbol_section(struct env *env, struct elfN *elf,
-                                const ElfN_Shdr *sym_shdr)
+static int
+print_symbol_section(struct env *env,
+                     struct elfN *elf,
+                     const ElfN_Shdr *sym_shdr)
 {
 	const ElfN_Shdr *str_shdr = NULL;
 	uint8_t *sym_data = NULL;
@@ -395,7 +415,8 @@ end:
 	return ret;
 }
 
-static int print_symbols(struct env *env, struct elfN *elf)
+static int
+print_symbols(struct env *env, struct elfN *elf)
 {
 	for (ElfN_Word i = 0; i < elfN_get_shnum(elf); ++i)
 	{
@@ -409,8 +430,8 @@ static int print_symbols(struct env *env, struct elfN *elf)
 	return 0;
 }
 
-static int print_hash(struct env *env, struct elfN *elf,
-                      const ElfN_Shdr *shdr)
+static int
+print_hash(struct env *env, struct elfN *elf, const ElfN_Shdr *shdr)
 {
 	if (shdr->sh_size < 4 * 2)
 	{
@@ -475,8 +496,8 @@ static int print_hash(struct env *env, struct elfN *elf,
 	return 0;
 }
 
-static int print_gnu_hash(struct env *env, struct elfN *elf,
-                          const ElfN_Shdr *shdr)
+static int
+print_gnu_hash(struct env *env, struct elfN *elf, const ElfN_Shdr *shdr)
 {
 	if (shdr->sh_size < 4 * 4 + sizeof(ElfN_Addr))
 	{
@@ -546,7 +567,8 @@ static int print_gnu_hash(struct env *env, struct elfN *elf,
 	return 0;
 }
 
-static int print_histogram(struct env *env, struct elfN *elf)
+static int
+print_histogram(struct env *env, struct elfN *elf)
 {
 	for (size_t i = 0; i < elfN_get_shnum(elf); ++i)
 	{
@@ -566,19 +588,20 @@ static int print_histogram(struct env *env, struct elfN *elf)
 	return 0;
 }
 
-static int print_verdef(struct env *env, struct elfN *elf,
-                        const ElfN_Shdr *shdr)
+static int
+print_verdef(struct env *env, struct elfN *elf, const ElfN_Shdr *shdr)
 {
+	const ElfN_Verdef *verdef;
+	ElfN_Off i = 0;
+	ElfN_Off ndef = 0;
 	uint8_t *data;
+
 	if (elfN_read_section(elf, shdr, (void**)&data, NULL))
 	{
 		fprintf(stderr, "%s: failed to read section: %s\n",
 		        env->progname, strerror(errno));
 		return 1;
 	}
-	const ElfN_Verdef *verdef;
-	ElfN_Off i = 0;
-	ElfN_Off ndef = 0;
 	while (1)
 	{
 		verdef = (const ElfN_Verdef*)&data[i];
@@ -614,19 +637,20 @@ static int print_verdef(struct env *env, struct elfN *elf,
 	return 0;
 }
 
-static int print_verneed(struct env *env, struct elfN *elf,
-                         const ElfN_Shdr *shdr)
+static int
+print_verneed(struct env *env, struct elfN *elf, const ElfN_Shdr *shdr)
 {
+	const ElfN_Verneed *verneed;
+	ElfN_Off i = 0;
+	ElfN_Off nneed = 0;
 	uint8_t *data;
+
 	if (elfN_read_section(elf, shdr, (void**)&data, NULL))
 	{
 		fprintf(stderr, "%s: failed to read section: %s\n",
 		        env->progname, strerror(errno));
 		return 1;
 	}
-	const ElfN_Verneed *verneed;
-	ElfN_Off i = 0;
-	ElfN_Off nneed = 0;
 	while (1)
 	{
 		verneed = (const ElfN_Verneed*)&data[i];
@@ -678,8 +702,8 @@ static int print_verneed(struct env *env, struct elfN *elf,
 	return 0;
 }
 
-static const char *get_verneed_name(struct elfN *elf, uint8_t *data,
-                                    uint16_t version)
+static const char *
+get_verneed_name(struct elfN *elf, uint8_t *data, uint16_t version)
 {
 	ElfN_Off i = 0;
 	while (1)
@@ -702,8 +726,8 @@ static const char *get_verneed_name(struct elfN *elf, uint8_t *data,
 	return NULL;
 }
 
-static const char *get_verdef_name(struct elfN *elf, uint8_t *data,
-                                   uint16_t version)
+static const char *
+get_verdef_name(struct elfN *elf, uint8_t *data, uint16_t version)
 {
 	ElfN_Off i = 0;
 	while (1)
@@ -719,10 +743,12 @@ static const char *get_verdef_name(struct elfN *elf, uint8_t *data,
 	return NULL;
 }
 
-static int print_versym(struct env *env, struct elfN *elf,
-                        const ElfN_Shdr *shdr,
-                        const ElfN_Shdr *verneed,
-                        const ElfN_Shdr *verdef)
+static int
+print_versym(struct env *env,
+             struct elfN *elf,
+             const ElfN_Shdr *shdr,
+             const ElfN_Shdr *verneed,
+             const ElfN_Shdr *verdef)
 {
 	uint8_t *verneed_data = NULL;
 	uint8_t *verdef_data = NULL;
@@ -801,10 +827,12 @@ end:
 	return ret;
 }
 
-static int print_version(struct env *env, struct elfN *elf)
+static int
+print_version(struct env *env, struct elfN *elf)
 {
 	const ElfN_Shdr *verneed = NULL;
 	const ElfN_Shdr *verdef = NULL;
+
 	for (ElfN_Word i = 0; i < elfN_get_shnum(elf); ++i)
 	{
 		const ElfN_Shdr *shdr = elfN_get_shdr(elf, i);
@@ -840,8 +868,12 @@ static int print_version(struct env *env, struct elfN *elf)
 	return 0;
 }
 
-static int dwarf_hdr(struct env *env, struct buf *buf, uint64_t *unit_length,
-                     uint16_t *version, int *dwarf64)
+static int
+dwarf_hdr(struct env *env,
+          struct buf *buf,
+          uint64_t *unit_length,
+          uint16_t *version,
+          int *dwarf64)
 {
 	uint32_t u32;
 
@@ -884,8 +916,10 @@ static int dwarf_hdr(struct env *env, struct buf *buf, uint64_t *unit_length,
 	return 0;
 }
 
-static int print_debug_rnglists(struct env *env, struct elfN *elf,
-                                const ElfN_Shdr *shdr)
+static int
+print_debug_rnglists(struct env *env,
+                     struct elfN *elf,
+                     const ElfN_Shdr *shdr)
 {
 	uint64_t unit_length;
 	uint16_t version;
@@ -947,7 +981,8 @@ end:
 	return ret;
 }
 
-static int print_debug(struct env *env, struct elfN *elf)
+static int
+print_debug(struct env *env, struct elfN *elf)
 {
 	for (ElfN_Word i = 0; i < elfN_get_shnum(elf); ++i)
 	{
@@ -965,7 +1000,8 @@ static int print_debug(struct env *env, struct elfN *elf)
 	return 0;
 }
 
-int print_elfN(struct env *env, struct elfN *elf)
+int
+print_elfN(struct env *env, struct elfN *elf)
 {
 	int ret = 1;
 

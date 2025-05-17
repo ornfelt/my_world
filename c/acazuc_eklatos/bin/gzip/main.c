@@ -4,10 +4,11 @@
 #include <stdio.h>
 #include <zlib.h>
 
-static int deflate_file(const char *progname, const char *file)
+static int
+deflate_file(const char *progname, const char *file)
 {
+	static uint8_t buf[1024 * 1024];
 	gzFile gzfile;
-	uint8_t buf[4096];
 	FILE *fp = NULL;
 	int ret = 1;
 
@@ -20,7 +21,9 @@ static int deflate_file(const char *progname, const char *file)
 	fp = fopen(file, "rb");
 	if (!fp)
 	{
-		fprintf(stderr, "%s: open(%s): %s\n", progname, file,
+		fprintf(stderr, "%s: open(%s): %s\n",
+		        progname,
+		        file,
 		        strerror(errno));
 		goto end;
 	}
@@ -42,12 +45,14 @@ end:
 	return ret;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s FILES\n", progname);
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	int ret;
 

@@ -8,27 +8,33 @@
 #include <stdlib.h>
 #include <string.h>
 
-int getifaddrs(struct ifaddrs **addrs)
+int
+getifaddrs(struct ifaddrs **addrs)
 {
+	struct ifaddrs *base = NULL;
+	struct ifaddrs *prev = NULL;
 	struct ifreq ifr[1024]; /* XXX dynamic */
 	struct ifconf ifc;
+	int sock;
+	int ret;
+
 	ifc.ifc_len = sizeof(ifr);
 	ifc.ifc_req = &ifr[0];
-	int sock = socket(AF_INET, SOCK_DGRAM, 0);
+	sock = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sock == -1)
 		return -1;
-	int ret = ioctl(sock, SIOCGIFCONF, &ifc);
+	ret = ioctl(sock, SIOCGIFCONF, &ifc);
 	if (ret)
 	{
 		close(sock);
 		return -1;
 	}
 	ifc.ifc_len /= sizeof(struct ifreq);
-	struct ifaddrs *base = NULL;
-	struct ifaddrs *prev = NULL;
 	for (int i = 0; i < ifc.ifc_len; ++i)
 	{
-		struct ifaddrs *ifaddr = calloc(1, sizeof(*ifaddr));
+		struct ifaddrs *ifaddr;
+
+		ifaddr = calloc(1, sizeof(*ifaddr));
 		if (!ifaddr)
 			goto err;
 		if (prev)

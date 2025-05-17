@@ -5,7 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-int ringbuf_init(struct ringbuf *ringbuf, size_t size)
+int
+ringbuf_init(struct ringbuf *ringbuf, size_t size)
 {
 	if (size)
 	{
@@ -23,14 +24,17 @@ int ringbuf_init(struct ringbuf *ringbuf, size_t size)
 	return 0;
 }
 
-void ringbuf_destroy(struct ringbuf *ringbuf)
+void
+ringbuf_destroy(struct ringbuf *ringbuf)
 {
 	free(ringbuf->data);
 }
 
-int ringbuf_resize(struct ringbuf *ringbuf, size_t size)
+int
+ringbuf_resize(struct ringbuf *ringbuf, size_t size)
 {
 	uint8_t *newdata;
+
 	if (ringbuf->write_pos == ringbuf->read_pos)
 	{
 		/* reset the buffer because no data */
@@ -105,7 +109,8 @@ int ringbuf_resize(struct ringbuf *ringbuf, size_t size)
 	return 0;
 }
 
-size_t ringbuf_write(struct ringbuf *ringbuf, const void *data, size_t size)
+size_t
+ringbuf_write(struct ringbuf *ringbuf, const void *data, size_t size)
 {
 	size_t wr = 0;
 	while (size > 0)
@@ -126,7 +131,8 @@ size_t ringbuf_write(struct ringbuf *ringbuf, const void *data, size_t size)
 	return wr;
 }
 
-size_t ringbuf_read(struct ringbuf *ringbuf, void *data, size_t size)
+size_t
+ringbuf_read(struct ringbuf *ringbuf, void *data, size_t size)
 {
 	size_t rd = 0;
 	while (size > 0)
@@ -145,7 +151,8 @@ size_t ringbuf_read(struct ringbuf *ringbuf, void *data, size_t size)
 	return rd;
 }
 
-size_t ringbuf_peek(struct ringbuf *ringbuf, void *data, size_t size)
+size_t
+ringbuf_peek(struct ringbuf *ringbuf, void *data, size_t size)
 {
 	size_t current = ringbuf->read_pos;
 	size_t ret = ringbuf_read(ringbuf, data, size);
@@ -153,14 +160,16 @@ size_t ringbuf_peek(struct ringbuf *ringbuf, void *data, size_t size)
 	return ret;
 }
 
-size_t ringbuf_write_size(const struct ringbuf *ringbuf)
+size_t
+ringbuf_write_size(const struct ringbuf *ringbuf)
 {
 	if (ringbuf->write_pos < ringbuf->read_pos)
 		return ringbuf->read_pos - ringbuf->write_pos - 1;
 	return ringbuf->size - 1 - ringbuf->write_pos + ringbuf->read_pos;
 }
 
-size_t ringbuf_contiguous_write_size(const struct ringbuf *ringbuf)
+size_t
+ringbuf_contiguous_write_size(const struct ringbuf *ringbuf)
 {
 	if (ringbuf->write_pos < ringbuf->read_pos)
 		return ringbuf->read_pos - ringbuf->write_pos - 1;
@@ -169,38 +178,44 @@ size_t ringbuf_contiguous_write_size(const struct ringbuf *ringbuf)
 	return ringbuf->size - ringbuf->write_pos;
 }
 
-size_t ringbuf_read_size(const struct ringbuf *ringbuf)
+size_t
+ringbuf_read_size(const struct ringbuf *ringbuf)
 {
 	if (ringbuf->read_pos <= ringbuf->write_pos)
 		return ringbuf->write_pos - ringbuf->read_pos;
 	return ringbuf->size - ringbuf->read_pos + ringbuf->write_pos;
 }
 
-size_t ringbuf_contiguous_read_size(const struct ringbuf *ringbuf)
+size_t
+ringbuf_contiguous_read_size(const struct ringbuf *ringbuf)
 {
 	if (ringbuf->read_pos <= ringbuf->write_pos)
 		return ringbuf->write_pos - ringbuf->read_pos;
 	return ringbuf->size - ringbuf->read_pos;
 }
 
-int8_t ringbuf_ri8(struct ringbuf *ringbuf)
+int8_t
+ringbuf_ri8(struct ringbuf *ringbuf)
 {
 	return (int8_t)ringbuf_ru8(ringbuf);
 }
 
-uint8_t ringbuf_ru8(struct ringbuf *ringbuf)
+uint8_t
+ringbuf_ru8(struct ringbuf *ringbuf)
 {
 	uint8_t v;
 	ringbuf_read(ringbuf, &v, 1);
 	return v;
 }
 
-int16_t ringbuf_ri16(struct ringbuf *ringbuf)
+int16_t
+ringbuf_ri16(struct ringbuf *ringbuf)
 {
 	return (int16_t)ringbuf_ru16(ringbuf);
 }
 
-uint16_t ringbuf_ru16(struct ringbuf *ringbuf)
+uint16_t
+ringbuf_ru16(struct ringbuf *ringbuf)
 {
 	uint16_t v;
 	ringbuf_read(ringbuf, &v, 2);
@@ -209,12 +224,14 @@ uint16_t ringbuf_ru16(struct ringbuf *ringbuf)
 	return v;
 }
 
-int32_t ringbuf_ri32(struct ringbuf *ringbuf)
+int32_t
+ringbuf_ri32(struct ringbuf *ringbuf)
 {
 	return (int32_t)ringbuf_ru32(ringbuf);
 }
 
-uint32_t ringbuf_ru32(struct ringbuf *ringbuf)
+uint32_t
+ringbuf_ru32(struct ringbuf *ringbuf)
 {
 	uint32_t v;
 	ringbuf_read(ringbuf, &v, 4);
@@ -223,41 +240,48 @@ uint32_t ringbuf_ru32(struct ringbuf *ringbuf)
 	return v;
 }
 
-void ringbuf_wi8(struct ringbuf *ringbuf, int8_t v)
+void
+ringbuf_wi8(struct ringbuf *ringbuf, int8_t v)
 {
 	ringbuf_wu8(ringbuf, (uint8_t)v);
 }
 
-void ringbuf_wu8(struct ringbuf *ringbuf, uint8_t v)
+void
+ringbuf_wu8(struct ringbuf *ringbuf, uint8_t v)
 {
 	ringbuf_write(ringbuf, &v, 1);
 }
 
-void ringbuf_wi16(struct ringbuf *ringbuf, int16_t v)
+void
+ringbuf_wi16(struct ringbuf *ringbuf, int16_t v)
 {
 	ringbuf_wu16(ringbuf, (uint16_t)v);
 }
 
-void ringbuf_wu16(struct ringbuf *ringbuf, uint16_t v)
+void
+ringbuf_wu16(struct ringbuf *ringbuf, uint16_t v)
 {
 	if (ringbuf->bitswap)
 		v = ntohs(v);
 	ringbuf_write(ringbuf, &v, 2);
 }
 
-void ringbuf_wi32(struct ringbuf *ringbuf, int32_t v)
+void
+ringbuf_wi32(struct ringbuf *ringbuf, int32_t v)
 {
 	ringbuf_wu32(ringbuf, (uint32_t)v);
 }
 
-void ringbuf_wu32(struct ringbuf *ringbuf, uint32_t v)
+void
+ringbuf_wu32(struct ringbuf *ringbuf, uint32_t v)
 {
 	if (ringbuf->bitswap)
 		v = ntohl(v);
 	ringbuf_write(ringbuf, &v, 4);
 }
 
-void ringbuf_rpad(struct ringbuf *ringbuf, uint32_t len)
+void
+ringbuf_rpad(struct ringbuf *ringbuf, uint32_t len)
 {
 	size_t n = len & 3;
 	if (!n)
@@ -265,7 +289,8 @@ void ringbuf_rpad(struct ringbuf *ringbuf, uint32_t len)
 	ringbuf_advance_read(ringbuf, 4 - n);
 }
 
-void ringbuf_wpad(struct ringbuf *ringbuf, uint32_t len)
+void
+ringbuf_wpad(struct ringbuf *ringbuf, uint32_t len)
 {
 	size_t n = len & 3;
 	if (!n)

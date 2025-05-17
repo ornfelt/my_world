@@ -23,7 +23,8 @@ struct env
 	int opt;
 };
 
-static void wc_fp(struct env *env, FILE *fp, const char *path, uint64_t *total)
+static void
+wc_fp(struct env *env, FILE *fp, const char *path, uint64_t *total)
 {
 	char mb_buf[5];
 	size_t mb_len = 0;
@@ -67,7 +68,9 @@ static void wc_fp(struct env *env, FILE *fp, const char *path, uint64_t *total)
 	}
 	if (ferror(fp))
 	{
-		fprintf(stderr, "%s: read: %s\n", env->progname, strerror(errno));
+		fprintf(stderr, "%s: read: %s\n",
+		        env->progname,
+		        strerror(errno));
 		return;
 	}
 	if (env->opt & OPT_l)
@@ -81,19 +84,26 @@ static void wc_fp(struct env *env, FILE *fp, const char *path, uint64_t *total)
 	puts(path);
 }
 
-static void wc_file(struct env *env, const char *path, uint64_t *total)
+static void
+wc_file(struct env *env, const char *path, uint64_t *total)
 {
-	FILE *fp = fopen(path, "r");
+	FILE *fp;
+
+	fp = fopen(path, "r");
 	if (!fp)
 	{
-		fprintf(stderr, "%s: open: %s\n", env->progname, strerror(errno));
+		fprintf(stderr, "%s: open(%s): %s\n",
+		        env->progname,
+		        path,
+		        strerror(errno));
 		return;
 	}
 	wc_fp(env, fp, path, total);
 	fclose(fp);
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-c] [-h] [-l] [-m] [-w] [FILES]\n", progname);
 	printf("-c: display the number of chars\n");
@@ -103,8 +113,10 @@ static void usage(const char *progname)
 	printf("-w: display the number of words\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
+	uint64_t total[4] = {0};
 	struct env env;
 	int c;
 
@@ -136,7 +148,6 @@ int main(int argc, char **argv)
 	}
 	if (!(env.opt & (OPT_l | OPT_w | OPT_c)))
 		env.opt = OPT_l | OPT_w | OPT_c;
-	uint64_t total[4] = {0};
 	if (optind == argc)
 	{
 		wc_fp(&env, stdout, "", total);

@@ -11,15 +11,19 @@ struct env
 	unsigned long count;
 };
 
-static int head_fp_lines(struct env *env, FILE *fp)
+static int
+head_fp_lines(struct env *env, FILE *fp)
 {
 	char *buf = NULL;
 	size_t n = 0;
+
 	for (unsigned long i = 0; i < env->count; ++i)
 	{
 		if (getline(&buf, &n, fp) < 0)
 		{
-			fprintf(stderr, "%s: read: %s\n", env->progname, strerror(errno));
+			fprintf(stderr, "%s: read: %s\n",
+			        env->progname,
+			        strerror(errno));
 			free(buf);
 			return 1;
 		}
@@ -29,7 +33,8 @@ static int head_fp_lines(struct env *env, FILE *fp)
 	return 0;
 }
 
-static int head_fp_bytes(struct env *env, FILE *fp)
+static int
+head_fp_bytes(struct env *env, FILE *fp)
 {
 	for (unsigned long i = 0; i < env->count;)
 	{
@@ -40,7 +45,9 @@ static int head_fp_bytes(struct env *env, FILE *fp)
 		size_t rd = fread(buf, 1, n, fp);
 		if (ferror(fp))
 		{
-			fprintf(stderr, "%s: read: %s", env->progname, strerror(errno));
+			fprintf(stderr, "%s: read: %s",
+			        env->progname,
+			        strerror(errno));
 			return 1;
 		}
 		fwrite(buf, 1, rd, stdout);
@@ -51,30 +58,40 @@ static int head_fp_bytes(struct env *env, FILE *fp)
 	return 0;
 }
 
-static int head_fp(struct env *env, FILE *fp)
+static int
+head_fp(struct env *env, FILE *fp)
 {
 	if (env->print_lines)
 		return head_fp_lines(env, fp);
 	return head_fp_bytes(env, fp);
 }
 
-static int head_file(struct env *env, const char *file)
+static int
+head_file(struct env *env, const char *file)
 {
-	FILE *fp = fopen(file, "r");
+	FILE *fp;
+	int ret;
+
+	fp = fopen(file, "r");
 	if (!fp)
 	{
-		fprintf(stderr, "%s: open: %s\n", env->progname, strerror(errno));
+		fprintf(stderr, "%s: open(%s): %s\n",
+		        env->progname,
+		        file,
+		        strerror(errno));
 		return 1;
 	}
-	int ret = head_fp(env, fp);
+	ret = head_fp(env, fp);
 	fclose(fp);
 	return ret;
 }
 
-static int parse_count(const char *progname, const char *str, unsigned long *count)
+static int
+parse_count(const char *progname, const char *str, unsigned long *count)
 {
-	errno = 0;
 	char *endptr;
+
+	errno = 0;
 	*count = strtoul(str, &endptr, 10);
 	if (errno)
 	{
@@ -89,16 +106,19 @@ static int parse_count(const char *progname, const char *str, unsigned long *cou
 	return 0;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-c num] [-n num] FILES\n", progname);
 	printf("-c num: print the first num bytes\n");
 	printf("-n num: print the first num lines\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
+	int multi;
 	int c;
 
 	memset(&env, 0, sizeof(env));
@@ -130,7 +150,7 @@ int main(int argc, char **argv)
 			return EXIT_FAILURE;
 		return EXIT_SUCCESS;
 	}
-	int multi = optind + 1 < argc;
+	multi = optind + 1 < argc;
 	for (int i = optind; i < argc; ++i)
 	{
 		if (multi)

@@ -17,6 +17,8 @@ Install the library from [nuget](https://www.nuget.org/packages/WowSrp):
 dotnet add package WowSrp
 ```
 
+A full example [can be found in the `wow_messages_csharp` repo](https://github.com/gtker/wow_messages_csharp/tree/main/ServerTest) which also contains a library for the message protocol.
+
 ## Usage
 
 ### Authentication
@@ -56,7 +58,7 @@ be the ones sent to the client.
 After receiving the `clientPublicKey` and `clientProof`, the proof can be attempted converted to an `SrpServer`.
 
 ```csharp
-var success = server.into_server(client_public_key, client_proof)
+var success = proof.IntoServer(client_public_key, client_proof)
 if (!success.HasValue) {
     // Password was incorrect
 }

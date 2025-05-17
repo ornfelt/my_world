@@ -6,9 +6,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct wow_dbc_file *wow_dbc_file_new(struct wow_mpq_file *mpq)
+struct wow_dbc_file *
+wow_dbc_file_new(struct wow_mpq_file *mpq)
 {
-	struct wow_dbc_file *file = WOW_MALLOC(sizeof(*file));
+	struct wow_dbc_file *file;
+
+	file = WOW_MALLOC(sizeof(*file));
 	if (!file)
 		return NULL;
 	memset(file, 0, sizeof(*file));
@@ -33,7 +36,8 @@ err:
 	return NULL;
 }
 
-void wow_dbc_file_delete(struct wow_dbc_file *file)
+void
+wow_dbc_file_delete(struct wow_dbc_file *file)
 {
 	if (!file)
 		return;
@@ -42,65 +46,78 @@ void wow_dbc_file_delete(struct wow_dbc_file *file)
 	WOW_FREE(file);
 }
 
-struct wow_dbc_row wow_dbc_get_row(const struct wow_dbc_file *file, uint32_t row)
+struct wow_dbc_row
+wow_dbc_get_row(const struct wow_dbc_file *file, uint32_t row)
 {
 	struct wow_dbc_row ret;
+
 	ret.file = file;
 	ret.ptr = file->data + file->header.record_size * row;
 	return ret;
 }
 
-const void *wow_dbc_get_ptr(const struct wow_dbc_row *row, uint32_t column_offset)
+const void *
+wow_dbc_get_ptr(const struct wow_dbc_row *row, uint32_t column_offset)
 {
 	return row->ptr + column_offset;
 }
 
-int8_t wow_dbc_get_i8(const struct wow_dbc_row *row, uint32_t column_offset)
+int8_t
+wow_dbc_get_i8(const struct wow_dbc_row *row, uint32_t column_offset)
 {
 	return *(int8_t*)wow_dbc_get_ptr(row, column_offset);
 }
 
-uint8_t wow_dbc_get_u8(const struct wow_dbc_row *row, uint32_t column_offset)
+uint8_t
+wow_dbc_get_u8(const struct wow_dbc_row *row, uint32_t column_offset)
 {
 	return *(uint8_t*)wow_dbc_get_ptr(row, column_offset);
 }
 
-int16_t wow_dbc_get_i16(const struct wow_dbc_row *row, uint32_t column_offset)
+int16_t
+wow_dbc_get_i16(const struct wow_dbc_row *row, uint32_t column_offset)
 {
 	return *(int16_t*)wow_dbc_get_ptr(row, column_offset);
 }
 
-uint16_t wow_dbc_get_u16(const struct wow_dbc_row *row, uint32_t column_offset)
+uint16_t
+wow_dbc_get_u16(const struct wow_dbc_row *row, uint32_t column_offset)
 {
 	return *(uint16_t*)wow_dbc_get_ptr(row, column_offset);
 }
 
-int32_t wow_dbc_get_i32(const struct wow_dbc_row *row, uint32_t column_offset)
+int32_t
+wow_dbc_get_i32(const struct wow_dbc_row *row, uint32_t column_offset)
 {
 	return *(int32_t*)wow_dbc_get_ptr(row, column_offset);
 }
 
-uint32_t wow_dbc_get_u32(const struct wow_dbc_row *row, uint32_t column_offset)
+uint32_t
+wow_dbc_get_u32(const struct wow_dbc_row *row, uint32_t column_offset)
 {
 	return *(uint32_t*)wow_dbc_get_ptr(row, column_offset);
 }
 
-int64_t wow_dbc_get_i64(const struct wow_dbc_row *row, uint32_t column_offset)
+int64_t
+wow_dbc_get_i64(const struct wow_dbc_row *row, uint32_t column_offset)
 {
 	return *(int64_t*)wow_dbc_get_ptr(row, column_offset);
 }
 
-uint64_t wow_dbc_get_u64(const struct wow_dbc_row *row, uint32_t column_offset)
+uint64_t
+wow_dbc_get_u64(const struct wow_dbc_row *row, uint32_t column_offset)
 {
 	return *(uint64_t*)wow_dbc_get_ptr(row, column_offset);
 }
 
-float wow_dbc_get_flt(const struct wow_dbc_row *row, uint32_t column_offset)
+float
+wow_dbc_get_flt(const struct wow_dbc_row *row, uint32_t column_offset)
 {
 	return *(float*)wow_dbc_get_ptr(row, column_offset);
 }
 
-const char *wow_dbc_get_str(const struct wow_dbc_row *row, uint32_t column_offset)
+const char *
+wow_dbc_get_str(const struct wow_dbc_row *row, uint32_t column_offset)
 {
 	uint32_t offset = wow_dbc_get_u32(row, column_offset);
 	if (offset >= row->file->strings_size)
@@ -108,7 +125,8 @@ const char *wow_dbc_get_str(const struct wow_dbc_row *row, uint32_t column_offse
 	return &row->file->strings[offset];
 }
 
-const struct wow_dbc_def wow_dbc_animation_data_def[] =
+const struct wow_dbc_def
+wow_dbc_animation_data_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*  4 */ {WOW_DBC_TYPE_STR, "name"},
@@ -120,7 +138,8 @@ const struct wow_dbc_def wow_dbc_animation_data_def[] =
 	         {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_area_poi_def[] =
+const struct wow_dbc_def
+wow_dbc_area_poi_def[] =
 {
 	/*   0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*   4 */ {WOW_DBC_TYPE_U32, "importance"},
@@ -138,7 +157,8 @@ const struct wow_dbc_def wow_dbc_area_poi_def[] =
 	          {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_area_table_def[] =
+const struct wow_dbc_def
+wow_dbc_area_table_def[] =
 {
 	/*   0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*   4 */ {WOW_DBC_TYPE_U32, "map"},
@@ -163,7 +183,8 @@ const struct wow_dbc_def wow_dbc_area_table_def[] =
 	          {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_auction_house_def[] =
+const struct wow_dbc_def
+wow_dbc_auction_house_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*  4 */ {WOW_DBC_TYPE_U32, "faction"},
@@ -173,14 +194,16 @@ const struct wow_dbc_def wow_dbc_auction_house_def[] =
 	         {WOW_DBC_TYPE_END, ""},
 };
 
-const struct wow_dbc_def wow_dbc_char_base_info_def[] =
+const struct wow_dbc_def
+wow_dbc_char_base_info_def[] =
 {
 	/* 0 */ {WOW_DBC_TYPE_U8, "race"},
 	/* 1 */ {WOW_DBC_TYPE_U8, "class"},
 	        {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_char_hair_geosets_def[] =
+const struct wow_dbc_def
+wow_dbc_char_hair_geosets_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*  4 */ {WOW_DBC_TYPE_U32, "race"},
@@ -191,7 +214,8 @@ const struct wow_dbc_def wow_dbc_char_hair_geosets_def[] =
 	         {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_char_hair_textures_def[] =
+const struct wow_dbc_def
+wow_dbc_char_hair_textures_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*  4 */ {WOW_DBC_TYPE_U32, "race"},
@@ -204,7 +228,8 @@ const struct wow_dbc_def wow_dbc_char_hair_textures_def[] =
 	         {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_char_sections_def[] =
+const struct wow_dbc_def
+wow_dbc_char_sections_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*  4 */ {WOW_DBC_TYPE_U32, "race"},
@@ -219,7 +244,8 @@ const struct wow_dbc_def wow_dbc_char_sections_def[] =
 	         {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_char_start_outfit_def[] =
+const struct wow_dbc_def
+wow_dbc_char_start_outfit_def[] =
 {
 	/*   0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*   4 */ {WOW_DBC_TYPE_U8, "race"},
@@ -268,7 +294,8 @@ const struct wow_dbc_def wow_dbc_char_start_outfit_def[] =
 	          {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_char_titles_def[] =
+const struct wow_dbc_def
+wow_dbc_char_titles_def[] =
 {
 	/*   0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*   4 */ {WOW_DBC_TYPE_U32, "unk"},
@@ -278,7 +305,8 @@ const struct wow_dbc_def wow_dbc_char_titles_def[] =
 	          {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_character_facial_hair_styles_def[] =
+const struct wow_dbc_def
+wow_dbc_character_facial_hair_styles_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "race"},
 	/*  4 */ {WOW_DBC_TYPE_U32, "gender"},
@@ -294,7 +322,8 @@ const struct wow_dbc_def wow_dbc_character_facial_hair_styles_def[] =
 	         {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_chat_profanity_def[] =
+const struct wow_dbc_def
+wow_dbc_chat_profanity_def[] =
 {
 	/* 0 */ {WOW_DBC_TYPE_U32, "id"},
 	/* 4 */ {WOW_DBC_TYPE_STR, "word"},
@@ -302,7 +331,8 @@ const struct wow_dbc_def wow_dbc_chat_profanity_def[] =
 	        {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_chr_classes_def[] =
+const struct wow_dbc_def
+wow_dbc_chr_classes_def[] =
 {
 	/*   0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*   4 */ {WOW_DBC_TYPE_U32, "unknown"},
@@ -316,7 +346,8 @@ const struct wow_dbc_def wow_dbc_chr_classes_def[] =
 	          {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_chr_races_def[] =
+const struct wow_dbc_def
+wow_dbc_chr_races_def[] =
 {
 	/*   0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*   4 */ {WOW_DBC_TYPE_U32, "flags"},
@@ -342,7 +373,8 @@ const struct wow_dbc_def wow_dbc_chr_races_def[] =
 	          {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_creature_display_info_def[] =
+const struct wow_dbc_def
+wow_dbc_creature_display_info_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*  4 */ {WOW_DBC_TYPE_U32, "model"},
@@ -361,7 +393,8 @@ const struct wow_dbc_def wow_dbc_creature_display_info_def[] =
 	         {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_creature_display_info_extra_def[] =
+const struct wow_dbc_def
+wow_dbc_creature_display_info_extra_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*  4 */ {WOW_DBC_TYPE_U32, "race"},
@@ -387,7 +420,8 @@ const struct wow_dbc_def wow_dbc_creature_display_info_extra_def[] =
 	         {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_creature_model_data_def[] =
+const struct wow_dbc_def
+wow_dbc_creature_model_data_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*  4 */ {WOW_DBC_TYPE_U32, "flags"},
@@ -417,7 +451,26 @@ const struct wow_dbc_def wow_dbc_creature_model_data_def[] =
 	         {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_game_object_display_info_def[] =
+const struct wow_dbc_def
+wow_dbc_declined_word_def[] =
+{
+	/* 0 */ {WOW_DBC_TYPE_U32, "id"},
+	/* 4 */ {WOW_DBC_TYPE_STR, "word"},
+	        {WOW_DBC_TYPE_END, ""}
+};
+
+const struct wow_dbc_def
+wow_dbc_declined_word_cases_def[] =
+{
+	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
+	/*  4 */ {WOW_DBC_TYPE_U32, "declined_word"},
+	/*  8 */ {WOW_DBC_TYPE_U32, "case_index"},
+	/* 12 */ {WOW_DBC_TYPE_STR, "word"},
+	         {WOW_DBC_TYPE_END, ""}
+};
+
+const struct wow_dbc_def
+wow_dbc_game_object_display_info_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*  4 */ {WOW_DBC_TYPE_STR, "model"},
@@ -440,7 +493,8 @@ const struct wow_dbc_def wow_dbc_game_object_display_info_def[] =
 	         {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_ground_effect_texture_def[] =
+const struct wow_dbc_def
+wow_dbc_ground_effect_texture_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*  4 */ {WOW_DBC_TYPE_U32, "doodad1"},
@@ -452,7 +506,8 @@ const struct wow_dbc_def wow_dbc_ground_effect_texture_def[] =
 	         {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_ground_effect_doodad_def[] =
+const struct wow_dbc_def
+wow_dbc_ground_effect_doodad_def[] =
 {
 	/* 0 */ {WOW_DBC_TYPE_U32, "id"},
 	/* 4 */ {WOW_DBC_TYPE_U32, "internal_id"},
@@ -460,7 +515,8 @@ const struct wow_dbc_def wow_dbc_ground_effect_doodad_def[] =
 	        {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_helmet_geoset_vis_data_def[] =
+const struct wow_dbc_def
+wow_dbc_helmet_geoset_vis_data_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*  4 */ {WOW_DBC_TYPE_U32, "hair_flags"},
@@ -473,7 +529,8 @@ const struct wow_dbc_def wow_dbc_helmet_geoset_vis_data_def[] =
 	         {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_item_def[] =
+const struct wow_dbc_def
+wow_dbc_item_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*  4 */ {WOW_DBC_TYPE_U32, "display_info"},
@@ -482,7 +539,8 @@ const struct wow_dbc_def wow_dbc_item_def[] =
 	         {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_item_class_def[] =
+const struct wow_dbc_def
+wow_dbc_item_class_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*  4 */ {WOW_DBC_TYPE_U32, "subclass"},
@@ -491,7 +549,8 @@ const struct wow_dbc_def wow_dbc_item_class_def[] =
                  {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_item_display_info_def[] =
+const struct wow_dbc_def
+wow_dbc_item_display_info_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*  4 */ {WOW_DBC_TYPE_STR, "model_name_left"},
@@ -521,7 +580,8 @@ const struct wow_dbc_def wow_dbc_item_display_info_def[] =
                  {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_item_set_def[] =
+const struct wow_dbc_def
+wow_dbc_item_set_def[] =
 {
 	/*   0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*   4 */ {WOW_DBC_TYPE_LSTR, "name"},
@@ -563,7 +623,8 @@ const struct wow_dbc_def wow_dbc_item_set_def[] =
 	          {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_item_sub_class_def[] =
+const struct wow_dbc_def
+wow_dbc_item_sub_class_def[] =
 {
 	/*   0 */ {WOW_DBC_TYPE_U32, "class_id"},
 	/*   4 */ {WOW_DBC_TYPE_U32, "sub_class_id"},
@@ -580,7 +641,25 @@ const struct wow_dbc_def wow_dbc_item_sub_class_def[] =
 	          {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_light_def[] =
+const struct wow_dbc_def
+wow_dbc_language_words_def[] =
+{
+	/* 0 */ {WOW_DBC_TYPE_U32, "id"},
+	/* 4 */ {WOW_DBC_TYPE_U32, "language"},
+	/* 8 */ {WOW_DBC_TYPE_STR, "word"},
+	        {WOW_DBC_TYPE_END, ""},
+};
+
+const struct wow_dbc_def
+wow_dbc_languages_def[] =
+{
+	/* 0 */ {WOW_DBC_TYPE_U32, "id"},
+	/* 4 */ {WOW_DBC_TYPE_STR, "name"},
+	        {WOW_DBC_TYPE_END, ""}
+};
+
+const struct wow_dbc_def
+wow_dbc_light_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*  4 */ {WOW_DBC_TYPE_U32, "continent"},
@@ -597,7 +676,8 @@ const struct wow_dbc_def wow_dbc_light_def[] =
 	         {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_light_float_band_def[] =
+const struct wow_dbc_def
+wow_dbc_light_float_band_def[] =
 {
 	/*   0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*   4 */ {WOW_DBC_TYPE_U32, "count"},
@@ -636,7 +716,8 @@ const struct wow_dbc_def wow_dbc_light_float_band_def[] =
 	          {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_light_int_band_def[] =
+const struct wow_dbc_def
+wow_dbc_light_int_band_def[] =
 {
 	/*   0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*   4 */ {WOW_DBC_TYPE_U32, "count"},
@@ -675,7 +756,8 @@ const struct wow_dbc_def wow_dbc_light_int_band_def[] =
 	          {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_light_params_def[] =
+const struct wow_dbc_def
+wow_dbc_light_params_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*  4 */ {WOW_DBC_TYPE_U32, "highlight_sky"},
@@ -689,7 +771,8 @@ const struct wow_dbc_def wow_dbc_light_params_def[] =
 	         {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_light_skybox_def[] =
+const struct wow_dbc_def
+wow_dbc_light_skybox_def[] =
 {
 	/* 0 */ {WOW_DBC_TYPE_U32, "id"},
 	/* 4 */ {WOW_DBC_TYPE_STR, "model"},
@@ -697,7 +780,8 @@ const struct wow_dbc_def wow_dbc_light_skybox_def[] =
 	        {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_liquid_type_def[] =
+const struct wow_dbc_def
+wow_dbc_liquid_type_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*  4 */ {WOW_DBC_TYPE_STR, "name"},
@@ -706,7 +790,8 @@ const struct wow_dbc_def wow_dbc_liquid_type_def[] =
 	         {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_loading_screens_def[] =
+const struct wow_dbc_def
+wow_dbc_loading_screens_def[] =
 {
 	/* 0 */ {WOW_DBC_TYPE_U32, "id"},
 	/* 4 */ {WOW_DBC_TYPE_STR, "name"},
@@ -714,7 +799,8 @@ const struct wow_dbc_def wow_dbc_loading_screens_def[] =
 	        {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_loading_screen_taxi_splines_def[] =
+const struct wow_dbc_def
+wow_dbc_loading_screen_taxi_splines_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*  4 */ {WOW_DBC_TYPE_U32, "path_id"},
@@ -738,7 +824,8 @@ const struct wow_dbc_def wow_dbc_loading_screen_taxi_splines_def[] =
 	         {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_map_def[] =
+const struct wow_dbc_def
+wow_dbc_map_def[] =
 {
 	/*   0 */  {WOW_DBC_TYPE_U32, "id"},
 	/*   4 */  {WOW_DBC_TYPE_STR, "directory"},
@@ -772,7 +859,8 @@ const struct wow_dbc_def wow_dbc_map_def[] =
 	          {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_name_gen_def[] =
+const struct wow_dbc_def
+wow_dbc_name_gen_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*  4 */ {WOW_DBC_TYPE_STR, "name"},
@@ -781,7 +869,8 @@ const struct wow_dbc_def wow_dbc_name_gen_def[] =
 	         {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_sound_entries_def[] =
+const struct wow_dbc_def
+wow_dbc_sound_entries_def[] =
 {
 	/*   0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*   4 */ {WOW_DBC_TYPE_U32, "sound_type"},
@@ -815,7 +904,8 @@ const struct wow_dbc_def wow_dbc_sound_entries_def[] =
 	          {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_spell_def[] =
+const struct wow_dbc_def
+wow_dbc_spell_def[] =
 {
 	/*   0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*   4 */ {WOW_DBC_TYPE_U32, "category"},
@@ -969,17 +1059,36 @@ const struct wow_dbc_def wow_dbc_spell_def[] =
 	/* 852 */ {WOW_DBC_TYPE_U32, "totem_category2"},
 	/* 856 */ {WOW_DBC_TYPE_U32, "area"},
 	/* 860 */ {WOW_DBC_TYPE_U32, "school"},
-	{WOW_DBC_TYPE_END, ""}
+	          {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_spell_icon_def[] =
+const struct wow_dbc_def
+wow_dbc_spell_icon_def[] =
 {
 	/* 0 */ {WOW_DBC_TYPE_U32, "id"},
 	/* 4 */ {WOW_DBC_TYPE_STR, "file"},
-	         {WOW_DBC_TYPE_END, ""}
+	        {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_talent_def[] =
+const struct wow_dbc_def
+wow_dbc_startup_strings_def[] =
+{
+	/* 0 */ {WOW_DBC_TYPE_U32, "id"},
+	/* 4 */ {WOW_DBC_TYPE_STR, "name"},
+	/* 8 */ {WOW_DBC_TYPE_LSTR, "text"},
+	        {WOW_DBC_TYPE_END, ""},
+};
+
+const struct wow_dbc_def
+wow_dbc_string_lookups_def[] =
+{
+	/* 0 */ {WOW_DBC_TYPE_U32, "id"},
+	/* 4 */ {WOW_DBC_TYPE_STR, "filename"},
+	        {WOW_DBC_TYPE_END, ""},
+};
+
+const struct wow_dbc_def
+wow_dbc_talent_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*  4 */ {WOW_DBC_TYPE_U32, "tab"},
@@ -1005,7 +1114,8 @@ const struct wow_dbc_def wow_dbc_talent_def[] =
 	         {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_talent_tab_def[] =
+const struct wow_dbc_def
+wow_dbc_talent_tab_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*  4 */ {WOW_DBC_TYPE_LSTR, "name"},
@@ -1017,7 +1127,8 @@ const struct wow_dbc_def wow_dbc_talent_tab_def[] =
 	         {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_taxi_nodes_def[] =
+const struct wow_dbc_def
+wow_dbc_taxi_nodes_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*  4 */ {WOW_DBC_TYPE_U32, "continent"},
@@ -1030,7 +1141,8 @@ const struct wow_dbc_def wow_dbc_taxi_nodes_def[] =
 	         {WOW_DBC_TYPE_END, ""},
 };
 
-const struct wow_dbc_def wow_dbc_taxi_path_def[] =
+const struct wow_dbc_def
+wow_dbc_taxi_path_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*  4 */ {WOW_DBC_TYPE_U32, "from_node"},
@@ -1039,7 +1151,8 @@ const struct wow_dbc_def wow_dbc_taxi_path_def[] =
 	         {WOW_DBC_TYPE_END, ""},
 };
 
-const struct wow_dbc_def wow_dbc_taxi_path_node_def[] =
+const struct wow_dbc_def
+wow_dbc_taxi_path_node_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*  4 */ {WOW_DBC_TYPE_U32, "path"},
@@ -1055,7 +1168,8 @@ const struct wow_dbc_def wow_dbc_taxi_path_node_def[] =
 	         {WOW_DBC_TYPE_END, ""},
 };
 
-const struct wow_dbc_def wow_dbc_world_map_area_def[] =
+const struct wow_dbc_def
+wow_dbc_world_map_area_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*  4 */ {WOW_DBC_TYPE_U32, "mapid"},
@@ -1069,7 +1183,8 @@ const struct wow_dbc_def wow_dbc_world_map_area_def[] =
 	         {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_world_map_continent_def[] =
+const struct wow_dbc_def
+wow_dbc_world_map_continent_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*  4 */ {WOW_DBC_TYPE_U32, "mapid"},
@@ -1087,7 +1202,8 @@ const struct wow_dbc_def wow_dbc_world_map_continent_def[] =
 	         {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_world_map_overlay_def[] =
+const struct wow_dbc_def
+wow_dbc_world_map_overlay_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*  4 */ {WOW_DBC_TYPE_U32, "zoneid"},
@@ -1109,7 +1225,8 @@ const struct wow_dbc_def wow_dbc_world_map_overlay_def[] =
 	         {WOW_DBC_TYPE_END, ""}
 };
 
-const struct wow_dbc_def wow_dbc_world_map_transforms_def[] =
+const struct wow_dbc_def
+wow_dbc_world_map_transforms_def[] =
 {
 	/*  0 */ {WOW_DBC_TYPE_U32, "id"},
 	/*  4 */ {WOW_DBC_TYPE_U32, "mapid"},
@@ -1123,7 +1240,8 @@ const struct wow_dbc_def wow_dbc_world_map_transforms_def[] =
 	         {WOW_DBC_TYPE_END, ""},
 };
 
-const struct wow_dbc_def wow_dbc_wow_error_strings_def[] =
+const struct wow_dbc_def
+wow_dbc_wow_error_strings_def[] =
 {
 	/* 0 */ {WOW_DBC_TYPE_U32, "id"},
 	/* 4 */ {WOW_DBC_TYPE_STR, "name"},

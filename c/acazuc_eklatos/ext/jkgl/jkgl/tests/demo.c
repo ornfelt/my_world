@@ -260,41 +260,9 @@ static void handle_key_release(struct window *window, KeySym sym)
 	}
 }
 
-static float hue2rgb(float p, float q, float t)
-{
-	if (t < 0)
-		t += 1;
-	else if (t > 1)
-		t -= 1;
-	if (t < 1 / 6.)
-		return p + (q - p) * 6 * t;
-	if (t < 1 / 2.)
-		return q;
-	if (t < 2 / 3.)
-		return p + (q - p) * (2 / 3. - t) * 6;
-	return p;
-}
-
-static void hsl2rgb(float *rgb, float *hsl)
-{
-	if (!hsl[1])
-	{
-		rgb[0] = hsl[2];
-		rgb[1] = hsl[2];
-		rgb[2] = hsl[2];
-		return;
-	}
-	float q = hsl[2] < .5 ? hsl[2] * (1 + hsl[1]) : hsl[2] + hsl[1] - hsl[2] * hsl[1];
-	float p = 2 * hsl[2] - q;
-	rgb[0] = hue2rgb(p, q, hsl[0] + 1 / 3.);
-	rgb[1] = hue2rgb(p, q, hsl[0]);
-	rgb[2] = hue2rgb(p, q, hsl[0] - 1 / 3.);
-}
-
 static int setup_ctx(struct env *env)
 {
-	GL_CALL(glViewport, env->window.width, env->window.height);
-	GL_CALL(glEnable, 0x56454536); /* test GL_CALL macro */
+	GL_CALL(glViewport, 0, 0, env->window.width, env->window.height);
 	GL_CALL(glEnable, GL_DEPTH_TEST);
 	GL_CALL(glClearDepth, 1);
 	GL_CALL(glClearStencil, 0);
@@ -385,11 +353,11 @@ static int setup_ctx(struct env *env)
 		0xFF, 0xFF, 0xFF, 0xFF,
 	};
 	GL_CALL(glTexImage2D, GL_TEXTURE_2D, 0, GL_RGBA8, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-	GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-	GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+	GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	GL_CALL(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	GL_CALL(glEnable, GL_CULL_FACE);
-	GL_CALL(glCullFace, GL_FRONT);
+	GL_CALL(glCullFace, GL_BACK);
 	GL_CALL(glFrontFace, GL_CCW);
 	return 0;
 }
@@ -427,7 +395,7 @@ static int mkobj(struct obj *obj, uint16_t vertexes_nb, uint16_t indices_nb)
 
 static int mkcube(struct obj *obj)
 {
-	if (mkobj(obj, 8, 24))
+	if (mkobj(obj, 8, 36))
 		return 1;
 	static const struct vec4 colors[8] =
 	{
@@ -473,21 +441,21 @@ static int mkcube(struct obj *obj)
 		{ 1, -1, -1},
 		{-1, -1, -1},
 	};
-	static const GLushort indices[24] =
+	static const GLushort indices[36] =
 	{
-		0, 1, 2, 3, /* front */
-		5, 4, 7, 6, /* back */
-		4, 5, 1, 0, /* top */
-		3, 2, 6, 7, /* bottom */
-		4, 0, 3, 7, /* left */
-		1, 5, 6, 2, /* right */
+		0, 1, 2, 0, 2, 3, /* front */
+		5, 4, 7, 5, 7, 6, /* back */
+		4, 5, 1, 4, 1, 0, /* top */
+		3, 2, 6, 3, 6, 7, /* bottom */
+		4, 0, 3, 4, 3, 7, /* left */
+		1, 5, 6, 1, 6, 2, /* right */
 	};
 	memcpy(obj->colors, colors, sizeof(colors));
 	memcpy(obj->positions, positions, sizeof(positions));
 	memcpy(obj->tex_coords, tex_coords, sizeof(tex_coords));
 	memcpy(obj->normals, normals, sizeof(normals));
 	memcpy(obj->indices, indices, sizeof(indices));
-	obj->primitive = GL_QUADS;
+	obj->primitive = GL_TRIANGLES;
 	return 0;
 }
 
@@ -495,7 +463,7 @@ static int mksphere(struct obj *obj, uint16_t n)
 {
 	if (n < 3)
 		return 1;
-	if (mkobj(obj, n * n, n * (n - 1) * 4))
+	if (mkobj(obj, n * n, n * (n - 1) * 6))
 		return 1;
 	size_t i = 0;
 	for (size_t y = 0; y < n; ++y)
@@ -537,10 +505,12 @@ static int mksphere(struct obj *obj, uint16_t n)
 			obj->indices[i++] = idx_base + x;
 			obj->indices[i++] = idx_base + x + n;
 			obj->indices[i++] = idx_base + t + n;
+			obj->indices[i++] = idx_base + x;
+			obj->indices[i++] = idx_base + t + n;
 			obj->indices[i++] = idx_base + t;
 		}
 	}
-	obj->primitive = GL_QUADS;
+	obj->primitive = GL_TRIANGLES;
 	return 0;
 }
 
@@ -564,15 +534,14 @@ static void render(struct env *env)
 {
 	uint64_t frametime = nanotime();
 
-	GL_CALL(glViewport, env->window.width, env->window.height);
+	GL_CALL(glViewport, 0, 0, env->window.width, env->window.height);
 
 	float hsl[3];
 	float rgb[4];
 	hsl[0] = fmodf((frametime % 5000000000) / 5000000000., 1);
-	hsl[1] = .5;
-	hsl[2] = .5;
+	hsl[1] = 0.5;
+	hsl[2] = 0.5;
 	hsl2rgb(rgb, hsl);
-	rgb[3] = 1;
 	GL_CALL(glFogfv, GL_FOG_COLOR, rgb);
 	GL_CALL(glClearColor, rgb[0], rgb[1], rgb[2], 1);
 	GL_CALL(glClear, GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
@@ -590,8 +559,10 @@ static void render(struct env *env)
 
 #if 1
 	{
+		GL_CALL(glEnableClientState, GL_VERTEX_ARRAY);
+		GL_CALL(glEnableClientState, GL_COLOR_ARRAY);
 		GL_CALL(glDisable, GL_LIGHTING);
-		float n = (frametime % 2000000000) / 2000000000.;
+		float n = (frametime % 2000000000) / 2000000000.0;
 		float c = cosf(n * M_PI);
 		float s = sinf(n * M_PI);
 		float d = 1;
@@ -627,6 +598,8 @@ static void render(struct env *env)
 		GL_CALL(glVertexPointer, 3, GL_FLOAT, 0, light5_position);
 		GL_CALL(glColorPointer, 3, GL_FLOAT, 0, light45_diffuse);
 		GL_CALL(glDrawArrays, GL_POINTS, 0, 1);
+		GL_CALL(glDisableClientState, GL_VERTEX_ARRAY);
+		GL_CALL(glDisableClientState, GL_COLOR_ARRAY);
 	}
 #endif
 
@@ -650,11 +623,13 @@ static void render(struct env *env)
 	GL_CALL(glEnableClientState, GL_TEXTURE_COORD_ARRAY);
 	GL_CALL(glEnableClientState, GL_NORMAL_ARRAY);
 	GL_CALL(glEnableClientState, GL_COLOR_ARRAY);
+	GL_CALL(glEnableClientState, GL_VERTEX_ARRAY);
 	GL_CALL(glEnable, GL_TEXTURE_2D);
 	GL_CALL(glMatrixMode, GL_MODELVIEW);
 	for (size_t i = 0; i < env->objects_nb; ++i)
 		draw_obj(&env->objects[i]);
 	GL_CALL(glDisable, GL_TEXTURE_2D);
+	GL_CALL(glDisableClientState, GL_VERTEX_ARRAY);
 	GL_CALL(glDisableClientState, GL_COLOR_ARRAY);
 	GL_CALL(glDisableClientState, GL_NORMAL_ARRAY);
 	GL_CALL(glDisableClientState, GL_TEXTURE_COORD_ARRAY);
@@ -695,29 +670,15 @@ int main(int argc, char **argv)
 		fprintf(stderr, "%s: failed to create sphere\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	env.objects[1].sx = .75;
-	env.objects[1].sy = .75;
-	env.objects[1].sz = .75;
+	env.objects[1].sx = 0.75;
+	env.objects[1].sy = 0.75;
+	env.objects[1].sz = 0.75;
 	env.posz = 2;
-
-	uint64_t last_fps = nanotime();
-	uint64_t fps = 0;
-
 	while (1)
 	{
 		handle_events(&env.window);
 		render(&env);
 		swap_buffers(&env.window);
-		uint64_t current = nanotime();
-		fps++;
-		if (current - last_fps >= 1000000000)
-		{
-#if 1
-			printf("fps: %" PRIu64 "\n", fps);
-#endif
-			last_fps = current;
-			fps = 0;
-		}
 		move(&env);
 	}
 	return EXIT_SUCCESS;

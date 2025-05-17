@@ -1,0 +1,5 @@
+JKG_GJIT_1.0 {
+	global:
+		jkg_ctx_alloc;
+	local: *;
+};

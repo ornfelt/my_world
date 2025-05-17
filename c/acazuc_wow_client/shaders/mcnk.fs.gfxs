@@ -7,6 +7,7 @@ in 5 vec2 uv2
 in 6 vec2 uv3
 in 7 vec2 uv4
 in 8 int id
+in 9 vec4 shadow_position
 
 out 0 vec4 color
 out 1 vec4 normal
@@ -31,6 +32,7 @@ constant 1 model_block
 	mat4 v
 	mat4 mv
 	mat4 mvp
+	mat4 shadow_mvp
 	float offset_time
 }
 
@@ -42,10 +44,12 @@ constant 2 scene_block
 	vec4 specular_color
 	vec4 fog_color
 	vec2 fog_range
+	ivec4 settings
 }
 
 sampler 0 2d_array alpha_map
-sampler 1 2d textures[15]
+sampler 1 2d shadow_tex
+sampler 2 2d textures[14]
 
 fs_output gfx_main(fs_input gfx_input)
 {
@@ -66,11 +70,22 @@ fs_output gfx_main(fs_input gfx_input)
 	vec4 s4 = gfx_sample_array(textures, mesh_blocks[gfx_input.id].textures[1].w, gfx_input.uv4);
 	vec4 spec_mix = mix(mix(mix(s1, s2, alpha.r), s3, alpha.g), s4, alpha.b);
 	float specular_factor = pow(clamp(dot(normalize(-gfx_input.position), normalize(reflect(-gfx_input.light_dir, gfx_input.normal))), 0.0, 1.0), 10.0);
-	specular_factor = specular_factor * alpha.a;
+	float shadow;
+	if (settings.x == 1)
+	{
+		vec3 shadow_coord = gfx_input.shadow_position.xyz / gfx_input.shadow_position.w;
+		float shadow_sample = gfx_sample(shadow_tex, 0.5 + 0.5 * shadow_coord.xy).x;
+		shadow = clamp(shadow_sample - shadow_coord.z, 0, 1) > 0.5 ? 1.0 : 0.0;
+	}
+	else
+	{
+		shadow = alpha.a;
+	}
+	specular_factor = specular_factor * shadow;
 	vec3 specular = clamp(specular_factor * specular_color.xyz, 0.0, 1.0);
 	specular *= spec_mix.rgb * spec_mix.a;
 	specular *= 2.0;
-	vec3 diffuse = diffuse_color.xyz * clamp(dot(gfx_input.normal, gfx_input.light_dir), 0.0, alpha.a);
+	vec3 diffuse = diffuse_color.xyz * clamp(dot(gfx_input.normal, gfx_input.light_dir), 0.0, shadow);
 	vec3 color = clamp(diffuse + ambient_color.xyz, 0.0, 1.0);
 	float fog_factor = clamp((length(gfx_input.position) - fog_range.x) / (fog_range.y - fog_range.x), 0.0, 1.0);
 	gfx_output.color = vec4(mix(diff_mix * color + specular, fog_color.xyz, fog_factor), 1.0);

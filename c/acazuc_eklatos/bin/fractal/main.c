@@ -66,11 +66,17 @@ struct env
 	size_t finished_threads;
 };
 
-static int create_shmimg(struct window *window)
+static int
+create_shmimg(struct window *window)
 {
-	window->image = XShmCreateImage(window->display, window->vi.visual, 24,
-	                                ZPixmap, NULL, &window->shminfo,
-	                                window->width, window->height);
+	window->image = XShmCreateImage(window->display,
+	                                window->vi.visual,
+	                                24,
+	                                ZPixmap,
+	                                NULL,
+	                                &window->shminfo,
+	                                window->width,
+	                                window->height);
 	if (!window->image)
 	{
 		fprintf(stderr, "%s: failed to create image\n",
@@ -83,14 +89,16 @@ static int create_shmimg(struct window *window)
 	                               IPC_CREAT | 0777);
 	if (window->shminfo.shmid == -1)
 	{
-		fprintf(stderr, "%s: shmget: %s\n", window->progname,
+		fprintf(stderr, "%s: shmget: %s\n",
+		        window->progname,
 		        strerror(errno));
 		return 1;
 	}
 	window->image->data = shmat(window->shminfo.shmid, 0, 0);
 	if (!window->image->data)
 	{
-		fprintf(stderr, "%s: shmat: %s\n", window->progname,
+		fprintf(stderr, "%s: shmat: %s\n",
+		        window->progname,
 		        strerror(errno));
 		return 1;
 	}
@@ -100,20 +108,27 @@ static int create_shmimg(struct window *window)
 	XSync(window->display, False);
 	if (shmctl(window->shminfo.shmid, IPC_RMID, NULL) == -1)
 	{
-		fprintf(stderr, "%s: shmctl: %s\n", window->progname,
+		fprintf(stderr, "%s: shmctl: %s\n",
+		        window->progname,
 		        strerror(errno));
 		return 1;
 	}
 	return 0;
 }
 
-static void handle_configure(struct window *window, XConfigureEvent *event)
+static void
+handle_configure(struct window *window, XConfigureEvent *event)
 {
 	if ((uint32_t)event->width == window->width
 	 && (uint32_t)event->height == window->height)
 		return;
-	XFillRectangle(window->display, window->window, window->gc, 0, 0,
-	               event->width, event->height);
+	XFillRectangle(window->display,
+	               window->window,
+	               window->gc,
+	               0,
+	               0,
+	               event->width,
+	               event->height);
 	window->width = event->width;
 	window->height = event->height;
 	XShmDetach(window->display, &window->shminfo);
@@ -124,7 +139,8 @@ static void handle_configure(struct window *window, XConfigureEvent *event)
 		exit(EXIT_FAILURE);
 }
 
-static void handle_events(struct window *window)
+static void
+handle_events(struct window *window)
 {
 	XEvent event;
 	XNextEvent(window->display, &event);
@@ -150,7 +166,8 @@ static void handle_events(struct window *window)
 	}
 }
 
-static int setup_window(const char *progname, struct window *window)
+static int
+setup_window(const char *progname, struct window *window)
 {
 	memset(window, 0, sizeof(*window));
 	window->progname = progname;
@@ -164,7 +181,10 @@ static int setup_window(const char *progname, struct window *window)
 	}
 	window->root = XRootWindow(window->display, 0);
 	window->screen = DefaultScreen(window->display);
-	if (!XMatchVisualInfo(window->display, window->screen, 24, TrueColor,
+	if (!XMatchVisualInfo(window->display,
+	                      window->screen,
+	                      24,
+	                      TrueColor,
 	                      &window->vi))
 	{
 		fprintf(stderr, "%s: failed to find visual\n", progname);
@@ -173,17 +193,32 @@ static int setup_window(const char *progname, struct window *window)
 	XSetWindowAttributes swa;
 	swa.event_mask = KeyPressMask | KeyReleaseMask | StructureNotifyMask;
 	swa.bit_gravity = CenterGravity;
-	window->window = XCreateWindow(window->display, window->root, 0, 0,
-	                               window->width, window->height, 0,
+	window->window = XCreateWindow(window->display,
+	                               window->root,
+	                               0,
+	                               0,
+	                               window->width,
+	                               window->height,
+	                               0,
 	                               window->vi.depth,
-	                               InputOutput, window->vi.visual,
-	                               CWEventMask | CWBitGravity, &swa);
-	XChangeProperty(window->display, window->window, XA_WM_NAME, XA_STRING,
-	                8, PropModeReplace, (uint8_t*)"fractal", 7);
+	                               InputOutput,
+	                               window->vi.visual,
+	                               CWEventMask | CWBitGravity,
+	                               &swa);
+	XChangeProperty(window->display,
+	                window->window,
+	                XA_WM_NAME,
+	                XA_STRING,
+	                8,
+	                PropModeReplace,
+	                (uint8_t*)"fractal",
+	                7);
 	XGCValues gc_values;
 	gc_values.foreground = 0;
-	window->gc = XCreateGC(window->display, window->window,
-	                       GCForeground, &gc_values);
+	window->gc = XCreateGC(window->display,
+	                       window->window,
+	                       GCForeground,
+	                       &gc_values);
 	if (!window->gc)
 	{
 		fprintf(stderr, "%s: failed to create GC\n", progname);
@@ -197,72 +232,106 @@ static int setup_window(const char *progname, struct window *window)
 	return 0;
 }
 
-static void swap_buffers(struct window *window)
+static void
+swap_buffers(struct window *window)
 {
-	XShmPutImage(window->display, window->window, window->gc,
-	             window->image, 0, 0, 0, 0,
-	             window->width, window->height, False);
+	XShmPutImage(window->display,
+	             window->window,
+	             window->gc,
+	             window->image,
+	             0,
+	             0,
+	             0,
+	             0,
+	             window->width,
+	             window->height,
+	             False);
 	XSync(window->display, False);
 }
 
-static double burningship(struct env *env, double x, double y)
+static double
+burningship(struct env *env, double x, double y)
 {
 	double cx = 0;
 	double cy = 0;
+
 	for (size_t i = 0; i < env->max_iterations; ++i)
 	{
-		double x2 = cx * cx;
-		double y2 = cy * cy;
+		double x2;
+		double y2;
+		double tx;
+		double ty;
+
+		x2 = cx * cx;
+		y2 = cy * cy;
 		if (x2 + y2 > 4)
 			return env->colors[i * 256 / env->max_iterations];
-		double tx = cx > 0 ? cx : -cx;
-		double ty = cy > 0 ? cy : -cy;
+		tx = cx > 0 ? cx : -cx;
+		ty = cy > 0 ? cy : -cy;
 		cx = x2 - y2 + x;
 		cy = 2.0 * tx * ty + y / 1.777777;
 	}
 	return env->colors[256];
 }
 
-static double julia(struct env *env, double x, double y)
+static double
+julia(struct env *env, double x, double y)
 {
 	double cx = x;
 	double cy = y;
+
 	for (size_t i = 0; i < env->max_iterations; ++i)
 	{
-		double x2 = cx * cx;
-		double y2 = cy * cy;
+		double x2;
+		double y2;
+		double tx;
+		double ty;
+
+		x2 = cx * cx;
+		y2 = cy * cy;
 		if (x2 + y2 > 4)
 			return env->colors[i * 256 / env->max_iterations];
-		double tx = cx;
-		double ty = cy;
+		tx = cx;
+		ty = cy;
 		cx = x2 - y2 - 0.7;
 		cy = 2.0 * tx * ty + 0.27;
 	}
 	return env->colors[256];
 }
 
-static uint32_t mandelbrot(struct env *env, double x, double y)
+static uint32_t
+mandelbrot(struct env *env, double x, double y)
 {
 	double cx = 0;
 	double cy = 0;
+
 	for (size_t i = 0; i < env->max_iterations; ++i)
 	{
-		double x2 = cx * cx;
-		double y2 = cy * cy;
+		double x2;
+		double y2;
+		double tx;
+		double ty;
+
+		x2 = cx * cx;
+		y2 = cy * cy;
 		if (x2 + y2 > 4)
 			return env->colors[i * 256 / env->max_iterations];
-		double tx = cx;
-		double ty = cy;
+		tx = cx;
+		ty = cy;
 		cx = x2 - y2 + x;
-		cy = 2. * tx * ty + y / 1.777777;
+		cy = 2.0 * tx * ty + y / 1.777777;
 	}
 	return env->colors[256];
 }
 
-static uint32_t draw_pixel(struct env *env, size_t x, size_t y)
+static uint32_t
+draw_pixel(struct env *env, size_t x, size_t y)
 {
-	double px = env->x_min + env->x_size * (x / (double)env->window.width);
-	double py = env->y_min + env->y_size * (y / (double)env->window.height);
+	double px;
+	double py;
+
+	px = env->x_min + env->x_size * (x / (double)env->window.width);
+	py = env->y_min + env->y_size * (y / (double)env->window.height);
 	switch (env->fractal_type)
 	{
 		default:
@@ -275,22 +344,28 @@ static uint32_t draw_pixel(struct env *env, size_t x, size_t y)
 	}
 }
 
-static void draw(struct env *env, size_t id)
+static void
+draw(struct env *env, size_t id)
 {
 	uint32_t *dst = (uint32_t*)env->window.image->data;
-	size_t start = (env->window.width * env->window.height) * id / THREADS_COUNT;
-	size_t end = (env->window.width * env->window.height) * (id + 1) / THREADS_COUNT;
+	size_t total;
+	size_t start;
+	size_t end;
+
+	total = env->window.width * env->window.height;
+	start = total * id / THREADS_COUNT;
+	end = total * (id + 1) / THREADS_COUNT;
 	for (size_t i = start; i < end; ++i)
-	{
-		size_t x = i % env->window.width;
-		size_t y = i / env->window.width;
-		dst[i] = draw_pixel(env, x, y);
-	}
+		dst[i] = draw_pixel(env,
+		                    i % env->window.width,
+		                    i / env->window.width);
 }
 
-static void on_key_down(struct window *window, KeySym sym)
+static void
+on_key_down(struct window *window, KeySym sym)
 {
 	struct env *env = window->userptr;
+
 	switch (sym)
 	{
 		case XK_Left:
@@ -315,9 +390,9 @@ static void on_key_down(struct window *window, KeySym sym)
 			break;
 		case XK_Page_Up:
 		{
-			env->zoom *= 1.15;
 			double cx = (env->x_max + env->x_min) / 2.0;
 			double cy = (env->y_max + env->y_min) / 2.0;
+			env->zoom *= 1.15;
 			env->x_min = cx - 0.5 / env->zoom;
 			env->x_max = cx + 0.5 / env->zoom;
 			env->y_min = cy - 0.5 / env->zoom;
@@ -328,11 +403,11 @@ static void on_key_down(struct window *window, KeySym sym)
 		}
 		case XK_Page_Down:
 		{
+			double cx = (env->x_max + env->x_min) / 2.0;
+			double cy = (env->y_max + env->y_min) / 2.0;
 			env->zoom /= 1.15;
 			if (env->zoom < 0.25)
 				env->zoom = 0.25;
-			double cx = (env->x_max + env->x_min) / 2.0;
-			double cy = (env->y_max + env->y_min) / 2.0;
 			env->x_min = cx - 0.5 / env->zoom;
 			env->x_max = cx + 0.5 / env->zoom;
 			env->y_min = cy - 0.5 / env->zoom;
@@ -352,7 +427,8 @@ static void on_key_down(struct window *window, KeySym sym)
 	}
 }
 
-static float hue2rgb(float p, float q, float t)
+static float
+hue2rgb(float p, float q, float t)
 {
 	if (t < 0)
 		t += 1;
@@ -367,8 +443,12 @@ static float hue2rgb(float p, float q, float t)
 	return p;
 }
 
-static void hsl2rgb(float *rgb, float *hsl)
+static void
+hsl2rgb(float *rgb, float *hsl)
 {
+	float p;
+	float q;
+
 	if (!hsl[1])
 	{
 		rgb[0] = hsl[2];
@@ -376,16 +456,18 @@ static void hsl2rgb(float *rgb, float *hsl)
 		rgb[2] = hsl[2];
 		return;
 	}
-	float q = hsl[2] < 0.5 ? hsl[2] * (1 + hsl[1]) : hsl[2] + hsl[1] - hsl[2] * hsl[1];
-	float p = 2.0 * hsl[2] - q;
+	q = hsl[2] < 0.5 ? hsl[2] * (1 + hsl[1]) : hsl[2] + hsl[1] - hsl[2] * hsl[1];
+	p = 2.0 * hsl[2] - q;
 	rgb[0] = hue2rgb(p, q, hsl[0] + 1.0 / 3.0);
 	rgb[1] = hue2rgb(p, q, hsl[0]);
 	rgb[2] = hue2rgb(p, q, hsl[0] - 1.0 / 3.0);
 }
 
-static void *thread_run(void *ptr)
+static void *
+thread_run(void *ptr)
 {
 	struct env *env = ptr;
+
 	while (1)
 	{
 		pthread_mutex_lock(&env->mutex);
@@ -404,13 +486,15 @@ static void *thread_run(void *ptr)
 	return NULL;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-h] [mandelbrot | julia | burningship]\n", progname);
 	printf("-h: show this help\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

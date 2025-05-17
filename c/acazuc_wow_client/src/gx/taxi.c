@@ -1,7 +1,7 @@
 #include "gx/frame.h"
 #include "gx/taxi.h"
+#include "gx/gx.h"
 
-#include "graphics.h"
 #include "shaders.h"
 #include "memory.h"
 #include "log.h"
@@ -121,7 +121,7 @@ void gx_taxi_render(struct gx_taxi *taxi, struct gx_frame *frame)
 		initialize(taxi);
 	if (!taxi->indices_nb)
 		return;
-	gfx_bind_attributes_state(g_wow->device, &taxi->attributes_state, &g_wow->graphics->taxi_input_layout);
+	gfx_bind_attributes_state(g_wow->device, &taxi->attributes_state, &g_wow->gx->taxi_input_layout);
 	struct shader_taxi_mesh_block mesh_block;
 	mesh_block.mvp = frame->view_vp;
 	VEC4_SET(mesh_block.color, 1, 1, 1, 1);

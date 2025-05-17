@@ -4,7 +4,8 @@
 #include <wchar.h>
 #include <errno.h>
 
-long long wcstoll(const wchar_t *nptr, wchar_t **endptr, int base)
+long long
+wcstoll(const wchar_t *nptr, wchar_t **endptr, int base)
 {
 	if (base && (base < 2 || base > 36))
 	{

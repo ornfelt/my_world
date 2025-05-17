@@ -21,11 +21,13 @@ struct env
 	size_t line;
 };
 
-static void output_filtered(struct env *env, const uint8_t *b, size_t n)
+static void
+output_filtered(struct env *env, const uint8_t *b, size_t n)
 {
 	for (size_t i = 0; i < n; ++i)
 	{
 		uint8_t c = b[i];
+
 		if (c == '\n')
 		{
 			if ((env->opt & OPT_s) && env->empty_nb == 2)
@@ -75,23 +77,29 @@ static void output_filtered(struct env *env, const uint8_t *b, size_t n)
 	}
 }
 
-static void output_standard(struct env *env, const uint8_t *b, size_t n)
+static void
+output_standard(struct env *env, const uint8_t *b, size_t n)
 {
 	(void)env;
 	write(1, b, n);
 }
 
-static void print_fd(struct env *env, int fd)
+static void
+print_fd(struct env *env, int fd)
 {
 	static uint8_t buffer[1024 * 1024];
+
 	while (1)
 	{
-		ssize_t rd = read(fd, buffer, sizeof(buffer));
+		ssize_t rd;
+
+		rd = read(fd, buffer, sizeof(buffer));
 		if (rd == -1)
 		{
 			if (errno == EINTR)
 				continue;
-			fprintf(stderr, "%s: read: %s\n", env->progname,
+			fprintf(stderr, "%s: read: %s\n",
+			        env->progname,
 			        strerror(errno));
 			return;
 		}
@@ -104,9 +112,12 @@ static void print_fd(struct env *env, int fd)
 	}
 }
 
-static void print_file(struct env *env, const char *file)
+static void
+print_file(struct env *env, const char *file)
 {
-	int fd = open(file, O_RDONLY);
+	int fd;
+
+	fd = open(file, O_RDONLY);
 	if (fd == -1)
 	{
 		perror(file);
@@ -116,7 +127,8 @@ static void print_file(struct env *env, const char *file)
 	close(fd);
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-b] [-e] [-h] [-n] [-s] [-t] [-u] [-v] [FILES]\n", progname);
 	printf("-b: number nonempty lines\n");
@@ -129,7 +141,8 @@ static void usage(const char *progname)
 	printf("-v: use ^ and M- notation, except for LFD and TAB\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

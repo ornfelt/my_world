@@ -5,30 +5,34 @@
 #include <stdlib.h>
 #include <string.h>
 
-xcb_extension_t xcb_render_id =
+xcb_extension_t
+xcb_render_id =
 {
 	"RENDER",
 	0,
 };
 
-xcb_render_query_version_cookie_t xcb_render_query_version(xcb_connection_t *conn,
-                                                           uint32_t client_major_version,
-                                                           uint32_t client_minor_version)
+xcb_render_query_version_cookie_t
+xcb_render_query_version(xcb_connection_t *conn,
+                         uint32_t client_major_version,
+                         uint32_t client_minor_version)
 {
-	EXT_GET(render);
+	xcb_render_query_version_cookie_t cookie;
 	uint16_t length = 3;
+
+	EXT_GET(render);
 	REQ_INIT(render_query_version, extension->major_opcode, length);
 	r->minor_opcode = XCB_RENDER_QUERY_VERSION;
 	r->client_major_version = client_major_version;
 	r->client_minor_version = client_minor_version;
-	xcb_render_query_version_cookie_t cookie;
 	cookie.sequence = ++conn->sequence;
 	return cookie;
 }
 
-xcb_render_query_version_reply_t *xcb_render_query_version_reply(xcb_connection_t *conn,
-                                                                 xcb_render_query_version_cookie_t cookie,
-                                                                 xcb_generic_error_t **error)
+xcb_render_query_version_reply_t *
+xcb_render_query_version_reply(xcb_connection_t *conn,
+                               xcb_render_query_version_cookie_t cookie,
+                               xcb_generic_error_t **error)
 {
 	REPLY_ANSWER(render_query_version, 0);
 	reply->response_type = answer->reply.response_type;
@@ -40,20 +44,23 @@ xcb_render_query_version_reply_t *xcb_render_query_version_reply(xcb_connection_
 	return reply;
 }
 
-xcb_render_query_pict_formats_cookie_t xcb_render_query_pict_formats(xcb_connection_t *conn)
+xcb_render_query_pict_formats_cookie_t
+xcb_render_query_pict_formats(xcb_connection_t *conn)
 {
-	EXT_GET(render);
+	xcb_render_query_pict_formats_cookie_t cookie;
 	uint16_t length = 1;
+
+	EXT_GET(render);
 	REQ_INIT(render_query_pict_formats, extension->major_opcode, length);
 	r->minor_opcode = XCB_RENDER_QUERY_PICT_FORMATS;
-	xcb_render_query_pict_formats_cookie_t cookie;
 	cookie.sequence = ++conn->sequence;
 	return cookie;
 }
 
-xcb_render_query_pict_formats_reply_t *xcb_render_query_pict_formats_reply(xcb_connection_t *conn,
-                                                                           xcb_render_query_pict_formats_cookie_t cookie,
-                                                                           xcb_generic_error_t **error)
+xcb_render_query_pict_formats_reply_t *
+xcb_render_query_pict_formats_reply(xcb_connection_t *conn,
+                                    xcb_render_query_pict_formats_cookie_t cookie,
+                                    xcb_generic_error_t **error)
 {
 	REPLY_ANSWER(priv_render_query_pict_formats, 0);
 	reply->reply.response_type = answer->reply.response_type;
@@ -75,32 +82,37 @@ xcb_render_query_pict_formats_reply_t *xcb_render_query_pict_formats_reply(xcb_c
 	return &reply->reply;
 }
 
-xcb_render_pictforminfo_t *xcb_render_query_pict_formats_formats(xcb_render_query_pict_formats_reply_t *reply)
+xcb_render_pictforminfo_t *
+xcb_render_query_pict_formats_formats(xcb_render_query_pict_formats_reply_t *reply)
 {
 	xcb_priv_render_query_pict_formats_reply_t *priv = (xcb_priv_render_query_pict_formats_reply_t*)reply;
 	return priv->formats;
 }
 
-int xcb_render_query_pict_formats_formats_length(xcb_render_query_pict_formats_reply_t *reply)
+int
+xcb_render_query_pict_formats_formats_length(xcb_render_query_pict_formats_reply_t *reply)
 {
 	return reply->num_formats;
 }
 
-xcb_void_cookie_t xcb_render_create_picture(xcb_connection_t *conn,
-                                            xcb_render_picture_t pid,
-                                            xcb_drawable_t drawable,
-                                            xcb_render_pictformat_t format,
-                                            uint32_t value_mask,
-                                            const uint32_t *values)
+xcb_void_cookie_t
+xcb_render_create_picture(xcb_connection_t *conn,
+                          xcb_render_picture_t pid,
+                          xcb_drawable_t drawable,
+                          xcb_render_pictformat_t format,
+                          uint32_t value_mask,
+                          const uint32_t *values)
 {
-	EXT_GET(render);
+	uint16_t length;
 	size_t n = 0;
+
+	EXT_GET(render);
 	for (size_t i = 0; i < 13; ++i)
 	{
 		if (value_mask & (1 << i))
 			n++;
 	}
-	uint16_t length = 5 + n;
+	length = 5 + n;
 	REQ_INIT(render_create_picture, extension->major_opcode, length);
 	r->minor_opcode = XCB_RENDER_CREATE_PICTURE;
 	r->pid = pid;
@@ -116,12 +128,13 @@ xcb_void_cookie_t xcb_render_create_picture(xcb_connection_t *conn,
 	return xcb_build_void_cookie(conn);
 }
 
-xcb_void_cookie_t xcb_render_create_picture_checked(xcb_connection_t *conn,
-                                                    xcb_render_picture_t pid,
-                                                    xcb_drawable_t drawable,
-                                                    xcb_render_pictformat_t format,
-                                                    uint32_t value_mask,
-                                                    const uint32_t *values)
+xcb_void_cookie_t
+xcb_render_create_picture_checked(xcb_connection_t *conn,
+                                  xcb_render_picture_t pid,
+                                  xcb_drawable_t drawable,
+                                  xcb_render_pictformat_t format,
+                                  uint32_t value_mask,
+                                  const uint32_t *values)
 {
 	return checked_request(conn,
 		xcb_render_create_picture(conn,
@@ -132,15 +145,18 @@ xcb_void_cookie_t xcb_render_create_picture_checked(xcb_connection_t *conn,
 		                          values));
 }
 
-xcb_void_cookie_t xcb_render_fill_rectangles(xcb_connection_t *conn,
-                                             uint8_t op,
-                                             xcb_render_picture_t dst,
-                                             xcb_render_color_t color,
-                                             uint32_t rectangles_len,
-                                             const xcb_rectangle_t *rectangles)
+xcb_void_cookie_t
+xcb_render_fill_rectangles(xcb_connection_t *conn,
+                           uint8_t op,
+                           xcb_render_picture_t dst,
+                           xcb_render_color_t color,
+                           uint32_t rectangles_len,
+                           const xcb_rectangle_t *rectangles)
 {
+	uint16_t length;
+
 	EXT_GET(render);
-	uint16_t length = 5 + 2 * rectangles_len;
+	length = 5 + 2 * rectangles_len;
 	REQ_INIT(render_fill_rectangles, extension->major_opcode, length);
 	r->minor_opcode = XCB_RENDER_FILL_RECTANGLES;
 	r->op = op;
@@ -153,12 +169,13 @@ xcb_void_cookie_t xcb_render_fill_rectangles(xcb_connection_t *conn,
 	return xcb_build_void_cookie(conn);
 }
 
-xcb_void_cookie_t xcb_render_fill_rectangles_checked(xcb_connection_t *conn,
-                                                     uint8_t op,
-                                                     xcb_render_picture_t dst,
-                                                     xcb_render_color_t color,
-                                                     uint32_t rectangles_len,
-                                                     const xcb_rectangle_t *rectangles)
+xcb_void_cookie_t
+xcb_render_fill_rectangles_checked(xcb_connection_t *conn,
+                                   uint8_t op,
+                                   xcb_render_picture_t dst,
+                                   xcb_render_color_t color,
+                                   uint32_t rectangles_len,
+                                   const xcb_rectangle_t *rectangles)
 {
 	return checked_request(conn,
 		xcb_render_fill_rectangles(conn,
@@ -169,22 +186,24 @@ xcb_void_cookie_t xcb_render_fill_rectangles_checked(xcb_connection_t *conn,
 		                           rectangles));
 }
 
-xcb_void_cookie_t xcb_render_composite(xcb_connection_t *conn,
-                                       uint8_t op,
-                                       xcb_render_picture_t src,
-                                       xcb_render_picture_t mask,
-                                       xcb_render_picture_t dst,
-                                       int16_t src_x,
-                                       int16_t src_y,
-                                       int16_t mask_x,
-                                       int16_t mask_y,
-                                       int16_t dst_x,
-                                       int16_t dst_y,
-                                       uint16_t width,
-                                       uint16_t height)
+xcb_void_cookie_t
+xcb_render_composite(xcb_connection_t *conn,
+                     uint8_t op,
+                     xcb_render_picture_t src,
+                     xcb_render_picture_t mask,
+                     xcb_render_picture_t dst,
+                     int16_t src_x,
+                     int16_t src_y,
+                     int16_t mask_x,
+                     int16_t mask_y,
+                     int16_t dst_x,
+                     int16_t dst_y,
+                     uint16_t width,
+                     uint16_t height)
 {
-	EXT_GET(render);
 	uint16_t length = 9;
+
+	EXT_GET(render);
 	REQ_INIT(render_composite, extension->major_opcode, length);
 	r->minor_opcode = XCB_RENDER_COMPOSITE;
 	r->op = op;
@@ -205,19 +224,20 @@ xcb_void_cookie_t xcb_render_composite(xcb_connection_t *conn,
 	return xcb_build_void_cookie(conn);
 }
 
-xcb_void_cookie_t xcb_render_composite_checked(xcb_connection_t *conn,
-                                               uint8_t op,
-                                               xcb_render_picture_t src,
-                                               xcb_render_picture_t mask,
-                                               xcb_render_picture_t dst,
-                                               int16_t src_x,
-                                               int16_t src_y,
-                                               int16_t mask_x,
-                                               int16_t mask_y,
-                                               int16_t dst_x,
-                                               int16_t dst_y,
-                                               uint16_t width,
-                                               uint16_t height)
+xcb_void_cookie_t
+xcb_render_composite_checked(xcb_connection_t *conn,
+                             uint8_t op,
+                             xcb_render_picture_t src,
+                             xcb_render_picture_t mask,
+                             xcb_render_picture_t dst,
+                             int16_t src_x,
+                             int16_t src_y,
+                             int16_t mask_x,
+                             int16_t mask_y,
+                             int16_t dst_x,
+                             int16_t dst_y,
+                             uint16_t width,
+                             uint16_t height)
 {
 	return checked_request(conn,
 		xcb_render_composite(conn,

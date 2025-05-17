@@ -14,7 +14,9 @@ void shmseg_register(struct xsrv *xsrv);
 int shm_req(struct xsrv *xsrv, struct client *client,
             struct request *request);
 
-struct shmseg *shmseg_new(struct xsrv *xsrv, struct client *client, uint32_t id,
+struct shmseg *shmseg_new(struct xsrv *xsrv,
+                          struct client *client,
+                          uint32_t id,
                           void *ptr);
 struct shmseg *shmseg_get(struct xsrv *xsrv, uint32_t id);
 

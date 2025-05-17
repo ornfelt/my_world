@@ -85,9 +85,12 @@ struct env
 	                                   */
 };
 
-static size_t getline_no_nl(char **line, size_t *len, FILE *fp)
+static size_t
+getline_no_nl(char **line, size_t *len, FILE *fp)
 {
-	ssize_t ret = getline(line, len, fp);
+	ssize_t ret;
+
+	ret = getline(line, len, fp);
 	if (ret <= 0)
 		return 0;
 	if ((*line)[ret - 1] == '\n')
@@ -95,9 +98,11 @@ static size_t getline_no_nl(char **line, size_t *len, FILE *fp)
 	return 1;
 }
 
-static int match_line(struct env *env, const char *line, struct match *match)
+static int
+match_line(struct env *env, const char *line, struct match *match)
 {
 	int matched = 0;
+
 	if (match)
 	{
 		match->start = SIZE_MAX;
@@ -153,13 +158,17 @@ static int match_line(struct env *env, const char *line, struct match *match)
 	return matched;
 }
 
-static void print_line(struct env *env, const char *path,
-                       const char *line, struct match *match,
-                       size_t n)
+static void
+print_line(struct env *env,
+           const char *path,
+           const char *line,
+           struct match *match,
+           size_t n)
 {
+	int colored = 0;
+
 	if ((env->opt & OPT_q) || ((env->opt & OPT_o) && match->start == SIZE_MAX))
 		return;
-	int colored = 0;
 	if (env->multiple || (env->opt & OPT_H))
 	{
 		if (env->colored)
@@ -206,7 +215,8 @@ static void print_line(struct env *env, const char *path,
 	}
 }
 
-static void print_separator(struct env *env)
+static void
+print_separator(struct env *env)
 {
 	if (!env->has_written)
 		return;
@@ -218,7 +228,8 @@ static void print_separator(struct env *env)
 		printf("--\n");
 }
 
-static int grep_normal(struct env *env, FILE *fp, const char *path)
+static int
+grep_normal(struct env *env, FILE *fp, const char *path)
 {
 	char *line = NULL;
 	size_t len = 0;
@@ -230,6 +241,7 @@ static int grep_normal(struct env *env, FILE *fp, const char *path)
 	while (getline_no_nl(&line, &len, fp))
 	{
 		struct match match;
+
 		if (match_line(env, line, &match) && match_count < env->max)
 		{
 			if (env->after > 0)
@@ -292,7 +304,8 @@ static int grep_normal(struct env *env, FILE *fp, const char *path)
 	return ferror(fp);
 }
 
-static int grep_filename(struct env *env, FILE *fp, const char *path)
+static int
+grep_filename(struct env *env, FILE *fp, const char *path)
 {
 	char *line = NULL;
 	size_t len = 0;
@@ -315,7 +328,8 @@ static int grep_filename(struct env *env, FILE *fp, const char *path)
 	return ferror(fp);
 }
 
-static int grep_count(struct env *env, FILE *fp, const char *path)
+static int
+grep_count(struct env *env, FILE *fp, const char *path)
 {
 	char *line = NULL;
 	size_t len = 0;
@@ -347,7 +361,8 @@ static int grep_count(struct env *env, FILE *fp, const char *path)
 	return 0;
 }
 
-static int grep_fp(struct env *env, FILE *fp, const char *path)
+static int
+grep_fp(struct env *env, FILE *fp, const char *path)
 {
 	if (!env->max)
 		return 0;
@@ -358,7 +373,8 @@ static int grep_fp(struct env *env, FILE *fp, const char *path)
 	return grep_normal(env, fp, path);
 }
 
-static int is_dir(DIR *dir, struct dirent *dirent)
+static int
+is_dir(DIR *dir, struct dirent *dirent)
 {
 	switch (dirent->d_type)
 	{
@@ -368,6 +384,7 @@ static int is_dir(DIR *dir, struct dirent *dirent)
 		case DT_UNKNOWN:
 		{
 			struct stat st;
+
 			if (fstatat(dirfd(dir), dirent->d_name, &st, 0) == -1)
 				return -1;
 			return S_ISDIR(st.st_mode) != 0;
@@ -377,7 +394,8 @@ static int is_dir(DIR *dir, struct dirent *dirent)
 	}
 }
 
-static int grep_fd(struct env *env, int fd, const char *path)
+static int
+grep_fd(struct env *env, int fd, const char *path)
 {
 	FILE *fp;
 	int ret;
@@ -386,8 +404,10 @@ static int grep_fd(struct env *env, int fd, const char *path)
 	if (!fp)
 	{
 		if (!(env->opt & OPT_s))
-			fprintf(stderr, "%s: fdopen(%s): %s\n", env->progname,
-			        path, strerror(errno));
+			fprintf(stderr, "%s: fdopen(%s): %s\n",
+			        env->progname,
+			        path,
+			        strerror(errno));
 		return 1;
 	}
 	ret = grep_fp(env, fp, path);
@@ -395,7 +415,8 @@ static int grep_fd(struct env *env, int fd, const char *path)
 	return ret;
 }
 
-static int grep_dir(struct env *env, int fd, const char *path)
+static int
+grep_dir(struct env *env, int fd, const char *path)
 {
 	struct dirent *dirent;
 	DIR *dir;
@@ -406,8 +427,10 @@ static int grep_dir(struct env *env, int fd, const char *path)
 	if (!dir)
 	{
 		if (!(env->opt & OPT_s))
-			fprintf(stderr, "%s: fdopendir(%s): %s\n", env->progname,
-			        path, strerror(errno));
+			fprintf(stderr, "%s: fdopendir(%s): %s\n",
+			        env->progname,
+			        path,
+			        strerror(errno));
 		goto end;
 	}
 	while ((dirent = readdir(dir)))
@@ -423,7 +446,9 @@ static int grep_dir(struct env *env, int fd, const char *path)
 		{
 			if (!(env->opt & OPT_s))
 				fprintf(stderr, "%s: openat(%s/%s): %s",
-				        env->progname, path, dirent->d_name,
+				        env->progname,
+				        path,
+				        dirent->d_name,
 				        strerror(errno));
 			continue;
 		}
@@ -443,7 +468,8 @@ end:
 	return ret;
 }
 
-static int grep_file(struct env *env, const char *path)
+static int
+grep_file(struct env *env, const char *path)
 {
 	struct stat st;
 	int fd = -1;
@@ -453,15 +479,19 @@ static int grep_file(struct env *env, const char *path)
 	if (fd == -1)
 	{
 		if (!(env->opt & OPT_s))
-			fprintf(stderr, "%s: open(%s): %s\n", env->progname,
-			        path, strerror(errno));
+			fprintf(stderr, "%s: open(%s): %s\n",
+			        env->progname,
+			        path,
+			        strerror(errno));
 		goto end;
 	}
 	if (fstat(fd, &st) == -1)
 	{
 		if (!(env->opt & OPT_s))
-			fprintf(stderr, "%s: stat(%s): %s\n", env->progname,
-			        path, strerror(errno));
+			fprintf(stderr, "%s: stat(%s): %s\n",
+			        env->progname,
+			        path,
+			        strerror(errno));
 		goto end;
 	}
 	if (S_ISDIR(st.st_mode))
@@ -478,7 +508,8 @@ end:
 	return ret;
 }
 
-static int add_pattern(struct env *env, const char *str)
+static int
+add_pattern(struct env *env, const char *str)
 {
 	struct pattern *new_patterns;
 	char *dup;
@@ -488,14 +519,18 @@ static int add_pattern(struct env *env, const char *str)
 	dup = strdup(str);
 	if (!dup)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", env->progname, strerror(errno));
+		fprintf(stderr, "%s: malloc: %s\n",
+		        env->progname,
+		        strerror(errno));
 		return 1;
 	}
 	new_patterns = realloc(env->patterns,
 	                       sizeof(*new_patterns) * (env->patterns_nb + 1));
 	if (!new_patterns)
 	{
-		fprintf(stderr, "%s: realloc: %s\n", env->progname, strerror(errno));
+		fprintf(stderr, "%s: realloc: %s\n",
+		        env->progname,
+		        strerror(errno));
 		free(dup);
 		return 1;
 	}
@@ -506,7 +541,8 @@ static int add_pattern(struct env *env, const char *str)
 	return 0;
 }
 
-static int add_pattern_file(struct env *env, const char *filename)
+static int
+add_pattern_file(struct env *env, const char *filename)
 {
 	char *line = NULL;
 	size_t len = 0;
@@ -516,7 +552,9 @@ static int add_pattern_file(struct env *env, const char *filename)
 	fp = fopen(filename, "r");
 	if (!fp)
 	{
-		fprintf(stderr, "%s: open(%s): %s\n", env->progname, filename,
+		fprintf(stderr, "%s: open(%s): %s\n",
+		        env->progname,
+		        filename,
 		        strerror(errno));
 		goto end;
 	}
@@ -534,7 +572,8 @@ end:
 	return ret;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-h] [-R] [-r] [-i] [-v] [-n] [-H] [-A num] [-B num] [-C num] [-l] [-L] [-o] [-c] [-s] [-q] [-m num] [-Z] [-E] [-F] [-G] [-e pattern] PATTERN FILES\n", progname);
 	printf("-h        : show this help\n");
@@ -562,7 +601,8 @@ static void usage(const char *progname)
 	printf("-f file   : use file as pattern list (one pattern per line)\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int has_pattern = 0;
@@ -744,7 +784,9 @@ int main(int argc, char **argv)
 		env.before_lines = calloc(env.before, sizeof(*env.before_lines));
 		if (!env.before_lines)
 		{
-			fprintf(stderr, "%s: malloc: %s\n", argv[0], strerror(errno));
+			fprintf(stderr, "%s: malloc: %s\n",
+			        argv[0],
+			        strerror(errno));
 			return EXIT_FAILURE;
 		}
 	}
@@ -759,8 +801,10 @@ int main(int argc, char **argv)
 			{
 				char buf[1024];
 				regerror(ret, &pattern->regex, buf, sizeof(buf));
-				fprintf(stderr, "%s: regcomp(%s): %s\n", argv[0],
-				        pattern->str, buf);
+				fprintf(stderr, "%s: regcomp(%s): %s\n",
+				        argv[0],
+				        pattern->str,
+				        buf);
 				return EXIT_FAILURE;
 			}
 			if (pattern->regex.re_nsub > env.regmatches_nb)
@@ -770,7 +814,9 @@ int main(int argc, char **argv)
 		env.regmatches = malloc(sizeof(*env.regmatches) * env.regmatches_nb);
 		if (!env.regmatches)
 		{
-			fprintf(stderr, "%s: malloc: %s\n", argv[0], strerror(errno));
+			fprintf(stderr, "%s: malloc: %s\n",
+			        argv[0],
+			        strerror(errno));
 			return EXIT_FAILURE;
 		}
 	}

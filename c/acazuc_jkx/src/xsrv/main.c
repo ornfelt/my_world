@@ -41,52 +41,65 @@ struct xcursor
 
 extern const struct xcursor *xcursors[154];
 
-static int setup_sock(struct xsrv *xsrv)
+static int
+setup_sock(struct xsrv *xsrv)
 {
+	struct sockaddr_un sockaddr;
+
 	xsrv->sock = socket(AF_LOCAL, SOCK_STREAM, 0);
 	if (xsrv->sock == -1)
 	{
-		fprintf(stderr, "%s: socket: %s\n", xsrv->progname,
+		fprintf(stderr, "%s: socket: %s\n",
+		        xsrv->progname,
 		        strerror(errno));
 		return 1;
 	}
-	struct sockaddr_un sockaddr;
 	sockaddr.sun_family = AF_LOCAL;
 	snprintf(sockaddr.sun_path, sizeof(sockaddr.sun_path),
-	         "/tmp/.X11-unix/X%d", 5);
+	         "/tmp/.X11-unix/X%d",
+	         5);
 	unlink(sockaddr.sun_path);
 	if (bind(xsrv->sock, (struct sockaddr*)&sockaddr, sizeof(sockaddr)) == -1)
 	{
-		fprintf(stderr, "%s: bind: %s\n", xsrv->progname,
+		fprintf(stderr, "%s: bind: %s\n",
+		        xsrv->progname,
 		        strerror(errno));
 		return 1;
 	}
 	if (listen(xsrv->sock, 128) == -1)
 	{
-		fprintf(stderr, "%s: listen: %s\n", xsrv->progname,
+		fprintf(stderr, "%s: listen: %s\n",
+		        xsrv->progname,
 		        strerror(errno));
 		return 1;
 	}
 	return 0;
 }
 
-static int handle_new_client(struct xsrv *xsrv)
+static int
+handle_new_client(struct xsrv *xsrv)
 {
 	struct sockaddr_un caddr;
 	socklen_t caddrlen = sizeof(caddr);
-	int fd = accept(xsrv->sock, (struct sockaddr*)&caddr, &caddrlen);
+	struct client *client;
+	int flags;
+	int fd;
+
+	fd = accept(xsrv->sock, (struct sockaddr*)&caddr, &caddrlen);
 	if (fd == -1)
 	{
 		if (errno == EINTR || errno == EAGAIN)
 			return 0;
-		fprintf(stderr, "%s: accept: %s\n", xsrv->progname,
+		fprintf(stderr, "%s: accept: %s\n",
+		        xsrv->progname,
 		        strerror(errno));
 		return 1;
 	}
-	int flags = fcntl(fd, F_GETFL, 0);
+	flags = fcntl(fd, F_GETFL, 0);
 	if (flags < 0)
 	{
-		fprintf(stderr, "%s: fcntl(F_GETFL): %s\n", xsrv->progname,
+		fprintf(stderr, "%s: fcntl(F_GETFL): %s\n",
+		        xsrv->progname,
 		        strerror(errno));
 		close(fd);
 		return 1;
@@ -94,12 +107,13 @@ static int handle_new_client(struct xsrv *xsrv)
 	flags |= O_NONBLOCK;
 	if (fcntl(fd, F_SETFL, flags) == -1)
 	{
-		fprintf(stderr, "%s: fcntl(F_SETFL): %s\n", xsrv->progname,
+		fprintf(stderr, "%s: fcntl(F_SETFL): %s\n",
+		        xsrv->progname,
 		        strerror(errno));
 		close(fd);
 		return 1;
 	}
-	struct client *client = client_new(xsrv, fd);
+	client = client_new(xsrv, fd);
 	if (!client)
 	{
 		close(fd);
@@ -109,13 +123,19 @@ static int handle_new_client(struct xsrv *xsrv)
 	return 0;
 }
 
-static struct format *create_format(struct xsrv *xsrv, uint8_t depth,
-                                    uint8_t bpp, uint8_t scanline_pad)
+static struct format *
+create_format(struct xsrv *xsrv,
+              uint8_t depth,
+              uint8_t bpp,
+              uint8_t scanline_pad)
 {
-	struct format *format = malloc(sizeof(*format));
+	struct format *format;
+
+	format = malloc(sizeof(*format));
 	if (!format)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", xsrv->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        xsrv->progname,
 		        strerror(errno));
 		return NULL;
 	}
@@ -125,10 +145,14 @@ static struct format *create_format(struct xsrv *xsrv, uint8_t depth,
 	return format;
 }
 
-static int setup_formats(struct xsrv *xsrv)
+static int
+setup_formats(struct xsrv *xsrv)
 {
-	size_t formats_count = 7;
-	struct format **formats = calloc(sizeof(*formats), formats_count);
+	size_t formats_count;
+	struct format **formats;
+
+	formats_count = 7;
+	formats = calloc(sizeof(*formats), formats_count);
 	if (!formats)
 	{
 		fprintf(stderr, "%s: malloc: %s\n", xsrv->progname,
@@ -161,7 +185,8 @@ err:
 	return 1;
 }
 
-const struct format *xsrv_get_format(struct xsrv *xsrv, uint8_t depth)
+const struct format *
+xsrv_get_format(struct xsrv *xsrv, uint8_t depth)
 {
 	for (size_t i = 0; i < xsrv->formats_count; ++i)
 	{
@@ -171,17 +196,23 @@ const struct format *xsrv_get_format(struct xsrv *xsrv, uint8_t depth)
 	return NULL;
 }
 
-static struct visual *create_visual(struct xsrv *xsrv, uint32_t id,
-                                    uint8_t class, uint8_t bpp,
-                                    uint16_t colormap_entries,
-                                    uint32_t red_mask,
-                                    uint32_t green_mask,
-                                    uint32_t blue_mask)
+static struct visual *
+create_visual(struct xsrv *xsrv,
+              uint32_t id,
+              uint8_t class,
+              uint8_t bpp,
+              uint16_t colormap_entries,
+              uint32_t red_mask,
+              uint32_t green_mask,
+              uint32_t blue_mask)
 {
-	struct visual *visual = malloc(sizeof(*visual));
+	struct visual *visual;
+
+	visual = malloc(sizeof(*visual));
 	if (!visual)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", xsrv->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        xsrv->progname,
 		        strerror(errno));
 		return NULL;
 	}
@@ -195,14 +226,19 @@ static struct visual *create_visual(struct xsrv *xsrv, uint32_t id,
 	return visual;
 }
 
-static struct depth *create_depth(struct xsrv *xsrv, uint8_t value,
-                                  uint16_t visuals_count,
-                                  struct visual **visuals)
+static struct depth *
+create_depth(struct xsrv *xsrv,
+             uint8_t value,
+             uint16_t visuals_count,
+             struct visual **visuals)
 {
-	struct depth *depth = malloc(sizeof(*depth));
+	struct depth *depth;
+
+	depth = malloc(sizeof(*depth));
 	if (!depth)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", xsrv->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        xsrv->progname,
 		        strerror(errno));
 		return NULL;
 	}
@@ -212,7 +248,8 @@ static struct depth *create_depth(struct xsrv *xsrv, uint8_t value,
 	return depth;
 }
 
-static int setup_screens(struct xsrv *xsrv)
+static int
+setup_screens(struct xsrv *xsrv)
 {
 	struct visual **visuals_24 = NULL;
 	struct visual **visuals_32 = NULL;
@@ -222,35 +259,51 @@ static int setup_screens(struct xsrv *xsrv)
 	size_t visuals_32_count;
 	size_t screens_count;
 	size_t depths_count;
+
 	visuals_24_count = 1;
 	visuals_24 = calloc(sizeof(*visuals_24), visuals_24_count);
 	if (!visuals_24)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", xsrv->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        xsrv->progname,
 		        strerror(errno));
 		goto err;
 	}
-	visuals_24[0] = create_visual(xsrv, 1, TrueColor, 8, 256,
-	                           0xFF0000, 0xFF00, 0xFF);
+	visuals_24[0] = create_visual(xsrv,
+	                              1,
+	                              TrueColor,
+	                              8,
+	                              256,
+	                              0xFF0000,
+	                              0x00FF00,
+	                              0x0000FF);
 	if (!visuals_24[0])
 		goto err;
 	visuals_32_count = 1;
 	visuals_32 = calloc(sizeof(*visuals_32), visuals_32_count);
 	if (!visuals_32)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", xsrv->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        xsrv->progname,
 		        strerror(errno));
 		goto err;
 	}
-	visuals_32[0] = create_visual(xsrv, 2, TrueColor, 8, 256,
-	                           0xFF0000, 0xFF00, 0xFF);
+	visuals_32[0] = create_visual(xsrv,
+	                              2,
+	                              TrueColor,
+	                              8,
+	                              256,
+	                              0xFF0000,
+	                              0x00FF00,
+	                              0x000FF);
 	if (!visuals_32[0])
 		goto err;
 	depths_count = 7;
 	depths = calloc(sizeof(*depths), depths_count);
 	if (!depths)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", xsrv->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        xsrv->progname,
 		        strerror(errno));
 		goto err;
 	}
@@ -273,14 +326,16 @@ static int setup_screens(struct xsrv *xsrv)
 	screens = calloc(sizeof(*screens), screens_count);
 	if (!screens)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", xsrv->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        xsrv->progname,
 		        strerror(errno));
 		goto err;
 	}
 	screens[0] = malloc(sizeof(**screens));
 	if (!screens[0])
 	{
-		fprintf(stderr, "%s: malloc: %s\n", xsrv->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        xsrv->progname,
 		        strerror(errno));
 		goto err;
 	}
@@ -301,10 +356,19 @@ static int setup_screens(struct xsrv *xsrv)
 	attributes.do_not_propagate_mask = 0;
 	attributes.colormap = NULL;
 	attributes.cursor = NULL;
-	screen->root = window_new(xsrv, NULL, xsrv_allocate_id(xsrv), NULL, 0,
-	                          0, xsrv->backend.width, xsrv->backend.height,
-	                          xsrv_get_format(xsrv, 24), 0, visuals_24[0],
-	                          InputOutput, &attributes);
+	screen->root = window_new(xsrv,
+	                          NULL,
+	                          xsrv_allocate_id(xsrv),
+	                          NULL,
+	                          0,
+	                          0,
+	                          xsrv->backend.width,
+	                          xsrv->backend.height,
+	                          xsrv_get_format(xsrv, 24),
+	                          0,
+	                          visuals_24[0],
+	                          InputOutput,
+	                          &attributes);
 	if (!screen->root)
 	{
 		fprintf(stderr, "%s: failed to create root window\n",
@@ -325,10 +389,15 @@ static int setup_screens(struct xsrv *xsrv)
 	}
 	screen->white_pixel = 0xFFFFFF;
 	screen->black_pixel = 0x000000;
-	screen->input_mask = KeyPressMask | KeyReleaseMask | EnterWindowMask
-	                   | LeaveWindowMask | StructureNotifyMask
-	                   | SubstructureNotifyMask | SubstructureRedirectMask
-	                   | PropertyChangeMask | ColormapChangeMask;
+	screen->input_mask = KeyPressMask
+	                   | KeyReleaseMask
+	                   | EnterWindowMask
+	                   | LeaveWindowMask
+	                   | StructureNotifyMask
+	                   | SubstructureNotifyMask
+	                   | SubstructureRedirectMask
+	                   | PropertyChangeMask
+	                   | ColormapChangeMask;
 	screen->width = xsrv->backend.width;
 	screen->height = xsrv->backend.height;
 	screen->mm_width = 530; /* XXX */
@@ -373,18 +442,10 @@ err:
 	return 1;
 }
 
-static int setup_cursor(struct xsrv *xsrv)
+static int
+setup_cursor(struct xsrv *xsrv)
 {
-	struct pixmap *color = pixmap_new(xsrv, NULL, xsrv_allocate_id(xsrv),
-	                                  32, 16, xsrv_get_format(xsrv, 1),
-	                                  xsrv->screens[0]->root);
-	if (!color)
-	{
-		fprintf(stderr, "%s: failed to create default cursor color\n",
-		        xsrv->progname);
-		return 1;
-	}
-	uint8_t colors[] =
+	static const uint8_t colors[] =
 	{
 		0x03, 0x00, 0x00, 0x00,
 		0x05, 0x00, 0x00, 0x00,
@@ -403,17 +464,7 @@ static int setup_cursor(struct xsrv *xsrv)
 		0x20, 0x01, 0x00, 0x00,
 		0xC0, 0x00, 0x00, 0x00,
 	};
-	memcpy(color->drawable.data, colors, sizeof(colors));
-	struct pixmap *mask = pixmap_new(xsrv, NULL, xsrv_allocate_id(xsrv),
-	                                 32, 16, xsrv_get_format(xsrv, 1),
-	                                 xsrv->screens[0]->root);
-	if (!mask)
-	{
-		fprintf(stderr, "%s: failed to create default cursor mask\n",
-		        xsrv->progname);
-		return 1;
-	}
-	uint8_t masks[] =
+	static const uint8_t masks[] =
 	{
 		0x03, 0x00, 0x00, 0x00,
 		0x07, 0x00, 0x00, 0x00,
@@ -432,10 +483,53 @@ static int setup_cursor(struct xsrv *xsrv)
 		0xE0, 0x01, 0x00, 0x00,
 		0xC0, 0x00, 0x00, 0x00,
 	};
+	struct pixmap *color;
+	struct pixmap *mask;
+	struct cursor *cursor;
+
+	color = pixmap_new(xsrv,
+	                   NULL,
+	                   xsrv_allocate_id(xsrv),
+	                   32,
+	                   16,
+	                   xsrv_get_format(xsrv, 1),
+	                   xsrv->screens[0]->root);
+	if (!color)
+	{
+		fprintf(stderr, "%s: failed to create default cursor color\n",
+		        xsrv->progname);
+		return 1;
+	}
+	memcpy(color->drawable.data, colors, sizeof(colors));
+	mask = pixmap_new(xsrv,
+	                  NULL,
+	                  xsrv_allocate_id(xsrv),
+	                  32,
+	                  16,
+	                  xsrv_get_format(xsrv, 1),
+	                  xsrv->screens[0]->root);
+	if (!mask)
+	{
+		fprintf(stderr, "%s: failed to create default cursor mask\n",
+		        xsrv->progname);
+		return 1;
+	}
 	memcpy(mask->drawable.data, masks, sizeof(masks));
-	struct cursor *cursor = cursor_new(xsrv, NULL, xsrv_allocate_id(xsrv),
-	                                   color, mask, 0xFFFF, 0xFFFF, 0xFFFF,
-	                                   0, 0, 0, 0, 0, 0, 0);
+	cursor = cursor_new(xsrv,
+	                    NULL,
+	                    xsrv_allocate_id(xsrv),
+	                    color,
+	                    mask,
+	                    0xFFFF,
+	                    0xFFFF,
+	                    0xFFFF,
+	                    0,
+	                    0,
+	                    0,
+	                    0,
+	                    0,
+	                    0,
+	                    0);
 	if (!cursor)
 	{
 		fprintf(stderr, "%s: failed to create default cursor\n",
@@ -446,22 +540,28 @@ static int setup_cursor(struct xsrv *xsrv)
 	return 0;
 }
 
-static struct extension *create_extension(struct xsrv *xsrv, const char *name,
-                                          uint8_t major_opcode,
-                                          uint8_t first_event,
-                                          uint8_t first_error)
+static struct extension *
+create_extension(struct xsrv *xsrv,
+                 const char *name,
+                 uint8_t major_opcode,
+                 uint8_t first_event,
+                 uint8_t first_error)
 {
-	struct extension *extension = malloc(sizeof(*extension));
+	struct extension *extension;
+
+	extension = malloc(sizeof(*extension));
 	if (!extension)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", xsrv->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        xsrv->progname,
 		        strerror(errno));
 		return NULL;
 	}
 	extension->name = strdup(name);
 	if (!extension->name)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", xsrv->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        xsrv->progname,
 		        strerror(errno));
 		free(extension);
 		return NULL;
@@ -473,22 +573,27 @@ static struct extension *create_extension(struct xsrv *xsrv, const char *name,
 	return extension;
 }
 
-struct extension *register_extension(struct xsrv *xsrv, const char *name)
+struct extension *
+register_extension(struct xsrv *xsrv, const char *name)
 {
-	struct extension *extension = create_extension(xsrv, name,
-	                                               128 + xsrv->extensions_count,
-	                                               64 + xsrv->extensions_count,
-	                                               128 + xsrv->extensions_count);
+	struct extension **extensions;
+	struct extension *extension;
+
+	extension = create_extension(xsrv,
+	                             name,
+	                             128 + xsrv->extensions_count,
+	                             64 + xsrv->extensions_count,
+	                             128 + xsrv->extensions_count);
 	if (!extension)
 		return NULL;
-	struct extension **extensions = realloc(xsrv->extensions,
-	                                        sizeof(*extensions)
-	                                      * (xsrv->extensions_count + 1));
+	extensions = realloc(xsrv->extensions, sizeof(*extensions)
+	                                     * (xsrv->extensions_count + 1));
 	if (!extensions)
 	{
 		free(extension->name);
 		free(extension);
-		fprintf(stderr, "%s: malloc: %s\n", xsrv->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        xsrv->progname,
 		        strerror(errno));
 		return NULL;
 	}
@@ -497,7 +602,8 @@ struct extension *register_extension(struct xsrv *xsrv, const char *name)
 	return extension;
 }
 
-uint8_t register_object_type(struct xsrv *xsrv, const struct object_def *def)
+uint8_t
+register_object_type(struct xsrv *xsrv, const struct object_def *def)
 {
 	for (size_t i = 0; i < sizeof(xsrv->objects_defs) / sizeof(*xsrv->objects_defs); ++i)
 	{
@@ -506,13 +612,17 @@ uint8_t register_object_type(struct xsrv *xsrv, const struct object_def *def)
 		xsrv->objects_defs[i] = def;
 		return i;
 	}
-	fprintf(stderr, "%s: no more object type id available\n", xsrv->progname);
+	fprintf(stderr, "%s: no more object type id available\n",
+	        xsrv->progname);
 	abort();
 }
 
-struct object *object_get_typed(struct xsrv *xsrv, uint32_t id, uint8_t type)
+struct object *
+object_get_typed(struct xsrv *xsrv, uint32_t id, uint8_t type)
 {
-	struct object *object = object_get(xsrv, id);
+	struct object *object;
+
+	object = object_get(xsrv, id);
 	if (!object)
 		return NULL;
 	if (object->type != type)
@@ -523,19 +633,24 @@ struct object *object_get_typed(struct xsrv *xsrv, uint32_t id, uint8_t type)
 	return object;
 }
 
-static struct font_def *create_font_def(struct xsrv *xsrv, const char *name)
+static struct font_def *
+create_font_def(struct xsrv *xsrv, const char *name)
 {
-	struct font_def *font = calloc(sizeof(*font), 1);
+	struct font_def *font;
+
+	font = calloc(sizeof(*font), 1);
 	if (!font)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", xsrv->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        xsrv->progname,
 		        strerror(errno));
 		return NULL;
 	}
 	font->name = strdup(name);
 	if (!font->name)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", xsrv->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        xsrv->progname,
 		        strerror(errno));
 		free(font);
 		return NULL;
@@ -544,14 +659,16 @@ static struct font_def *create_font_def(struct xsrv *xsrv, const char *name)
 	return font;
 }
 
-static int setup_8x16(struct xsrv *xsrv, struct font_def *font)
+static int
+setup_8x16(struct xsrv *xsrv, struct font_def *font)
 {
 	for (size_t i = 0; i < 256; ++i)
 	{
 		font->glyphs[i] = malloc(sizeof(**font->glyphs));
 		if (!font->glyphs[i])
 		{
-			fprintf(stderr, "%s: malloc: %s\n", xsrv->progname,
+			fprintf(stderr, "%s: malloc: %s\n",
+			        xsrv->progname,
 			        strerror(errno));
 			return 1;
 		}
@@ -560,9 +677,11 @@ static int setup_8x16(struct xsrv *xsrv, struct font_def *font)
 		font->glyphs[i]->width = 8;
 		font->glyphs[i]->ascent = 16;
 		font->glyphs[i]->descent = 0;
-		font->glyphs[i]->pixmap = pixmap_new(xsrv, NULL,
+		font->glyphs[i]->pixmap = pixmap_new(xsrv,
+		                                     NULL,
 		                                     xsrv_allocate_id(xsrv),
-		                                     8, 16,
+		                                     8,
+		                                     16,
 		                                     xsrv_get_format(xsrv, 1),
 		                                     xsrv->screens[0]->root);
 		if (!font->glyphs[i]->pixmap)
@@ -588,17 +707,20 @@ static int setup_8x16(struct xsrv *xsrv, struct font_def *font)
 	return 0;
 }
 
-static int setup_cursor_font(struct xsrv *xsrv, struct font_def *font)
+static int
+setup_cursor_font(struct xsrv *xsrv, struct font_def *font)
 {
 	for (size_t i = 0; i < 154; ++i)
 	{
 		const struct xcursor *xcursor = xcursors[i];
+
 		if (!xcursor)
 			continue;
 		font->glyphs[i] = malloc(sizeof(**font->glyphs));
 		if (!font->glyphs[i])
 		{
-			fprintf(stderr, "%s: malloc: %s\n", xsrv->progname,
+			fprintf(stderr, "%s: malloc: %s\n",
+			        xsrv->progname,
 			        strerror(errno));
 			return 1;
 		}
@@ -607,7 +729,8 @@ static int setup_cursor_font(struct xsrv *xsrv, struct font_def *font)
 		font->glyphs[i]->width = xcursor->width;
 		font->glyphs[i]->ascent = xcursor->yhot;
 		font->glyphs[i]->descent = xcursor->height - xcursor->yhot;
-		font->glyphs[i]->pixmap = pixmap_new(xsrv, NULL,
+		font->glyphs[i]->pixmap = pixmap_new(xsrv,
+		                                     NULL,
 		                                     xsrv_allocate_id(xsrv),
 		                                     xcursor->width,
 		                                     xcursor->height,
@@ -637,13 +760,17 @@ static int setup_cursor_font(struct xsrv *xsrv, struct font_def *font)
 	return 0;
 }
 
-static int setup_fonts(struct xsrv *xsrv)
+static int
+setup_fonts(struct xsrv *xsrv)
 {
 	size_t fonts_count = 2;
-	struct font_def **fonts = calloc(sizeof(*fonts), fonts_count);
+	struct font_def **fonts;
+
+	fonts = calloc(sizeof(*fonts), fonts_count);
 	if (!fonts)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", xsrv->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        xsrv->progname,
 		        strerror(errno));
 		return 1;
 	}
@@ -672,7 +799,8 @@ err:
 	return 1;
 }
 
-static int setup_object_types(struct xsrv *xsrv)
+static int
+setup_object_types(struct xsrv *xsrv)
 {
 	window_register(xsrv);
 	colormap_register(xsrv);
@@ -683,14 +811,16 @@ static int setup_object_types(struct xsrv *xsrv)
 	return 0;
 }
 
-static int setup_objects_map(struct xsrv *xsrv)
+static int
+setup_objects_map(struct xsrv *xsrv)
 {
 	xsrv->objects_map_size = 1024;
 	xsrv->objects_map = malloc(sizeof(*xsrv->objects_map)
 	                         * xsrv->objects_map_size);
 	if (!xsrv->objects_map)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", xsrv->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        xsrv->progname,
 		        strerror(errno));
 		return 1;
 	}
@@ -699,7 +829,8 @@ static int setup_objects_map(struct xsrv *xsrv)
 	return 0;
 }
 
-static int setup_focus(struct xsrv *xsrv)
+static int
+setup_focus(struct xsrv *xsrv)
 {
 	xsrv->focus.window = NULL;
 	xsrv->focus.timestamp = millitime();
@@ -707,7 +838,8 @@ static int setup_focus(struct xsrv *xsrv)
 	return 0;
 }
 
-static int setup_pointer(struct xsrv *xsrv)
+static int
+setup_pointer(struct xsrv *xsrv)
 {
 	uint8_t map_len = sizeof(xsrv->pointer.map) / sizeof(*xsrv->pointer.map);
 	for (size_t i = 0; i < map_len; ++i)
@@ -728,7 +860,8 @@ static int setup_pointer(struct xsrv *xsrv)
 	return 0;
 }
 
-static int setup_keyboard(struct xsrv *xsrv)
+static int
+setup_keyboard(struct xsrv *xsrv)
 {
 	xsrv->keyboard.min_keycode = 8;
 	xsrv->keyboard.max_keycode = 255;
@@ -1040,7 +1173,8 @@ static int setup_keyboard(struct xsrv *xsrv)
 	return 0;
 }
 
-static int setup_backend(struct xsrv *xsrv)
+static int
+setup_backend(struct xsrv *xsrv)
 {
 	if (backend_init(xsrv))
 		return 1;
@@ -1048,12 +1182,16 @@ static int setup_backend(struct xsrv *xsrv)
 	return 0;
 }
 
-static int add_atom(struct xsrv *xsrv, const char *name, uint32_t id)
+static int
+add_atom(struct xsrv *xsrv, const char *name, uint32_t id)
 {
-	struct atom *atom = malloc(sizeof(*atom));
+	struct atom *atom;
+
+	atom = malloc(sizeof(*atom));
 	if (!atom)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", xsrv->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        xsrv->progname,
 		        strerror(errno));
 		return 1;
 	}
@@ -1061,7 +1199,8 @@ static int add_atom(struct xsrv *xsrv, const char *name, uint32_t id)
 	if (!atom->name)
 	{
 		free(atom);
-		fprintf(stderr, "%s: malloc: %s\n", xsrv->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        xsrv->progname,
 		        strerror(errno));
 		return 1;
 	}
@@ -1071,7 +1210,8 @@ static int add_atom(struct xsrv *xsrv, const char *name, uint32_t id)
 	return 0;
 }
 
-static int setup_atoms(struct xsrv *xsrv)
+static int
+setup_atoms(struct xsrv *xsrv)
 {
 #define ADD_ATOM(atom) add_atom(xsrv, #atom, XA_##atom)
 	if (ADD_ATOM(PRIMARY)
@@ -1147,7 +1287,15 @@ static int setup_atoms(struct xsrv *xsrv)
 #undef ADD_ATOM
 }
 
-uint32_t xsrv_allocate_id(struct xsrv *xsrv)
+static int
+setup_req_handlers(struct xsrv *xsrv)
+{
+	register_req_handlers(xsrv);
+	return 0;
+}
+
+uint32_t
+xsrv_allocate_id(struct xsrv *xsrv)
 {
 	if (xsrv->xid >= 0x7FFFFF)
 	{
@@ -1157,7 +1305,8 @@ uint32_t xsrv_allocate_id(struct xsrv *xsrv)
 	return ++xsrv->xid;
 }
 
-uint32_t xsrv_allocate_id_base(struct xsrv *xsrv)
+uint32_t
+xsrv_allocate_id_base(struct xsrv *xsrv)
 {
 	for (size_t i = 0; i < 0x200; i += sizeof(size_t) * 8)
 	{
@@ -1176,13 +1325,15 @@ uint32_t xsrv_allocate_id_base(struct xsrv *xsrv)
 	return 0;
 }
 
-void xsrv_release_id_base(struct xsrv *xsrv, uint32_t base)
+void
+xsrv_release_id_base(struct xsrv *xsrv, uint32_t base)
 {
 	base /= 0x100000;
 	xsrv->id_base_bitmap[base / (sizeof(size_t) * 8)] &= ~(1 << (base % (sizeof(size_t) * 8)));
 }
 
-static int modifier_has_key(struct xsrv *xsrv, uint8_t modifier, uint8_t key)
+static int
+modifier_has_key(struct xsrv *xsrv, uint8_t modifier, uint8_t key)
 {
 	for (size_t i = 0; i < xsrv->keyboard.codes_per_modifier; ++i)
 	{
@@ -1194,7 +1345,8 @@ static int modifier_has_key(struct xsrv *xsrv, uint8_t modifier, uint8_t key)
 	return 0;
 }
 
-void xsrv_key_press(struct xsrv *xsrv, uint8_t key)
+void
+xsrv_key_press(struct xsrv *xsrv, uint8_t key)
 {
 	if (xsrv->focus.window)
 		window_key_press(xsrv, xsrv->focus.window, key);
@@ -1217,7 +1369,8 @@ void xsrv_key_press(struct xsrv *xsrv, uint8_t key)
 	xsrv->keyboard.state[key / 8] |= 1 << (key % 8);
 }
 
-void xsrv_key_release(struct xsrv *xsrv, uint8_t key)
+void
+xsrv_key_release(struct xsrv *xsrv, uint8_t key)
 {
 	if (xsrv->focus.window)
 		window_key_release(xsrv, xsrv->focus.window, key);
@@ -1240,7 +1393,8 @@ void xsrv_key_release(struct xsrv *xsrv, uint8_t key)
 	xsrv->keyboard.state[key / 8] &= ~(1 << (key % 8));
 }
 
-static struct window *get_ancestor(struct window *a, struct window *b)
+static struct window *
+get_ancestor(struct window *a, struct window *b)
 {
 	if (!a || !b)
 		return NULL;
@@ -1256,14 +1410,17 @@ static struct window *get_ancestor(struct window *a, struct window *b)
 	return a;
 }
 
-static void enter_leave_events(struct xsrv *xsrv, struct window *a,
-                               struct window *b)
+static void
+enter_leave_events(struct xsrv *xsrv, struct window *a, struct window *b)
 {
-	struct window *ancestor = get_ancestor(a, b);
+	struct window *ancestor;
+	struct window *tmp;
+
+	ancestor = get_ancestor(a, b);
 	if (ancestor == b)
 	{
 		window_leave_notify(xsrv, a, NotifyAncestor);
-		struct window *tmp = a->parent;
+		tmp = a->parent;
 		while (tmp && tmp != b)
 		{
 			window_leave_notify(xsrv, tmp, NotifyVirtual);
@@ -1276,7 +1433,7 @@ static void enter_leave_events(struct xsrv *xsrv, struct window *a,
 	if (ancestor == a)
 	{
 		window_leave_notify(xsrv, a, NotifyInferior);
-		struct window *tmp = b->parent;
+		tmp = b->parent;
 		while (tmp && tmp != a) /* XXX reverse order */
 		{
 			window_leave_notify(xsrv, tmp, NotifyVirtual);
@@ -1287,7 +1444,7 @@ static void enter_leave_events(struct xsrv *xsrv, struct window *a,
 		return;
 	}
 	window_leave_notify(xsrv, a, NotifyNonlinear);
-	struct window *tmp = a->parent;
+	tmp = a->parent;
 	while (tmp != ancestor)
 	{
 		window_leave_notify(xsrv, tmp, NotifyNonlinearVirtual);
@@ -1304,10 +1461,16 @@ static void enter_leave_events(struct xsrv *xsrv, struct window *a,
 	window_keymap_notify(xsrv, b);
 }
 
-static void get_cursor_rect(struct xsrv *xsrv, uint16_t *x, uint16_t *y,
-                            uint16_t *width, uint16_t *height)
+static void
+get_cursor_rect(struct xsrv *xsrv,
+                uint16_t *x,
+                uint16_t *y,
+                uint16_t *width,
+                uint16_t *height)
 {
-	struct cursor *cursor = xsrv->pointer.cursor;
+	struct cursor *cursor;
+
+	cursor = xsrv->pointer.cursor;
 	*x = xsrv->pointer.x - cursor->xhot;
 	*y = xsrv->pointer.y - cursor->yhot;
 	if (cursor->mask)
@@ -1324,7 +1487,8 @@ static void get_cursor_rect(struct xsrv *xsrv, uint16_t *x, uint16_t *y,
 	}
 }
 
-void xsrv_cursor_motion(struct xsrv *xsrv, uint16_t x, uint16_t y)
+void
+xsrv_cursor_motion(struct xsrv *xsrv, uint16_t x, uint16_t y)
 {
 	/* XXX acceleration */
 	if (x >= xsrv->backend.width)
@@ -1371,7 +1535,8 @@ void xsrv_cursor_motion(struct xsrv *xsrv, uint16_t x, uint16_t y)
 	framebuffer_redraw(xsrv, new_x, new_y, new_width, new_height);
 }
 
-void xsrv_button_press(struct xsrv *xsrv, uint8_t button)
+void
+xsrv_button_press(struct xsrv *xsrv, uint8_t button)
 {
 	if (!button || button > 32)
 		return;
@@ -1399,7 +1564,8 @@ void xsrv_button_press(struct xsrv *xsrv, uint8_t button)
 	xsrv->keybutmask |= Button1Mask << (button - 1);
 }
 
-void xsrv_button_release(struct xsrv *xsrv, uint8_t button)
+void
+xsrv_button_release(struct xsrv *xsrv, uint8_t button)
 {
 	if (!button || button > 32)
 		return;
@@ -1427,17 +1593,24 @@ void xsrv_button_release(struct xsrv *xsrv, uint8_t button)
 	xsrv->keybutmask &= ~(Button1Mask << (button - 1));
 }
 
-static void focus_event(struct xsrv *xsrv, struct window *a, struct window *b,
-                        struct window *p)
+static void
+focus_event(struct xsrv *xsrv,
+            struct window *a,
+            struct window *b,
+            struct window *p)
 {
+	struct window *ancestor;
+	struct window *end;
+	struct window *tmp;
+
 	(void)p;
-	struct window *ancestor = get_ancestor(a, b);
+	ancestor = get_ancestor(a, b);
 	if (ancestor)
 	{
 		if (ancestor == b)
 		{
 			window_focus_out(xsrv, a, NotifyAncestor);
-			struct window *tmp = a->parent;
+			tmp = a->parent;
 			while (tmp && tmp != b)
 			{
 				window_focus_out(xsrv, tmp, NotifyVirtual);
@@ -1452,7 +1625,7 @@ static void focus_event(struct xsrv *xsrv, struct window *a, struct window *b,
 		{
 			/* XXX p */
 			window_focus_out(xsrv, a, NotifyInferior);
-			struct window *tmp = b->parent;
+			tmp = b->parent;
 			while (tmp && tmp != a) /* XXX reverse order */
 			{
 				window_focus_in(xsrv, tmp, NotifyVirtual);
@@ -1467,8 +1640,8 @@ static void focus_event(struct xsrv *xsrv, struct window *a, struct window *b,
 	if (a)
 	{
 		window_focus_out(xsrv, a, NotifyNonlinear);
-		struct window *end = ancestor ? ancestor : a->drawable.root;
-		struct window *tmp = a->parent;
+		end = ancestor ? ancestor : a->drawable.root;
+		tmp = a->parent;
 		while (tmp && tmp != end)
 		{
 			window_focus_out(xsrv, tmp, NotifyNonlinearVirtual);
@@ -1477,8 +1650,8 @@ static void focus_event(struct xsrv *xsrv, struct window *a, struct window *b,
 	}
 	if (b)
 	{
-		struct window *end = ancestor ? ancestor : b->drawable.root;
-		struct window *tmp = b->parent;
+		end = ancestor ? ancestor : b->drawable.root;
+		tmp = b->parent;
 		while (tmp && tmp != end) /* XXX should be in reverse order */
 		{
 			window_focus_in(xsrv, tmp, NotifyNonlinearVirtual);
@@ -1491,8 +1664,11 @@ static void focus_event(struct xsrv *xsrv, struct window *a, struct window *b,
 	/* XXX p */
 }
 
-void xsrv_set_focus(struct xsrv *xsrv, struct window *window,
-                    uint8_t revert_to, uint32_t timestamp)
+void
+xsrv_set_focus(struct xsrv *xsrv,
+               struct window *window,
+               uint8_t revert_to,
+               uint32_t timestamp)
 {
 	xsrv->focus.revert_to = revert_to;
 	xsrv->focus.timestamp = timestamp;
@@ -1504,7 +1680,8 @@ void xsrv_set_focus(struct xsrv *xsrv, struct window *window,
 	xsrv->focus.window = window;
 }
 
-void xsrv_revert_focus(struct xsrv *xsrv)
+void
+xsrv_revert_focus(struct xsrv *xsrv)
 {
 	switch (xsrv->focus.revert_to)
 	{
@@ -1539,11 +1716,17 @@ void xsrv_revert_focus(struct xsrv *xsrv)
 	}
 }
 
-void xsrv_grab_pointer(struct xsrv *xsrv, struct client *client,
-                       struct window *window, struct window *confine_to,
-                       struct cursor *cursor, uint16_t event_mask,
-                       uint8_t pointer_mode, uint8_t keyboard_mode,
-                       uint8_t owner_events, uint32_t time)
+void
+xsrv_grab_pointer(struct xsrv *xsrv,
+                  struct client *client,
+                  struct window *window,
+                  struct window *confine_to,
+                  struct cursor *cursor,
+                  uint16_t event_mask,
+                  uint8_t pointer_mode,
+                  uint8_t keyboard_mode,
+                  uint8_t owner_events,
+                  uint32_t time)
 {
 	if (xsrv->pointer_grab.client)
 	{
@@ -1568,7 +1751,8 @@ void xsrv_grab_pointer(struct xsrv *xsrv, struct client *client,
 		cursor->object.refs++;
 }
 
-void xsrv_ungrab_pointer(struct xsrv *xsrv)
+void
+xsrv_ungrab_pointer(struct xsrv *xsrv)
 {
 	if (!xsrv->pointer_grab.window)
 		return;
@@ -1582,7 +1766,8 @@ void xsrv_ungrab_pointer(struct xsrv *xsrv)
 	xsrv_cursor_motion(xsrv, xsrv->pointer.x, xsrv->pointer.y);
 }
 
-void delete_button_grab(struct xsrv *xsrv, struct button_grab *button_grab)
+void
+delete_button_grab(struct xsrv *xsrv, struct button_grab *button_grab)
 {
 	object_free(xsrv, OBJECT(button_grab->pointer_grab.window));
 	object_free(xsrv, OBJECT(button_grab->pointer_grab.confine_to));
@@ -1594,19 +1779,22 @@ void delete_button_grab(struct xsrv *xsrv, struct button_grab *button_grab)
 	free(button_grab);
 }
 
-uint64_t nanotime(void)
+uint64_t
+nanotime(void)
 {
 	struct timespec ts;
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 	return ts.tv_nsec + ts.tv_sec * 1000000000;
 }
 
-uint64_t millitime(void)
+uint64_t
+millitime(void)
 {
 	return nanotime() / 1000000;
 }
 
-uint32_t npot32(uint32_t val)
+uint32_t
+npot32(uint32_t val)
 {
 	val--;
 	val |= val >> 1;
@@ -1617,18 +1805,23 @@ uint32_t npot32(uint32_t val)
 	return ++val;
 }
 
-static int poll_sockets(struct xsrv *xsrv)
+static int
+poll_sockets(struct xsrv *xsrv)
 {
+	struct client *client;
+	struct timeval tv;
 	fd_set rfds;
 	fd_set wfds;
+	int nfds;
+	int ret;
+
 	FD_ZERO(&rfds);
 	FD_ZERO(&wfds);
 	FD_SET(xsrv->sock, &rfds);
 	FD_SET(xsrv->backend.fd, &rfds);
-	int nfds = xsrv->sock + 1;
+	nfds = xsrv->sock + 1;
 	if (xsrv->backend.fd >= nfds)
 		nfds = xsrv->backend.fd + 1;
-	struct client *client;
 	TAILQ_FOREACH(client, &xsrv->clients, chain)
 	{
 		if (xsrv->grab_client && xsrv->grab_client != client)
@@ -1651,11 +1844,13 @@ static int poll_sockets(struct xsrv *xsrv)
 		if (client->fd >= nfds)
 			nfds = client->fd + 1;
 	}
-	struct timeval tv;
 	tv.tv_sec = 0;
 	tv.tv_usec = 0;
-	int ret = select(nfds, &rfds, &wfds, NULL,
-	                 !xsrv->need_process ? NULL : &tv);
+	ret = select(nfds,
+	             &rfds,
+	             &wfds,
+	             NULL,
+	             !xsrv->need_process ? NULL : &tv);
 	xsrv->need_process = 0;
 	if (ret == -1)
 	{
@@ -1681,10 +1876,12 @@ static int poll_sockets(struct xsrv *xsrv)
 	return 0;
 }
 
-struct atom *atom_get(struct xsrv *xsrv, const char *name)
+struct atom *
+atom_get(struct xsrv *xsrv, const char *name)
 {
 	uint32_t name_len = strlen(name);
 	struct atom *atom;
+
 	TAILQ_FOREACH(atom, &xsrv->atoms, chain)
 	{
 		if (atom->name_len == name_len
@@ -1694,9 +1891,11 @@ struct atom *atom_get(struct xsrv *xsrv, const char *name)
 	return NULL;
 }
 
-struct atom *atom_get_id(struct xsrv *xsrv, uint32_t id)
+struct atom *
+atom_get_id(struct xsrv *xsrv, uint32_t id)
 {
 	struct atom *atom;
+
 	TAILQ_FOREACH(atom, &xsrv->atoms, chain)
 	{
 		if (atom->id == id)
@@ -1705,9 +1904,12 @@ struct atom *atom_get_id(struct xsrv *xsrv, uint32_t id)
 	return NULL;
 }
 
-struct atom *atom_new(struct xsrv *xsrv, const char *name)
+struct atom *
+atom_new(struct xsrv *xsrv, const char *name)
 {
-	struct atom *atom = malloc(sizeof(*atom));
+	struct atom *atom;
+
+	atom = malloc(sizeof(*atom));
 	if (!atom)
 	{
 		fprintf(stderr, "%s: malloc: %s\n", xsrv->progname,
@@ -1728,13 +1930,19 @@ struct atom *atom_new(struct xsrv *xsrv, const char *name)
 	return atom;
 }
 
-void test_fb_redraw(struct xsrv *xsrv, struct drawable *drawable,
-                    int32_t min_x, int32_t min_y,
-                    int32_t max_x, int32_t max_y)
+void
+test_fb_redraw(struct xsrv *xsrv,
+               struct drawable *drawable,
+               int32_t min_x,
+               int32_t min_y,
+               int32_t max_x,
+               int32_t max_y)
 {
+	struct window *window;
+
 	if (drawable->object.type != xsrv->obj_window)
 		return;
-	struct window *window = (struct window*)drawable;
+	window = (struct window*)drawable;
 	if (!window_visible(window))
 		return;
 	if (min_x > max_x || min_y > max_y
@@ -1762,15 +1970,18 @@ void test_fb_redraw(struct xsrv *xsrv, struct drawable *drawable,
 	                   rect_width, rect_height);
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-d] [-h]\n", progname);
 	printf("-d: daemonize\n");
 	printf("-h: display this help\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
+	struct xsrv xsrv;
 	int daemonize = 0;
 	int c;
 
@@ -1791,7 +2002,6 @@ int main(int argc, char **argv)
 	}
 	signal(SIGPIPE, SIG_IGN);
 	srand(nanotime());
-	struct xsrv xsrv;
 	memset(&xsrv, 0, sizeof(xsrv));
 	xsrv.id_base_bitmap[0] = 0xFF; /* reserve 8 first bitmask */
 	TAILQ_INIT(&xsrv.clients);
@@ -1809,6 +2019,7 @@ int main(int argc, char **argv)
 	 || setup_pointer(&xsrv)
 	 || setup_keyboard(&xsrv)
 	 || setup_atoms(&xsrv)
+	 || setup_req_handlers(&xsrv)
 	 || setup_shm(&xsrv)
 	 || setup_render(&xsrv))
 		return EXIT_FAILURE;

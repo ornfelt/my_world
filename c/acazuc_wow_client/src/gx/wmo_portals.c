@@ -1,8 +1,8 @@
 #include "gx/wmo_portals.h"
 #include "gx/frame.h"
 #include "gx/wmo.h"
+#include "gx/gx.h"
 
-#include "graphics.h"
 #include "memory.h"
 #include "log.h"
 #include "wow.h"
@@ -197,7 +197,7 @@ void gx_wmo_portals_render(struct gx_wmo_portals *portals, struct gx_frame *fram
 	model_block.mvp = instance->frames[frame->id].mvp;
 	gfx_set_buffer_data(&portals->uniform_buffers[frame->id], &model_block, sizeof(model_block), 0);
 	gfx_bind_constant(g_wow->device, 1, &portals->uniform_buffers[frame->id], sizeof(model_block), 0);
-	gfx_bind_attributes_state(g_wow->device, &portals->attributes_state, &g_wow->graphics->wmo_portals_input_layout);
+	gfx_bind_attributes_state(g_wow->device, &portals->attributes_state, &g_wow->gx->wmo_portals_input_layout);
 	struct vec4f rpos;
 	struct vec4f tmp;
 	VEC3_CPY(tmp, frame->view_pos);

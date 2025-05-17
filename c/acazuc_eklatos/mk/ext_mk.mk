@@ -40,7 +40,7 @@ $(EXTDIR)/.patch_%: patches/%.patch $(EXTRACT_MARK)
 	@$(PATCH) --forward --batch --quiet -d "$(DIR)" -p0 < "$<"
 	@$(TOUCH) "$@"
 
-$(PATCH_MARK): $(PATCHES_MARKS)
+$(PATCH_MARK): $(PATCHES_MARKS) $(EXTRACT_MARK)
 	@$(TOUCH) "$@"
 
 $(AUTORECONF_MARK): $(PATCH_MARK)

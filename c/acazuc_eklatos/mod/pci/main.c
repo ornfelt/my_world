@@ -54,7 +54,8 @@ static struct sma pci_map_sma;
 static struct file_op sysfs_pci_fop;
 static struct file_op sysfs_pci_dev_fop;
 
-static void enable_cmd(struct pci_device *device, uint16_t cmd)
+static void
+enable_cmd(struct pci_device *device, uint16_t cmd)
 {
 	if (device->header.command & cmd)
 		return;
@@ -62,7 +63,8 @@ static void enable_cmd(struct pci_device *device, uint16_t cmd)
 	pci_dev_write(device, 0x4, device->header.v4);
 }
 
-static void disable_cmd(struct pci_device *device, uint16_t cmd)
+static void
+disable_cmd(struct pci_device *device, uint16_t cmd)
 {
 	if (!(device->header.command & cmd))
 		return;
@@ -70,22 +72,26 @@ static void disable_cmd(struct pci_device *device, uint16_t cmd)
 	pci_dev_write(device, 0x4, device->header.v4);
 }
 
-static void enable_bus_mastering(struct pci_device *device)
+static void
+enable_bus_mastering(struct pci_device *device)
 {
 	enable_cmd(device, 1 << 2);
 }
 
-static void enable_mmio(struct pci_device *device)
+static void
+enable_mmio(struct pci_device *device)
 {
 	enable_cmd(device, 1 << 1);
 }
 
-static void enable_pio(struct pci_device *device)
+static void
+enable_pio(struct pci_device *device)
 {
 	enable_cmd(device, 1 << 0);
 }
 
-static int find_capability(struct pci_device *device, uint8_t id, uint8_t *ptrp)
+static int
+find_capability(struct pci_device *device, uint8_t id, uint8_t *ptrp)
 {
 	uint8_t ptr;
 
@@ -106,7 +112,8 @@ static int find_capability(struct pci_device *device, uint8_t id, uint8_t *ptrp)
 	return -EXDEV;
 }
 
-static int enable_msi(struct pci_device *device, uint64_t addr, uint32_t data)
+static int
+enable_msi(struct pci_device *device, uint64_t addr, uint32_t data)
 {
 	union pci_cap_msi cap;
 	uint8_t ptr;
@@ -127,13 +134,17 @@ static int enable_msi(struct pci_device *device, uint64_t addr, uint32_t data)
 	return 0;
 }
 
-static void disable_msi(struct pci_device *device)
+static void
+disable_msi(struct pci_device *device)
 {
 	disable_cmd(device, 1 << 10);
 }
 
-static int enable_msix(struct pci_device *device, uint64_t addr, uint32_t data,
-                       uint16_t *vector)
+static int
+enable_msix(struct pci_device *device,
+            uint64_t addr,
+            uint32_t data,
+            uint16_t *vector)
 {
 	uint32_t id = UINT32_MAX;
 
@@ -160,7 +171,8 @@ static int enable_msix(struct pci_device *device, uint64_t addr, uint32_t data,
 	return 0;
 }
 
-static void disable_msix(struct pci_device *device, uint16_t vector)
+static void
+disable_msix(struct pci_device *device, uint16_t vector)
 {
 	assert(device->msix, "disabling unexisting msix\n");
 	assert(vector < device->msix->size, "invalid msix vector\n");
@@ -168,7 +180,8 @@ static void disable_msix(struct pci_device *device, uint16_t vector)
 	pci_w32(device->msix->map, vector * 16 + 12, 1);
 }
 
-static int set_powerstate(struct pci_device *device, uint8_t state)
+static int
+set_powerstate(struct pci_device *device, uint8_t state)
 {
 	static const struct timespec delay = {0, 10000000};
 	union pci_cap_pm cap;
@@ -191,7 +204,8 @@ static int set_powerstate(struct pci_device *device, uint8_t state)
 	return 0;
 }
 
-static int setup_msix(struct pci_device *device)
+static int
+setup_msix(struct pci_device *device)
 {
 	union pci_cap_msix cap;
 	uint8_t bir;
@@ -235,9 +249,14 @@ static int setup_msix(struct pci_device *device)
 	return 0;
 }
 
-static int checkdev(uint8_t bus, uint8_t slot, uint8_t func)
+static int
+checkdev(uint8_t bus, uint8_t slot, uint8_t func)
 {
-	struct pci_device *device = sma_alloc(&pci_device_sma, M_ZERO);
+	struct pci_device *device;
+	uintptr_t ecam_poff;
+	int ret;
+
+	device = sma_alloc(&pci_device_sma, M_ZERO);
 	if (!device)
 	{
 		TRACE("pci: device allocation failed");
@@ -247,11 +266,12 @@ static int checkdev(uint8_t bus, uint8_t slot, uint8_t func)
 	device->slot = slot;
 	device->func = func;
 	device->base = 0x80000000 | (bus << 16) | (slot << 11) | (func << 8);
-	uintptr_t ecam_poff;
 #if WITH_ACPI
-	int ret = acpi_get_ecam_addr(bus, slot, func, &ecam_poff);
+	ret = acpi_get_ecam_addr(bus, slot, func, &ecam_poff);
 #elif WITH_FDT
-	int ret = fdt_get_ecam_addr(bus, slot, func, &ecam_poff);
+	ret = fdt_get_ecam_addr(bus, slot, func, &ecam_poff);
+#else
+# error "no ecam"
 #endif
 #if !defined(__i386__) && !defined(__amd64__)
 	if (ret)
@@ -346,8 +366,8 @@ static int checkdev(uint8_t bus, uint8_t slot, uint8_t func)
 	return 0;
 }
 
-void pci_probe(uint16_t vendor, uint16_t device, pci_probe_t probe,
-               void *userdata)
+void
+pci_probe(uint16_t vendor, uint16_t device, pci_probe_t probe, void *userdata)
 {
 	struct pci_device *dev;
 
@@ -364,8 +384,12 @@ void pci_probe(uint16_t vendor, uint16_t device, pci_probe_t probe,
 	spinlock_unlock(&devices_lock);
 }
 
-void pci_probe_progif(uint8_t class, uint8_t subclass, uint8_t progif,
-                      pci_probe_t probe, void *userdata)
+void
+pci_probe_progif(uint8_t class,
+                 uint8_t subclass,
+                 uint8_t progif,
+                 pci_probe_t probe,
+                 void *userdata)
 {
 	struct pci_device *dev;
 
@@ -383,7 +407,8 @@ void pci_probe_progif(uint8_t class, uint8_t subclass, uint8_t progif,
 	spinlock_unlock(&devices_lock);
 }
 
-static void scan(void)
+static void
+scan(void)
 {
 	for (uint32_t bus = 0; bus < 256; ++bus)
 	{
@@ -399,8 +424,11 @@ static void scan(void)
 		TRACE("failed to create /sys/pci/list");
 }
 
-int pci_register_irq(struct pci_device *device, irq_fn_t fn, void *userdata,
-                     struct irq_handle *handle)
+int
+pci_register_irq(struct pci_device *device,
+                 irq_fn_t fn,
+                 void *userdata,
+                 struct irq_handle *handle)
 {
 #if defined(__i386__) || defined(__x86_64__)
 	if (!g_has_apic)
@@ -447,7 +475,8 @@ int pci_register_irq(struct pci_device *device, irq_fn_t fn, void *userdata,
 	return -EINVAL;
 }
 
-void pci_unregister_irq(struct pci_device *device, struct irq_handle *handle)
+void
+pci_unregister_irq(struct pci_device *device, struct irq_handle *handle)
 {
 	switch (handle->type)
 	{
@@ -466,7 +495,8 @@ void pci_unregister_irq(struct pci_device *device, struct irq_handle *handle)
 	unregister_irq(handle);
 }
 
-int pci_map(size_t addr, size_t size, size_t offset, struct pci_map **mapp)
+int
+pci_map(size_t addr, size_t size, size_t offset, struct pci_map **mapp)
 {
 	struct pci_map *map = NULL;
 	int ret;
@@ -511,8 +541,12 @@ err:
 	return ret;
 }
 
-int pci_map_bar(struct pci_device *device, size_t bar, size_t size,
-                size_t offset, struct pci_map **mapp)
+int
+pci_map_bar(struct pci_device *device,
+            size_t bar,
+            size_t size,
+            size_t offset,
+            struct pci_map **mapp)
 {
 	switch (device->header.headertype & 0x7F)
 	{
@@ -581,7 +615,8 @@ int pci_map_bar(struct pci_device *device, size_t bar, size_t size,
 	}
 }
 
-void pci_unmap(struct pci_device *device, struct pci_map *map)
+void
+pci_unmap(struct pci_device *device, struct pci_map *map)
 {
 	if (!map)
 		return;
@@ -598,13 +633,15 @@ void pci_unmap(struct pci_device *device, struct pci_map *map)
 
 #if defined(__i386__) || defined(__x86_64__)
 
-uint32_t pci_read(uint32_t addr)
+uint32_t
+pci_read(uint32_t addr)
 {
 	outl(PCI_ADDR, addr);
 	return inl(PCI_DATA);
 }
 
-void pci_write(uint32_t addr, uint32_t data)
+void
+pci_write(uint32_t addr, uint32_t data)
 {
 	outl(PCI_ADDR, addr);
 	outl(PCI_DATA, data);
@@ -612,7 +649,8 @@ void pci_write(uint32_t addr, uint32_t data)
 
 #endif
 
-uint8_t pci_r8(struct pci_map *map, uint32_t off)
+uint8_t
+pci_r8(struct pci_map *map, uint32_t off)
 {
 #if defined(__i386__) || defined(__amd64__)
 	if (map->addr & 1)
@@ -621,7 +659,8 @@ uint8_t pci_r8(struct pci_map *map, uint32_t off)
 	return *(uint8_t volatile*)&map->data[off];
 }
 
-uint16_t pci_r16(struct pci_map *map, uint32_t off)
+uint16_t
+pci_r16(struct pci_map *map, uint32_t off)
 {
 #if defined(__i386__) || defined(__amd64__)
 	if (map->addr & 1)
@@ -630,7 +669,8 @@ uint16_t pci_r16(struct pci_map *map, uint32_t off)
 	return *(uint16_t volatile*)&map->data[off];
 }
 
-uint32_t pci_r32(struct pci_map *map, uint32_t off)
+uint32_t
+pci_r32(struct pci_map *map, uint32_t off)
 {
 #if defined(__i386__) || defined(__amd64__)
 	if (map->addr & 1)
@@ -639,7 +679,8 @@ uint32_t pci_r32(struct pci_map *map, uint32_t off)
 	return *(uint32_t volatile*)&map->data[off];
 }
 
-uint64_t pci_r64(struct pci_map *map, uint64_t off)
+uint64_t
+pci_r64(struct pci_map *map, uint64_t off)
 {
 #if defined(__i386__) || defined(__amd64__)
 	if (map->addr & 1)
@@ -648,7 +689,8 @@ uint64_t pci_r64(struct pci_map *map, uint64_t off)
 	return *(uint64_t volatile*)&map->data[off];
 }
 
-void pci_r8v(struct pci_map *map, uint32_t off, uint8_t *data, size_t count)
+void
+pci_r8v(struct pci_map *map, uint32_t off, uint8_t *data, size_t count)
 {
 #if defined(__i386__) || defined(__amd64__)
 	if (map->addr & 1)
@@ -658,7 +700,8 @@ void pci_r8v(struct pci_map *map, uint32_t off, uint8_t *data, size_t count)
 		data[i] = *(uint8_t volatile*)&map->data[off + i];
 }
 
-void pci_r16v(struct pci_map *map, uint32_t off, uint16_t *data, size_t count)
+void
+pci_r16v(struct pci_map *map, uint32_t off, uint16_t *data, size_t count)
 {
 #if defined(__i386__) || defined(__amd64__)
 	if (map->addr & 1)
@@ -668,7 +711,8 @@ void pci_r16v(struct pci_map *map, uint32_t off, uint16_t *data, size_t count)
 		data[i] = *(uint16_t volatile*)&map->data[off + i];
 }
 
-void pci_r32v(struct pci_map *map, uint32_t off, uint32_t *data, size_t count)
+void
+pci_r32v(struct pci_map *map, uint32_t off, uint32_t *data, size_t count)
 {
 #if defined(__i386__) || defined(__amd64__)
 	if (map->addr & 1)
@@ -678,7 +722,8 @@ void pci_r32v(struct pci_map *map, uint32_t off, uint32_t *data, size_t count)
 		data[i] = *(uint32_t volatile*)&map->data[off + i];
 }
 
-void pci_r64v(struct pci_map *map, uint32_t off, uint64_t *data, size_t count)
+void
+pci_r64v(struct pci_map *map, uint32_t off, uint64_t *data, size_t count)
 {
 #if defined(__i386__) || defined(__amd64__)
 	if (map->addr & 1)
@@ -688,7 +733,8 @@ void pci_r64v(struct pci_map *map, uint32_t off, uint64_t *data, size_t count)
 		data[i] = *(uint64_t volatile*)&map->data[off + i];
 }
 
-void pci_w8(struct pci_map *map, uint32_t off, uint8_t v)
+void
+pci_w8(struct pci_map *map, uint32_t off, uint8_t v)
 {
 #if defined(__i386__) || defined(__amd64__)
 	if (map->addr & 1)
@@ -700,7 +746,8 @@ void pci_w8(struct pci_map *map, uint32_t off, uint8_t v)
 	*(uint8_t volatile*)&map->data[off] = v;
 }
 
-void pci_w16(struct pci_map *map, uint32_t off, uint16_t v)
+void
+pci_w16(struct pci_map *map, uint32_t off, uint16_t v)
 {
 #if defined(__i386__) || defined(__amd64__)
 	if (map->addr & 1)
@@ -712,7 +759,8 @@ void pci_w16(struct pci_map *map, uint32_t off, uint16_t v)
 	*(uint16_t volatile*)&map->data[off] = v;
 }
 
-void pci_w32(struct pci_map *map, uint32_t off, uint32_t v)
+void
+pci_w32(struct pci_map *map, uint32_t off, uint32_t v)
 {
 #if defined(__i386__) || defined(__amd64__)
 	if (map->addr & 1)
@@ -724,7 +772,8 @@ void pci_w32(struct pci_map *map, uint32_t off, uint32_t v)
 	*(uint32_t volatile*)&map->data[off] = v;
 }
 
-void pci_w64(struct pci_map *map, uint32_t off, uint64_t v)
+void
+pci_w64(struct pci_map *map, uint32_t off, uint64_t v)
 {
 #if defined(__i386__) || defined(__amd64__)
 	if (map->addr & 1)
@@ -733,7 +782,8 @@ void pci_w64(struct pci_map *map, uint32_t off, uint64_t v)
 	*(uint64_t volatile*)&map->data[off] = v;
 }
 
-void pci_w8v(struct pci_map *map, uint32_t off, const uint8_t *data, size_t count)
+void
+pci_w8v(struct pci_map *map, uint32_t off, const uint8_t *data, size_t count)
 {
 #if defined(__i386__) || defined(__amd64__)
 	if (map->addr & 1)
@@ -746,7 +796,8 @@ void pci_w8v(struct pci_map *map, uint32_t off, const uint8_t *data, size_t coun
 		*(uint8_t volatile*)&map->data[off + i] = data[i];
 }
 
-void pci_w16v(struct pci_map *map, uint32_t off, const uint16_t *data, size_t count)
+void
+pci_w16v(struct pci_map *map, uint32_t off, const uint16_t *data, size_t count)
 {
 #if defined(__i386__) || defined(__amd64__)
 	if (map->addr & 1)
@@ -759,7 +810,8 @@ void pci_w16v(struct pci_map *map, uint32_t off, const uint16_t *data, size_t co
 		*(uint16_t volatile*)&map->data[off + i] = data[i];
 }
 
-void pci_w32v(struct pci_map *map, uint32_t off, const uint32_t *data, size_t count)
+void
+pci_w32v(struct pci_map *map, uint32_t off, const uint32_t *data, size_t count)
 {
 #if defined(__i386__) || defined(__amd64__)
 	if (map->addr & 1)
@@ -772,7 +824,8 @@ void pci_w32v(struct pci_map *map, uint32_t off, const uint32_t *data, size_t co
 		*(uint32_t volatile*)&map->data[off + i] = data[i];
 }
 
-void pci_w64v(struct pci_map *map, uint32_t off, const uint64_t *data, size_t count)
+void
+pci_w64v(struct pci_map *map, uint32_t off, const uint64_t *data, size_t count)
 {
 #if defined(__i386__) || defined(__amd64__)
 	if (map->addr & 1)
@@ -782,7 +835,8 @@ void pci_w64v(struct pci_map *map, uint32_t off, const uint64_t *data, size_t co
 		*(uint64_t volatile*)&map->data[off + i] = data[i];
 }
 
-uint32_t pci_dev_read(struct pci_device *device, uint32_t off)
+uint32_t
+pci_dev_read(struct pci_device *device, uint32_t off)
 {
 	if (device->ecam)
 		return *(uint32_t volatile*)&device->ecam[off];
@@ -793,7 +847,8 @@ uint32_t pci_dev_read(struct pci_device *device, uint32_t off)
 #endif
 }
 
-void pci_dev_write(struct pci_device *device, uint32_t off, uint32_t val)
+void
+pci_dev_write(struct pci_device *device, uint32_t off, uint32_t val)
 {
 	if (device->ecam)
 	{
@@ -810,8 +865,8 @@ void pci_dev_write(struct pci_device *device, uint32_t off, uint32_t val)
 #endif
 }
 
-static void print_capabilities(struct uio *uio, struct pci_device *device,
-                               uint8_t ptr)
+static void
+print_capabilities(struct uio *uio, struct pci_device *device, uint8_t ptr)
 {
 	if (!(device->header.status & (1 << 4)))
 		return;
@@ -825,9 +880,11 @@ static void print_capabilities(struct uio *uio, struct pci_device *device,
 	uprintf(uio, "\n");
 }
 
-static int pci_dev_print(struct uio *uio, struct pci_device *device)
+static int
+pci_dev_print(struct uio *uio, struct pci_device *device)
 {
 	union pci_header *header = &device->header;
+
 	uprintf(uio, "address   : %02" PRIx8 ":%02" PRIx8 ".%01" PRIx8 "\n"
 	             "vendor    : 0x%04" PRIx16 "\n"
 	             "device    : 0x%04" PRIx16 "\n"
@@ -948,7 +1005,8 @@ static int pci_dev_print(struct uio *uio, struct pci_device *device)
 	return 0;
 }
 
-static int pci_print(struct uio *uio)
+static int
+pci_print(struct uio *uio)
 {
 	struct pci_device *device;
 
@@ -963,7 +1021,8 @@ static int pci_print(struct uio *uio)
 	return 0;
 }
 
-static ssize_t sysfs_pci_read(struct file *file, struct uio *uio)
+static ssize_t
+sysfs_pci_read(struct file *file, struct uio *uio)
 {
 	(void)file;
 	size_t count = uio->count;
@@ -975,18 +1034,21 @@ static ssize_t sysfs_pci_read(struct file *file, struct uio *uio)
 	return count - uio->count;
 }
 
-static struct file_op sysfs_pci_fop =
+static struct file_op
+sysfs_pci_fop =
 {
 	.read = sysfs_pci_read,
 };
 
-static int sysfs_pci_dev_open(struct file *file, struct node *node)
+static int
+sysfs_pci_dev_open(struct file *file, struct node *node)
 {
 	file->userdata = node->userdata;
 	return 0;
 }
 
-static ssize_t sysfs_pci_dev_read(struct file *file, struct uio *uio)
+static ssize_t
+sysfs_pci_dev_read(struct file *file, struct uio *uio)
 {
 	size_t count = uio->count;
 	off_t off = uio->off;
@@ -997,13 +1059,15 @@ static ssize_t sysfs_pci_dev_read(struct file *file, struct uio *uio)
 	return count - uio->count;
 }
 
-static struct file_op sysfs_pci_dev_fop =
+static struct file_op
+sysfs_pci_dev_fop =
 {
 	.open = sysfs_pci_dev_open,
 	.read = sysfs_pci_dev_read,
 };
 
-int init(void)
+int
+init(void)
 {
 	sma_init(&pci_device_sma, sizeof(struct pci_device), NULL, NULL, "pci_device");
 	sma_init(&pci_msix_sma, sizeof(struct pci_msix), NULL, NULL, "pci_msix");
@@ -1012,11 +1076,13 @@ int init(void)
 	return 0;
 }
 
-void fini(void)
+void
+fini(void)
 {
 }
 
-struct kmod_info kmod =
+struct kmod_info
+kmod =
 {
 	.magic = KMOD_MAGIC,
 	.version = 1,

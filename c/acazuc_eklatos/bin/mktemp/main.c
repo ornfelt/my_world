@@ -13,12 +13,14 @@ struct env
 	int opt;
 };
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-h] [-d]\n", progname);
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	unsigned rnd;

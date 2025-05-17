@@ -2,12 +2,14 @@
 
 #include <netdb.h>
 
-struct protoent *getprotobynumber(int proto)
+struct protoent *
+getprotobynumber(int proto)
 {
+	struct protoent *protoent;
+
 	setprotoent(0);
 	if (!protoent_fp)
 		return NULL;
-	struct protoent *protoent;
 	while (1)
 	{
 		protoent = next_protoent();

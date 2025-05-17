@@ -3,12 +3,13 @@
 #include "gx/wmo.h"
 #include "gx/blp.h"
 #include "gx/m2.h"
+#include "gx/gx.h"
 
 #include "map/tile.h"
 #include "map/map.h"
 
-#include "performance.h"
-#include "graphics.h"
+#include "ppe/render_target.h"
+
 #include "shaders.h"
 #include "camera.h"
 #include "memory.h"
@@ -305,7 +306,7 @@ static void init_chunk_animations(struct wow_mcnk *mcnk, struct vec2f *uv_offset
 static void init_chunk_alpha_low(struct gx_mcnk *mcnk, struct wow_mcnk *wow_mcnk, uint32_t chunk)
 {
 	uint8_t *iter = mcnk->init_data->alpha[chunk];
-	if (g_wow->map->flags & WOW_MPHD_FLAG_BIG_ALPHA)
+	if (g_wow->map->wow_flags & WOW_MPHD_FLAG_BIG_ALPHA)
 	{
 		for (size_t z = 0; z < 64; ++z)
 		{
@@ -765,9 +766,9 @@ int gx_mcnk_initialize(struct gx_mcnk *mcnk)
 	const struct gfx_attribute_bind binds[] =
 	{
 		{&mcnk->vertexes_buffer},
-		{&g_wow->map->mcnk_vertexes_buffer},
+		{&g_wow->gx->mcnk_vertexes_buffer},
 	};
-	gfx_create_attributes_state(g_wow->device, &mcnk->attributes_state, binds, sizeof(binds) / sizeof(*binds), (mcnk->flags & GX_MCNK_FLAG_HOLES) ? &mcnk->indices_buffer : &g_wow->map->mcnk_indices_buffer, GFX_INDEX_UINT16);
+	gfx_create_attributes_state(g_wow->device, &mcnk->attributes_state, binds, sizeof(binds) / sizeof(*binds), (mcnk->flags & GX_MCNK_FLAG_HOLES) ? &mcnk->indices_buffer : &g_wow->gx->mcnk_indices_buffer, GFX_INDEX_UINT16);
 	mcnk->flags |= GX_MCNK_FLAG_INITIALIZED;
 	return 1;
 }
@@ -785,6 +786,8 @@ void gx_mcnk_cull(struct gx_mcnk *mcnk, struct gx_frame *frame)
 	enum frustum_result result = frustum_check(&frame->frustum, &mcnk->parent->aabb);
 	MAT4_TRANSLATE(mcnk_frame->mv, frame->view_v, mcnk->parent->pos);
 	MAT4_MUL(mcnk_frame->mvp, frame->view_p, mcnk_frame->mv);
+	MAT4_TRANSLATE(mcnk_frame->shadow_mv, frame->view_shadow_v, mcnk->parent->pos);
+	MAT4_MUL(mcnk_frame->shadow_mvp, frame->view_shadow_p, mcnk_frame->shadow_mv);
 	bool has_unculled_chunk = false;
 	for (size_t i = 0; i < GX_MCNK_CHUNKS_PER_TILE; ++i)
 	{
@@ -863,33 +866,33 @@ void gx_mcnk_render(struct gx_mcnk *mcnk, struct gx_frame *frame)
 	if (!mcnk_frame->draw_cmd_nb)
 		return;
 	{
-		PERFORMANCE_BEGIN(MCNK_RENDER_DATA);
 		struct shader_mcnk_model_block model_block;
 		model_block.v = *(struct mat4f*)&frame->view_v;
 		model_block.mv = mcnk_frame->mv;
 		model_block.mvp = mcnk_frame->mvp;
-		model_block.offset_time = g_wow->frametime / 333000000000.;
+		model_block.shadow_mvp = mcnk_frame->shadow_mvp;
+		model_block.offset_time = frame->time / 333000000000.0;
 		gfx_set_buffer_data(&mcnk_frame->uniform_buffer, &model_block, sizeof(model_block), 0);
 		gfx_set_buffer_data(&mcnk_frame->indirect_buffer, mcnk_frame->draw_cmds, sizeof(*mcnk_frame->draw_cmds) * mcnk_frame->draw_cmd_nb, 0);
-		PERFORMANCE_END(MCNK_RENDER_DATA);
 	}
 	{
-		PERFORMANCE_BEGIN(MCNK_RENDER_BIND);
 		gfx_bind_constant(g_wow->device, 0, &mcnk->chunks_uniform_buffer, sizeof(struct shader_mcnk_mesh_block) * GX_MCNK_CHUNKS_PER_TILE, 0);
 		gfx_bind_constant(g_wow->device, 1, &mcnk_frame->uniform_buffer, sizeof(struct shader_mcnk_model_block), 0);
-		gfx_bind_attributes_state(g_wow->device, &mcnk->attributes_state, &g_wow->graphics->mcnk_input_layout);
-		PERFORMANCE_END(MCNK_RENDER_BIND);
+		gfx_bind_attributes_state(g_wow->device, &mcnk->attributes_state, &g_wow->gx->mcnk_input_layout);
 	}
 	uint32_t draw_cmd_offset = 0;
-	const gfx_texture_t *textures[1 + GX_MCNK_MAX_BATCH_TEXTURES * 2] = {0};
+	const gfx_texture_t *textures[2 + GX_MCNK_MAX_BATCH_TEXTURES * 2] = {0};
 	textures[0] = &mcnk->alpha_texture;
+	if (g_wow->gx->opt & GX_OPT_DYN_SHADOW)
+		textures[1] = &g_wow->post_process.shadow->depth_stencil_texture;
+	else
+		textures[1] = NULL;
 	for (size_t i = 0; i < mcnk->batches.size; ++i)
 	{
 		struct gx_mcnk_batch *batch = JKS_ARRAY_GET(&mcnk->batches, i, struct gx_mcnk_batch);
 		if (!mcnk_frame->batches_draw_cmds[i])
 			continue;
-		PERFORMANCE_BEGIN(MCNK_RENDER_BIND);
-		size_t n = 1;
+		size_t n = 2;
 		for (size_t j = 0; j < batch->textures_nb; ++j)
 		{
 			uint16_t texture_index = batch->textures[j];
@@ -908,10 +911,7 @@ void gx_mcnk_render(struct gx_mcnk *mcnk, struct gx_frame *frame)
 			textures[n++] = &g_wow->black_texture->texture;
 		}
 		gfx_bind_samplers(g_wow->device, 0, sizeof(textures) / sizeof(*textures), textures);
-		PERFORMANCE_END(MCNK_RENDER_BIND);
-		PERFORMANCE_BEGIN(MCNK_RENDER_DRAW);
 		gfx_draw_indexed_indirect(g_wow->device, &mcnk_frame->indirect_buffer, mcnk_frame->batches_draw_cmds[i], draw_cmd_offset);
-		PERFORMANCE_END(MCNK_RENDER_DRAW);
 		draw_cmd_offset += mcnk_frame->batches_draw_cmds[i] * sizeof(*mcnk_frame->draw_cmds);
 	}
 }

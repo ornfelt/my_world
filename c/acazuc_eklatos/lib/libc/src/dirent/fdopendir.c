@@ -3,9 +3,12 @@
 #include <dirent.h>
 #include <stdlib.h>
 
-DIR *fdopendir(int fd)
+DIR *
+fdopendir(int fd)
 {
-	DIR *dir = malloc(sizeof(*dir));
+	DIR *dir;
+
+	dir = malloc(sizeof(*dir));
 	if (!dir)
 		return NULL;
 	dir->fd = fd;

@@ -1,0 +1,10 @@
+RAST_1.0 {
+	global:
+		rast_draw;
+		rast_line;
+		rast_point;
+		rast_triangle;
+		rast_vert_mix;
+		rast_vert_normalize;
+	local: *;
+};

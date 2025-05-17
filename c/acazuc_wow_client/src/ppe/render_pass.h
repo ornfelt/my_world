@@ -20,7 +20,6 @@ struct render_pass
 	const struct render_pass_vtable *vtable;
 	uint32_t width;
 	uint32_t height;
-	bool dirty_size;
 	bool enabled;
 };
 
@@ -39,5 +38,6 @@ struct render_pass *sharpen_render_pass_new(void);
 struct render_pass *chromaber_render_pass_new(void);
 struct render_pass *sobel_render_pass_new(void);
 struct render_pass *fsaa_render_pass_new(void);
+struct render_pass *death_render_pass_new(void);
 
 #endif

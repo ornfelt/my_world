@@ -1,6 +1,7 @@
 #include <mntent.h>
 
-char *hasmntopt(const struct mntent *mnt, const char *opt)
+char *
+hasmntopt(const struct mntent *mnt, const char *opt)
 {
 	/* XXX */
 	(void)mnt;

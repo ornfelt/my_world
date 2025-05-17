@@ -13,20 +13,26 @@ struct env
 	int opt;
 };
 
-static char *get_file_line(struct env *env, const char *file)
+static char *
+get_file_line(struct env *env, const char *file)
 {
-	FILE *fp = fopen(file, "r");
+	char *line = NULL;
+	size_t len = 0;
+	FILE *fp;
+
+	fp = fopen(file, "r");
 	if (!fp)
 	{
-		fprintf(stderr, "%s: open: %s\n", env->progname,
+		fprintf(stderr, "%s: open(%s): %s\n",
+		        env->progname,
+		        file,
 		        strerror(errno));
 		return NULL;
 	}
-	char *line = NULL;
-	size_t len = 0;
 	if (getline(&line, &len, fp) < 0)
 	{
-		fprintf(stderr, "%s: read: %s\n", env->progname,
+		fprintf(stderr, "%s: read: %s\n",
+		        env->progname,
 		        strerror(errno));
 		fclose(fp);
 		return NULL;
@@ -35,13 +41,16 @@ static char *get_file_line(struct env *env, const char *file)
 	return line;
 }
 
-static int get_uptime(struct env *env, time_t *t)
+static int
+get_uptime(struct env *env, time_t *t)
 {
+	char *endptr;
 	int ret = 1;
-	char *line = get_file_line(env, "/sys/uptime");
+	char *line;
+
+	line = get_file_line(env, "/sys/uptime");
 	if (!line)
 		return 1;
-	char *endptr;
 	errno = 0;
 	*t = strtoul(line, &endptr, 10);
 	if (errno || *endptr != '.')
@@ -56,9 +65,11 @@ end:
 	return ret;
 }
 
-static int get_loadavg(struct env *env, uint8_t *loadavg)
+static int
+get_loadavg(struct env *env, uint8_t *loadavg)
 {
 	double avg[3];
+
 	if (getloadavg(avg, 3) == -1)
 	{
 		fprintf(stderr, "%s: failed to get loadavg\n", env->progname);
@@ -73,14 +84,16 @@ static int get_loadavg(struct env *env, uint8_t *loadavg)
 	return 0;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-h] [-s]\n", progname);
 	printf("-h: display this help\n");
 	printf("-s: display boot time in yyyy-mm-dd HH:MM:SS format\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

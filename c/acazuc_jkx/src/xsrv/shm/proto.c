@@ -10,8 +10,10 @@
 #define SHM_DETACH        2
 #define SHM_PUT_IMAGE     3
 
-static int req_shm_query_version(struct xsrv *xsrv, struct client *client,
-                                 struct request *request)
+static int
+req_shm_query_version(struct xsrv *xsrv,
+                      struct client *client,
+                      struct request *request)
 {
 	if (request->length != 1)
 		return CLIENT_BAD_LENGTH(xsrv, client, request);
@@ -30,8 +32,10 @@ static int req_shm_query_version(struct xsrv *xsrv, struct client *client,
 	return 1;
 }
 
-static int req_shm_attach(struct xsrv *xsrv, struct client *client,
-                          struct request *request)
+static int
+req_shm_attach(struct xsrv *xsrv,
+               struct client *client,
+               struct request *request)
 {
 	if (request->length != 4)
 		return CLIENT_BAD_LENGTH(xsrv, client, request);
@@ -55,8 +59,10 @@ static int req_shm_attach(struct xsrv *xsrv, struct client *client,
 	return 1;
 }
 
-static int req_shm_detach(struct xsrv *xsrv, struct client *client,
-                          struct request *request)
+static int
+req_shm_detach(struct xsrv *xsrv,
+               struct client *client,
+               struct request *request)
 {
 	if (request->length != 2)
 		return CLIENT_BAD_LENGTH(xsrv, client, request);
@@ -69,10 +75,17 @@ static int req_shm_detach(struct xsrv *xsrv, struct client *client,
 	return 1;
 }
 
-static void shm_put(struct shmseg *shmseg, struct drawable *drawable,
-                    int16_t x, int16_t y, uint16_t width, uint16_t height,
-                    uint16_t src_x, uint16_t src_y,
-                    uint16_t total_width, uint16_t total_height)
+static void
+shm_put(struct shmseg *shmseg,
+        struct drawable *drawable,
+        int16_t x,
+        int16_t y,
+        uint16_t width,
+        uint16_t height,
+        uint16_t src_x,
+        uint16_t src_y,
+        uint16_t total_width,
+        uint16_t total_height)
 {
 	if (x < 0)
 	{
@@ -120,8 +133,10 @@ static void shm_put(struct shmseg *shmseg, struct drawable *drawable,
 	}
 }
 
-static int req_shm_put_image(struct xsrv *xsrv, struct client *client,
-                             struct request *request)
+static int
+req_shm_put_image(struct xsrv *xsrv,
+                  struct client *client,
+                  struct request *request)
 {
 	if (request->length != 10)
 		return CLIENT_BAD_LENGTH(xsrv, client, request);
@@ -192,8 +207,10 @@ static int req_shm_put_image(struct xsrv *xsrv, struct client *client,
 	return ret;
 }
 
-int shm_req(struct xsrv *xsrv, struct client *client,
-            struct request *request)
+int
+shm_req(struct xsrv *xsrv,
+        struct client *client,
+        struct request *request)
 {
 	static const req_handler_t shm_handlers[] =
 	{

@@ -8,23 +8,27 @@
 #include <stdio.h>
 #include <time.h>
 
-static void print_time(const char *name, struct timeval *tv)
+static void
+print_time(const char *name, struct timeval *tv)
 {
 	char buf[64];
 	long long min = tv->tv_sec / 60;
 	long long sec = tv->tv_sec % 60;
 	long long ms = tv->tv_usec / 1000;
+
 	snprintf(buf, sizeof(buf), "%lldm%lld,%03llds", min, sec, ms);
 	printf("%s\t%s\n", name, buf);
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-h] PROGRAM\n", progname);
 	printf("-h: show this help\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct rusage rusage;
 	struct timespec begin;

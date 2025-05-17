@@ -16,11 +16,13 @@ struct env
 
 extern char **environ;
 
-static void print_which(struct env *env, char **path, const char *name)
+static void
+print_which(struct env *env, char **path, const char *name)
 {
 	for (size_t i = 0; path[i]; ++i)
 	{
 		char pathname[MAXPATHLEN];
+
 		if (snprintf(pathname, sizeof(pathname), "%s/%s", path[i], name) >= (int)sizeof(pathname))
 		{
 			fprintf(stderr, "%s: path too long\n", env->progname);
@@ -35,29 +37,39 @@ static void print_which(struct env *env, char **path, const char *name)
 	}
 }
 
-static char **build_path(const char *progname)
+static char **
+build_path(const char *progname)
 {
-	char **ret = calloc(1, sizeof(*ret));
+	size_t ret_size = 0;
+	const char *path;
+	const char *tmp;
+	char **ret;
+
+	ret = calloc(1, sizeof(*ret));
 	if (!ret)
 		return NULL;
-	size_t ret_size = 0;
-	const char *path = getenv("PATH");
+	path = getenv("PATH");
 	if (!path)
 		path = "/bin:/usr/bin";
-	const char *tmp;
 	while ((tmp = strchrnul(path, ':')))
 	{
-		char **new_ret = realloc(ret, sizeof(*ret) * (ret_size + 2));
+		char **new_ret;
+
+		new_ret = realloc(ret, sizeof(*ret) * (ret_size + 2));
 		if (!new_ret)
 		{
-			fprintf(stderr, "%s: malloc: %s\n", progname, strerror(errno));
+			fprintf(stderr, "%s: malloc: %s\n",
+			        progname,
+			        strerror(errno));
 			goto err;
 		}
 		ret = new_ret;
 		new_ret[ret_size] = strndup(path, tmp - path);
 		if (!new_ret[ret_size])
 		{
-			fprintf(stderr, "%s: malloc: %s\n", progname, strerror(errno));
+			fprintf(stderr, "%s: malloc: %s\n",
+			        progname,
+			        strerror(errno));
 			goto err;
 		}
 		ret_size++;
@@ -75,13 +87,15 @@ err:
 	return NULL;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-a] FILES\n", progname);
 	printf("-a: display all the matching files\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	char **path = NULL;

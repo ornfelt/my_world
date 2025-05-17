@@ -2,7 +2,8 @@
 
 #include <netdb.h>
 
-void setservent(int stayopen)
+void
+setservent(int stayopen)
 {
 	if (servent_fp)
 		fclose(servent_fp);

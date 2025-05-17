@@ -6,6 +6,7 @@ SRC = inflate.c \
       crc32.c \
       huffman.c \
       deflate.c \
+      utils.c \
 
 HDR = zlib.h \
 

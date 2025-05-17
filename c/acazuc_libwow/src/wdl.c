@@ -6,9 +6,12 @@
 #include <string.h>
 #include <stdlib.h>
 
-struct wow_wdl_file *wow_wdl_file_new(struct wow_mpq_file *mpq)
+struct wow_wdl_file *
+wow_wdl_file_new(struct wow_mpq_file *mpq)
 {
-	struct wow_wdl_file *file = WOW_MALLOC(sizeof(*file));
+	struct wow_wdl_file *file;
+
+	file = WOW_MALLOC(sizeof(*file));
 	if (!file)
 		return NULL;
 	if (wow_mpq_read(mpq, &file->mver, sizeof(file->mver)) != sizeof(file->mver))
@@ -39,7 +42,8 @@ err:
 	return NULL;
 }
 
-void wow_wdl_file_delete(struct wow_wdl_file *file)
+void
+wow_wdl_file_delete(struct wow_wdl_file *file)
 {
 	if (!file)
 		return;

@@ -48,7 +48,8 @@ ssize_t evdev_read(struct file *file, struct uio *uio);
 ssize_t evdev_write(struct file *file, struct uio *uio);
 int evdev_poll(struct file *file, struct poll_entry *entry);
 
-uint32_t get_scancode(enum kbd_key key, enum kbd_mod mods)
+uint32_t
+get_scancode(enum kbd_key key, enum kbd_mod mods)
 {
 	if (mods & (KBD_MOD_LSHIFT | KBD_MOD_RSHIFT))
 		return scancodes_shift[key];
@@ -59,9 +60,11 @@ uint32_t get_scancode(enum kbd_key key, enum kbd_mod mods)
 	return scancodes_normal[key];
 }
 
-int get_mods_value(uint32_t mods)
+int
+get_mods_value(uint32_t mods)
 {
 	int ret = 1;
+
 	if (mods & (KBD_MOD_LSHIFT | KBD_MOD_RSHIFT))
 		ret += 1;
 	if (mods & (KBD_MOD_LALT | KBD_MOD_RALT))
@@ -73,10 +76,12 @@ int get_mods_value(uint32_t mods)
 	return ret;
 }
 
-void print_mods_seq(char *s, size_t n, const char *code,
+void
+print_mods_seq(char *s, size_t n, const char *code,
                     const char *seq, enum kbd_mod mods)
 {
 	char mods_str[8];
+
 	if (mods)
 	{
 		if (!code)
@@ -91,9 +96,11 @@ void print_mods_seq(char *s, size_t n, const char *code,
 	snprintf(s, n, "\033[%s%s%s", code ? code : "", mods_str, seq);
 }
 
-int send_tty(struct tty *tty, enum kbd_key key, enum kbd_mod mods)
+int
+send_tty(struct tty *tty, enum kbd_key key, enum kbd_mod mods)
 {
 	char utf8[64];
+
 	if (key == KBD_KEY_CURSOR_UP)
 	{
 		print_mods_seq(utf8, sizeof(utf8), NULL, "A", mods);
@@ -169,7 +176,8 @@ int send_tty(struct tty *tty, enum kbd_key key, enum kbd_mod mods)
 	return count;
 }
 
-static const struct file_op fop =
+static const struct file_op
+fop =
 {
 	.open = evdev_open,
 	.release = evdev_release,
@@ -178,9 +186,12 @@ static const struct file_op fop =
 	.poll = evdev_poll,
 };
 
-int evdev_alloc(struct evdev **evdevp)
+int
+evdev_alloc(struct evdev **evdevp)
 {
-	struct evdev *evdev = sma_alloc(&evdev_sma, M_ZERO);
+	struct evdev *evdev;
+
+	evdev = sma_alloc(&evdev_sma, M_ZERO);
 	if (!evdev)
 		return -ENOMEM;
 	refcount_init(&evdev->refcount, 1);
@@ -209,7 +220,8 @@ int evdev_alloc(struct evdev **evdevp)
 	return 0;
 }
 
-void evdev_free(struct evdev *evdev)
+void
+evdev_free(struct evdev *evdev)
 {
 	if (!evdev)
 		return;
@@ -220,14 +232,17 @@ void evdev_free(struct evdev *evdev)
 	sma_free(&evdev_sma, evdev);
 }
 
-void evdev_ref(struct evdev *evdev)
+void
+evdev_ref(struct evdev *evdev)
 {
 	refcount_inc(&evdev->refcount);
 }
 
-void send_event(struct evdev *evdev, const struct event *event)
+void
+send_event(struct evdev *evdev, const struct event *event)
 {
 	struct evdev_queue *queue;
+
 	spinlock_lock(&evdev->lock);
 	TAILQ_FOREACH(queue, &evdev->queues, chain)
 	{
@@ -245,7 +260,8 @@ void send_event(struct evdev *evdev, const struct event *event)
 	poller_broadcast(&evdev->poll_entries, POLLIN);
 }
 
-void queue_free(struct evdev_queue *queue)
+void
+queue_free(struct evdev_queue *queue)
 {
 	if (!queue)
 		return;
@@ -257,10 +273,14 @@ void queue_free(struct evdev_queue *queue)
 	sma_free(&queue_sma, queue);
 }
 
-int evdev_open(struct file *file, struct node *node)
+int
+evdev_open(struct file *file, struct node *node)
 {
 	struct evdev *evdev = node->cdev->userdata;
-	struct evdev_queue *queue = sma_alloc(&queue_sma, M_ZERO);
+	struct evdev_queue *queue;
+	int ret;
+
+	queue = sma_alloc(&queue_sma, M_ZERO);
 	if (!queue)
 	{
 		TRACE("evdev: queue allocation failed");
@@ -269,8 +289,11 @@ int evdev_open(struct file *file, struct node *node)
 	waitq_init(&queue->rwaitq);
 	waitq_init(&queue->wwaitq);
 	mutex_init(&queue->mutex, 0);
-	int ret = pipebuf_init(&queue->pipebuf, PIPE_BUF * 2, &queue->mutex,
-	                       &queue->rwaitq, &queue->wwaitq);
+	ret = pipebuf_init(&queue->pipebuf,
+	                   PIPE_BUF * 2,
+	                   &queue->mutex,
+	                   &queue->rwaitq,
+	                   &queue->wwaitq);
 	if (ret)
 	{
 		TRACE("evdev: failed to create ringbuf: %s", strerror(ret));
@@ -288,12 +311,15 @@ int evdev_open(struct file *file, struct node *node)
 	return 0;
 }
 
-int evdev_release(struct file *file)
+int
+evdev_release(struct file *file)
 {
 	struct evdev_queue *queue = file->userdata;
+	struct evdev *evdev;
+
 	if (!queue)
 		return 0;
-	struct evdev *evdev = queue->evdev;
+	evdev = queue->evdev;
 	spinlock_lock(&evdev->lock);
 	TAILQ_REMOVE(&evdev->queues, queue, chain);
 	spinlock_unlock(&evdev->lock);
@@ -301,18 +327,22 @@ int evdev_release(struct file *file)
 	return 0;
 }
 
-ssize_t evdev_read(struct file *file, struct uio *uio)
+ssize_t
+evdev_read(struct file *file, struct uio *uio)
 {
 	struct evdev_queue *queue = file->userdata;
+
 	return pipebuf_read(&queue->pipebuf, uio, 0, NULL);
 }
 
-ssize_t evdev_write(struct file *file, struct uio *uio)
+ssize_t
+evdev_write(struct file *file, struct uio *uio)
 {
 	struct evdev_queue *queue = file->userdata;
 	struct evdev *evdev = queue->evdev;
 	struct event event;
 	ssize_t wr = 0;
+
 	while (uio->count >= sizeof(event))
 	{
 		ssize_t ret = uio_copyout(&event, uio, sizeof(event));
@@ -324,23 +354,30 @@ ssize_t evdev_write(struct file *file, struct uio *uio)
 	return wr;
 }
 
-int evdev_poll(struct file *file, struct poll_entry *entry)
+int
+evdev_poll(struct file *file, struct poll_entry *entry)
 {
 	struct evdev_queue *queue = file->userdata;
 	struct evdev *evdev = queue->evdev;
-	int ret = pipebuf_poll(&queue->pipebuf, entry->events & ~POLLOUT);
+	int ret;
+
+	ret = pipebuf_poll(&queue->pipebuf, entry->events & ~POLLOUT);
 	if (ret)
 		return ret;
 	entry->file_head = &evdev->poll_entries;
 	return poller_add(entry);
 }
 
-void ev_send_key_event(struct evdev *evdev, enum kbd_key key,
-                       enum kbd_mod mods, int pressed)
+void
+ev_send_key_event(struct evdev *evdev,
+                  enum kbd_key key,
+                  enum kbd_mod mods,
+                  int pressed)
 {
+	struct event evt;
+
 	if (pressed && curtty)
 		send_tty(curtty, key, mods);
-	struct event evt;
 	evt.type = EVENT_KEY;
 	evt.key.key = key;
 	evt.key.mod = mods;
@@ -350,10 +387,11 @@ void ev_send_key_event(struct evdev *evdev, enum kbd_key key,
 	send_event(evdev, &evt);
 }
 
-void ev_send_mouse_event(struct evdev *evdev, enum mouse_button button,
-                         int pressed)
+void
+ev_send_mouse_event(struct evdev *evdev, enum mouse_button button, int pressed)
 {
 	struct event evt;
+
 	evt.type = EVENT_MOUSE;
 	evt.mouse.button = button;
 	evt.mouse.pressed = pressed;
@@ -363,9 +401,11 @@ void ev_send_mouse_event(struct evdev *evdev, enum mouse_button button,
 	send_event(evdev, &evt);
 }
 
-void ev_send_pointer_event(struct evdev *evdev, int x, int y)
+void
+ev_send_pointer_event(struct evdev *evdev, int x, int y)
 {
 	struct event evt;
+
 	evt.type = EVENT_POINTER;
 	evt.pointer.x = x;
 	evt.pointer.y = y;
@@ -375,9 +415,11 @@ void ev_send_pointer_event(struct evdev *evdev, int x, int y)
 	send_event(evdev, &evt);
 }
 
-void ev_send_scroll_event(struct evdev *evdev, int x, int y)
+void
+ev_send_scroll_event(struct evdev *evdev, int x, int y)
 {
 	struct event evt;
+
 	evt.type = EVENT_SCROLL;
 	evt.scroll.x = x;
 	evt.scroll.y = y;
@@ -387,7 +429,8 @@ void ev_send_scroll_event(struct evdev *evdev, int x, int y)
 	send_event(evdev, &evt);
 }
 
-int init(void)
+int
+init(void)
 {
 	sma_init(&queue_sma, sizeof(struct evdev_queue), NULL, NULL, "evdev_queue");
 	sma_init(&evdev_sma, sizeof(struct evdev), NULL, NULL, "evdev");
@@ -395,11 +438,13 @@ int init(void)
 	return 0;
 }
 
-void fini(void)
+void
+fini(void)
 {
 }
 
-struct kmod_info kmod =
+struct kmod_info
+kmod =
 {
 	.magic = KMOD_MAGIC,
 	.version = 1,

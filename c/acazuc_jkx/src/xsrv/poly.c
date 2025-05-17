@@ -6,8 +6,12 @@
  * http://members.chello.at/~easyfilter/bresenham.html
  */
 
-static void draw_point(struct xsrv *xsrv, struct drawable *drawable,
-                      struct gcontext *gcontext, int16_t x, int16_t y)
+static void
+draw_point(struct xsrv *xsrv,
+           struct drawable *drawable,
+           struct gcontext *gcontext,
+           int16_t x,
+           int16_t y)
 {
 	if (x < 0 || (uint16_t)x >= drawable->width
 	 || y < 0 || (uint16_t)y >= drawable->height)
@@ -15,15 +19,24 @@ static void draw_point(struct xsrv *xsrv, struct drawable *drawable,
 	drawable_set_pixel(xsrv, drawable, x, y, gcontext->values.foreground);
 }
 
-void poly_point(struct xsrv *xsrv, struct drawable *drawable,
-                struct gcontext *gcontext, int16_t x, int16_t y)
+void
+poly_point(struct xsrv *xsrv,
+           struct drawable *drawable,
+           struct gcontext *gcontext,
+           int16_t x,
+           int16_t y)
 {
 	draw_point(xsrv, drawable, gcontext, x, y);
 }
 
-static void draw_line(struct xsrv *xsrv, struct drawable *drawable,
-                      struct gcontext *gcontext, int16_t x1, int16_t y1,
-                      int16_t x2, int16_t y2)
+static void
+draw_line(struct xsrv *xsrv,
+          struct drawable *drawable,
+          struct gcontext *gcontext,
+          int16_t x1,
+          int16_t y1,
+          int16_t x2,
+          int16_t y2)
 {
 	int32_t dx =  abs(x2 - x1);
 	int32_t dy = -abs(y2 - y1);
@@ -51,16 +64,26 @@ static void draw_line(struct xsrv *xsrv, struct drawable *drawable,
 	}
 }
 
-void poly_line(struct xsrv *xsrv, struct drawable *drawable,
-               struct gcontext *gcontext, int16_t x1, int16_t y1,
-               int16_t x2, int16_t y2)
+void
+poly_line(struct xsrv *xsrv,
+          struct drawable *drawable,
+          struct gcontext *gcontext,
+          int16_t x1,
+          int16_t y1,
+          int16_t x2,
+          int16_t y2)
 {
 	draw_line(xsrv, drawable, gcontext, x1, y1, x2, y2);
 }
 
-void poly_rect(struct xsrv *xsrv, struct drawable *drawable,
-               struct gcontext *gcontext, int16_t x, int16_t y,
-               uint16_t width, uint16_t height)
+void
+poly_rect(struct xsrv *xsrv,
+          struct drawable *drawable,
+          struct gcontext *gcontext,
+          int16_t x,
+          int16_t y,
+          uint16_t width,
+          uint16_t height)
 {
 	draw_line(xsrv, drawable, gcontext, x        , y         , x + width, y);
 	draw_line(xsrv, drawable, gcontext, x + width, y         , x + width, y + height);
@@ -68,9 +91,16 @@ void poly_rect(struct xsrv *xsrv, struct drawable *drawable,
 	draw_line(xsrv, drawable, gcontext, x        , y + height, x        , y);
 }
 
-void poly_arc(struct xsrv *xsrv, struct drawable *drawable,
-              struct gcontext *gcontext, int16_t x, int16_t y,
-              uint16_t width, uint16_t height, int16_t angle1, int16_t angle2)
+void
+poly_arc(struct xsrv *xsrv,
+         struct drawable *drawable,
+         struct gcontext *gcontext,
+         int16_t x,
+         int16_t y,
+         uint16_t width,
+         uint16_t height,
+         int16_t angle1,
+         int16_t angle2)
 {
 	(void)angle1; /* XXX */
 	(void)angle2; /* XXX */
@@ -120,9 +150,14 @@ void poly_arc(struct xsrv *xsrv, struct drawable *drawable,
 	}
 }
 
-void poly_fill_rect(struct xsrv *xsrv, struct drawable *drawable,
-                    struct gcontext *gcontext, int16_t x, int16_t y,
-                    uint16_t width, uint16_t height)
+void
+poly_fill_rect(struct xsrv *xsrv,
+               struct drawable *drawable,
+               struct gcontext *gcontext,
+               int16_t x,
+               int16_t y,
+               uint16_t width,
+               uint16_t height)
 {
 	for (uint16_t xx = 0; xx < width; ++xx)
 	{
@@ -133,10 +168,17 @@ void poly_fill_rect(struct xsrv *xsrv, struct drawable *drawable,
 	}
 }
 
-static void draw_glyph(struct xsrv *xsrv, struct drawable *drawable,
-                       struct gcontext *gcontext, struct font_glyph *glyph,
-                       int16_t x, int16_t y, uint32_t *minx, uint32_t *miny,
-                       uint32_t *maxx, uint32_t *maxy)
+static void
+draw_glyph(struct xsrv *xsrv,
+           struct drawable *drawable,
+           struct gcontext *gcontext,
+           struct font_glyph *glyph,
+           int16_t x,
+           int16_t y,
+           uint32_t *minx,
+           uint32_t *miny,
+           uint32_t *maxx,
+           uint32_t *maxy)
 {
 	int32_t dst_x = x + glyph->left_bearing;
 	int32_t dst_y = y - glyph->ascent;
@@ -205,15 +247,24 @@ static void draw_glyph(struct xsrv *xsrv, struct drawable *drawable,
 	}
 }
 
-void poly_text8(struct xsrv *xsrv, struct drawable *drawable,
-                struct gcontext *gcontext, int16_t x, int16_t y,
-                uint8_t text_len, const uint8_t *text,
-                uint32_t *minx, uint32_t *miny,
-                uint32_t *maxx, uint32_t *maxy)
+void
+poly_text8(struct xsrv *xsrv,
+           struct drawable *drawable,
+           struct gcontext *gcontext,
+           int16_t x,
+           int16_t y,
+           uint8_t text_len,
+           const uint8_t *text,
+           uint32_t *minx,
+           uint32_t *miny,
+           uint32_t *maxx,
+           uint32_t *maxy)
 {
+	struct font_def *font_def;
+
 	if (!gcontext->values.font)
 		return;
-	struct font_def *font_def = gcontext->values.font->def;
+	font_def = gcontext->values.font->def;
 	*minx = UINT32_MAX;
 	*miny = UINT32_MAX;
 	*maxx = 0;

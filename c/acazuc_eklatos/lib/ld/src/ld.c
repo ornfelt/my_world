@@ -30,12 +30,14 @@ static uint32_t g_lock;
  */
 static int _errno;
 
-int *__get_errno(void)
+int *
+__get_errno(void)
 {
 	return &_errno;
 }
 
-void __set_errno(int err)
+void
+__set_errno(int err)
 {
 	_errno = err;
 }
@@ -43,7 +45,8 @@ void __set_errno(int err)
 #if defined(__i386__)
 void __stack_chk_fail(void);
 
-void __stack_chk_fail_local(void)
+void
+__stack_chk_fail_local(void)
 {
 	__stack_chk_fail();
 }
@@ -56,7 +59,8 @@ extern uintptr_t __stack_chk_guard;
 
 typedef int (*jmp_t)(int argc, char **argv, char **envp, size_t *auxv);
 
-int main(int argc, char **argv, char **envp)
+int
+main(int argc, char **argv, char **envp)
 {
 	g_page_size = getauxval(AT_PAGESZ);
 	if (argc < 1)
@@ -77,27 +81,32 @@ int main(int argc, char **argv, char **envp)
 	exit(ret);
 }
 
-static void ld_lock(void)
+static void
+ld_lock(void)
 {
 	_eklat_lock(&g_lock);
 }
 
-static void ld_unlock(void)
+static void
+ld_unlock(void)
 {
 	_eklat_unlock(&g_lock, NULL);
 }
 
-void _libc_lock(struct _libc_lock *lock)
+void
+_libc_lock(struct _libc_lock *lock)
 {
 	(void)lock;
 }
 
-void _libc_unlock(struct _libc_lock *lock)
+void
+_libc_unlock(struct _libc_lock *lock)
 {
 	(void)lock;
 }
 
-void *_dl_open(const char *filename, int flags)
+void *
+_dl_open(const char *filename, int flags)
 {
 	ld_lock();
 	if (!filename)
@@ -126,7 +135,8 @@ err:
 	return NULL;
 }
 
-int _dl_close(void *handle)
+int
+_dl_close(void *handle)
 {
 	ld_lock();
 	elf_free(handle);
@@ -134,7 +144,8 @@ int _dl_close(void *handle)
 	return 0;
 }
 
-char *_dl_error(void)
+char *
+_dl_error(void)
 {
 	ld_lock();
 	if (!g_ld_err)
@@ -147,7 +158,8 @@ char *_dl_error(void)
 	return g_ld_errbuf;
 }
 
-void *_dl_sym(void *handle, const char *symbol)
+void *
+_dl_sym(void *handle, const char *symbol)
 {
 	ld_lock();
 	if (handle == RTLD_DEFAULT)
@@ -160,7 +172,8 @@ void *_dl_sym(void *handle, const char *symbol)
 	return (void*)sym;
 }
 
-void *_dl_tls_alloc(void)
+void *
+_dl_tls_alloc(void)
 {
 	ld_lock();
 	struct tls_block *tls = tls_block_alloc();
@@ -168,14 +181,16 @@ void *_dl_tls_alloc(void)
 	return tls;
 }
 
-void _dl_tls_free(void *ptr)
+void
+_dl_tls_free(void *ptr)
 {
 	ld_lock();
 	tls_block_free(ptr);
 	ld_unlock();
 }
 
-int _dl_tls_set(void *ptr)
+int
+_dl_tls_set(void *ptr)
 {
 	struct tls_block *tls = ptr;
 #if defined(__arm__) || defined(__aarch64__)
@@ -189,9 +204,9 @@ int _dl_tls_set(void *ptr)
 #endif
 }
 
-int _dl_iterate_phdr(int (*cb)(struct dl_phdr_info *info,
-                               size_t size, void *data),
-                     void *data)
+int
+_dl_iterate_phdr(int (*cb)(struct dl_phdr_info *info, size_t size, void *data),
+                 void *data)
 {
 	ld_lock();
 	struct elf *elf;

@@ -2,7 +2,8 @@
 
 #include <stdlib.h>
 
-void lcong48(uint16_t param[7])
+void
+lcong48(uint16_t param[7])
 {
 	rand48_x[0] = param[0];
 	rand48_x[1] = param[1];

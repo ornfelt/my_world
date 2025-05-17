@@ -1,7 +1,8 @@
 #include <libelf.h>
 #include <string.h>
 
-const char *elf_ehdr_class_str(uint8_t v)
+const char *
+elf_ehdr_class_str(uint8_t v)
 {
 	switch (v)
 	{
@@ -15,7 +16,8 @@ const char *elf_ehdr_class_str(uint8_t v)
 	return NULL;
 }
 
-const char *elf_ehdr_data_str(uint8_t v)
+const char *
+elf_ehdr_data_str(uint8_t v)
 {
 	switch (v)
 	{
@@ -29,7 +31,8 @@ const char *elf_ehdr_data_str(uint8_t v)
 	return NULL;
 }
 
-const char *elf_ehdr_abi_str(uint8_t v)
+const char *
+elf_ehdr_abi_str(uint8_t v)
 {
 	switch (v)
 	{
@@ -63,7 +66,8 @@ const char *elf_ehdr_abi_str(uint8_t v)
 	return NULL;
 }
 
-const char *elf_ehdr_type_str(uint16_t v)
+const char *
+elf_ehdr_type_str(uint16_t v)
 {
 	switch (v)
 	{
@@ -81,7 +85,8 @@ const char *elf_ehdr_type_str(uint16_t v)
 	return NULL;
 }
 
-const char *elf_ehdr_machine_str(uint16_t v)
+const char *
+elf_ehdr_machine_str(uint16_t v)
 {
 	switch (v)
 	{
@@ -115,7 +120,8 @@ const char *elf_ehdr_machine_str(uint16_t v)
 	return NULL;
 }
 
-const char *elf_phdr_type_str(uint32_t v)
+const char *
+elf_phdr_type_str(uint32_t v)
 {
 	switch (v)
 	{
@@ -140,7 +146,8 @@ const char *elf_phdr_type_str(uint32_t v)
 	return NULL;
 }
 
-const char *elf_phdr_flags_str(uint8_t v)
+const char *
+elf_phdr_flags_str(uint8_t v)
 {
 	static const char str[8][4] =
 	{
@@ -156,7 +163,8 @@ const char *elf_phdr_flags_str(uint8_t v)
 	return str[v & 0x7];
 }
 
-const char *elf_shdr_type_str(uint32_t v)
+const char *
+elf_shdr_type_str(uint32_t v)
 {
 	switch (v)
 	{
@@ -187,7 +195,8 @@ const char *elf_shdr_type_str(uint32_t v)
 	return NULL;
 }
 
-const char *elf_shdr_flags_str(char *buf, size_t size, uint32_t v)
+const char *
+elf_shdr_flags_str(char *buf, size_t size, uint32_t v)
 {
 #define TEST_FLAG(v, f, c) \
 do \
@@ -222,7 +231,8 @@ do \
 #undef TEST_FLAG
 }
 
-const char *elf_dyn_str(uint32_t v)
+const char *
+elf_dyn_str(uint32_t v)
 {
 	switch (v)
 	{
@@ -273,7 +283,8 @@ const char *elf_dyn_str(uint32_t v)
 	return NULL;
 }
 
-const char *elf_dyn_flags_str(char *buf, size_t size, uint32_t v)
+const char *
+elf_dyn_flags_str(char *buf, size_t size, uint32_t v)
 {
 #define TEST_DF(name) \
 do \
@@ -300,7 +311,8 @@ do \
 #undef TEST_DF
 }
 
-const char *elf_dyn_flags1_str(char *buf, size_t size, uint32_t v)
+const char *
+elf_dyn_flags1_str(char *buf, size_t size, uint32_t v)
 {
 #define TEST_DF_1(name) \
 do \
@@ -353,7 +365,8 @@ do \
 #undef TEST_DF_1
 }
 
-const char *elf_stb_str(uint8_t v)
+const char *
+elf_stb_str(uint8_t v)
 {
 	switch (v)
 	{
@@ -368,7 +381,8 @@ const char *elf_stb_str(uint8_t v)
 	return NULL;
 }
 
-const char *elf_stt_str(uint8_t v)
+const char *
+elf_stt_str(uint8_t v)
 {
 	switch (v)
 	{
@@ -387,7 +401,8 @@ const char *elf_stt_str(uint8_t v)
 	return NULL;
 }
 
-const char *elf_stv_str(uint8_t v)
+const char *
+elf_stv_str(uint8_t v)
 {
 	switch (v)
 	{
@@ -403,7 +418,8 @@ const char *elf_stv_str(uint8_t v)
 	return NULL;
 }
 
-const char *elf_r_str(uint32_t v)
+const char *
+elf_r_str(uint32_t v)
 {
 	switch (v)
 	{
@@ -423,7 +439,8 @@ const char *elf_r_str(uint32_t v)
 	return NULL;
 }
 
-const char *elf_r_386_str(uint32_t v)
+const char *
+elf_r_386_str(uint32_t v)
 {
 	switch (v)
 	{
@@ -464,7 +481,8 @@ const char *elf_r_386_str(uint32_t v)
 	return NULL;
 }
 
-const char *elf_r_x86_64_str(uint32_t v)
+const char *
+elf_r_x86_64_str(uint32_t v)
 {
 	switch (v)
 	{
@@ -512,7 +530,8 @@ const char *elf_r_x86_64_str(uint32_t v)
 	return NULL;
 }
 
-const char *elf_r_arm_str(uint32_t v)
+const char *
+elf_r_arm_str(uint32_t v)
 {
 	switch (v)
 	{
@@ -680,7 +699,8 @@ const char *elf_r_arm_str(uint32_t v)
 	return NULL;
 }
 
-const char *elf_r_aarch64_str(uint32_t v)
+const char *
+elf_r_aarch64_str(uint32_t v)
 {
 	switch (v)
 	{
@@ -819,7 +839,8 @@ const char *elf_r_aarch64_str(uint32_t v)
 	return NULL;
 }
 
-const char *elf_r_riscv_str(uint32_t v)
+const char *
+elf_r_riscv_str(uint32_t v)
 {
 	switch (v)
 	{
@@ -888,7 +909,8 @@ const char *elf_r_riscv_str(uint32_t v)
 	return NULL;
 }
 
-const char *elf_r_mips_str(uint32_t v)
+const char *
+elf_r_mips_str(uint32_t v)
 {
 	switch (v)
 	{
@@ -954,7 +976,8 @@ const char *elf_r_mips_str(uint32_t v)
 	return NULL;
 }
 
-const char *elf_ver_flags_str(char *buf, size_t size, uint32_t v)
+const char *
+elf_ver_flags_str(char *buf, size_t size, uint32_t v)
 {
 #define TEST_VER_FLAG(name) \
 do \

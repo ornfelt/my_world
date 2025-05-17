@@ -1,6 +1,7 @@
 #include <wchar.h>
 
-wchar_t *wcschr(const wchar_t *s, wchar_t wc)
+wchar_t *
+wcschr(const wchar_t *s, wchar_t wc)
 {
 	while (1)
 	{

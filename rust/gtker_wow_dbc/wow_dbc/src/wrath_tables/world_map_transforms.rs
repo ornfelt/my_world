@@ -4,11 +4,13 @@ use crate::{
 use crate::header::{
     DbcHeader, HEADER_SIZE, parse_header,
 };
+use crate::util::StringCache;
 use crate::wrath_tables::dungeon_map::DungeonMapKey;
 use crate::wrath_tables::map::MapKey;
 use std::io::Write;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct WorldMapTransforms {
     pub rows: Vec<WorldMapTransformsRow>,
 }
@@ -17,6 +19,8 @@ impl DbcTable for WorldMapTransforms {
     type Row = WorldMapTransformsRow;
 
     const FILENAME: &'static str = "WorldMapTransforms.dbc";
+    const FIELD_COUNT: usize = 10;
+    const ROW_SIZE: usize = 40;
 
     fn rows(&self) -> &[Self::Row] { &self.rows }
     fn rows_mut(&mut self) -> &mut [Self::Row] { &mut self.rows }
@@ -26,19 +30,19 @@ impl DbcTable for WorldMapTransforms {
         b.read_exact(&mut header)?;
         let header = parse_header(&header)?;
 
-        if header.record_size != 40 {
+        if header.record_size != Self::ROW_SIZE as u32 {
             return Err(crate::DbcError::InvalidHeader(
                 crate::InvalidHeaderError::RecordSize {
-                    expected: 40,
+                    expected: Self::ROW_SIZE as u32,
                     actual: header.record_size,
                 },
             ));
         }
 
-        if header.field_count != 10 {
+        if header.field_count != Self::FIELD_COUNT as u32 {
             return Err(crate::DbcError::InvalidHeader(
                 crate::InvalidHeaderError::FieldCount {
-                    expected: 10,
+                    expected: Self::FIELD_COUNT as u32,
                     actual: header.field_count,
                 },
             ));
@@ -88,15 +92,10 @@ impl DbcTable for WorldMapTransforms {
         Ok(WorldMapTransforms { rows, })
     }
 
-    fn write(&self, b: &mut impl Write) -> Result<(), std::io::Error> {
-        let header = DbcHeader {
-            record_count: self.rows.len() as u32,
-            field_count: 10,
-            record_size: 40,
-            string_block_size: 1,
-        };
+    fn write(&self, w: &mut impl Write) -> Result<(), std::io::Error> {
+        let mut b = Vec::with_capacity(self.rows.len() * Self::ROW_SIZE);
 
-        b.write_all(&header.write_header())?;
+        let  string_cache = StringCache::new();
 
         for row in &self.rows {
             // id: primary_key (WorldMapTransforms) int32
@@ -131,8 +130,17 @@ impl DbcTable for WorldMapTransforms {
 
         }
 
-        b.write_all(&[0_u8])?;
+        assert_eq!(b.len(), self.rows.len() * Self::ROW_SIZE);
+        let header = DbcHeader {
+            record_count: self.rows.len() as u32,
+            field_count: Self::FIELD_COUNT as u32,
+            record_size: Self::ROW_SIZE as u32,
+            string_block_size: string_cache.size(),
+        };
 
+        w.write_all(&header.write_header())?;
+        w.write_all(&b)?;
+        w.write_all(string_cache.buffer())?;
         Ok(())
     }
 
@@ -152,6 +160,7 @@ impl Indexable for WorldMapTransforms {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Hash, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct WorldMapTransformsKey {
     pub id: i32
 }
@@ -229,6 +238,7 @@ impl TryFrom<isize> for WorldMapTransformsKey {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct WorldMapTransformsRow {
     pub id: WorldMapTransformsKey,
     pub map_id: MapKey,
@@ -239,3 +249,22 @@ pub struct WorldMapTransformsRow {
     pub new_dungeon_map_id: DungeonMapKey,
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::fs::File;
+    use std::io::Read;
+
+    #[test]
+    #[ignore = "requires DBC files"]
+    fn world_map_transforms() {
+        let mut file = File::open("../wrath-dbc/WorldMapTransforms.dbc").expect("Failed to open DBC file");
+        let mut contents = Vec::new();
+        file.read_to_end(&mut contents).expect("Failed to read DBC file");
+        let actual = WorldMapTransforms::read(&mut contents.as_slice()).unwrap();
+        let mut v = Vec::with_capacity(contents.len());
+        actual.write(&mut v).unwrap();
+        let new = WorldMapTransforms::read(&mut v.as_slice()).unwrap();
+        assert_eq!(actual, new);
+    }
+}

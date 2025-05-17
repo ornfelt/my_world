@@ -90,13 +90,15 @@ struct virtio_blk
 static ssize_t dread(struct disk *disk, struct uio *uio);
 static ssize_t dwrite(struct disk *disk, struct uio *uio);
 
-static const struct disk_op g_op =
+static const struct disk_op
+g_op =
 {
 	.read = dread,
 	.write = dwrite,
 };
 
-static void on_msg(struct virtq *queue, uint16_t id, uint32_t len)
+static void
+on_msg(struct virtq *queue, uint16_t id, uint32_t len)
 {
 	struct virtio_blk *blk = (struct virtio_blk*)queue->dev;
 
@@ -107,7 +109,8 @@ static void on_msg(struct virtq *queue, uint16_t id, uint32_t len)
 	spinlock_unlock(&blk->waitq_lock);
 }
 
-static int wait_buf(struct virtio_blk *blk)
+static int
+wait_buf(struct virtio_blk *blk)
 {
 	int ret;
 
@@ -117,16 +120,19 @@ static int wait_buf(struct virtio_blk *blk)
 	return ret;
 }
 
-static ssize_t dread(struct disk *disk, struct uio *uio)
+static ssize_t
+dread(struct disk *disk, struct uio *uio)
 {
 	struct virtio_blk *blk = disk->userdata;
 	struct virtio_blk_req *req;
-	struct sg_head sg;
+	struct sg_head sg_write;
+	struct sg_head sg_read;
 	size_t numsect = uio->count / BLOCK_SIZE;
 	ssize_t ret;
 	size_t rd = 0;
 
-	sg_init(&sg);
+	sg_init(&sg_write);
+	sg_init(&sg_read);
 	mutex_lock(&blk->mutex);
 	for (size_t i = 0; i < numsect; ++i)
 	{
@@ -134,17 +140,18 @@ static ssize_t dread(struct disk *disk, struct uio *uio)
 		req->type = VIRTIO_BLK_T_IN;
 		req->reserved = 0;
 		req->sector = uio->off / BLOCK_SIZE;
-		sg_reset(&sg);
-		ret = sg_add_dma_buf(&sg, blk->buf, 16, 0);
+		sg_reset(&sg_write);
+		sg_reset(&sg_read);
+		ret = sg_add_dma_buf(&sg_read, blk->buf, 16, 0);
 		if (ret)
 			goto end;
-		ret = sg_add_uio(&sg, uio, BLOCK_SIZE);
+		ret = sg_add_uio(&sg_write, uio, BLOCK_SIZE);
 		if (ret)
 			goto end;
-		ret = sg_add_dma_buf(&sg, blk->buf, 1, 16);
+		ret = sg_add_dma_buf(&sg_write, blk->buf, 1, 16);
 		if (ret)
 			goto end;
-		ret = virtq_send(&blk->dev.queues[0], &sg, 1, sg.count - 1);
+		ret = virtq_send(&blk->dev.queues[0], &sg_read, &sg_write);
 		if (ret < 0)
 			goto end;
 		virtq_notify(&blk->dev.queues[0]);
@@ -164,20 +171,24 @@ static ssize_t dread(struct disk *disk, struct uio *uio)
 
 end:
 	mutex_unlock(&blk->mutex);
-	sg_free(&sg);
+	sg_free(&sg_write);
+	sg_free(&sg_read);
 	return ret;
 }
 
-static ssize_t dwrite(struct disk *disk, struct uio *uio)
+static ssize_t
+dwrite(struct disk *disk, struct uio *uio)
 {
 	struct virtio_blk *blk = disk->userdata;
 	struct virtio_blk_req *req;
-	struct sg_head sg;
+	struct sg_head sg_write;
+	struct sg_head sg_read;
 	size_t numsect = uio->count / BLOCK_SIZE;
 	ssize_t ret;
 	size_t wr = 0;
 
-	sg_init(&sg);
+	sg_init(&sg_write);
+	sg_init(&sg_read);
 	mutex_lock(&blk->mutex);
 	for (size_t i = 0; i < numsect; ++i)
 	{
@@ -185,17 +196,18 @@ static ssize_t dwrite(struct disk *disk, struct uio *uio)
 		req->type = VIRTIO_BLK_T_OUT;
 		req->reserved = 0;
 		req->sector = uio->off / BLOCK_SIZE;
-		sg_reset(&sg);
-		ret = sg_add_dma_buf(&sg, blk->buf, 16, 0);
+		sg_reset(&sg_write);
+		sg_reset(&sg_read);
+		ret = sg_add_dma_buf(&sg_read, blk->buf, 16, 0);
 		if (ret)
 			goto end;
-		ret = sg_add_uio(&sg, uio, BLOCK_SIZE);
+		ret = sg_add_uio(&sg_read, uio, BLOCK_SIZE);
 		if (ret)
 			goto end;
-		ret = sg_add_dma_buf(&sg, blk->buf, 1, 16);
+		ret = sg_add_dma_buf(&sg_write, blk->buf, 1, 16);
 		if (ret)
 			goto end;
-		ret = virtq_send(&blk->dev.queues[0], &sg, sg.count - 1, 1);
+		ret = virtq_send(&blk->dev.queues[0], &sg_read, &sg_write);
 		if (ret < 0)
 			goto end;
 		virtq_notify(&blk->dev.queues[0]);
@@ -215,11 +227,13 @@ static ssize_t dwrite(struct disk *disk, struct uio *uio)
 
 end:
 	mutex_unlock(&blk->mutex);
-	sg_free(&sg);
+	sg_free(&sg_write);
+	sg_free(&sg_read);
 	return ret;
 }
 
-static inline void print_blk_cfg(struct uio *uio, struct pci_map *blk_cfg)
+static inline void
+print_blk_cfg(struct uio *uio, struct pci_map *blk_cfg)
 {
 	uprintf(uio, "capacity: 0x%" PRIx64 "\n",
 	        pci_r64(blk_cfg, VIRTIO_BLK_C_CAPACITY));
@@ -259,7 +273,8 @@ static inline void print_blk_cfg(struct uio *uio, struct pci_map *blk_cfg)
 	        pci_r32(blk_cfg, VIRTIO_BLK_C_ZEROES_MAY_UNMAP));
 }
 
-static void virtio_blk_delete(struct virtio_blk *blk)
+static void
+virtio_blk_delete(struct virtio_blk *blk)
 {
 	if (!blk)
 		return;
@@ -272,10 +287,12 @@ static void virtio_blk_delete(struct virtio_blk *blk)
 	free(blk);
 }
 
-int init_pci(struct pci_device *device, void *userdata)
+int
+init_pci(struct pci_device *device, void *userdata)
 {
 	struct virtio_blk *blk = NULL;
 	uint8_t features[(VIRTIO_F_RING_RESET + 7) / 8];
+	uint64_t capacity;
 	int ret;
 
 	(void)userdata;
@@ -320,7 +337,7 @@ int init_pci(struct pci_device *device, void *userdata)
 		goto err;
 	}
 	virtio_dev_init_end(&blk->dev);
-	uint64_t capacity = pci_r64(blk->blk_cfg, VIRTIO_BLK_C_CAPACITY);
+	capacity = pci_r64(blk->blk_cfg, VIRTIO_BLK_C_CAPACITY);
 	ret = disk_new("vbd", makedev(97, 0), capacity * BLOCK_SIZE,
 	               &g_op, &blk->disk);
 	if (ret)
@@ -342,17 +359,20 @@ err:
 	return ret;
 }
 
-static int init(void)
+static int
+init(void)
 {
 	pci_probe(0x1AF4, 0x1001, init_pci, NULL);
 	return 0;
 }
 
-static void fini(void)
+static void
+fini(void)
 {
 }
 
-struct kmod_info kmod =
+struct kmod_info
+kmod =
 {
 	.magic = KMOD_MAGIC,
 	.version = 1,

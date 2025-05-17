@@ -2,13 +2,16 @@
 
 #include <stdio.h>
 
-int vfscanf(FILE *fp, const char *fmt, va_list va_arg)
+int
+vfscanf(FILE *fp, const char *fmt, va_list va_arg)
 {
 	struct buf buf;
+	int ret;
+
 	buf.type = SCANF_FP;
 	buf.fp = fp;
 	flockfile(fp);
-	int ret = scanf_buf(&buf, fmt, va_arg);
+	ret = scanf_buf(&buf, fmt, va_arg);
 	funlockfile(fp);
 	return ret;
 }

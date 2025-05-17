@@ -8,7 +8,8 @@
 #include <stdio.h>
 #include <time.h>
 
-static int load_nameserver(struct in_addr *dst)
+static int
+load_nameserver(struct in_addr *dst)
 {
 	FILE *fp = NULL;
 	int ret = 1;
@@ -33,7 +34,8 @@ end:
 	return ret;
 }
 
-int res_ninit(res_state state)
+int
+res_ninit(res_state state)
 {
 	struct sockaddr_in dst;
 	struct timeval tv;

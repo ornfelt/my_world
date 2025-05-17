@@ -18,7 +18,8 @@ static int (*types_fn[])(wint_t) =
 	[WCTYPE_XDIGIT] = iswxdigit,
 };
 
-int iswctype(wint_t wc, wctype_t type)
+int
+iswctype(wint_t wc, wctype_t type)
 {
 	if (type >= sizeof(types_fn) / sizeof(*types_fn))
 		return 0;

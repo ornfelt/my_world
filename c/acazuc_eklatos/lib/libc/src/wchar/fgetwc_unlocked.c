@@ -2,7 +2,8 @@
 #include <wchar.h>
 #include <errno.h>
 
-wint_t fgetwc_unlocked(FILE *fp)
+wint_t
+fgetwc_unlocked(FILE *fp)
 {
 	char buf[4];
 

@@ -12,14 +12,63 @@ struct env
 	int opt;
 };
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-n] [-e] strings\n", progname);
 	printf("-n: don't output newline\n");
 	printf("-e: enable escape sequence\n");
 }
 
-static int echo_str(struct env *env, const char *str, int last)
+static void
+print_x(const char *str, size_t *i)
+{
+	uint8_t byte = 0;
+
+	if (str[*i + 2])
+	{
+		(*i)++;
+		char c = tolower(str[(*i) + 1]);
+		if (c >= '0' && c <= '9')
+		{
+			byte += c - '0';
+		}
+		else if (c >= 'a' && c <= 'f')
+		{
+			byte += c - 'a' + 10;
+		}
+		else
+		{
+			putchar('\\');
+			putchar(str[(*i) + 0]);
+			putchar(str[(*i) + 1]);
+			return;
+		}
+		if (str[(*i) + 2])
+		{
+			(*i)++;
+			c = tolower(str[(*i) + 1]);
+			if (c >= '0' && c <= '9')
+			{
+				byte += c - '0';
+			}
+			else if (c >= 'a' && c <= 'f')
+			{
+				byte += c - 'a' + 10;
+			}
+			else
+			{
+				putchar(byte);
+				putchar(str[(*i) + 1]);
+				return;
+			}
+		}
+		putchar(byte);
+	}
+}
+
+static int
+echo_str(struct env *env, const char *str, int last)
 {
 	if (env->opt & OPT_e)
 	{
@@ -65,47 +114,7 @@ static int echo_str(struct env *env, const char *str, int last)
 					break;
 				case 'x':
 				{
-					uint8_t byte = 0;
-					if (str[i + 2])
-					{
-						i++;
-						char c = tolower(str[i + 1]);
-						if (c >= '0' && c <= '9')
-						{
-							byte += c - '0';
-						}
-						else if (c >= 'a' && c <= 'f')
-						{
-							byte += c - 'a' + 10;
-						}
-						else
-						{
-							putchar('\\');
-							putchar(str[i + 0]);
-							putchar(str[i + 1]);
-							break;
-						}
-						if (str[i + 2])
-						{
-							i++;
-							c = tolower(str[i + 1]);
-							if (c >= '0' && c <= '9')
-							{
-								byte += c - '0';
-							}
-							else if (c >= 'a' && c <= 'f')
-							{
-								byte += c - 'a' + 10;
-							}
-							else
-							{
-								putchar(byte);
-								putchar(str[i + 1]);
-								break;
-							}
-						}
-						putchar(byte);
-					}
+					print_x(str, &i);
 					break;
 				}
 				default:
@@ -134,7 +143,8 @@ static int echo_str(struct env *env, const char *str, int last)
 	return 0;
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

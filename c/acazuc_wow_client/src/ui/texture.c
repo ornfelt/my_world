@@ -200,7 +200,7 @@ static void render(struct ui_object *object)
 				break;
 			case BLEND_ALPHAKEY:
 				blend_state = INTERFACE_BLEND_OPAQUE;
-				model_block.alpha_test = 224.0 / 255;
+				model_block.alpha_test = 224.0 / 255.0;
 				break;
 			case BLEND_ADD:
 				blend_state = INTERFACE_BLEND_ADD;

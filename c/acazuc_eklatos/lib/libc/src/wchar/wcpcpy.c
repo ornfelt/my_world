@@ -1,8 +1,10 @@
 #include <wchar.h>
 
-wchar_t *wcpcpy(wchar_t *d, const wchar_t *s)
+wchar_t *
+wcpcpy(wchar_t *d, const wchar_t *s)
 {
 	size_t i = 0;
+
 	while (1)
 	{
 		wchar_t v = s[i];

@@ -1,8 +1,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int main()
+int
+main(int argc, char **argv)
 {
+	(void)argc;
+	(void)argv;
+
 	for (size_t i = 0; i < 10; ++i)
 	{
 		char tmp[] = "\033[0;30m0;30 \033[1;30m1;30 \033[0;40m0;40\033[0m \033[1;40m1;40\033[0m";

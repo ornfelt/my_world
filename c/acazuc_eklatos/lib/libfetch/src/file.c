@@ -5,13 +5,15 @@
 #include <string.h>
 #include <fetch.h>
 
-FILE *fetchGetFile(struct url *url, const char *flags)
+FILE *
+fetchGetFile(struct url *url, const char *flags)
 {
 	(void)flags;
 	return fopen(url->doc, "rb");
 }
 
-FILE *fetchPutFile(struct url *url, const char *flags)
+FILE *
+fetchPutFile(struct url *url, const char *flags)
 {
 	const char *mode;
 	if (flags && strchr(flags, 'a'))
@@ -21,7 +23,8 @@ FILE *fetchPutFile(struct url *url, const char *flags)
 	return fopen(url->doc, mode);
 }
 
-int fetchStatFile(struct url *url, struct url_stat *ustat, const char *flags)
+int
+fetchStatFile(struct url *url, struct url_stat *ustat, const char *flags)
 {
 	struct stat st;
 
@@ -34,7 +37,8 @@ int fetchStatFile(struct url *url, struct url_stat *ustat, const char *flags)
 	return 0;
 }
 
-struct url_ent *fetchListFile(struct url *url, const char *flags)
+struct url_ent *
+fetchListFile(struct url *url, const char *flags)
 {
 	(void)flags;
 	DIR *dir = opendir(url->doc);

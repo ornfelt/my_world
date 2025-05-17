@@ -24,18 +24,22 @@ struct env
 	size_t prev_entries_nb;
 };
 
-static struct entry *add_entry(struct env *env)
+static struct entry *
+add_entry(struct env *env)
 {
 	if (env->entries_nb >= env->entries_size)
 	{
-		size_t new_size = env->entries_size * 2;
+		struct entry *entries;
+		size_t new_size;
+
+		new_size = env->entries_size * 2;
 		if (new_size < 32)
 			new_size = 32;
-		struct entry *entries = realloc(env->entries,
-		                                sizeof(*entries) * new_size);
+		entries = realloc(env->entries, sizeof(*entries) * new_size);
 		if (!entries)
 		{
-			fprintf(stderr, "%s: malloc: %s\n", env->progname,
+			fprintf(stderr, "%s: malloc: %s\n",
+			        env->progname,
 			        strerror(errno));
 			return NULL;
 		}
@@ -45,27 +49,32 @@ static struct entry *add_entry(struct env *env)
 	return &env->entries[env->entries_nb++];
 }
 
-static int get_entries(struct env *env)
+static int
+get_entries(struct env *env)
 {
 	int ret = 1;
 	FILE *fp = NULL;
 	char *line = NULL;
 	size_t size = 0;
+
 	fp = fopen("/sys/procinfo", "r");
 	if (!fp)
 	{
-		fprintf(stderr, "%s: open: %s\n", env->progname,
+		fprintf(stderr, "%s: open: %s\n",
+		        env->progname,
 		        strerror(errno));
 		goto end;
 	}
 	env->entries_nb = 0;
 	while ((getline(&line, &size, fp)) > 0)
 	{
-		struct entry *entry = add_entry(env);
-		if (!entry)
-			goto end;
+		struct entry *entry;
 		size_t ums;
 		size_t sms;
+
+		entry = add_entry(env);
+		if (!entry)
+			goto end;
 		if (sscanf(line, "%d %d %*s %32s %zd.%zdu %zd.%zds",
 		           &entry->pid,
 		           &entry->ppid,
@@ -90,7 +99,8 @@ end:
 	return ret;
 }
 
-static int display(struct env *env)
+static int
+display(struct env *env)
 {
 	static const char equals[] = "======================================================================================================================================================";
 	if (env->prev_entries_nb)
@@ -118,13 +128,15 @@ static int display(struct env *env)
 	return 0;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-h]\n", progname);
 	printf("-h: display this help\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

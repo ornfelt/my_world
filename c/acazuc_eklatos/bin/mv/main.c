@@ -16,11 +16,16 @@ struct env
 	int opt;
 };
 
-static int move_file(struct env *env, const char *file, const char *dst)
+static int
+move_file(struct env *env, const char *file, const char *dst)
 {
 	char path[MAXPATHLEN];
-	size_t file_len = strlen(file);
-	const char *end = file + file_len;
+	size_t file_len;
+	const char *begin;
+	const char *end;
+
+	file_len = strlen(file);
+	end = file + file_len;
 	while (end >= file && *end == '/')
 		end--;
 	if (end <= file)
@@ -28,7 +33,7 @@ static int move_file(struct env *env, const char *file, const char *dst)
 		fprintf(stderr, "%s: invalid operand\n", env->progname);
 		return 1;
 	}
-	const char *begin = end;
+	begin = end;
 	while (begin > file && *begin != '/')
 		begin--;
 	if (*begin == '/')
@@ -45,21 +50,26 @@ static int move_file(struct env *env, const char *file, const char *dst)
 		{
 			/* XXX cp */
 		}
-		fprintf(stderr, "%s: rename: %s\n", env->progname,
+		fprintf(stderr, "%s: rename: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
 	return 0;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-v] SOURCES DEST\n", progname);
 	printf("-v: verbose operations\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
+	const char *dst;
+	struct stat st;
 	struct env env;
 	int c;
 
@@ -82,9 +92,8 @@ int main(int argc, char **argv)
 		fprintf(stderr, "%s: missing operand\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	const char *dst = argv[argc - 1];
-	struct stat dst_st;
-	if (stat(dst, &dst_st) == -1)
+	dst = argv[argc - 1];
+	if (stat(dst, &st) == -1)
 	{
 		if (errno == ENOENT)
 		{
@@ -92,14 +101,16 @@ int main(int argc, char **argv)
 		}
 		else
 		{
-			fprintf(stderr, "%s: stat(%s): %s\n", argv[0], dst,
+			fprintf(stderr, "%s: stat(%s): %s\n",
+			        argv[0],
+			        dst,
 			        strerror(errno));
 			return EXIT_FAILURE;
 		}
 	}
 	else
 	{
-		env.dst_isdir = S_ISDIR(dst_st.st_mode);
+		env.dst_isdir = S_ISDIR(st.st_mode);
 	}
 	if (argc - optind > 2 && !env.dst_isdir)
 	{

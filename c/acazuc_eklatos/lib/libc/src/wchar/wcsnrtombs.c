@@ -1,11 +1,12 @@
 #include <string.h>
 #include <wchar.h>
 
-size_t wcsnrtombs(char *d, const wchar_t **s, size_t n, size_t len,
-                  mbstate_t *ps)
+size_t
+wcsnrtombs(char *d, const wchar_t **s, size_t n, size_t len, mbstate_t *ps)
 {
 	char buf[4];
 	size_t sum = 0;
+
 	while (**s)
 	{
 		if (!n)

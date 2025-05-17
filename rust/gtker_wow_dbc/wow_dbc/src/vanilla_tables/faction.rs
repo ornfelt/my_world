@@ -4,12 +4,15 @@ use crate::{
 use crate::header::{
     DbcHeader, HEADER_SIZE, parse_header,
 };
+use crate::tys::WritableString;
+use crate::util::StringCache;
 use std::io::Write;
 use wow_world_base::vanilla::{
     AllowedRace, ReputationFlags,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Faction {
     pub rows: Vec<FactionRow>,
 }
@@ -18,6 +21,8 @@ impl DbcTable for Faction {
     type Row = FactionRow;
 
     const FILENAME: &'static str = "Faction.dbc";
+    const FIELD_COUNT: usize = 37;
+    const ROW_SIZE: usize = 148;
 
     fn rows(&self) -> &[Self::Row] { &self.rows }
     fn rows_mut(&mut self) -> &mut [Self::Row] { &mut self.rows }
@@ -27,19 +32,19 @@ impl DbcTable for Faction {
         b.read_exact(&mut header)?;
         let header = parse_header(&header)?;
 
-        if header.record_size != 148 {
+        if header.record_size != Self::ROW_SIZE as u32 {
             return Err(crate::DbcError::InvalidHeader(
                 crate::InvalidHeaderError::RecordSize {
-                    expected: 148,
+                    expected: Self::ROW_SIZE as u32,
                     actual: header.record_size,
                 },
             ));
         }
 
-        if header.field_count != 37 {
+        if header.field_count != Self::FIELD_COUNT as u32 {
             return Err(crate::DbcError::InvalidHeader(
                 crate::InvalidHeaderError::FieldCount {
-                    expected: 37,
+                    expected: Self::FIELD_COUNT as u32,
                     actual: header.field_count,
                 },
             ));
@@ -113,17 +118,11 @@ impl DbcTable for Faction {
         Ok(Faction { rows, })
     }
 
-    fn write(&self, b: &mut impl Write) -> Result<(), std::io::Error> {
-        let header = DbcHeader {
-            record_count: self.rows.len() as u32,
-            field_count: 37,
-            record_size: 148,
-            string_block_size: self.string_block_size(),
-        };
+    fn write(&self, w: &mut impl Write) -> Result<(), std::io::Error> {
+        let mut b = Vec::with_capacity(self.rows.len() * Self::ROW_SIZE);
 
-        b.write_all(&header.write_header())?;
+        let mut string_cache = StringCache::new();
 
-        let mut string_index = 1;
         for row in &self.rows {
             // id: primary_key (Faction) uint32
             b.write_all(&row.id.id.to_le_bytes())?;
@@ -159,15 +158,24 @@ impl DbcTable for Faction {
             b.write_all(&(row.parent_faction.id as u32).to_le_bytes())?;
 
             // name: string_ref_loc
-            b.write_all(&row.name.string_indices_as_array(&mut string_index))?;
+            b.write_all(&row.name.string_indices_as_array(&mut string_cache))?;
 
             // description: string_ref_loc
-            b.write_all(&row.description.string_indices_as_array(&mut string_index))?;
+            b.write_all(&row.description.string_indices_as_array(&mut string_cache))?;
 
         }
 
-        self.write_string_block(b)?;
+        assert_eq!(b.len(), self.rows.len() * Self::ROW_SIZE);
+        let header = DbcHeader {
+            record_count: self.rows.len() as u32,
+            field_count: Self::FIELD_COUNT as u32,
+            record_size: Self::ROW_SIZE as u32,
+            string_block_size: string_cache.size(),
+        };
 
+        w.write_all(&header.write_header())?;
+        w.write_all(&b)?;
+        w.write_all(string_cache.buffer())?;
         Ok(())
     }
 
@@ -186,31 +194,8 @@ impl Indexable for Faction {
     }
 }
 
-impl Faction {
-    fn write_string_block(&self, b: &mut impl Write) -> Result<(), std::io::Error> {
-        b.write_all(&[0])?;
-
-        for row in &self.rows {
-            row.name.string_block_as_array(b)?;
-            row.description.string_block_as_array(b)?;
-        }
-
-        Ok(())
-    }
-
-    fn string_block_size(&self) -> u32 {
-        let mut sum = 1;
-        for row in &self.rows {
-            sum += row.name.string_block_size();
-            sum += row.description.string_block_size();
-        }
-
-        sum as u32
-    }
-
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Hash, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct FactionKey {
     pub id: u32
 }
@@ -290,6 +275,7 @@ impl TryFrom<isize> for FactionKey {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct FactionRow {
     pub id: FactionKey,
     pub reputation_index: u32,
@@ -302,3 +288,22 @@ pub struct FactionRow {
     pub description: LocalizedString,
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::fs::File;
+    use std::io::Read;
+
+    #[test]
+    #[ignore = "requires DBC files"]
+    fn faction() {
+        let mut file = File::open("../vanilla-dbc/Faction.dbc").expect("Failed to open DBC file");
+        let mut contents = Vec::new();
+        file.read_to_end(&mut contents).expect("Failed to read DBC file");
+        let actual = Faction::read(&mut contents.as_slice()).unwrap();
+        let mut v = Vec::with_capacity(contents.len());
+        actual.write(&mut v).unwrap();
+        let new = Faction::read(&mut v.as_slice()).unwrap();
+        assert_eq!(actual, new);
+    }
+}

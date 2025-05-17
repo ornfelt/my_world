@@ -13,10 +13,12 @@ struct memopen_data
 	int has_written;
 };
 
-static ssize_t read_fn(void *cookie, char *buf, size_t size)
+static ssize_t
+read_fn(void *cookie, char *buf, size_t size)
 {
 	struct memopen_data *data = cookie;
 	size_t avail = data->wr_pos - data->pos;
+
 	if (size > avail)
 		size = avail;
 	memcpy(buf, &data->data[data->pos], size);
@@ -24,11 +26,13 @@ static ssize_t read_fn(void *cookie, char *buf, size_t size)
 	return size;
 }
 
-static ssize_t write_fn(void *cookie, const char *buf, size_t size)
+static ssize_t
+write_fn(void *cookie, const char *buf, size_t size)
 {
 	struct memopen_data *data = cookie;
 	size_t avail = data->size - data->pos;
 	size_t org = size;
+
 	if (data->pos == data->size)
 		return size;
 	if (size > avail)
@@ -42,9 +46,11 @@ static ssize_t write_fn(void *cookie, const char *buf, size_t size)
 	return org;
 }
 
-static int seek_fn(void *cookie, off_t off, int whence)
+static int
+seek_fn(void *cookie, off_t off, int whence)
 {
 	struct memopen_data *data = cookie;
+
 	switch (whence)
 	{
 		case SEEK_CUR:
@@ -89,18 +95,22 @@ static int seek_fn(void *cookie, off_t off, int whence)
 	return data->pos;
 }
 
-static int close_fn(void *cookie)
+static int
+close_fn(void *cookie)
 {
 	struct memopen_data *data = cookie;
+
 	if (data->own_buf)
 		free(data->data);
 	free(data);
 	return 0;
 }
 
-static int flush_fn(FILE *fp)
+static int
+flush_fn(FILE *fp)
 {
 	struct memopen_data *data = fp->cookie;
+
 	switch (data->fp->mode & 3)
 	{
 		case O_WRONLY:
@@ -116,12 +126,16 @@ static int flush_fn(FILE *fp)
 	return 0;
 }
 
-FILE *fmemopen(void *buf, size_t size, const char *mode)
+FILE *
+fmemopen(void *buf, size_t size, const char *mode)
 {
-	FILE *fp = mkfp();
+	struct memopen_data *data;
+	FILE *fp;
+	int flags;
+
+	fp = mkfp();
 	if (!fp)
 		return NULL;
-	int flags;
 	if (!parse_flags(mode, &flags))
 	{
 		free(fp);
@@ -133,7 +147,7 @@ FILE *fmemopen(void *buf, size_t size, const char *mode)
 		return NULL;
 	}
 	fp->mode = flags;
-	struct memopen_data *data = malloc(sizeof(*data));
+	data = malloc(sizeof(*data));
 	if (!data)
 	{
 		free(fp);

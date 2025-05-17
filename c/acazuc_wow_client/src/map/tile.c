@@ -4,6 +4,7 @@
 #include "gx/mclq.h"
 #include "gx/wmo.h"
 #include "gx/m2.h"
+#include "gx/gx.h"
 
 #include "map/tile.h"
 #include "map/map.h"
@@ -49,23 +50,30 @@ struct map_chunk_ground_effect
 static void add_objects_to_render(struct map_tile *tile, struct gx_frame *frame);
 static void init_ground_effects(struct map_chunk *chunk, struct wow_mcnk *wow_mcnk);
 
-static void tile_ground_effect_destroy(void *data)
+static void
+tile_ground_effect_destroy(void *data)
 {
 	struct map_tile_ground_effect *ground_effect = data;
+
 	gx_m2_ground_batch_free(ground_effect->light_batch);
 	gx_m2_ground_batch_free(ground_effect->shadow_batch);
 }
 
-static void chunk_ground_effect_destroy(void *data)
+static void
+chunk_ground_effect_destroy(void *data)
 {
 	struct map_chunk_ground_effect *ground_effect = data;
+
 	jks_array_destroy(&ground_effect->light_doodads);
 	jks_array_destroy(&ground_effect->shadow_doodads);
 }
 
-struct map_tile *map_tile_new(const char *filename, int32_t x, int32_t z)
+struct map_tile *
+map_tile_new(const char *filename, int32_t x, int32_t z)
 {
-	struct map_tile *tile = mem_zalloc(MEM_MAP, sizeof(*tile));
+	struct map_tile *tile;
+
+	tile = mem_zalloc(MEM_MAP, sizeof(*tile));
 	if (!tile)
 		return NULL;
 	refcount_init(&tile->refcount, 1);
@@ -100,10 +108,12 @@ err:
 	return NULL;
 }
 
-static void map_tile_unload_task(struct wow_mpq_compound *mpq_compound, void *userdata)
+static void
+map_tile_unload_task(struct wow_mpq_compound *mpq_compound, void *userdata)
 {
-	(void)mpq_compound;
 	struct map_tile *tile = userdata;
+
+	(void)mpq_compound;
 	for (size_t i = 0; i < CHUNKS_PER_TILE; ++i)
 	{
 		struct map_chunk *chunk = &tile->chunks[i];
@@ -130,7 +140,8 @@ static void map_tile_unload_task(struct wow_mpq_compound *mpq_compound, void *us
 	mem_free(MEM_MAP, tile);
 }
 
-void map_tile_free(struct map_tile *tile)
+void
+map_tile_free(struct map_tile *tile)
 {
 	if (!tile)
 		return;
@@ -146,17 +157,23 @@ void map_tile_free(struct map_tile *tile)
 	mem_free(MEM_GX, tile->m2);
 	tile->m2 = NULL;
 	tile->m2_nb = 0;
-	loader_push(g_wow->loader, ASYNC_TASK_MAP_TILE_UNLOAD, map_tile_unload_task, tile);
+	loader_push(g_wow->loader,
+	            ASYNC_TASK_MAP_TILE_UNLOAD,
+	            map_tile_unload_task,
+	            tile);
 }
 
-void map_tile_ref(struct map_tile *tile)
+void
+map_tile_ref(struct map_tile *tile)
 {
 	refcount_inc(&tile->refcount);
 }
 
-static bool initialize(void *userdata)
+static bool
+initialize(void *userdata)
 {
 	struct map_tile *tile = userdata;
+
 	assert(tile->flags & MAP_TILE_FLAG_LOADED);
 	switch (gx_mcnk_initialize(tile->gx_mcnk))
 	{
@@ -183,22 +200,77 @@ static bool initialize(void *userdata)
 	return true;
 }
 
-static bool load_childs(struct map_tile *tile, struct wow_adt_file *file)
+static bool
+load_m2(struct map_tile *tile, struct wow_adt_file *file)
+{
+	uint32_t m2_nb = file->mddf.size;
+	struct map_m2 **m2 = NULL;
+
+	m2 = mem_malloc(MEM_GX, sizeof(*m2) * m2_nb);
+	if (!m2)
+		return false;
+	for (uint32_t i = 0; i < m2_nb; ++i)
+	{
+		struct wow_mddf_data *mddf = &file->mddf.data[i];
+		struct map_m2 *handle;
+
+		cache_lock_map_m2(g_wow->cache);
+		if (!cache_ref_unmutexed_map_m2(g_wow->cache, mddf->unique_id, &handle))
+		{
+			cache_unlock_map_m2(g_wow->cache);
+			LOG_ERROR("failed to get m2 handle: %d", mddf->unique_id);
+			m2[i] = NULL;
+			continue;
+		}
+		if (!handle->instance)
+		{
+			char filename[512];
+			snprintf(filename, sizeof(filename), "%s", &file->mmdx.data[file->mmid.data[mddf->name_id]]);
+			wow_mpq_normalize_m2_fn(filename, sizeof(filename));
+			map_m2_load(handle, filename);
+			cache_unlock_map_m2(g_wow->cache);
+			float offset = (32 * 16) * CHUNK_WIDTH;
+			struct vec3f pos = {offset - mddf->position.z, mddf->position.y, -(offset - mddf->position.x)};
+			struct mat4f mat1;
+			struct mat4f mat2;
+			MAT4_IDENTITY(mat1);
+			MAT4_TRANSLATE(mat2, mat1, pos);
+			MAT4_ROTATEY(float, mat1, mat2,  (mddf->rotation.y + 180.0f) / 180.0f * M_PI);
+			MAT4_ROTATEZ(float, mat2, mat1, -(mddf->rotation.x) / 180.0f * M_PI);
+			MAT4_ROTATEX(float, mat1, mat2,  (mddf->rotation.z) / 180.0f * M_PI);
+			MAT4_SCALEV(mat1, mat1, mddf->scale / 1024.0f);
+			cache_lock_m2(g_wow->cache);
+			handle->instance->scale = mddf->scale / 1024.0f;
+			gx_m2_instance_set_mat(handle->instance, &mat1);
+			handle->instance->pos = pos;
+			gx_m2_ask_load(handle->instance->parent);
+			cache_unlock_m2(g_wow->cache);
+		}
+		else
+		{
+			cache_unlock_map_m2(g_wow->cache);
+		}
+		m2[i] = handle;
+	}
+	tile->m2_nb = m2_nb;
+	tile->m2 = m2;
+	return true;
+}
+
+static bool
+load_wmo(struct map_tile *tile, struct wow_adt_file *file)
 {
 	uint32_t wmo_nb = file->modf.size;
 	struct map_wmo **wmo = NULL;
-	uint32_t m2_nb = file->mddf.size;
-	struct map_m2 **m2 = NULL;
+
 	wmo = mem_malloc(MEM_GX, sizeof(*wmo) * wmo_nb);
 	if (!wmo)
-		goto err;
-	m2 = mem_malloc(MEM_GX, sizeof(*m2) * m2_nb);
-	if (!m2)
-		goto err;
+		return false;
 	for (uint32_t i = 0; i < wmo_nb; ++i)
 	{
 		struct wow_modf_data *modf = &file->modf.data[i];
 		struct map_wmo *handle;
+
 		cache_lock_map_wmo(g_wow->cache);
 		if (!cache_ref_unmutexed_map_wmo(g_wow->cache, modf->unique_id, &handle))
 		{
@@ -239,61 +311,13 @@ static bool load_childs(struct map_tile *tile, struct wow_adt_file *file)
 		}
 		wmo[i] = handle;
 	}
-	for (uint32_t i = 0; i < m2_nb; ++i)
-	{
-		struct wow_mddf_data *mddf = &file->mddf.data[i];
-		struct map_m2 *handle;
-		cache_lock_map_m2(g_wow->cache);
-		if (!cache_ref_unmutexed_map_m2(g_wow->cache, mddf->unique_id, &handle))
-		{
-			cache_unlock_map_m2(g_wow->cache);
-			LOG_ERROR("failed to get m2 handle: %d", mddf->unique_id);
-			m2[i] = NULL;
-			continue;
-		}
-		if (!handle->instance)
-		{
-			char filename[512];
-			snprintf(filename, sizeof(filename), "%s", &file->mmdx.data[file->mmid.data[mddf->name_id]]);
-			wow_mpq_normalize_m2_fn(filename, sizeof(filename));
-			map_m2_load(handle, filename);
-			cache_unlock_map_m2(g_wow->cache);
-			float offset = (32 * 16) * CHUNK_WIDTH;
-			struct vec3f pos = {offset - mddf->position.z, mddf->position.y, -(offset - mddf->position.x)};
-			struct mat4f mat1;
-			struct mat4f mat2;
-			MAT4_IDENTITY(mat1);
-			MAT4_TRANSLATE(mat2, mat1, pos);
-			MAT4_ROTATEY(float, mat1, mat2,  (mddf->rotation.y + 180.0f) / 180.0f * M_PI);
-			MAT4_ROTATEZ(float, mat2, mat1, -(mddf->rotation.x) / 180.0f * M_PI);
-			MAT4_ROTATEX(float, mat1, mat2,  (mddf->rotation.z) / 180.0f * M_PI);
-			MAT4_SCALEV(mat1, mat1, mddf->scale / 1024.0f);
-			cache_lock_m2(g_wow->cache);
-			handle->instance->scale = mddf->scale / 1024.0f;
-			gx_m2_instance_set_mat(handle->instance, &mat1);
-			handle->instance->pos = pos;
-			gx_m2_ask_load(handle->instance->parent);
-			cache_unlock_m2(g_wow->cache);
-		}
-		else
-		{
-			cache_unlock_map_m2(g_wow->cache);
-		}
-		m2[i] = handle;
-	}
 	tile->wmo_nb = wmo_nb;
 	tile->wmo = wmo;
-	tile->m2_nb = m2_nb;
-	tile->m2 = m2;
 	return true;
-
-err:
-	mem_free(MEM_GX, wmo);
-	mem_free(MEM_GX, m2);
-	return false;
 }
 
-static bool load(struct map_tile *tile, struct wow_adt_file *file)
+static bool
+load(struct map_tile *tile, struct wow_adt_file *file)
 {
 	float tile_min_y = +9999;
 	float tile_max_y = -9999;
@@ -420,7 +444,8 @@ static bool load(struct map_tile *tile, struct wow_adt_file *file)
 	return true;
 }
 
-static void map_tile_load_task(struct wow_mpq_compound *mpq_compound, void *userdata)
+static void
+map_tile_load_task(struct wow_mpq_compound *mpq_compound, void *userdata)
 {
 	struct map_tile *tile = userdata;
 	struct wow_mpq_file *mpq_file = NULL;
@@ -438,9 +463,14 @@ static void map_tile_load_task(struct wow_mpq_compound *mpq_compound, void *user
 		LOG_ERROR("failed to create adt from file %s", tile->filename);
 		goto end;
 	}
-	if (!load_childs(tile, adt_file))
+	if (!load_wmo(tile, adt_file))
 	{
-		LOG_ERROR("failed to load adt childs");
+		LOG_ERROR("failed to load adt wmo");
+		goto end;
+	}
+	if (!load_m2(tile, adt_file))
+	{
+		LOG_ERROR("failed to load adt m2");
 		goto end;
 	}
 	if (!load(tile, adt_file))
@@ -458,7 +488,8 @@ end:
 	map_tile_free(tile);
 }
 
-void map_tile_ask_load(struct map_tile *tile)
+void
+map_tile_ask_load(struct map_tile *tile)
 {
 	if (tile->flags & (MAP_TILE_FLAG_LOADING | MAP_TILE_FLAG_LOADED))
 		return;
@@ -468,7 +499,8 @@ void map_tile_ask_load(struct map_tile *tile)
 }
 
 #ifdef WITH_DEBUG_RENDERING
-static void cull_aabb(struct map_tile *tile, struct gx_mcnk *mcnk, struct gx_frame *frame)
+static void
+cull_aabb(struct map_tile *tile, struct gx_mcnk *mcnk, struct gx_frame *frame)
 {
 	if (tile->flags & MAP_TILE_FLAG_DOODADS_AABB)
 	{
@@ -493,6 +525,7 @@ static void cull_aabb(struct map_tile *tile, struct gx_mcnk *mcnk, struct gx_fra
 	{
 		struct gx_mcnk_chunk *gx_chunk = &mcnk->chunks[i];
 		struct map_chunk *chunk = &tile->chunks[i];
+
 		if (chunk->doodads_to_aabb.size != chunk->doodads_nb)
 		{
 			switch (chunk->doodads_frustum_result)
@@ -518,15 +551,18 @@ static void cull_aabb(struct map_tile *tile, struct gx_mcnk *mcnk, struct gx_fra
 }
 #endif
 
-static void cull_objects(struct map_tile *tile, struct gx_frame *frame)
+static void
+cull_objects(struct map_tile *tile, struct gx_frame *frame)
 {
 	uint8_t doodads_chunks[CHUNKS_PER_TILE];
 	size_t doodads_chunks_count = 0;
 	uint8_t wmos_chunks[CHUNKS_PER_TILE];
 	size_t wmos_chunks_count = 0;
+
 	for (uint32_t i = 0; i < CHUNKS_PER_TILE; ++i)
 	{
 		struct map_chunk *chunk = &tile->chunks[i];
+
 		for (size_t j = 0; j < chunk->doodads_to_aabb.size; ++j)
 		{
 			struct gx_m2_instance *m2 = tile->m2[*JKS_ARRAY_GET(&chunk->doodads_to_aabb, j, uint32_t)]->instance;
@@ -630,7 +666,8 @@ static void cull_objects(struct map_tile *tile, struct gx_frame *frame)
 	}
 }
 
-void map_tile_cull(struct map_tile *tile, struct gx_frame *frame)
+void
+map_tile_cull(struct map_tile *tile, struct gx_frame *frame)
 {
 	if (!(tile->flags & MAP_TILE_FLAG_INITIALIZED))
 		return;
@@ -644,14 +681,19 @@ void map_tile_cull(struct map_tile *tile, struct gx_frame *frame)
 	if (g_wow->wow_opt & WOW_OPT_AABB_OPTIMIZE)
 		cull_objects(tile, frame);
 #ifdef WITH_DEBUG_RENDERING
-	if (g_wow->render_opt & RENDER_OPT_MCNK_AABB)
+	if (g_wow->gx->opt & GX_OPT_MCNK_AABB)
 		cull_aabb(tile, tile->gx_mcnk, frame);
 #endif
 	if (tile->gx_mclq)
 		gx_mclq_cull(tile->gx_mclq, frame);
 }
 
-static void add_point(struct map_tile *tile, struct map_chunk *chunk, uint8_t chunk_id, uint16_t idx, struct vec3f *p)
+static void
+add_point(struct map_tile *tile,
+          struct map_chunk *chunk,
+          uint8_t chunk_id,
+          uint16_t idx,
+          struct vec3f *p)
 {
 	size_t y = idx % 17;
 	float z = idx / 17 * 2;
@@ -670,7 +712,12 @@ static void add_point(struct map_tile *tile, struct map_chunk *chunk, uint8_t ch
 	p->y = chunk->height[idx];
 }
 
-static void add_chunk(struct map_tile *tile, struct map_chunk *chunk, uint8_t chunk_id, const struct collision_params *params, struct jks_array *triangles)
+static void
+add_chunk(struct map_tile *tile,
+          struct map_chunk *chunk,
+          uint8_t chunk_id,
+          const struct collision_params *params,
+          struct jks_array *triangles)
 {
 	float xmin = tile->pos.x - (1 + (ssize_t)(chunk_id / 16)) * CHUNK_WIDTH;
 	ssize_t z_end = floorf((params->aabb.p0.x - xmin) / (CHUNK_WIDTH / 8));
@@ -745,7 +792,8 @@ static void add_chunk(struct map_tile *tile, struct map_chunk *chunk, uint8_t ch
 	jks_array_resize(triangles, triangles_nb + n * 4);
 }
 
-static void add_object_point(struct gx_m2_instance *m2, struct vec3f *point, uint16_t idx)
+static void
+add_object_point(struct gx_m2_instance *m2, struct vec3f *point, uint16_t idx)
 {
 	struct vec4f tmp;
 	VEC3_CPY(tmp, m2->parent->collision_vertexes[idx]);
@@ -755,7 +803,8 @@ static void add_object_point(struct gx_m2_instance *m2, struct vec3f *point, uin
 	VEC3_CPY(*point, out);
 }
 
-static void add_object(struct gx_m2_instance *m2, struct jks_array *triangles)
+static void
+add_object(struct gx_m2_instance *m2, struct jks_array *triangles)
 {
 	if (!m2->parent->collision_triangles_nb)
 		return;
@@ -775,7 +824,12 @@ static void add_object(struct gx_m2_instance *m2, struct jks_array *triangles)
 	}
 }
 
-static void add_objects(struct map_tile *tile, struct map_chunk *chunk, const struct collision_params *params, struct collision_state *state, struct jks_array *triangles)
+static void
+add_objects(struct map_tile *tile,
+            struct map_chunk *chunk,
+            const struct collision_params *params,
+            struct collision_state *state,
+            struct jks_array *triangles)
 {
 	for (size_t i = 0; i < chunk->doodads_nb; ++i)
 	{
@@ -808,7 +862,11 @@ static void add_objects(struct map_tile *tile, struct map_chunk *chunk, const st
 	}
 }
 
-static void add_wmo_point(struct gx_wmo_instance *wmo, struct gx_wmo_group *group, struct vec3f *point, uint32_t indice)
+static void
+add_wmo_point(struct gx_wmo_instance *wmo,
+              struct gx_wmo_group *group,
+              struct vec3f *point,
+              uint32_t indice)
 {
 	struct wow_vec3f *src = JKS_ARRAY_GET(&group->movt, *JKS_ARRAY_GET(&group->movi, indice, uint16_t), struct wow_vec3f);
 	struct vec4f tmp;
@@ -825,7 +883,8 @@ enum bsp_side
 	BSP_NEG = (1 << 1),
 };
 
-static enum bsp_side get_aabb_bsp_side(const struct aabb *aabb, const struct wow_mobn_node *node)
+static enum bsp_side
+get_aabb_bsp_side(const struct aabb *aabb, const struct wow_mobn_node *node)
 {
 	enum bsp_side side = 0;
 	uint8_t plane = node->flags & WOW_MOBN_NODE_FLAGS_AXIS_MASK;
@@ -836,7 +895,13 @@ static enum bsp_side get_aabb_bsp_side(const struct aabb *aabb, const struct wow
 	return side;
 }
 
-static void bsp_add_triangles(struct gx_wmo_instance *wmo, struct gx_wmo_group *group, const struct wow_mobn_node *node, const struct collision_params *params, struct jks_array *triangles, struct jks_array *triangles_tracker)
+static void
+bsp_add_triangles(struct gx_wmo_instance *wmo,
+                  struct gx_wmo_group *group,
+                  const struct wow_mobn_node *node,
+                  const struct collision_params *params,
+                  struct jks_array *triangles,
+                  struct jks_array *triangles_tracker)
 {
 	if (!node->faces_nb)
 		return;
@@ -880,7 +945,14 @@ static void bsp_add_triangles(struct gx_wmo_instance *wmo, struct gx_wmo_group *
 	jks_array_resize(triangles, triangles->size - (node->faces_nb - n));
 }
 
-static void bsp_traverse(struct gx_wmo_instance *wmo, struct gx_wmo_group *group, const struct wow_mobn_node *node, const struct aabb *aabb, const struct collision_params *params, struct jks_array *triangles, struct jks_array *triangles_tracker)
+static void
+bsp_traverse(struct gx_wmo_instance *wmo,
+             struct gx_wmo_group *group,
+             const struct wow_mobn_node *node,
+             const struct aabb *aabb,
+             const struct collision_params *params,
+             struct jks_array *triangles,
+             struct jks_array *triangles_tracker)
 {
 	if (node->flags & WOW_MOBN_NODE_FLAGS_LEAF)
 	{
@@ -894,7 +966,13 @@ static void bsp_traverse(struct gx_wmo_instance *wmo, struct gx_wmo_group *group
 		bsp_traverse(wmo, group, JKS_ARRAY_GET(&group->mobn, node->neg_child, struct wow_mobn_node), aabb, params, triangles, triangles_tracker);
 }
 
-static void add_wmo_group(struct gx_wmo_instance *wmo, struct gx_wmo_group *group, const struct collision_params *params, struct collision_state *state, struct jks_array *triangles, struct jks_array *triangles_tracker)
+static void
+add_wmo_group(struct gx_wmo_instance *wmo,
+              struct gx_wmo_group *group,
+              const struct collision_params *params,
+              struct collision_state *state,
+              struct jks_array *triangles,
+              struct jks_array *triangles_tracker)
 {
 	for (size_t i = 0; i < group->doodads.size; ++i)
 	{
@@ -948,7 +1026,11 @@ static void add_wmo_group(struct gx_wmo_instance *wmo, struct gx_wmo_group *grou
 	}
 }
 
-static void add_wmo(struct gx_wmo_instance *wmo, const struct collision_params *params, struct collision_state *state, struct jks_array *triangles)
+static void
+add_wmo(struct gx_wmo_instance *wmo,
+        const struct collision_params *params,
+        struct collision_state *state,
+        struct jks_array *triangles)
 {
 	struct jks_array triangles_tracker;
 	jks_array_init(&triangles_tracker, sizeof(uint32_t), NULL, NULL);
@@ -965,7 +1047,12 @@ static void add_wmo(struct gx_wmo_instance *wmo, const struct collision_params *
 	jks_array_destroy(&triangles_tracker);
 }
 
-static void add_wmos(struct map_tile *tile, struct map_chunk *chunk, const struct collision_params *params, struct collision_state *state, struct jks_array *triangles)
+static void
+add_wmos(struct map_tile *tile,
+         struct map_chunk *chunk,
+         const struct collision_params *params,
+         struct collision_state *state,
+         struct jks_array *triangles)
 {
 	for (size_t i = 0; i < chunk->wmos_nb; ++i)
 	{
@@ -991,7 +1078,11 @@ static void add_wmos(struct map_tile *tile, struct map_chunk *chunk, const struc
 	}
 }
 
-void map_tile_collect_collision_triangles(struct map_tile *tile, const struct collision_params *params, struct collision_state *state, struct jks_array *triangles)
+void
+map_tile_collect_collision_triangles(struct map_tile *tile,
+                                     const struct collision_params *params,
+                                     struct collision_state *state,
+                                     struct jks_array *triangles)
 {
 	if (!(tile->flags & MAP_TILE_FLAG_LOADED))
 		return;
@@ -1064,7 +1155,8 @@ void map_tile_collect_collision_triangles(struct map_tile *tile, const struct co
 	}
 }
 
-static void init_ground_effects(struct map_chunk *chunk, struct wow_mcnk *wow_mcnk)
+static void
+init_ground_effects(struct map_chunk *chunk, struct wow_mcnk *wow_mcnk)
 {
 	chunk->no_effect_doodads = wow_mcnk->header.no_effect_doodads;
 	chunk->ground_effect_loaded = false;
@@ -1085,9 +1177,12 @@ static void init_ground_effects(struct map_chunk *chunk, struct wow_mcnk *wow_mc
 	}
 }
 
-static void load_ground_effect_doodads(struct map_tile *tile, struct map_chunk *chunk, uint32_t chunk_id)
+static void
+load_ground_effect_doodads(struct map_tile *tile,
+                           struct map_chunk *chunk,
+                           uint32_t chunk_id)
 {
-	if (!(g_wow->render_opt & RENDER_OPT_GROUND_EFFECT))
+	if (!(g_wow->gx->opt & GX_OPT_GROUND_EFFECT))
 		return;
 	if (chunk->ground_effect_loaded)
 		return;
@@ -1104,7 +1199,7 @@ static void load_ground_effect_doodads(struct map_tile *tile, struct map_chunk *
 			uint16_t effect_id = chunk->effect_id[z][x];
 			if (effect_id == UINT16_MAX)
 				continue;
-			if ((chunk->no_effect_doodad[z] >> x) & 1)
+			if (((chunk->no_effect_doodad[z] >> x) & 1))
 				continue;
 			if (chunk->holes & (1 << (z / 2 * 4 + x / 2)))
 				continue;
@@ -1238,7 +1333,8 @@ static void load_ground_effect_doodads(struct map_tile *tile, struct map_chunk *
 	}
 }
 
-static void unload_ground_effect_doodads(struct map_chunk *chunk)
+static void
+unload_ground_effect_doodads(struct map_chunk *chunk)
 {
 	if (!chunk->ground_effect_loaded)
 		return;
@@ -1246,7 +1342,8 @@ static void unload_ground_effect_doodads(struct map_chunk *chunk)
 	chunk->ground_effect_loaded = false;
 }
 
-static void add_objects_to_render(struct map_tile *tile, struct gx_frame *frame)
+static void
+add_objects_to_render(struct map_tile *tile, struct gx_frame *frame)
 {
 	if (!(tile->gx_mcnk->flags & GX_MCNK_FLAG_INITIALIZED))
 		return;
@@ -1260,7 +1357,7 @@ static void add_objects_to_render(struct map_tile *tile, struct gx_frame *frame)
 			load_ground_effect_doodads(tile, chunk, i);
 		if (gx_chunk->frames[frame->id].distance_to_camera > frame->view_distance + (CHUNK_WIDTH * 1.4142))
 			continue;
-		if ((g_wow->render_opt & RENDER_OPT_GROUND_EFFECT)
+		if ((g_wow->gx->opt & GX_OPT_GROUND_EFFECT)
 		 && !gx_chunk->frames[frame->id].culled)
 		{
 			for (size_t j = 0; j < chunk->ground_effects.size; ++j)
@@ -1306,7 +1403,8 @@ static void add_objects_to_render(struct map_tile *tile, struct gx_frame *frame)
 	}
 }
 
-void map_tile_ground_end(struct map_tile *tile, struct gx_frame *frame)
+void
+map_tile_ground_end(struct map_tile *tile, struct gx_frame *frame)
 {
 	for (size_t i = 0; i < tile->ground_effects.size; ++i)
 	{
@@ -1316,7 +1414,8 @@ void map_tile_ground_end(struct map_tile *tile, struct gx_frame *frame)
 	}
 }
 
-void map_tile_ground_clear(struct map_tile *tile, struct gx_frame *frame)
+void
+map_tile_ground_clear(struct map_tile *tile, struct gx_frame *frame)
 {
 	for (size_t i = 0; i < tile->ground_effects.size; ++i)
 	{
@@ -1326,7 +1425,8 @@ void map_tile_ground_clear(struct map_tile *tile, struct gx_frame *frame)
 	}
 }
 
-struct map_wmo *map_wmo_new(uint32_t id)
+struct map_wmo *
+map_wmo_new(uint32_t id)
 {
 	struct map_wmo *handle = mem_malloc(MEM_GX, sizeof(*handle));
 	if (!handle)
@@ -1337,7 +1437,8 @@ struct map_wmo *map_wmo_new(uint32_t id)
 	return handle;
 }
 
-void map_wmo_free(struct map_wmo *handle)
+void
+map_wmo_free(struct map_wmo *handle)
 {
 	if (!handle)
 		return;
@@ -1355,19 +1456,22 @@ void map_wmo_free(struct map_wmo *handle)
 	mem_free(MEM_GX, handle);
 }
 
-void map_wmo_ref(struct map_wmo *handle)
+void
+map_wmo_ref(struct map_wmo *handle)
 {
 	refcount_inc(&handle->refcount);
 }
 
-void map_wmo_load(struct map_wmo *handle, const char *filename)
+void
+map_wmo_load(struct map_wmo *handle, const char *filename)
 {
 	if (handle->instance)
 		return;
 	handle->instance = gx_wmo_instance_new(filename);
 }
 
-struct map_m2 *map_m2_new(uint32_t id)
+struct map_m2 *
+map_m2_new(uint32_t id)
 {
 	struct map_m2 *handle = mem_malloc(MEM_GX, sizeof(*handle));
 	if (!handle)
@@ -1378,7 +1482,8 @@ struct map_m2 *map_m2_new(uint32_t id)
 	return handle;
 }
 
-void map_m2_free(struct map_m2 *handle)
+void
+map_m2_free(struct map_m2 *handle)
 {
 	if (!handle)
 		return;
@@ -1396,12 +1501,14 @@ void map_m2_free(struct map_m2 *handle)
 	mem_free(MEM_GX, handle);
 }
 
-void map_m2_ref(struct map_m2 *handle)
+void
+map_m2_ref(struct map_m2 *handle)
 {
 	refcount_inc(&handle->refcount);
 }
 
-void map_m2_load(struct map_m2 *handle, const char *filename)
+void
+map_m2_load(struct map_m2 *handle, const char *filename)
 {
 	if (handle->instance)
 		return;
@@ -1409,7 +1516,8 @@ void map_m2_load(struct map_m2 *handle, const char *filename)
 	gx_m2_instance_flag_set(handle->instance, GX_M2_INSTANCE_FLAG_DYN_SHADOW);
 }
 
-void map_chunk_get_interp_points(float px, float pz, uint8_t *points)
+void
+map_chunk_get_interp_points(float px, float pz, uint8_t *points)
 {
 	float pxf = fmodf(px, 1.0);
 	float pzf = fmodf(pz, 1.0);
@@ -1481,7 +1589,8 @@ void map_chunk_get_interp_points(float px, float pz, uint8_t *points)
 	}
 }
 
-void map_chunk_get_interp_factors(float px, float pz, uint8_t *points, float *factors)
+void
+map_chunk_get_interp_factors(float px, float pz, uint8_t *points, float *factors)
 {
 	float pxf = fmod(px, 1);
 	float pzf = fmod(pz, 1);
@@ -1505,7 +1614,8 @@ void map_chunk_get_interp_factors(float px, float pz, uint8_t *points, float *fa
 	factors[2] = 1.0 - factors[0] - factors[1];
 }
 
-void map_chunk_get_y(struct map_chunk *chunk, float px, float pz, uint8_t *points, float *factors, float *y)
+void
+map_chunk_get_y(struct map_chunk *chunk, float px, float pz, uint8_t *points, float *factors, float *y)
 {
 	static const uint8_t pos[5] = {0, 1, 17, 18, 9};
 	uint8_t base = (9 + 8) * (int)pz + (int)px;
@@ -1515,7 +1625,8 @@ void map_chunk_get_y(struct map_chunk *chunk, float px, float pz, uint8_t *point
 	*y = y0 * factors[0] + y1 * factors[1] + y2 * factors[2];
 }
 
-void map_chunk_get_normal(struct map_chunk *chunk, float px, float pz, uint8_t *points, float *factors, struct vec3f *n)
+void
+map_chunk_get_normal(struct map_chunk *chunk, float px, float pz, uint8_t *points, float *factors, struct vec3f *n)
 {
 	static const uint8_t pos[5] = {0, 1, 17, 18, 9};
 	uint8_t base = (9 + 8) * (int)pz + (int)px;

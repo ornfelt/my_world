@@ -2,7 +2,8 @@
 
 #include <unistd.h>
 
-pid_t setsid(void)
+pid_t
+setsid(void)
 {
 	return syscall0(SYS_setsid);
 }

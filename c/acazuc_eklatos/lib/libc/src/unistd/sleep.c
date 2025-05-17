@@ -1,9 +1,12 @@
 #include <unistd.h>
 #include <time.h>
 
-unsigned int sleep(unsigned int seconds)
+unsigned int
+sleep(unsigned int seconds)
 {
-	struct timespec ts, rem;
+	struct timespec ts;
+	struct timespec rem;
+
 	ts.tv_sec = seconds;
 	ts.tv_nsec = 0;
 	if (nanosleep(&ts, &rem) == -1)

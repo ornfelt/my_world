@@ -1,7 +1,8 @@
 #include <unistd.h>
 #include <time.h>
 
-unsigned alarm(unsigned seconds)
+unsigned
+alarm(unsigned seconds)
 {
 	struct itimerval val;
 	struct itimerval old;

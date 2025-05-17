@@ -2,8 +2,11 @@
 
 #include <unistd.h>
 
-int symlinkat(const char *target, int newdirfd, const char *linkpath)
+int
+symlinkat(const char *target, int newdirfd, const char *linkpath)
 {
-	return syscall3(SYS_symlinkat, (uintptr_t)target, newdirfd,
+	return syscall3(SYS_symlinkat,
+	                (uintptr_t)target,
+	                newdirfd,
 	                (uintptr_t)linkpath);
 }

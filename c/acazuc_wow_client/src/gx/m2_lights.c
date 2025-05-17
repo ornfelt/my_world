@@ -1,8 +1,8 @@
 #include "gx/m2_lights.h"
 #include "gx/frame.h"
 #include "gx/m2.h"
+#include "gx/gx.h"
 
-#include "graphics.h"
 #include "memory.h"
 #include "log.h"
 #include "wow.h"
@@ -92,7 +92,7 @@ void gx_m2_lights_render(struct gx_m2_lights *lights, struct gx_frame *frame, co
 		return;
 	if (!nb)
 		return;
-	gfx_bind_attributes_state(g_wow->device, &lights->attributes_state, &g_wow->graphics->m2_lights_input_layout);
+	gfx_bind_attributes_state(g_wow->device, &lights->attributes_state, &g_wow->gx->m2_lights_input_layout);
 	for (size_t i = 0; i < nb; ++i)
 	{
 		const struct gx_m2_instance *instance = instances[i];

@@ -2,7 +2,8 @@
 
 #include <netdb.h>
 
-void setprotoent(int stayopen)
+void
+setprotoent(int stayopen)
 {
 	if (protoent_fp)
 		fclose(protoent_fp);

@@ -8,7 +8,8 @@
  */
 static __thread int self;
 
-bool _libc_trylock(struct _libc_lock *lock)
+bool
+_libc_trylock(struct _libc_lock *lock)
 {
 	if (lock->owner == &self)
 	{
@@ -21,7 +22,8 @@ bool _libc_trylock(struct _libc_lock *lock)
 	return true;
 }
 
-void _libc_lock(struct _libc_lock *lock)
+void
+_libc_lock(struct _libc_lock *lock)
 {
 	if (lock->owner == &self)
 	{
@@ -32,7 +34,8 @@ void _libc_lock(struct _libc_lock *lock)
 	lock->owner = &self;
 }
 
-void _libc_unlock(struct _libc_lock *lock)
+void
+_libc_unlock(struct _libc_lock *lock)
 {
 	_eklat_unlock(&lock->value, &lock->owner);
 }

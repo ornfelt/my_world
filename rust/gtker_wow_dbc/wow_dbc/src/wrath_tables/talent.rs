@@ -4,10 +4,12 @@ use crate::{
 use crate::header::{
     DbcHeader, HEADER_SIZE, parse_header,
 };
+use crate::util::StringCache;
 use crate::wrath_tables::spell::SpellKey;
 use std::io::Write;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Talent {
     pub rows: Vec<TalentRow>,
 }
@@ -16,6 +18,8 @@ impl DbcTable for Talent {
     type Row = TalentRow;
 
     const FILENAME: &'static str = "Talent.dbc";
+    const FIELD_COUNT: usize = 23;
+    const ROW_SIZE: usize = 92;
 
     fn rows(&self) -> &[Self::Row] { &self.rows }
     fn rows_mut(&mut self) -> &mut [Self::Row] { &mut self.rows }
@@ -25,19 +29,19 @@ impl DbcTable for Talent {
         b.read_exact(&mut header)?;
         let header = parse_header(&header)?;
 
-        if header.record_size != 92 {
+        if header.record_size != Self::ROW_SIZE as u32 {
             return Err(crate::DbcError::InvalidHeader(
                 crate::InvalidHeaderError::RecordSize {
-                    expected: 92,
+                    expected: Self::ROW_SIZE as u32,
                     actual: header.record_size,
                 },
             ));
         }
 
-        if header.field_count != 23 {
+        if header.field_count != Self::FIELD_COUNT as u32 {
             return Err(crate::DbcError::InvalidHeader(
                 crate::InvalidHeaderError::FieldCount {
-                    expected: 23,
+                    expected: Self::FIELD_COUNT as u32,
                     actual: header.field_count,
                 },
             ));
@@ -99,15 +103,10 @@ impl DbcTable for Talent {
         Ok(Talent { rows, })
     }
 
-    fn write(&self, b: &mut impl Write) -> Result<(), std::io::Error> {
-        let header = DbcHeader {
-            record_count: self.rows.len() as u32,
-            field_count: 23,
-            record_size: 92,
-            string_block_size: 1,
-        };
+    fn write(&self, w: &mut impl Write) -> Result<(), std::io::Error> {
+        let mut b = Vec::with_capacity(self.rows.len() * Self::ROW_SIZE);
 
-        b.write_all(&header.write_header())?;
+        let  string_cache = StringCache::new();
 
         for row in &self.rows {
             // id: primary_key (Talent) int32
@@ -154,8 +153,17 @@ impl DbcTable for Talent {
 
         }
 
-        b.write_all(&[0_u8])?;
+        assert_eq!(b.len(), self.rows.len() * Self::ROW_SIZE);
+        let header = DbcHeader {
+            record_count: self.rows.len() as u32,
+            field_count: Self::FIELD_COUNT as u32,
+            record_size: Self::ROW_SIZE as u32,
+            string_block_size: string_cache.size(),
+        };
 
+        w.write_all(&header.write_header())?;
+        w.write_all(&b)?;
+        w.write_all(string_cache.buffer())?;
         Ok(())
     }
 
@@ -175,6 +183,7 @@ impl Indexable for Talent {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Hash, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TalentKey {
     pub id: i32
 }
@@ -252,6 +261,7 @@ impl TryFrom<isize> for TalentKey {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TalentRow {
     pub id: TalentKey,
     pub tab_id: i32,
@@ -265,3 +275,22 @@ pub struct TalentRow {
     pub category_mask: [i32; 2],
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::fs::File;
+    use std::io::Read;
+
+    #[test]
+    #[ignore = "requires DBC files"]
+    fn talent() {
+        let mut file = File::open("../wrath-dbc/Talent.dbc").expect("Failed to open DBC file");
+        let mut contents = Vec::new();
+        file.read_to_end(&mut contents).expect("Failed to read DBC file");
+        let actual = Talent::read(&mut contents.as_slice()).unwrap();
+        let mut v = Vec::with_capacity(contents.len());
+        actual.write(&mut v).unwrap();
+        let new = Talent::read(&mut v.as_slice()).unwrap();
+        assert_eq!(actual, new);
+    }
+}

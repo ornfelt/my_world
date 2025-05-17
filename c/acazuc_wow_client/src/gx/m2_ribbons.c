@@ -3,10 +3,10 @@
 #include "gx/frame.h"
 #include "gx/blp.h"
 #include "gx/m2.h"
+#include "gx/gx.h"
 
 #include "map/map.h"
 
-#include "graphics.h"
 #include "shaders.h"
 #include "memory.h"
 #include "cache.h"
@@ -94,52 +94,52 @@ struct gx_m2_ribbons *gx_m2_ribbons_new(struct gx_m2_instance *parent)
 		emitter->last_spawned = g_wow->frametime;
 		jks_array_init(&emitter->points, sizeof(struct gx_m2_ribbon_point), NULL, &jks_array_memory_fn_GX);
 		struct wow_m2_material *material = &parent->parent->materials[ribbon->material_indices[0]];
-		enum world_rasterizer_state rasterizer_state = WORLD_RASTERIZER_UNCULLED;
-		enum world_depth_stencil_state depth_stencil_state;
-		enum world_blend_state blend_state;
+		enum gx_rasterizer_state rasterizer_state = GX_RASTERIZER_UNCULLED;
+		enum gx_depth_stencil_state depth_stencil_state;
+		enum gx_blend_state blend_state;
 		switch (material->blend_mode)
 		{
 			case 0: /* opaque */
-				blend_state = WORLD_BLEND_OPAQUE;
+				blend_state = GX_BLEND_OPAQUE;
 				emitter->alpha_test = 0.0 / 255.0;
 				emitter->fog_override = false;
 				break;
 			case 1: /* alpha key */
-				blend_state = WORLD_BLEND_OPAQUE;
+				blend_state = GX_BLEND_OPAQUE;
 				emitter->alpha_test = 224.0 / 255.0;
 				emitter->fog_override = false;
 				break;
 			case 2: /* alpha */
-				blend_state = WORLD_BLEND_ALPHA;
+				blend_state = GX_BLEND_ALPHA;
 				emitter->alpha_test = 1.0 / 255.0;
 				emitter->fog_override = false;
 				break;
 			case 3: /* no alpha add */
-				blend_state = WORLD_BLEND_NO_ALPHA_ADD;
+				blend_state = GX_BLEND_NO_ALPHA_ADD;
 				emitter->alpha_test = 1.0 / 255.0;
 				emitter->fog_override = true;
 				VEC3_SETV(emitter->fog_color, 0.0);
 				break;
 			case 4: /* add */
-				blend_state = WORLD_BLEND_ADD;
+				blend_state = GX_BLEND_ADD;
 				emitter->alpha_test = 1.0 / 255.0;
 				emitter->fog_override = true;
 				VEC3_SETV(emitter->fog_color, 0.0);
 				break;
 			case 5: /* mod */
-				blend_state = WORLD_BLEND_MOD;
+				blend_state = GX_BLEND_MOD;
 				emitter->alpha_test = 1.0 / 255.0;
 				emitter->fog_override = true;
 				VEC3_SETV(emitter->fog_color, 1.0);
 				break;
 			case 6: /* mod2x */
-				blend_state = WORLD_BLEND_MOD2X;
+				blend_state = GX_BLEND_MOD2X;
 				emitter->alpha_test = 1.0 / 255.0;
 				emitter->fog_override = true;
 				VEC3_SETV(emitter->fog_color, 0.5);
 				break;
 			default:
-				blend_state = WORLD_BLEND_ALPHA;
+				blend_state = GX_BLEND_ALPHA;
 				emitter->alpha_test = 1.0 / 255.0;
 				emitter->fog_override = false;
 				LOG_WARN("unsupported blend mode: %u", material->blend_mode);
@@ -148,19 +148,19 @@ struct gx_m2_ribbons *gx_m2_ribbons_new(struct gx_m2_instance *parent)
 		switch ((!(material->flags & WOW_M2_MATERIAL_FLAGS_DEPTH_WRITE)) * 2 + (!(material->flags & WOW_M2_MATERIAL_FLAGS_DEPTH_TEST)) * 1)
 		{
 			case 0:
-				depth_stencil_state = WORLD_DEPTH_STENCIL_NO_W;
+				depth_stencil_state = GX_DEPTH_STENCIL_NO_WO;
 				break;
 			case 1:
-				depth_stencil_state = WORLD_DEPTH_STENCIL_R_W;
+				depth_stencil_state = GX_DEPTH_STENCIL_RO_WO;
 				break;
 			case 2:
-				depth_stencil_state = WORLD_DEPTH_STENCIL_W_W;
+				depth_stencil_state = GX_DEPTH_STENCIL_WO_WO;
 				break;
 			case 3:
-				depth_stencil_state = WORLD_DEPTH_STENCIL_RW_W;
+				depth_stencil_state = GX_DEPTH_STENCIL_RW_WO;
 				break;
 		}
-		emitter->pipeline_state = &g_wow->graphics->ribbons_pipeline_states[rasterizer_state][depth_stencil_state][blend_state] - &g_wow->graphics->ribbons_pipeline_states[0][0][0];
+		emitter->pipeline_state = &g_wow->gx->ribbons_pipeline_states[rasterizer_state][depth_stencil_state][blend_state] - &g_wow->gx->ribbons_pipeline_states[0][0][0];
 		emitter->fog_override = false;
 	}
 	return ribbons;
@@ -278,8 +278,8 @@ static void render_emitter(struct gx_m2_ribbons_emitter *emitter, struct gx_fram
 		return;
 	struct gx_m2_ribbons_emitter_frame *emitter_frame = &emitter->frames[frame->id];
 	gfx_set_buffer_data(&emitter_frame->vertexes_buffer, emitter_frame->vertexes.data, sizeof(struct shader_ribbon_input) * emitter_frame->vertexes.size, 0);
-	gfx_bind_attributes_state(g_wow->device, &emitter_frame->attributes_state, &g_wow->graphics->ribbons_input_layout);
-	gfx_bind_pipeline_state(g_wow->device, &((gfx_pipeline_state_t*)g_wow->graphics->ribbons_pipeline_states)[emitter->pipeline_state]);
+	gfx_bind_attributes_state(g_wow->device, &emitter_frame->attributes_state, &g_wow->gx->ribbons_input_layout);
+	gfx_bind_pipeline_state(g_wow->device, &((gfx_pipeline_state_t*)g_wow->gx->ribbons_pipeline_states)[emitter->pipeline_state]);
 	struct shader_ribbon_model_block model_block;
 	model_block.alpha_test = emitter->alpha_test;
 	model_block.mvp = params->vp;

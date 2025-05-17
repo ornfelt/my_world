@@ -2,7 +2,8 @@
 
 #include <stdlib.h>
 
-int atexit(void (*function)(void))
+int
+atexit(void (*function)(void))
 {
 	if (g_atexit_fn_nb >= ATEXIT_MAX)
 		return 1;

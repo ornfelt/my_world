@@ -4,7 +4,8 @@
 #include <string.h>
 #include <stdio.h>
 
-static const char *get_reg_8_name(uint8_t v)
+static const char *
+get_reg_8_name(uint8_t v)
 {
 	static const char names[8][4] =
 	{
@@ -20,7 +21,8 @@ static const char *get_reg_8_name(uint8_t v)
 	return names[v];
 }
 
-static const char *get_reg_16_name(uint8_t v)
+static const char *
+get_reg_16_name(uint8_t v)
 {
 	static const char names[8][4] =
 	{
@@ -36,7 +38,8 @@ static const char *get_reg_16_name(uint8_t v)
 	return names[v];
 }
 
-static const char *get_reg_32_name(uint8_t v)
+static const char *
+get_reg_32_name(uint8_t v)
 {
 	static const char names[8][4] =
 	{
@@ -52,7 +55,8 @@ static const char *get_reg_32_name(uint8_t v)
 	return names[v];
 }
 
-static const char *get_reg_x87_name(uint8_t v)
+static const char *
+get_reg_x87_name(uint8_t v)
 {
 	static const char names[8][6] =
 	{
@@ -68,7 +72,8 @@ static const char *get_reg_x87_name(uint8_t v)
 	return names[v];
 }
 
-static const char *get_reg_mmx_name(uint8_t v)
+static const char *
+get_reg_mmx_name(uint8_t v)
 {
 	static const char names[8][5] =
 	{
@@ -84,7 +89,8 @@ static const char *get_reg_mmx_name(uint8_t v)
 	return names[v];
 }
 
-static const char *get_reg_xmm_name(uint8_t v)
+static const char *
+get_reg_xmm_name(uint8_t v)
 {
 	static const char names[8][5] =
 	{
@@ -100,7 +106,8 @@ static const char *get_reg_xmm_name(uint8_t v)
 	return names[v];
 }
 
-static const char *get_reg_ctrl_name(uint8_t v)
+static const char *
+get_reg_ctrl_name(uint8_t v)
 {
 	static const char names[8][4] =
 	{
@@ -116,7 +123,8 @@ static const char *get_reg_ctrl_name(uint8_t v)
 	return names[v];
 }
 
-static const char *get_reg_dbg_name(uint8_t v)
+static const char *
+get_reg_dbg_name(uint8_t v)
 {
 	static const char names[8][4] =
 	{
@@ -132,7 +140,8 @@ static const char *get_reg_dbg_name(uint8_t v)
 	return names[v];
 }
 
-static const char *get_reg_name(enum asm_x86_reg_size size, uint8_t v)
+static const char *
+get_reg_name(enum asm_x86_reg_size size, uint8_t v)
 {
 	switch (size)
 	{
@@ -156,7 +165,8 @@ static const char *get_reg_name(enum asm_x86_reg_size size, uint8_t v)
 	return "";
 }
 
-static const char *get_segment_name(enum asm_x86_segment segment)
+static const char *
+get_segment_name(enum asm_x86_segment segment)
 {
 	static const char names[8][3] =
 	{
@@ -171,8 +181,12 @@ static const char *get_segment_name(enum asm_x86_segment segment)
 	return names[segment];
 }
 
-static int print_sib0(char *buf, size_t size, const uint8_t *data,
-                      enum asm_x86_reg_size addr_size, const char *seg_str)
+static int
+print_sib0(char *buf,
+           size_t size,
+           const uint8_t *data,
+           enum asm_x86_reg_size addr_size,
+           const char *seg_str)
 {
 	uint8_t sib = *data;
 	switch ((sib >> 3) & 0x7)
@@ -232,8 +246,12 @@ static int print_sib0(char *buf, size_t size, const uint8_t *data,
 	return 2;
 }
 
-static int print_sib1(char *buf, size_t size, const uint8_t *data,
-                      enum asm_x86_reg_size reg_size, const char *seg_str)
+static int
+print_sib1(char *buf,
+           size_t size,
+           const uint8_t *data,
+           enum asm_x86_reg_size reg_size,
+           const char *seg_str)
 {
 	uint8_t sib = *data;
 	switch ((sib >> 3) & 0x7)
@@ -264,8 +282,12 @@ static int print_sib1(char *buf, size_t size, const uint8_t *data,
 	return 2;
 }
 
-static int print_sib2(char *buf, size_t size, const uint8_t *data,
-                      enum asm_x86_reg_size addr_size, const char *seg_str)
+static int
+print_sib2(char *buf,
+           size_t size,
+           const uint8_t *data,
+           enum asm_x86_reg_size addr_size,
+           const char *seg_str)
 {
 	uint8_t sib = *data;
 	switch ((sib >> 3) & 0x7)
@@ -296,8 +318,8 @@ static int print_sib2(char *buf, size_t size, const uint8_t *data,
 	return 2;
 }
 
-static void get_segment_prefix(char *dst, size_t size,
-                               enum asm_x86_segment segment)
+static void
+get_segment_prefix(char *dst, size_t size, enum asm_x86_segment segment)
 {
 	const char *segment_name = get_segment_name(segment);
 	if (!segment_name || !segment_name[0])
@@ -308,10 +330,13 @@ static void get_segment_prefix(char *dst, size_t size,
 	snprintf(dst, size, "%s:", segment_name);
 }
 
-static size_t print_mrm(char *buf, size_t size, const uint8_t *data,
-                        enum asm_x86_reg_size operand_size,
-                        enum asm_x86_reg_size addr_size,
-                        enum asm_x86_segment segment)
+static size_t
+print_mrm(char *buf,
+          size_t size,
+          const uint8_t *data,
+          enum asm_x86_reg_size operand_size,
+          enum asm_x86_reg_size addr_size,
+          enum asm_x86_segment segment)
 {
 	uint8_t mrm = *data;
 	char seg_str[5];
@@ -402,7 +427,8 @@ static size_t print_mrm(char *buf, size_t size, const uint8_t *data,
 	return 0;
 }
 
-static const struct asm_x86_opcode opcodes_0[256] =
+static const struct asm_x86_opcode
+opcodes_0[256] =
 {
 	[0x00] = {{"add" }, ASM_X86_OPCODE_EXTRA_MRM , 2, {ASM_X86_OPERAND_REG_8, ASM_X86_OPERAND_MRM}},
 	[0x01] = {{"add" }, ASM_X86_OPCODE_EXTRA_MRM , 2, {ASM_X86_OPERAND_REG, ASM_X86_OPERAND_MRM}},
@@ -598,7 +624,8 @@ static const struct asm_x86_opcode opcodes_0[256] =
 	[0xFD] = {{"std" }, ASM_X86_OPCODE_EXTRA_NONE, 0, {}},
 };
 
-static const struct asm_x86_opcode opcodes_0F[256] =
+static const struct asm_x86_opcode
+opcodes_0F[256] =
 {
 	[0x40] = {{"cmovo" }, ASM_X86_OPCODE_EXTRA_MRM, 2, {ASM_X86_OPERAND_MRM, ASM_X86_OPERAND_REG}},
 	[0x41] = {{"cmovno"}, ASM_X86_OPCODE_EXTRA_MRM, 2, {ASM_X86_OPERAND_MRM, ASM_X86_OPERAND_REG}},
@@ -662,7 +689,8 @@ static const struct asm_x86_opcode opcodes_0F[256] =
 	[0xBE] = {{"movsbl"}, ASM_X86_OPCODE_EXTRA_MRM, 2, {ASM_X86_OPERAND_MRM, ASM_X86_OPERAND_REG}},
 };
 
-static const struct asm_x86_opcode opcodes_80[8] =
+static const struct asm_x86_opcode
+opcodes_80[8] =
 {
 	{{"add"}, ASM_X86_OPCODE_EXTRA_MRM8_IMM8, 2, {ASM_X86_OPERAND_IMM, ASM_X86_OPERAND_MRM}},
 	{{"or "}, ASM_X86_OPCODE_EXTRA_MRM8_IMM8, 2, {ASM_X86_OPERAND_IMM, ASM_X86_OPERAND_MRM}},
@@ -674,7 +702,8 @@ static const struct asm_x86_opcode opcodes_80[8] =
 	{{"cmp"}, ASM_X86_OPCODE_EXTRA_MRM8_IMM8, 2, {ASM_X86_OPERAND_IMM, ASM_X86_OPERAND_MRM}},
 };
 
-static const struct asm_x86_opcode opcodes_81[8] =
+static const struct asm_x86_opcode
+opcodes_81[8] =
 {
 	{{"add"}, ASM_X86_OPCODE_EXTRA_MRM_IMM, 2, {ASM_X86_OPERAND_IMM, ASM_X86_OPERAND_MRM}},
 	{{"or "}, ASM_X86_OPCODE_EXTRA_MRM_IMM, 2, {ASM_X86_OPERAND_IMM, ASM_X86_OPERAND_MRM}},
@@ -686,7 +715,8 @@ static const struct asm_x86_opcode opcodes_81[8] =
 	{{"cmp"}, ASM_X86_OPCODE_EXTRA_MRM_IMM, 2, {ASM_X86_OPERAND_IMM, ASM_X86_OPERAND_MRM}},
 };
 
-static const struct asm_x86_opcode opcodes_83[8] =
+static const struct asm_x86_opcode
+opcodes_83[8] =
 {
 	{{"add"}, ASM_X86_OPCODE_EXTRA_MRM_IMM8, 2, {ASM_X86_OPERAND_IMM, ASM_X86_OPERAND_MRM}},
 	{{"or" }, ASM_X86_OPCODE_EXTRA_MRM_IMM8, 2, {ASM_X86_OPERAND_IMM, ASM_X86_OPERAND_MRM}},
@@ -698,7 +728,8 @@ static const struct asm_x86_opcode opcodes_83[8] =
 	{{"cmp"}, ASM_X86_OPCODE_EXTRA_MRM_IMM8, 2, {ASM_X86_OPERAND_IMM, ASM_X86_OPERAND_MRM}},
 };
 
-static const struct asm_x86_opcode opcodes_C0[8] =
+static const struct asm_x86_opcode
+opcodes_C0[8] =
 {
 	{{"rol"}, ASM_X86_OPCODE_EXTRA_MRM8_IMM8, 2, {ASM_X86_OPERAND_IMM, ASM_X86_OPERAND_MRM}},
 	{{"ror"}, ASM_X86_OPCODE_EXTRA_MRM8_IMM8, 2, {ASM_X86_OPERAND_IMM, ASM_X86_OPERAND_MRM}},
@@ -710,7 +741,8 @@ static const struct asm_x86_opcode opcodes_C0[8] =
 	{{"sar"}, ASM_X86_OPCODE_EXTRA_MRM8_IMM8, 2, {ASM_X86_OPERAND_IMM, ASM_X86_OPERAND_MRM}},
 };
 
-static const struct asm_x86_opcode opcodes_C1[8] =
+static const struct asm_x86_opcode
+opcodes_C1[8] =
 {
 	{{"rol"}, ASM_X86_OPCODE_EXTRA_MRM_IMM8, 2, {ASM_X86_OPERAND_IMM, ASM_X86_OPERAND_MRM}},
 	{{"ror"}, ASM_X86_OPCODE_EXTRA_MRM_IMM8, 2, {ASM_X86_OPERAND_IMM, ASM_X86_OPERAND_MRM}},
@@ -722,7 +754,8 @@ static const struct asm_x86_opcode opcodes_C1[8] =
 	{{"sar"}, ASM_X86_OPCODE_EXTRA_MRM_IMM8, 2, {ASM_X86_OPERAND_IMM, ASM_X86_OPERAND_MRM}},
 };
 
-static const struct asm_x86_opcode opcodes_D0[8] =
+static const struct asm_x86_opcode
+opcodes_D0[8] =
 {
 	{{"rol"}, ASM_X86_OPCODE_EXTRA_MRM8, 2, {ASM_X86_OPERAND_0X1, ASM_X86_OPERAND_MRM}},
 	{{"ror"}, ASM_X86_OPCODE_EXTRA_MRM8, 2, {ASM_X86_OPERAND_0X1, ASM_X86_OPERAND_MRM}},
@@ -734,7 +767,8 @@ static const struct asm_x86_opcode opcodes_D0[8] =
 	{{"sar"}, ASM_X86_OPCODE_EXTRA_MRM8, 2, {ASM_X86_OPERAND_0X1, ASM_X86_OPERAND_MRM}},
 };
 
-static const struct asm_x86_opcode opcodes_D1[8] =
+static const struct asm_x86_opcode
+opcodes_D1[8] =
 {
 	{{"rol"}, ASM_X86_OPCODE_EXTRA_MRM, 2, {ASM_X86_OPERAND_0X1, ASM_X86_OPERAND_MRM}},
 	{{"ror"}, ASM_X86_OPCODE_EXTRA_MRM, 2, {ASM_X86_OPERAND_0X1, ASM_X86_OPERAND_MRM}},
@@ -746,7 +780,8 @@ static const struct asm_x86_opcode opcodes_D1[8] =
 	{{"sar"}, ASM_X86_OPCODE_EXTRA_MRM, 2, {ASM_X86_OPERAND_0X1, ASM_X86_OPERAND_MRM}},
 };
 
-static const struct asm_x86_opcode opcodes_D2[8] =
+static const struct asm_x86_opcode
+opcodes_D2[8] =
 {
 	{{"rol"}, ASM_X86_OPCODE_EXTRA_MRM8, 2, {ASM_X86_OPERAND_CL, ASM_X86_OPERAND_MRM}},
 	{{"ror"}, ASM_X86_OPCODE_EXTRA_MRM8, 2, {ASM_X86_OPERAND_CL, ASM_X86_OPERAND_MRM}},
@@ -758,7 +793,8 @@ static const struct asm_x86_opcode opcodes_D2[8] =
 	{{"sar"}, ASM_X86_OPCODE_EXTRA_MRM8, 2, {ASM_X86_OPERAND_CL, ASM_X86_OPERAND_MRM}},
 };
 
-static const struct asm_x86_opcode opcodes_D3[8] =
+static const struct asm_x86_opcode
+opcodes_D3[8] =
 {
 	{{"rol"}, ASM_X86_OPCODE_EXTRA_MRM, 2, {ASM_X86_OPERAND_CL, ASM_X86_OPERAND_MRM}},
 	{{"ror"}, ASM_X86_OPCODE_EXTRA_MRM, 2, {ASM_X86_OPERAND_CL, ASM_X86_OPERAND_MRM}},
@@ -770,7 +806,8 @@ static const struct asm_x86_opcode opcodes_D3[8] =
 	{{"sar"}, ASM_X86_OPCODE_EXTRA_MRM, 2, {ASM_X86_OPERAND_CL, ASM_X86_OPERAND_MRM}},
 };
 
-static const struct asm_x86_opcode opcodes_F6[8] =
+static const struct asm_x86_opcode
+opcodes_F6[8] =
 {
 	{{"test"}, ASM_X86_OPCODE_EXTRA_MRM8_IMM8, 2, {ASM_X86_OPERAND_IMM, ASM_X86_OPERAND_MRM}},
 	{},
@@ -782,7 +819,8 @@ static const struct asm_x86_opcode opcodes_F6[8] =
 	{{"idiv"}, ASM_X86_OPCODE_EXTRA_MRM8, 1, {ASM_X86_OPERAND_MRM}},
 };
 
-static const struct asm_x86_opcode opcodes_F7[8] =
+static const struct asm_x86_opcode
+opcodes_F7[8] =
 {
 	{{"test"}, ASM_X86_OPCODE_EXTRA_MRM_IMM, 2, {ASM_X86_OPERAND_IMM, ASM_X86_OPERAND_MRM}},
 	{},
@@ -794,13 +832,15 @@ static const struct asm_x86_opcode opcodes_F7[8] =
 	{{"idiv"}, ASM_X86_OPCODE_EXTRA_MRM, 1, {ASM_X86_OPERAND_MRM}},
 };
 
-static const struct asm_x86_opcode opcodes_FE[8] =
+static const struct asm_x86_opcode
+opcodes_FE[8] =
 {
 	{{"inc"}, ASM_X86_OPCODE_EXTRA_MRM8, 1, {ASM_X86_OPERAND_MRM}},
 	{{"dec"}, ASM_X86_OPCODE_EXTRA_MRM8, 1, {ASM_X86_OPERAND_MRM}},
 };
 
-static const struct asm_x86_opcode opcodes_FF[8] =
+static const struct asm_x86_opcode
+opcodes_FF[8] =
 {
 	{{"inc"  }, ASM_X86_OPCODE_EXTRA_MRM, 1, {ASM_X86_OPERAND_MRM}},
 	{{"dec"  }, ASM_X86_OPCODE_EXTRA_MRM, 1, {ASM_X86_OPERAND_MRM}},
@@ -812,10 +852,16 @@ static const struct asm_x86_opcode opcodes_FF[8] =
 	{},
 };
 
-static void disas_operand(char *buf, size_t size, uint8_t operand,
-                          char *mrm, size_t *imms, int mrm_reg,
-                          size_t pos, size_t bytes,
-                          enum asm_x86_reg_size operand_size)
+static void
+disas_operand(char *buf,
+              size_t size,
+              uint8_t operand,
+              char *mrm,
+              size_t *imms,
+              int mrm_reg,
+              size_t pos,
+              size_t bytes,
+              enum asm_x86_reg_size operand_size)
 {
 	switch (operand)
 	{
@@ -950,7 +996,8 @@ static void disas_operand(char *buf, size_t size, uint8_t operand,
 	}
 }
 
-int asm_x86_disas(char *buf, size_t size, const uint8_t *data, size_t pos)
+int
+asm_x86_disas(char *buf, size_t size, const uint8_t *data, size_t pos)
 {
 	const struct asm_x86_opcode *opcode;
 	char operands[4][64];

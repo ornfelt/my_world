@@ -4,20 +4,27 @@
 #include <stdlib.h>
 #include <errno.h>
 
-int vexec(const char *pathname, int path, const char *arg, va_list ap)
+int
+vexec(const char *pathname, int path, const char *arg, va_list ap)
 {
-	char **argv = malloc(sizeof(*argv) * 2);
+	char **argv;
+	int argc;
+	char *a;
+	int ret;
+
+	argv = malloc(sizeof(*argv) * 2);
 	if (!argv)
 	{
 		errno = ENOMEM;
 		return -1;
 	}
-	int argc = 1;
+	argc = 1;
 	argv[0] = (char*)arg;
-	char *a;
 	while ((a = va_arg(ap, char*)))
 	{
-		char **newarg = realloc(argv, sizeof(*newarg) * (argc + 2));
+		char **newarg;
+
+		newarg = realloc(argv, sizeof(*newarg) * (argc + 2));
 		if (!newarg)
 		{
 			free(argv);
@@ -29,7 +36,6 @@ int vexec(const char *pathname, int path, const char *arg, va_list ap)
 		argc++;
 	}
 	argv[argc] = NULL;
-	int ret;
 	if (path)
 		ret = execvp(pathname, argv);
 	else

@@ -4,9 +4,8 @@
 #include "gx/wmo.h"
 #include "gx/blp.h"
 #include "gx/m2.h"
+#include "gx/gx.h"
 
-#include "performance.h"
-#include "graphics.h"
 #include "shaders.h"
 #include "camera.h"
 #include "loader.h"
@@ -64,25 +63,25 @@ static void batch_init(struct gx_wmo_batch *batch, struct gx_wmo_group *parent, 
 	batch->indices_nb = moba->count;
 	struct wow_momt_data *momt = JKS_ARRAY_GET(&parent->parent->momt, moba->material_id, struct wow_momt_data);
 	batch->shader = momt->shader;
-	enum world_rasterizer_state rasterizer_state;
-	enum world_blend_state blend_state;
+	enum gx_rasterizer_state rasterizer_state;
+	enum gx_blend_state blend_state;
 	switch (momt->blend_mode)
 	{
 		case 0: /* opaque */
-			blend_state = WORLD_BLEND_OPAQUE;
-			batch->alpha_test = 0; /* 1. / 255.; */
+			blend_state = GX_BLEND_OPAQUE;
+			batch->alpha_test = 0; /* 1.0 / 255.0; */
 			break;
 		case 1: /* alpha key */
-			blend_state = WORLD_BLEND_OPAQUE;
-			batch->alpha_test = 224. / 255.;
+			blend_state = GX_BLEND_OPAQUE;
+			batch->alpha_test = 224.0 / 255.0;
 			break;
 		case 2: /* alpha */
-			blend_state = WORLD_BLEND_ALPHA;
-			batch->alpha_test = 224. / 255.;
+			blend_state = GX_BLEND_ALPHA;
+			batch->alpha_test = 224.0 / 255.0;
 			break;
 		default:
-			blend_state = WORLD_BLEND_ALPHA;
-			batch->alpha_test = 224. / 255.;
+			blend_state = GX_BLEND_ALPHA;
+			batch->alpha_test = 224.0 / 255.0;
 			LOG_WARN("unsupported blend mode: %u", momt->blend_mode);
 	}
 	/* Mainly seen: 0, 1, 5
@@ -92,8 +91,8 @@ static void batch_init(struct gx_wmo_batch *batch, struct gx_wmo_group *parent, 
 		LOG_DEBUG("WMOshader: %u", batch->shader);
 #endif
 	batch->flags1 = momt->flags;
-	rasterizer_state = batch->flags1 & WOW_MOMT_FLAGS_UNCULLED ? WORLD_RASTERIZER_UNCULLED : WORLD_RASTERIZER_CULLED;
-	batch->pipeline_state = &g_wow->graphics->wmo_pipeline_states[rasterizer_state][blend_state] - &g_wow->graphics->wmo_pipeline_states[0][0];
+	rasterizer_state = batch->flags1 & WOW_MOMT_FLAGS_UNCULLED ? GX_RASTERIZER_UNCULLED : GX_RASTERIZER_CULLED;
+	batch->pipeline_state = &g_wow->gx->wmo_pipeline_states[rasterizer_state][blend_state] - &g_wow->gx->wmo_pipeline_states[0][0];
 	char texture_name[512];
 	snprintf(texture_name, sizeof(texture_name), "%s", JKS_ARRAY_GET(&parent->parent->motx, momt->texture1, char));
 	if (texture_name[0])
@@ -140,7 +139,6 @@ static void batch_prepare_draw(struct gx_wmo_group *group, struct gx_frame *fram
 {
 	if (!batch->uniform_buffers[frame->id].handle.u64)
 		gfx_create_buffer(g_wow->device, &batch->uniform_buffers[frame->id], GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_wmo_mesh_block), GFX_BUFFER_STREAM);
-	PERFORMANCE_BEGIN(WMO_RENDER_DATA);
 	struct shader_wmo_mesh_block mesh_block;
 	VEC4_SETV(mesh_block.emissive_color, 0);
 	VEC4_SETV(mesh_block.combiners, 0);
@@ -150,8 +148,6 @@ static void batch_prepare_draw(struct gx_wmo_group *group, struct gx_frame *fram
 	mesh_block.settings.z = (batch->flags1 & WOW_MOMT_FLAGS_UNFOGGED) ? 1 : 0;
 	mesh_block.settings.w = batch->shader;
 	gfx_set_buffer_data(&batch->uniform_buffers[frame->id], &mesh_block, sizeof(mesh_block), 0);
-	PERFORMANCE_END(WMO_RENDER_DATA);
-	PERFORMANCE_BEGIN(WMO_RENDER_BIND);
 	const gfx_texture_t *textures[2];
 	if (batch->texture1)
 	{
@@ -192,17 +188,14 @@ static void batch_prepare_draw(struct gx_wmo_group *group, struct gx_frame *fram
 	gfx_bind_samplers(g_wow->device, 0, 1, textures); /* XXX 2 textures */
 	gfx_bind_constant(g_wow->device, 0, &batch->uniform_buffers[frame->id], sizeof(struct shader_wmo_mesh_block), 0);
 	if (group->wow_flags & WOW_MOGP_FLAGS_COLOR)
-		gfx_bind_pipeline_state(g_wow->device, &((gfx_pipeline_state_t*)g_wow->graphics->wmo_colored_pipeline_states)[batch->pipeline_state]);
+		gfx_bind_pipeline_state(g_wow->device, &((gfx_pipeline_state_t*)g_wow->gx->wmo_colored_pipeline_states)[batch->pipeline_state]);
 	else
-		gfx_bind_pipeline_state(g_wow->device, &((gfx_pipeline_state_t*)g_wow->graphics->wmo_pipeline_states)[batch->pipeline_state]);
-	PERFORMANCE_END(WMO_RENDER_BIND);
+		gfx_bind_pipeline_state(g_wow->device, &((gfx_pipeline_state_t*)g_wow->gx->wmo_pipeline_states)[batch->pipeline_state]);
 }
 
 static void batch_render(struct gx_wmo_batch *batch)
 {
-	PERFORMANCE_BEGIN(WMO_RENDER_DRAW);
 	gfx_draw_indexed(g_wow->device, batch->indices_nb, batch->indices_offset);
-	PERFORMANCE_END(WMO_RENDER_DRAW);
 }
 
 struct gx_wmo_group *gx_wmo_group_new(struct gx_wmo *parent, uint32_t index, uint32_t flags)
@@ -564,7 +557,7 @@ void gx_wmo_group_render(struct gx_wmo_group *group, struct gx_frame *frame, str
 {
 	if (!gx_wmo_group_flag_get(group, GX_WMO_GROUP_FLAG_INITIALIZED))
 		return;
-	gfx_bind_attributes_state(g_wow->device, &group->attributes_state, (group->wow_flags & WOW_MOGP_FLAGS_COLOR) ? &g_wow->graphics->wmo_colored_input_layout : &g_wow->graphics->wmo_input_layout);
+	gfx_bind_attributes_state(g_wow->device, &group->attributes_state, (group->wow_flags & WOW_MOGP_FLAGS_COLOR) ? &g_wow->gx->wmo_colored_input_layout : &g_wow->gx->wmo_input_layout);
 	for (size_t i = 0; i < group->batches.size; ++i)
 	{
 		bool initialized = false;
@@ -586,9 +579,7 @@ void gx_wmo_group_render(struct gx_wmo_group *group, struct gx_frame *frame, str
 				batch_prepare_draw(group, frame, batch);
 				initialized = true;
 			}
-			PERFORMANCE_BEGIN(WMO_RENDER_BIND);
 			gfx_bind_constant(g_wow->device, 1, &instance_frame->uniform_buffer, sizeof(struct shader_wmo_model_block), 0);
-			PERFORMANCE_END(WMO_RENDER_BIND);
 			batch_render(batch);
 		}
 	}

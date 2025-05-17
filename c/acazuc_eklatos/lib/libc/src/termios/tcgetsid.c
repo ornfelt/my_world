@@ -2,7 +2,8 @@
 
 #include <termios.h>
 
-pid_t tcgetsid(int fd)
+pid_t
+tcgetsid(int fd)
 {
 	return ioctl(fd, TIOCGSID);
 }

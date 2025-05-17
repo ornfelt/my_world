@@ -5,6 +5,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct
 {
 	uint8_t response_type;
@@ -102,5 +106,9 @@ char *xcb_str_name(const xcb_str_t *str);
 int xcb_str_name_length(const xcb_str_t *str);
 void xcb_str_next(xcb_str_iterator_t *it);
 xcb_generic_iterator_t xcb_str_end(xcb_str_iterator_t it);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

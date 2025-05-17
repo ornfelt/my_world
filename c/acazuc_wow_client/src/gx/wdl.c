@@ -1,10 +1,10 @@
 #include "gx/skybox.h"
 #include "gx/frame.h"
 #include "gx/wdl.h"
+#include "gx/gx.h"
 
 #include "map/map.h"
 
-#include "graphics.h"
 #include "shaders.h"
 #include "camera.h"
 #include "memory.h"
@@ -234,7 +234,7 @@ void gx_wdl_cull(struct gx_wdl *wdl, struct gx_frame *frame)
 		}
 		wdl_frame->culled[i / 8] &= ~(1 << (i % 8));
 #ifdef WITH_DEBUG_RENDERING
-		if (g_wow->render_opt & RENDER_OPT_WDL_AABB)
+		if (g_wow->gx->opt & GX_OPT_WDL_AABB)
 			gx_aabb_add_to_render(&chunk->gx_aabb, frame, (struct mat4f*)&frame->view_wdl_vp);
 #endif
 	}
@@ -263,7 +263,7 @@ void gx_wdl_render(struct gx_wdl *wdl, struct gx_frame *frame)
 			model_block.mv = frame->view_v;
 			gfx_set_buffer_data(&wdl_frame->uniform_buffer, &model_block, sizeof(model_block), 0);
 			gfx_bind_constant(g_wow->device, 1, &wdl_frame->uniform_buffer, sizeof(model_block), 0);
-			gfx_bind_attributes_state(g_wow->device, &wdl->attributes_state, &g_wow->graphics->wdl_input_layout);
+			gfx_bind_attributes_state(g_wow->device, &wdl->attributes_state, &g_wow->gx->wdl_input_layout);
 			initialized = true;
 		}
 		gfx_draw_indexed(g_wow->device, 3072, chunk->indices_offset);

@@ -16,36 +16,46 @@ struct env
 	int opt;
 };
 
-static int cmp_str(const void *a, const void *b)
+static int
+cmp_str(const void *a, const void *b)
 {
 	return strcmp(*(char**)a, *(char**)b);
 }
 
-static int cmp_str_rev(const void *a, const void *b)
+static int
+cmp_str_rev(const void *a, const void *b)
 {
 	return -strcmp(*(char**)a, *(char**)b);
 }
 
-static int cmp_str_case(const void *a, const void *b)
+static int
+cmp_str_case(const void *a, const void *b)
 {
 	return strcasecmp(*(char**)a, *(char**)b);
 }
 
-static int cmp_str_case_rev(const void *a, const void *b)
+static int
+cmp_str_case_rev(const void *a, const void *b)
 {
 	return -strcasecmp(*(char**)a, *(char**)b);
 }
 
-static int read_fp(struct env *env, FILE *fp)
+static int
+read_fp(struct env *env, FILE *fp)
 {
 	char *line = NULL;
 	size_t len = 0;
+
 	while ((getline(&line, &len, fp)) != -1)
 	{
-		char **lines = realloc(env->lines, (env->lines_nb + 1) * sizeof(*env->lines));
+		char **lines;
+
+		lines = realloc(env->lines, (env->lines_nb + 1) * sizeof(*env->lines));
 		if (!lines)
 		{
-			fprintf(stderr, "%s: realloc: %s\n", env->progname, strerror(errno));
+			fprintf(stderr, "%s: realloc: %s\n",
+			        env->progname,
+			        strerror(errno));
 			free(line);
 			return 1;
 		}
@@ -57,35 +67,45 @@ static int read_fp(struct env *env, FILE *fp)
 	}
 	if (errno)
 	{
-		fprintf(stderr, "%s: read: %s\n", env->progname, strerror(errno));
+		fprintf(stderr, "%s: read: %s\n",
+		        env->progname,
+		        strerror(errno));
 		return 1;
 	}
 	return 0;
 }
 
-static int read_file(struct env *env, const char *file)
+static int
+read_file(struct env *env, const char *file)
 {
+	FILE *fp;
+	int ret;
+
 	if (!strcmp(file, "-"))
 		return read_fp(env, stdin);
-	FILE *fp = fopen(file, "r");
+	fp = fopen(file, "r");
 	if (!fp)
 	{
-		fprintf(stderr, "%s: open: %s\n", env->progname, strerror(errno));
+		fprintf(stderr, "%s: open: %s\n",
+		        env->progname,
+		        strerror(errno));
 		return 1;
 	}
-	int ret = read_fp(env, fp);
+	ret = read_fp(env, fp);
 	fclose(fp);
 	return ret;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-f] [-r] [FILES]\n", progname);
 	printf("-f: case insensitive sort\n");
 	printf("-r: reverse sort\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	int (*cmp_fn)(const void *a, const void *b);
 	struct env env;

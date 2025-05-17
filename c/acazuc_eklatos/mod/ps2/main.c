@@ -5,7 +5,8 @@
 
 #include <kmod.h>
 
-int ps2_wr(uint8_t port, uint8_t v)
+int
+ps2_wr(uint8_t port, uint8_t v)
 {
 	size_t i = 0;
 	while ((inb(PS2_STATUS) & 2))
@@ -18,7 +19,8 @@ int ps2_wr(uint8_t port, uint8_t v)
 	return 0;
 }
 
-int ps2_rd(uint8_t port, uint8_t *v)
+int
+ps2_rd(uint8_t port, uint8_t *v)
 {
 	size_t i = 0;
 	while (!(inb(PS2_STATUS) & 1))
@@ -31,7 +33,8 @@ int ps2_rd(uint8_t port, uint8_t *v)
 	return 0;
 }
 
-int ps2_wait_ack(void)
+int
+ps2_wait_ack(void)
 {
 	uint8_t ack;
 	if (ps2_rd(PS2_DATA, &ack))
@@ -41,7 +44,8 @@ int ps2_wait_ack(void)
 	return 0;
 }
 
-void ps2_interrupt(void *userptr)
+void
+ps2_interrupt(void *userptr)
 {
 	(void)userptr;
 
@@ -51,18 +55,21 @@ void ps2_interrupt(void *userptr)
 		ps2_kbd_input(inb(PS2_DATA));
 }
 
-static int init(void)
+static int
+init(void)
 {
 	ps2_kbd_init();
 	ps2_mouse_init();
 	return 0;
 }
 
-static void fini(void)
+static void
+fini(void)
 {
 }
 
-struct kmod_info kmod =
+struct kmod_info
+kmod =
 {
 	.magic = KMOD_MAGIC,
 	.version = 1,

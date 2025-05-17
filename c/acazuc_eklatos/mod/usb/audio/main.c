@@ -5,7 +5,8 @@
 
 #include <kmod.h>
 
-static const struct usb_itf_probe probes[] =
+static const struct usb_itf_probe
+probes[] =
 {
 	{USB_CLASS_AUDIO, USB_SUBCLASS_AUDIO_STREAMING, 0},
 };
@@ -19,8 +20,11 @@ struct usb_audio
 	struct snd *snd;
 };
 
-static void isoc_pipe_fn(struct usb_isoc_pipe *pipe, void *data, size_t *sizes,
-                         size_t nbufs)
+static void
+isoc_pipe_fn(struct usb_isoc_pipe *pipe,
+             void *data,
+             size_t *sizes,
+             size_t nbufs)
 {
 	struct usb_audio *audio = pipe->userdata;
 
@@ -31,7 +35,8 @@ static void isoc_pipe_fn(struct usb_isoc_pipe *pipe, void *data, size_t *sizes,
 	}
 }
 
-static void usb_audio_free(struct usb_audio *audio)
+static void
+usb_audio_free(struct usb_audio *audio)
 {
 	if (!audio)
 		return;
@@ -40,8 +45,10 @@ static void usb_audio_free(struct usb_audio *audio)
 	free(audio);
 }
 
-static int usb_init(struct usb_device *device, struct usb_interface *interface,
-                    void *userdata)
+static int
+usb_init(struct usb_device *device,
+         struct usb_interface *interface,
+         void *userdata)
 {
 	struct usb_audio *audio = NULL;
 	int ret;
@@ -99,7 +106,8 @@ err:
 	return ret;
 }
 
-int init(void)
+int
+init(void)
 {
 	int ret;
 
@@ -114,11 +122,13 @@ int init(void)
 	return 0;
 }
 
-void fini(void)
+void
+fini(void)
 {
 }
 
-struct kmod_info kmod =
+struct kmod_info
+kmod =
 {
 	.magic = KMOD_MAGIC,
 	.version = 1,

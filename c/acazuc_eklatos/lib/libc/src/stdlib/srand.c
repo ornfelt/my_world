@@ -2,7 +2,8 @@
 
 #include <stdlib.h>
 
-void srand(unsigned int seed)
+void
+srand(unsigned int seed)
 {
 	rand_val = seed;
 }

@@ -2,7 +2,8 @@
 
 #include <pwd.h>
 
-struct passwd *getpwent(void)
+struct passwd *
+getpwent(void)
 {
 	if (!pwent_fp)
 	{

@@ -33,7 +33,6 @@ SRCS_NAME = cache.c \
             char_input.c \
             cvars.c \
             dbc.c \
-            graphics.c \
             lagometer.c \
             loader.c \
             log.c \
@@ -45,6 +44,7 @@ SRCS_NAME = cache.c \
             wow.c \
             gx/blp.c \
             gx/frame.c \
+            gx/gx.c \
             gx/m2.c \
             gx/m2_particles.c \
             gx/m2_ribbons.c \

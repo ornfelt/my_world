@@ -13,9 +13,14 @@
 #define TOKEN_VAR "##"
 #define TOKEN_COMMENT "#"
 
-struct wow_toc_file *wow_toc_file_new(const uint8_t *data, uint32_t len)
+struct wow_toc_file *
+wow_toc_file_new(const uint8_t *data, uint32_t len)
 {
-	struct wow_toc_file *file = WOW_MALLOC(sizeof(*file));
+	struct wow_toc_file *file;
+	char *ret;
+	char *prv;
+
+	file = WOW_MALLOC(sizeof(*file));
 	if (!file)
 		return NULL;
 	memset(file, 0, sizeof(*file));
@@ -25,8 +30,7 @@ struct wow_toc_file *wow_toc_file_new(const uint8_t *data, uint32_t len)
 		org += 3;
 		len -= 3;
 	}
-	char *ret;
-	char *prv = org;
+	prv = org;
 	while ((ret = (char*)memchr(prv, '\n', len - (prv - org))))
 	{
 		if (ret == prv)
@@ -117,7 +121,8 @@ err:
 	return NULL;
 }
 
-void wow_toc_file_delete(struct wow_toc_file *file)
+void
+wow_toc_file_delete(struct wow_toc_file *file)
 {
 	if (!file)
 		return;

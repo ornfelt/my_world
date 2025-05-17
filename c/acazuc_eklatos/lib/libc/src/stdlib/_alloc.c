@@ -119,7 +119,8 @@ enum small_type
 	SMALL_3328, SMALL_3584, SMALL_3840,
 };
 
-static const size_t small_sizes[] =
+static const size_t
+small_sizes[] =
 {
 	4,    8,    16,   32,
 	48,   64,   80,   96,
@@ -149,7 +150,8 @@ enum large_type
 	LARGE_2048K,
 };
 
-static const size_t large_sizes[] =
+static const size_t
+large_sizes[] =
 {
 	1024 * 4,
 	1024 * 8,
@@ -269,7 +271,8 @@ static void sma_destroy(struct sma *sma);
 static void *sma_alloc(struct sma *sma);
 static void sma_free(struct slab *slab, void *ptr);
 
-static uint32_t npot32(uint32_t val)
+static uint32_t
+npot32(uint32_t val)
 {
 	val--;
 	val |= val >> 1;
@@ -280,15 +283,19 @@ static uint32_t npot32(uint32_t val)
 	return ++val;
 }
 
-static void *mem_alloc(size_t size)
+static void *
+mem_alloc(size_t size)
 {
-	return mmap(NULL, size,
+	return mmap(NULL,
+	            size,
 	            PROT_READ | PROT_WRITE,
 	            MAP_ANONYMOUS | MAP_PRIVATE,
-	            -1, 0);
+	            -1,
+	            0);
 }
 
-static struct arena *arena_new(void)
+static struct arena *
+arena_new(void)
 {
 	struct arena *arena;
 
@@ -306,7 +313,8 @@ static struct arena *arena_new(void)
 }
 
 __attribute__((unused))
-static void arena_destroy(struct arena *arena)
+static void
+arena_destroy(struct arena *arena)
 {
 	struct chunk *chunk;
 
@@ -324,8 +332,11 @@ static void arena_destroy(struct arena *arena)
 	munmap(arena, ARENA_MMAP_SIZE);
 }
 
-static void print_extent(struct chunk *chunk, struct extent *extent,
-                         size_t order, size_t indent)
+static void
+print_extent(struct chunk *chunk,
+             struct extent *extent,
+             size_t order,
+             size_t indent)
 {
 	printf("%.*sextent %p(0x%zx) %s\n",
 	       (int)indent * 2, "                                   ",
@@ -345,7 +356,8 @@ static void print_extent(struct chunk *chunk, struct extent *extent,
 	print_extent(chunk, right, order - 1, indent + 1);
 }
 
-static void print_chunk(struct chunk *chunk)
+static void
+print_chunk(struct chunk *chunk)
 {
 	printf("    chunk %p\n", chunk);
 	printf("      free lists\n");
@@ -368,13 +380,15 @@ static void print_chunk(struct chunk *chunk)
 	             CHUNK_ORDERS_COUNT - 1, 4);
 }
 
-static void print_slab(struct slab *slab)
+static void
+print_slab(struct slab *slab)
 {
 	printf("          slab %p: USED=%zu FIRST_FREE=%zu STATE=%d ADDR=%p\n",
 	      slab, slab->used, slab->first_free, slab->state, slab->addr);
 }
 
-static void print_meta(struct meta *meta)
+static void
+print_meta(struct meta *meta)
 {
 	struct slab *slab;
 
@@ -390,7 +404,8 @@ static void print_meta(struct meta *meta)
 		print_slab(slab);
 }
 
-static void print_sma(struct sma *sma)
+static void
+print_sma(struct sma *sma)
 {
 	struct meta *meta;
 
@@ -406,7 +421,8 @@ static void print_sma(struct sma *sma)
 	printf("    meta free %p\n", sma->meta_free);
 }
 
-static void print_arena_chunks_lists(struct arena *arena)
+static void
+print_arena_chunks_lists(struct arena *arena)
 {
 	struct chunk *chunk;
 
@@ -422,7 +438,8 @@ static void print_arena_chunks_lists(struct arena *arena)
 	}
 }
 
-static void print_arena_chunks(struct arena *arena)
+static void
+print_arena_chunks(struct arena *arena)
 {
 	struct chunk *chunk;
 
@@ -431,23 +448,25 @@ static void print_arena_chunks(struct arena *arena)
 		print_chunk(chunk);
 }
 
-static void print_arena_sma(struct arena *arena)
+static void
+print_arena_sma(struct arena *arena)
 {
 	for (size_t i = 0; i < SMALL_SIZES_COUNT; ++i)
 		print_sma(&arena->sma[i]);
 }
 
 __attribute__((unused))
-static void print_arena(struct arena *arena)
+static void
+print_arena(struct arena *arena)
 {
-
 	printf("arena %p\n", arena);
 	print_arena_chunks_lists(arena);
 	print_arena_chunks(arena);
 	print_arena_sma(arena);
 }
 
-static struct chunk *chunk_get(void *ptr)
+static struct chunk *
+chunk_get(void *ptr)
 {
 	struct chunk *chunk;
 
@@ -457,10 +476,12 @@ static struct chunk *chunk_get(void *ptr)
 	return chunk;
 }
 
-static struct extent *chunk_get_extent(struct chunk *chunk, void *ptr)
+static struct extent *
+chunk_get_extent(struct chunk *chunk, void *ptr)
 {
 	size_t id = ((uint8_t*)ptr - (uint8_t*)chunk) / PAGE_SIZE;
 	size_t off = 0;
+
 	for (size_t i = 0; i < CHUNK_ORDERS_COUNT; ++i)
 	{
 		struct extent *extent = &chunk->extents[off | id];
@@ -474,7 +495,8 @@ static struct extent *chunk_get_extent(struct chunk *chunk, void *ptr)
 	return NULL;
 }
 
-static struct extent *extent_get(void *ptr, struct chunk **chunkp)
+static struct extent *
+extent_get(void *ptr, struct chunk **chunkp)
 {
 	struct extent *extent;
 	struct chunk *chunk;
@@ -489,8 +511,8 @@ static struct extent *extent_get(void *ptr, struct chunk **chunkp)
 	return extent;
 }
 
-static void chunk_add_free(struct chunk *chunk, struct extent *extent,
-                           size_t order)
+static void
+chunk_add_free(struct chunk *chunk, struct extent *extent, size_t order)
 {
 	size_t off;
 
@@ -504,8 +526,8 @@ static void chunk_add_free(struct chunk *chunk, struct extent *extent,
 	chunk->free_lists[order] = off;
 }
 
-static void chunk_remove_free(struct chunk *chunk, struct extent *extent,
-                              size_t order)
+static void
+chunk_remove_free(struct chunk *chunk, struct extent *extent, size_t order)
 {
 	if (!extent->free_prev && !extent->free_next)
 		TAILQ_REMOVE(&chunk->arena->chunks_lists[order], chunk, lists_chains[order]);
@@ -517,7 +539,8 @@ static void chunk_remove_free(struct chunk *chunk, struct extent *extent,
 		chunk->free_lists[order] = extent->free_next;
 }
 
-static void extent_coalesce(struct chunk *chunk, size_t off, size_t order)
+static void
+extent_coalesce(struct chunk *chunk, size_t off, size_t order)
 {
 	struct extent *extent;
 	struct extent *buddy;
@@ -540,7 +563,8 @@ static void extent_coalesce(struct chunk *chunk, size_t off, size_t order)
 	extent_coalesce(chunk, parent_off, order + 1);
 }
 
-static void chunk_free(struct chunk *chunk, struct extent *extent)
+static void
+chunk_free(struct chunk *chunk, struct extent *extent)
 {
 	size_t off = extent - chunk->extents;
 	size_t mask = 1 << (CHUNK_ORDERS_COUNT - 1);
@@ -568,8 +592,11 @@ static void chunk_free(struct chunk *chunk, struct extent *extent)
 		chunk->arena->free_chunk = chunk;
 }
 
-static struct extent *extent_split(struct chunk *chunk, struct extent *extent,
-                                   size_t split_order, size_t order)
+static struct extent *
+extent_split(struct chunk *chunk,
+             struct extent *extent,
+             size_t split_order,
+             size_t order)
 {
 	if (split_order == order)
 		return extent;
@@ -585,9 +612,11 @@ static struct extent *extent_split(struct chunk *chunk, struct extent *extent,
 	return extent_split(chunk, left, split_order - 1, order);
 }
 
-static size_t pages_to_order(size_t pages)
+static size_t
+pages_to_order(size_t pages)
 {
 	size_t order = 0;
+
 	while (1)
 	{
 		if (order == CHUNK_ORDERS_COUNT)
@@ -598,7 +627,8 @@ static size_t pages_to_order(size_t pages)
 	}
 }
 
-static void *chunk_alloc(struct chunk *chunk, size_t pages, uintptr_t userdata)
+static void *
+chunk_alloc(struct chunk *chunk, size_t pages, uintptr_t userdata)
 {
 	struct extent *extent;
 	size_t order;
@@ -633,7 +663,8 @@ static void *chunk_alloc(struct chunk *chunk, size_t pages, uintptr_t userdata)
 	return &((uint8_t*)chunk)[PAGE_SIZE * ((off & mask) << order)];
 }
 
-static struct chunk *chunk_new(struct arena *arena)
+static struct chunk *
+chunk_new(struct arena *arena)
 {
 	struct chunk *chunk;
 
@@ -655,12 +686,14 @@ static struct chunk *chunk_new(struct arena *arena)
 	return chunk;
 }
 
-static void chunk_destroy(struct chunk *chunk)
+static void
+chunk_destroy(struct chunk *chunk)
 {
 	munmap(chunk, CHUNK_SIZE);
 }
 
-static void *arena_alloc(struct arena *arena, size_t pages, uintptr_t owner)
+static void *
+arena_alloc(struct arena *arena, size_t pages, uintptr_t owner)
 {
 	struct chunk *chunk;
 	size_t order;
@@ -714,7 +747,8 @@ static void *arena_alloc(struct arena *arena, size_t pages, uintptr_t owner)
 	return ptr;
 }
 
-static void arena_free(struct arena *arena, void *ptr)
+static void
+arena_free(struct arena *arena, void *ptr)
 {
 	struct chunk *chunk;
 	struct extent *extent;
@@ -728,7 +762,8 @@ static void arena_free(struct arena *arena, void *ptr)
 	_libc_unlock(&arena->lock);
 }
 
-static struct arena *get_arena(void)
+static struct arena *
+get_arena(void)
 {
 	_libc_lock(&init_lock);
 	if (!g_arena)
@@ -742,29 +777,34 @@ static struct arena *get_arena(void)
 	return g_arena;
 }
 
-static void *alloc_huge_alloc(size_t *size)
+static void *
+alloc_huge_alloc(size_t *size)
 {
 	*size += CHUNK_SIZE - 1;
 	*size -= *size % CHUNK_SIZE;
 	return mem_alloc(*size);
 }
 
-static void bitmap_set(struct slab *slab, size_t offset)
+static void
+bitmap_set(struct slab *slab, size_t offset)
 {
 	slab->bitmap[offset / BITMAP_BPW] |= ((size_t)1 << (offset % BITMAP_BPW));
 }
 
-static void bitmap_clr(struct slab *slab, size_t offset)
+static void
+bitmap_clr(struct slab *slab, size_t offset)
 {
 	slab->bitmap[offset / BITMAP_BPW] &= ~((size_t)1 << (offset % BITMAP_BPW));
 }
 
-static size_t bitmap_get(struct slab *slab, size_t offset)
+static size_t
+bitmap_get(struct slab *slab, size_t offset)
 {
 	return slab->bitmap[offset / BITMAP_BPW] & ((size_t)1 << (offset % BITMAP_BPW));
 }
 
-static int slab_ctr(struct sma *sma, struct meta *meta, struct slab *slab)
+static int
+slab_ctr(struct sma *sma, struct meta *meta, struct slab *slab)
 {
 	slab->meta = meta;
 	slab->addr = arena_alloc(sma->arena, sma->slab_pages, (uintptr_t)slab);
@@ -774,7 +814,8 @@ static int slab_ctr(struct sma *sma, struct meta *meta, struct slab *slab)
 	return 0;
 }
 
-static void slab_destroy(struct sma *sma, struct slab *slab)
+static void
+slab_destroy(struct sma *sma, struct slab *slab)
 {
 	void *addr;
 
@@ -785,7 +826,8 @@ static void slab_destroy(struct sma *sma, struct slab *slab)
 	arena_free(sma->arena, addr);
 }
 
-static struct meta *meta_new(struct sma *sma)
+static struct meta *
+meta_new(struct sma *sma)
 {
 	struct meta *meta;
 	struct slab *slab;
@@ -814,7 +856,8 @@ static struct meta *meta_new(struct sma *sma)
 	return meta;
 }
 
-static void meta_destroy(struct sma *sma, struct meta *meta)
+static void
+meta_destroy(struct sma *sma, struct meta *meta)
 {
 	struct slab *slab;
 
@@ -833,8 +876,8 @@ static void meta_destroy(struct sma *sma, struct meta *meta)
 	arena_free(sma->arena, meta);
 }
 
-static void check_free_slab(struct sma *sma, struct meta *meta,
-                            struct slab *slab)
+static void
+check_free_slab(struct sma *sma, struct meta *meta, struct slab *slab)
 {
 	if (slab->state == SLAB_FULL)
 	{
@@ -871,8 +914,11 @@ static void check_free_slab(struct sma *sma, struct meta *meta,
 	}
 }
 
-static void update_first_free(struct sma *sma, struct meta *meta,
-                              struct slab *slab, size_t start)
+static void
+update_first_free(struct sma *sma,
+                  struct meta *meta,
+                  struct slab *slab,
+                  size_t start)
 {
 	if (slab->used == sma->bitmap_count)
 		goto full;
@@ -915,7 +961,8 @@ full:
 /* lazy loading because there is a lot of sma for each arena
  * and most of them won't be used
  */
-static void sma_initialize(struct sma *sma)
+static void
+sma_initialize(struct sma *sma)
 {
 	TAILQ_INIT(&sma->meta_full);
 	TAILQ_INIT(&sma->meta_partial);
@@ -940,7 +987,8 @@ static void sma_initialize(struct sma *sma)
 	sma->initialized = 1;
 }
 
-static void *sma_alloc(struct sma *sma)
+static void *
+sma_alloc(struct sma *sma)
 {
 	struct meta *meta;
 	struct slab *slab;
@@ -988,7 +1036,8 @@ end:
 	return addr;
 }
 
-static void sma_free(struct slab *slab, void *ptr)
+static void
+sma_free(struct slab *slab, void *ptr)
 {
 	struct meta *meta = slab->meta;
 	struct sma *sma = meta->sma;
@@ -1013,7 +1062,8 @@ static void sma_free(struct slab *slab, void *ptr)
 	_libc_unlock(&sma->lock);
 }
 
-static void sma_init(struct sma *sma, size_t data_size, struct arena *arena)
+static void
+sma_init(struct sma *sma, size_t data_size, struct arena *arena)
 {
 	sma->arena = arena;
 	sma->initialized = 0;
@@ -1021,7 +1071,8 @@ static void sma_init(struct sma *sma, size_t data_size, struct arena *arena)
 	_libc_lock_init(&sma->lock);
 }
 
-static void sma_destroy(struct sma *sma)
+static void
+sma_destroy(struct sma *sma)
 {
 	struct meta *meta;
 
@@ -1044,7 +1095,8 @@ static void sma_destroy(struct sma *sma)
 	sma->initialized = 0;
 }
 
-static void *_malloc_huge(size_t size)
+static void *
+_malloc_huge(size_t size)
 {
 	struct huge_alloc *huge_alloc;
 	void *data;
@@ -1066,7 +1118,8 @@ static void *_malloc_huge(size_t size)
 	return data;
 }
 
-static void *_malloc_large(struct arena *arena, size_t size)
+static void *
+_malloc_large(struct arena *arena, size_t size)
 {
 	for (size_t i = 0; i < LARGE_SIZES_COUNT; ++i)
 	{
@@ -1077,7 +1130,8 @@ static void *_malloc_large(struct arena *arena, size_t size)
 	ALLOC_ABORT("bogus large size");
 }
 
-static void *_malloc_small(struct arena *arena, size_t size)
+static void *
+_malloc_small(struct arena *arena, size_t size)
 {
 	for (size_t i = 0; i < SMALL_SIZES_COUNT; ++i)
 	{
@@ -1088,7 +1142,8 @@ static void *_malloc_small(struct arena *arena, size_t size)
 	ALLOC_ABORT("bogus small size");
 }
 
-void *_malloc(size_t size)
+void *
+_malloc(size_t size)
 {
 	struct arena *arena;
 
@@ -1100,7 +1155,8 @@ void *_malloc(size_t size)
 	return _malloc_small(arena, size);
 }
 
-static void _free_huge(void *ptr)
+static void
+_free_huge(void *ptr)
 {
 	struct huge_alloc *huge_alloc;
 
@@ -1119,7 +1175,8 @@ static void _free_huge(void *ptr)
 	ALLOC_ABORT("free unknown addr: %p", ptr);
 }
 
-void _free(void *ptr)
+void
+_free(void *ptr)
 {
 	struct chunk *chunk;
 	struct extent *extent;
@@ -1145,7 +1202,8 @@ void _free(void *ptr)
 	sma_free(extent->slab, ptr);
 }
 
-static void *_realloc_huge(void *ptr, size_t size)
+static void *
+_realloc_huge(void *ptr, size_t size)
 {
 	struct huge_alloc *huge_alloc;
 	void *data;
@@ -1175,8 +1233,11 @@ static void *_realloc_huge(void *ptr, size_t size)
 	ALLOC_ABORT("free unknown addr: %p", ptr);
 }
 
-static void *_realloc_large(struct chunk *chunk, struct extent *extent,
-                            void *ptr, size_t size)
+static void *
+_realloc_large(struct chunk *chunk,
+               struct extent *extent,
+               void *ptr,
+               size_t size)
 {
 	struct arena *arena = chunk->arena;
 	void *new_data;
@@ -1201,8 +1262,11 @@ static void *_realloc_large(struct chunk *chunk, struct extent *extent,
 	return new_data;
 }
 
-static void *_realloc_small(struct chunk *chunk, struct extent *extent,
-                            void *ptr, size_t size)
+static void *
+_realloc_small(struct chunk *chunk,
+               struct extent *extent,
+               void *ptr,
+               size_t size)
 {
 	struct slab *slab = extent->slab;
 	struct sma *sma = slab->meta->sma;
@@ -1223,7 +1287,8 @@ static void *_realloc_small(struct chunk *chunk, struct extent *extent,
 	return new_data;
 }
 
-void *_realloc(void *ptr, size_t size)
+void *
+_realloc(void *ptr, size_t size)
 {
 	struct chunk *chunk;
 	struct extent *extent;

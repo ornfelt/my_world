@@ -2,9 +2,11 @@
 
 #if defined(__i386__)
 __attribute__((regparm(1)))
-void *___tls_get_addr(size_t *ptr)
+void *
+___tls_get_addr(size_t *ptr)
 #else
-void *__tls_get_addr(size_t *ptr)
+void *
+__tls_get_addr(size_t *ptr)
 #endif
 {
 	/* on risc-v (and mips, powerpc, and some other architectures)

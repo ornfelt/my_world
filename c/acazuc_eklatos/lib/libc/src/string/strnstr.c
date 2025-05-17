@@ -1,6 +1,7 @@
 #include <string.h>
 
-char *strnstr(const char *s1, const char *s2, size_t n)
+char *
+strnstr(const char *s1, const char *s2, size_t n)
 {
 	if (!*s2)
 		return (char*)s1;

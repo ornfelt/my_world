@@ -1,6 +1,7 @@
 #include <stdlib.h>
 
-intmax_t strtoimax(const char *nptr, char **endptr, int base)
+intmax_t
+strtoimax(const char *nptr, char **endptr, int base)
 {
 #if __SIZE_WIDTH__ == 32
 	return strtoll(nptr, endptr, base);

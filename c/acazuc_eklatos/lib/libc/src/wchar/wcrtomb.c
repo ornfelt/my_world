@@ -1,7 +1,8 @@
 #include <wchar.h>
 #include <errno.h>
 
-size_t wcrtomb(char *s, wchar_t wc, mbstate_t *ps)
+size_t
+wcrtomb(char *s, wchar_t wc, mbstate_t *ps)
 {
 	if (!wc)
 		return 0;

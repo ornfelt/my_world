@@ -25,30 +25,50 @@ static XVisualInfo *vi;
 static GC gc;
 static struct button buttons[78];
 
-static int create_button(const char *progname, struct button *button,
-                         int32_t x, int32_t y, uint32_t width, uint32_t height,
-                         uint32_t cid)
+static int
+create_button(const char *progname,
+              struct button *button,
+              int32_t x,
+              int32_t y,
+              uint32_t width,
+              uint32_t height,
+              uint32_t cid)
 {
+	XSetWindowAttributes swa;
+	char name[64];
+
 	button->x = x;
 	button->y = y;
 	button->width = width;
 	button->height = height;
-	XSetWindowAttributes swa;
 	swa.event_mask = ExposureMask;
 	swa.border_pixel = 0xFF0000;
-	button->window = XCreateWindow(display, window, x, y, width, height, 2,
-	                               vi->depth, InputOutput, vi->visual,
-	                               CWEventMask | CWBorderPixel, &swa);
+	button->window = XCreateWindow(display,
+	                               window,
+	                               x,
+	                               y,
+	                               width,
+	                               height, 2,
+	                               vi->depth,
+	                               InputOutput,
+	                               vi->visual,
+	                               CWEventMask | CWBorderPixel,
+	                               &swa);
 	if (!button->window)
 	{
 		fprintf(stderr, "%s: failed to create button window\n",
 		        progname);
 		return 1;
 	}
-	char name[64];
 	snprintf(name, sizeof(name), "xcursor button %" PRIu32, cid / 2);
-	XChangeProperty(display, button->window, XA_WM_NAME, XA_STRING, 8,
-	                PropModeReplace, (uint8_t*)name, strlen(name));
+	XChangeProperty(display,
+	                button->window,
+	                XA_WM_NAME,
+	                XA_STRING,
+	                8,
+	                PropModeReplace,
+	                (uint8_t*)name,
+	                strlen(name));
 	if (cid < 77 * 2)
 	{
 		button->cursor = XCreateFontCursor(display, cid);
@@ -143,8 +163,17 @@ static int create_button(const char *progname, struct button *button,
 	return 0;
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
+	XSetWindowAttributes swa;
+	XSizeHints hints;
+	XGCValues gc_values;
+	Window root;
+	unsigned mask;
+	int nitems;
+	long vimask = 0;
+
 	(void)argc;
 	display = XOpenDisplay(NULL);
 	if (!display)
@@ -152,26 +181,40 @@ int main(int argc, char **argv)
 		fprintf(stderr, "%s: failed to open display\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	int nitems;
-	long vimask = 0;
 	vi = XGetVisualInfo(display, vimask, NULL, &nitems);
-	Window root = XRootWindow(display, 0);
-	XSetWindowAttributes swa;
+	root = XRootWindow(display, 0);
 	swa.event_mask = ExposureMask;
-	unsigned mask = CWEventMask;
-	window = XCreateWindow(display, root, 0, 0, 320, 320, 0, vi->depth,
-	                       InputOutput, vi->visual, mask, &swa);
+	mask = CWEventMask;
+	window = XCreateWindow(display,
+	                       root,
+	                       0,
+	                       0,
+	                       320,
+	                       320,
+	                       0,
+	                       vi->depth,
+	                       InputOutput,
+	                       vi->visual,
+	                       mask,
+	                       &swa);
 	if (!window)
 	{
 		fprintf(stderr, "%s: failed to create window\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	XChangeProperty(display, window, XA_WM_NAME, XA_STRING, 8,
-	                PropModeReplace, (uint8_t*)"xcursor", 7);
-	XGCValues gc_values;
+	XChangeProperty(display,
+	                window,
+	                XA_WM_NAME,
+	                XA_STRING,
+	                8,
+	                PropModeReplace,
+	                (uint8_t*)"xcursor",
+	                7);
 	gc_values.foreground = 0xFFFFFFFF;
 	gc_values.graphics_exposures = 0;
-	gc = XCreateGC(display, window, GCForeground | GCGraphicsExposures,
+	gc = XCreateGC(display,
+	               window,
+	               GCForeground | GCGraphicsExposures,
 	               &gc_values);
 	if (!gc)
 	{
@@ -186,7 +229,6 @@ int main(int argc, char **argv)
 		                  30, 30, i * 2))
 			return EXIT_FAILURE;
 	}
-	XSizeHints hints;
 	hints.flags = PMinSize | PMaxSize;
 	hints.min_width = 320;
 	hints.max_width = 320;

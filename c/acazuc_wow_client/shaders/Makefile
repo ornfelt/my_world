@@ -6,6 +6,7 @@ SHADERS = aabb \
           cel \
           chromaber \
           collisions \
+          death \
           fsaa \
           fxaa \
           glow \

@@ -8,13 +8,20 @@
 
 static int realpath_addpath(char *dst, const char *add);
 
-static int realpath_adddir(char *dst, const char *dir)
+static int
+realpath_adddir(char *dst, const char *dir)
 {
+	char linkpath[PATH_MAX];
+	struct stat st;
+	ssize_t ret;
+
 	if (!strcmp(dir, "."))
 		return 1;
 	if (!strcmp(dir, ".."))
 	{
-		char *prv = strrchr(dst, '/');
+		char *prv;
+
+		prv = strrchr(dst, '/');
 		if (!prv) /* can't happend, but still */
 			return 0;
 		if (prv == dst)
@@ -26,13 +33,11 @@ static int realpath_adddir(char *dst, const char *dir)
 	if (dst[1])
 		strlcat(dst, "/", PATH_MAX);
 	strlcat(dst, dir, PATH_MAX);
-	struct stat st;
 	if (lstat(dst, &st) == -1)
 		return 0;
 	if (!S_ISLNK(st.st_mode))
 		return 1;
-	char linkpath[PATH_MAX];
-	ssize_t ret = readlink(dst, linkpath, sizeof(linkpath));
+	ret = readlink(dst, linkpath, sizeof(linkpath));
 	if (ret == -1)
 		return 0;
 	linkpath[ret] = '\0';
@@ -42,7 +47,8 @@ static int realpath_adddir(char *dst, const char *dir)
 	return 1;
 }
 
-static int realpath_addpath(char *dst, const char *add)
+static int
+realpath_addpath(char *dst, const char *add)
 {
 	while (*add == '/')
 		add++;
@@ -61,7 +67,8 @@ static int realpath_addpath(char *dst, const char *add)
 	return 1;
 }
 
-char *realpath(const char *path, char *resolved_path)
+char *
+realpath(const char *path, char *resolved_path)
 {
 	if (!path)
 	{

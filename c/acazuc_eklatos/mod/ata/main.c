@@ -215,7 +215,8 @@ struct ata
 static ssize_t dread(struct disk *disk, struct uio *uio);
 static ssize_t dwrite(struct disk *disk, struct uio *uio);
 
-static const struct disk_op dop =
+static const struct disk_op
+dop =
 {
 	.read = dread,
 	.write = dwrite,
@@ -224,65 +225,78 @@ static const struct disk_op dop =
 static int sysnode_open(struct file *file, struct node *node);
 static ssize_t sysnode_read(struct file *file, struct uio *uio);
 
-static const struct file_op fop =
+static const struct file_op
+fop =
 {
 	.open = sysnode_open,
 	.read = sysnode_read,
 };
 
-static inline uint8_t base_read(struct ata_channel *channel, uint32_t reg)
+static inline uint8_t
+base_read(struct ata_channel *channel, uint32_t reg)
 {
 	return pci_r8(channel->base, reg);
 }
 
-static inline void base_write(struct ata_channel *channel, uint32_t reg, uint8_t val)
+static inline void
+base_write(struct ata_channel *channel, uint32_t reg, uint8_t val)
 {
 	pci_w8(channel->base, reg, val);
 }
 
-static inline uint8_t ctrl_read(struct ata_channel *channel, uint32_t reg)
+static inline uint8_t
+ctrl_read(struct ata_channel *channel, uint32_t reg)
 {
 	return pci_r8(channel->ctrl, reg);
 }
 
-static inline void ctrl_write(struct ata_channel *channel, uint32_t reg, uint8_t val)
+static inline void
+ctrl_write(struct ata_channel *channel, uint32_t reg, uint8_t val)
 {
 	pci_w8(channel->ctrl, reg, val);
 }
 
-static inline uint8_t bmide_r8(struct ata_channel *channel, uint32_t reg)
+static inline uint8_t
+bmide_r8(struct ata_channel *channel, uint32_t reg)
 {
 	return pci_r8(channel->bmide, reg);
 }
 
-static inline uint32_t bmide_r32(struct ata_channel *channel, uint32_t reg)
+static inline uint32_t
+bmide_r32(struct ata_channel *channel, uint32_t reg)
 {
 	return pci_r32(channel->bmide, reg);
 }
 
-static inline void bmide_w8(struct ata_channel *channel, uint32_t reg, uint8_t val)
+static inline void
+bmide_w8(struct ata_channel *channel, uint32_t reg, uint8_t val)
 {
 	pci_w8(channel->bmide, reg, val);
 }
 
-static inline void bmide_w32(struct ata_channel *channel, uint32_t reg, uint32_t val)
+static inline void
+bmide_w32(struct ata_channel *channel, uint32_t reg, uint32_t val)
 {
 	pci_w32(channel->bmide, reg, val);
 }
 
-static inline void channel_lock(struct ata_channel *channel)
+static inline void
+channel_lock(struct ata_channel *channel)
 {
 	mutex_lock(&channel->mutex);
 }
 
-static inline void channel_unlock(struct ata_channel *channel)
+static inline void
+channel_unlock(struct ata_channel *channel)
 {
 	mutex_unlock(&channel->mutex);
 }
 
-static void int_handler(void *userdata)
+static void
+int_handler(void *userdata)
 {
 	struct ata_channel *channel = userdata;
+
 	if (channel->flags & ATA_CHANNEL_BMIDE)
 	{
 		if (!(bmide_r8(channel, ATA_BMIDE_STATUS) & ATA_BMIDE_STATUS_IRQ))
@@ -299,14 +313,16 @@ static void int_handler(void *userdata)
 	spinlock_unlock(&channel->waitq_lock);
 }
 
-static inline void wait_busy(struct ata_channel *channel)
+static inline void
+wait_busy(struct ata_channel *channel)
 {
 	/* XXX timeout */
 	while (base_read(channel, ATA_BASE_STATUS) & ATA_SR_BSY)
 		;
 }
 
-static int check_state(struct ata_channel *channel)
+static int
+check_state(struct ata_channel *channel)
 {
 	uint8_t state = base_read(channel, ATA_BASE_STATUS);
 	if (state & ATA_SR_ERR)
@@ -318,7 +334,8 @@ static int check_state(struct ata_channel *channel)
 	return 0;
 }
 
-static void reorder_string(char *str, size_t len)
+static void
+reorder_string(char *str, size_t len)
 {
 	for (size_t i = 0; i < len; i += 2)
 	{
@@ -327,8 +344,8 @@ static void reorder_string(char *str, size_t len)
 	}
 }
 
-static int ata_setup_addr(struct ata_device *device, uint64_t lba,
-                          uint8_t numsects)
+static int
+ata_setup_addr(struct ata_device *device, uint64_t lba, uint8_t numsects)
 {
 	struct ata_channel *channel = device->channel;
 
@@ -358,7 +375,8 @@ static int ata_setup_addr(struct ata_device *device, uint64_t lba,
 	return 0;
 }
 
-static int ata_wait_dma(struct ata_channel *channel)
+static int
+ata_wait_dma(struct ata_channel *channel)
 {
 	/* XXX timeout */
 	while (bmide_r8(channel, ATA_BMIDE_STATUS) & ATA_BMIDE_STATUS_DMA)
@@ -373,7 +391,8 @@ static int ata_wait_dma(struct ata_channel *channel)
 	return 0;
 }
 
-static int ata_wait_pio(struct ata_channel *channel)
+static int
+ata_wait_pio(struct ata_channel *channel)
 {
 	/* XXX timeout */
 	while (base_read(channel, ATA_BASE_STATUS) & ATA_SR_BSY)
@@ -388,7 +407,8 @@ static int ata_wait_pio(struct ata_channel *channel)
 	return check_state(channel);
 }
 
-static void setup_dma_prdt(struct ata_channel *channel, uint8_t numsect)
+static void
+setup_dma_prdt(struct ata_channel *channel, uint8_t numsect)
 {
 	bmide_w32(channel, ATA_BMIDE_PRDT, pm_page_addr(channel->prdt->pages));
 	*(uint64_t*)channel->prdt->data = ((pm_page_addr(channel->buf->pages)) & 0xFFFFFFFF)
@@ -396,7 +416,8 @@ static void setup_dma_prdt(struct ata_channel *channel, uint8_t numsect)
 	                                | (1ULL << 63);
 }
 
-static int ata_read_dma(struct ata_device *device, uint8_t numsect)
+static int
+ata_read_dma(struct ata_device *device, uint8_t numsect)
 {
 	struct ata_channel *channel = device->channel;
 	int ret;
@@ -415,7 +436,8 @@ static int ata_read_dma(struct ata_device *device, uint8_t numsect)
 	return ret;
 }
 
-static int ata_read_pio(struct ata_device *device, uint8_t numsect)
+static int
+ata_read_pio(struct ata_device *device, uint8_t numsect)
 {
 	struct ata_channel *channel = device->channel;
 	uint32_t words = BLOCK_SIZE / 2;
@@ -442,8 +464,11 @@ end:
 	return ret;
 }
 
-static int ata_read_batch(struct ata_device *device, struct uio *uio,
-                          uint64_t lba, uint8_t numsect)
+static int
+ata_read_batch(struct ata_device *device,
+               struct uio *uio,
+               uint64_t lba,
+               uint8_t numsect)
 {
 	struct ata_channel *channel = device->channel;
 	ssize_t ret;
@@ -460,7 +485,8 @@ static int ata_read_batch(struct ata_device *device, struct uio *uio,
 	return uio_copyin(uio, channel->buf, numsect * BLOCK_SIZE);
 }
 
-static ssize_t ata_read(struct ata_device *device, struct uio *uio)
+static ssize_t
+ata_read(struct ata_device *device, struct uio *uio)
 {
 	struct ata_channel *channel = device->channel;
 	ssize_t ret;
@@ -482,7 +508,8 @@ static ssize_t ata_read(struct ata_device *device, struct uio *uio)
 	return rd;
 }
 
-static int ata_write_dma(struct ata_device *device, uint8_t numsect)
+static int
+ata_write_dma(struct ata_device *device, uint8_t numsect)
 {
 	struct ata_channel *channel = device->channel;
 	int ret;
@@ -501,7 +528,8 @@ static int ata_write_dma(struct ata_device *device, uint8_t numsect)
 	return ret;
 }
 
-static int ata_write_pio(struct ata_device *device, uint8_t numsect)
+static int
+ata_write_pio(struct ata_device *device, uint8_t numsect)
 {
 	static const struct timespec delay = {0, 400};
 	struct ata_channel *channel = device->channel;
@@ -531,8 +559,11 @@ end:
 	return ret;
 }
 
-static int ata_write_batch(struct ata_device *device, struct uio *uio,
-                           uint64_t lba, uint8_t numsect)
+static int
+ata_write_batch(struct ata_device *device,
+                struct uio *uio,
+                uint64_t lba,
+                uint8_t numsect)
 {
 	struct ata_channel *channel = device->channel;
 	ssize_t ret;
@@ -548,7 +579,8 @@ static int ata_write_batch(struct ata_device *device, struct uio *uio,
 	return ata_write_pio(device, numsect);
 }
 
-static ssize_t ata_write(struct ata_device *device, struct uio *uio)
+static ssize_t
+ata_write(struct ata_device *device, struct uio *uio)
 {
 	struct ata_channel *channel = device->channel;
 	ssize_t ret;
@@ -570,9 +602,11 @@ static ssize_t ata_write(struct ata_device *device, struct uio *uio)
 	return wr;
 }
 
-static ssize_t dread(struct disk *disk, struct uio *uio)
+static ssize_t
+dread(struct disk *disk, struct uio *uio)
 {
 	struct ata_device *device = disk->userdata;
+
 	switch (device->type)
 	{
 		case IDE_ATA:
@@ -584,9 +618,11 @@ static ssize_t dread(struct disk *disk, struct uio *uio)
 	}
 }
 
-static ssize_t dwrite(struct disk *disk, struct uio *uio)
+static ssize_t
+dwrite(struct disk *disk, struct uio *uio)
 {
 	struct ata_device *device = disk->userdata;
+
 	switch (device->type)
 	{
 		case IDE_ATA:
@@ -598,17 +634,20 @@ static ssize_t dwrite(struct disk *disk, struct uio *uio)
 	}
 }
 
-static int sysnode_open(struct file *file, struct node *node)
+static int
+sysnode_open(struct file *file, struct node *node)
 {
 	file->userdata = node->userdata;
 	return 0;
 }
 
-static ssize_t sysnode_read(struct file *file, struct uio *uio)
+static ssize_t
+sysnode_read(struct file *file, struct uio *uio)
 {
 	struct ata_device *device = file->userdata;
 	size_t count = uio->count;
 	off_t off = uio->off;
+
 	uprintf(uio, "serial: %.*s\n",
 	        (int)sizeof(device->identify.serial_number),
 	       device->identify.serial_number);
@@ -622,10 +661,16 @@ static ssize_t sysnode_read(struct file *file, struct uio *uio)
 	return count - uio->count;
 }
 
-int init_channel_maps(struct ata_channel *channel, uint32_t base,
-                      uint32_t ctrl, uint32_t bmide, int secondary)
+int
+init_channel_maps(struct ata_channel *channel,
+                  uint32_t base,
+                  uint32_t ctrl,
+                  uint32_t bmide,
+                  int secondary)
 {
-	int ret = pci_map(base, 8, 0, &channel->base);
+	int ret;
+
+	ret = pci_map(base, 8, 0, &channel->base);
 	if (ret)
 	{
 		TRACE("ata: base map failed");
@@ -651,8 +696,11 @@ int init_channel_maps(struct ata_channel *channel, uint32_t base,
 	return 0;
 }
 
-int init_device(struct ata *ata, struct ata_device *device,
-                uint8_t id, struct ata_channel *channel)
+int
+init_device(struct ata *ata,
+            struct ata_device *device,
+            uint8_t id,
+            struct ata_channel *channel)
 {
 	uint8_t err = 0;
 	uint8_t type = IDE_ATA;
@@ -707,8 +755,11 @@ int init_device(struct ata *ata, struct ata_device *device,
 	return 0;
 }
 
-int init_channel(struct ata *ata, struct ata_channel *channel,
-                 uint8_t id, uint8_t pci_native)
+int
+init_channel(struct ata *ata,
+             struct ata_channel *channel,
+             uint8_t id,
+             uint8_t pci_native)
 {
 	int ret;
 
@@ -763,7 +814,8 @@ int init_channel(struct ata *ata, struct ata_channel *channel,
 	return 0;
 }
 
-int init_dev(const uint32_t *bars, uint8_t pci_native)
+int
+init_dev(const uint32_t *bars, uint8_t pci_native)
 {
 	struct ata *ata;
 	int ret;
@@ -818,7 +870,8 @@ int init_dev(const uint32_t *bars, uint8_t pci_native)
 	return 0;
 }
 
-int init_isa(void)
+int
+init_isa(void)
 {
 	static const uint32_t bars[] =
 	{
@@ -831,7 +884,8 @@ int init_isa(void)
 	return init_dev(bars, 0);
 }
 
-int init_pci(struct pci_device *device, void *userdata)
+int
+init_pci(struct pci_device *device, void *userdata)
 {
 	int *found = userdata;
 	uint32_t bars[5];
@@ -869,7 +923,8 @@ int init_pci(struct pci_device *device, void *userdata)
 	return 0;
 }
 
-int init(void)
+int
+init(void)
 {
 	int found = 0;
 	pci_probe(0x8086, 0x7010, init_pci, &found);
@@ -879,11 +934,13 @@ int init(void)
 	return init_isa();
 }
 
-void fini(void)
+void
+fini(void)
 {
 }
 
-struct kmod_info kmod =
+struct kmod_info
+kmod =
 {
 	.magic = KMOD_MAGIC,
 	.version = 1,

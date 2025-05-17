@@ -34,8 +34,8 @@ struct elfN_symtab
 	uint8_t *strtab_data;
 };
 
-static int elfN_readat(struct elfN *elf, void *ptr, ElfN_Word len,
-                       ElfN_Off off)
+static int
+elfN_readat(struct elfN *elf, void *ptr, ElfN_Word len, ElfN_Off off)
 {
 	if (fseek(elf->fp, off, SEEK_SET) == -1)
 		return 1;
@@ -44,7 +44,8 @@ static int elfN_readat(struct elfN *elf, void *ptr, ElfN_Word len,
 	return 0;
 }
 
-static int elfN_load_phdr(struct elfN *elf)
+static int
+elfN_load_phdr(struct elfN *elf)
 {
 	elf->phdr = malloc(sizeof(*elf->phdr) * elf->ehdr.e_phnum);
 	if (!elf->phdr)
@@ -62,7 +63,8 @@ static int elfN_load_phdr(struct elfN *elf)
 	return 0;
 }
 
-static int elfN_load_shdr(struct elfN *elf)
+static int
+elfN_load_shdr(struct elfN *elf)
 {
 	elf->shdr = malloc(sizeof(*elf->shdr) * elf->ehdr.e_shnum);
 	if (!elf->shdr)
@@ -80,7 +82,8 @@ static int elfN_load_shdr(struct elfN *elf)
 	return 0;
 }
 
-static int elfN_load_shstr(struct elfN *elf)
+static int
+elfN_load_shstr(struct elfN *elf)
 {
 	elf->sh_strndx = (ElfN_Shdr*)elfN_get_shdr(elf, elf->ehdr.e_shstrndx);
 	if (!elf->sh_strndx)
@@ -89,7 +92,8 @@ static int elfN_load_shstr(struct elfN *elf)
 	                         (void**)&elf->shstrtab, &elf->shstrtab_size);
 }
 
-static int elfN_load_dynstr(struct elfN *elf)
+static int
+elfN_load_dynstr(struct elfN *elf)
 {
 	elf->sh_dynstr = (ElfN_Shdr*)elfN_get_shdr(elf, elf->sh_dynsym->sh_link);
 	if (!elf->sh_dynstr)
@@ -99,7 +103,8 @@ static int elfN_load_dynstr(struct elfN *elf)
 	                         &elf->dynstr_size);
 }
 
-static int elfN_load_dynsym(struct elfN *elf)
+static int
+elfN_load_dynsym(struct elfN *elf)
 {
 	for (ElfN_Word i = 0; i < elf->ehdr.e_shnum; ++i)
 	{
@@ -118,7 +123,8 @@ static int elfN_load_dynsym(struct elfN *elf)
 	return 1;
 }
 
-static int elfN_load_dyns(struct elfN *elf)
+static int
+elfN_load_dyns(struct elfN *elf)
 {
 	for (ElfN_Word i = 0; i < elf->ehdr.e_shnum; ++i)
 	{
@@ -137,7 +143,8 @@ static int elfN_load_dyns(struct elfN *elf)
 	return 1;
 }
 
-static int elf_init(struct elfN *elf)
+static int
+elf_init(struct elfN *elf)
 {
 	if (fread(&elf->ehdr, 1, sizeof(elf->ehdr), elf->fp) != sizeof(elf->ehdr))
 		return 1;
@@ -160,7 +167,8 @@ static int elf_init(struct elfN *elf)
 	return 0;
 }
 
-struct elfN *elfN_open(const char *path)
+struct elfN *
+elfN_open(const char *path)
 {
 	struct elfN *elf = calloc(1, sizeof(*elf));
 	if (!elf)
@@ -177,7 +185,8 @@ err:
 	return NULL;
 }
 
-struct elfN *elfN_open_fd(int fd)
+struct elfN *
+elfN_open_fd(int fd)
 {
 	int nfd = dup(fd);
 	if (nfd == -1)
@@ -200,7 +209,8 @@ err:
 	return NULL;
 }
 
-void elfN_free(struct elfN *elf)
+void
+elfN_free(struct elfN *elf)
 {
 	if (!elf)
 		return;
@@ -214,9 +224,10 @@ void elfN_free(struct elfN *elf)
 	free(elf);
 }
 
-static int decompress_zlib(void *out, size_t out_size,
-                           const void *in, size_t in_size)
+static int
+decompress_zlib(void *out, size_t out_size, const void *in, size_t in_size)
 {
+	/* XXX use uncompress() from zlib */
 	z_stream zstream;
 	memset(&zstream, 0, sizeof(zstream));
 	if (inflateInit(&zstream) != Z_OK)
@@ -234,8 +245,11 @@ static int decompress_zlib(void *out, size_t out_size,
 	return 0;
 }
 
-int elfN_read_section(struct elfN *elf, const ElfN_Shdr *shdr,
-                      void **datap, ElfN_Word *sizep)
+int
+elfN_read_section(struct elfN *elf,
+                  const ElfN_Shdr *shdr,
+                  void **datap,
+                  ElfN_Word *sizep)
 {
 	ElfN_Chdr chdr;
 	ElfN_Word size;
@@ -303,58 +317,68 @@ int elfN_read_section(struct elfN *elf, const ElfN_Shdr *shdr,
 	return 0;
 }
 
-ElfN_Ehdr *elfN_get_ehdr(struct elfN *elf)
+ElfN_Ehdr *
+elfN_get_ehdr(struct elfN *elf)
 {
 	return &elf->ehdr;
 }
 
-ElfN_Half elfN_get_shnum(struct elfN *elf)
+ElfN_Half
+elfN_get_shnum(struct elfN *elf)
 {
 	return elf->ehdr.e_shnum;
 }
 
-ElfN_Off elfN_get_shoff(struct elfN *elf)
+ElfN_Off
+elfN_get_shoff(struct elfN *elf)
 {
 	return elf->ehdr.e_shoff;
 }
 
-ElfN_Shdr *elfN_get_shdr(struct elfN *elf, ElfN_Half idx)
+ElfN_Shdr *
+elfN_get_shdr(struct elfN *elf, ElfN_Half idx)
 {
 	if (idx >= elf->ehdr.e_shnum)
 		return NULL;
 	return &elf->shdr[idx];
 }
 
-ElfN_Half elfN_get_phnum(struct elfN *elf)
+ElfN_Half
+elfN_get_phnum(struct elfN *elf)
 {
 	return elf->ehdr.e_phnum;
 }
 
-ElfN_Off elfN_get_phoff(struct elfN *elf)
+ElfN_Off
+elfN_get_phoff(struct elfN *elf)
 {
 	return elf->ehdr.e_phoff;
 }
 
-ElfN_Phdr *elfN_get_phdr(struct elfN *elf, ElfN_Half idx)
+ElfN_Phdr *
+elfN_get_phdr(struct elfN *elf, ElfN_Half idx)
 {
 	if (idx >= elf->ehdr.e_phnum)
 		return NULL;
 	return &elf->phdr[idx];
 }
 
-ElfN_Word elfN_get_dynnum(struct elfN *elf)
+ElfN_Word
+elfN_get_dynnum(struct elfN *elf)
 {
 	return elf->dyns_count;
 }
 
-ElfN_Dyn *elfN_get_dyn(struct elfN *elf, ElfN_Word idx)
+ElfN_Dyn *
+elfN_get_dyn(struct elfN *elf, ElfN_Word idx)
 {
 	if (idx >= elf->dyns_count)
 		return NULL;
 	return &elf->dyns[idx];
 }
 
-ElfN_Dyn *elfN_get_dynid(struct elfN *elf, ElfN_Sword id)
+ElfN_Dyn *
+elfN_get_dynid(struct elfN *elf, ElfN_Sword id)
 {
 	for (ElfN_Word i = 0; i < elf->dyns_count; ++i)
 	{
@@ -365,33 +389,38 @@ ElfN_Dyn *elfN_get_dynid(struct elfN *elf, ElfN_Sword id)
 	return NULL;
 }
 
-ElfN_Word elfN_get_dynsymnum(struct elfN *elf)
+ElfN_Word
+elfN_get_dynsymnum(struct elfN *elf)
 {
 	return elf->dynsyms_count;
 }
 
-ElfN_Sym *elfN_get_dynsym(struct elfN *elf, ElfN_Word idx)
+ElfN_Sym *
+elfN_get_dynsym(struct elfN *elf, ElfN_Word idx)
 {
 	if (idx >= elf->dynsyms_count)
 		return NULL;
 	return &elf->dynsyms[idx];
 }
 
-const char *elfN_get_shname(struct elfN *elf, const ElfN_Shdr *shdr)
+const char *
+elfN_get_shname(struct elfN *elf, const ElfN_Shdr *shdr)
 {
 	if (shdr->sh_name >= elf->shstrtab_size)
 		return NULL;
 	return &elf->shstrtab[shdr->sh_name];
 }
 
-const char *elfN_get_dynstr_str(struct elfN *elf, ElfN_Word val)
+const char *
+elfN_get_dynstr_str(struct elfN *elf, ElfN_Word val)
 {
 	if (val >= elf->dynstr_size)
 		return NULL;
 	return &elf->dynstr[val];
 }
 
-struct elfN_symtab *elfN_symtab_read(struct elfN *elf, const ElfN_Shdr *shdr)
+struct elfN_symtab *
+elfN_symtab_read(struct elfN *elf, const ElfN_Shdr *shdr)
 {
 	struct elfN_symtab *symtab = calloc(1, sizeof(*symtab));
 	if (!symtab)
@@ -410,7 +439,8 @@ err:
 	return NULL;
 }
 
-ElfN_Sym *elfN_symtab_sym(struct elfN_symtab *symtab, ElfN_Word value)
+ElfN_Sym *
+elfN_symtab_sym(struct elfN_symtab *symtab, ElfN_Word value)
 {
 	for (ElfN_Off i = 0; i < symtab->symtab_shdr->sh_size; i += symtab->symtab_shdr->sh_entsize)
 	{
@@ -421,7 +451,8 @@ ElfN_Sym *elfN_symtab_sym(struct elfN_symtab *symtab, ElfN_Word value)
 	return NULL;
 }
 
-const char *elfN_symtab_str(struct elfN_symtab *symtab, const ElfN_Sym *sym)
+const char *
+elfN_symtab_str(struct elfN_symtab *symtab, const ElfN_Sym *sym)
 {
 	if (!sym)
 		return NULL;
@@ -432,7 +463,8 @@ const char *elfN_symtab_str(struct elfN_symtab *symtab, const ElfN_Sym *sym)
 	return (const char*)&symtab->strtab_data[sym->st_name];
 }
 
-void elfN_symtab_free(struct elfN_symtab *symtab)
+void
+elfN_symtab_free(struct elfN_symtab *symtab)
 {
 	if (!symtab)
 		return;

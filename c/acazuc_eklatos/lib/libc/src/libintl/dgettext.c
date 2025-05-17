@@ -1,6 +1,7 @@
 #include <libintl.h>
 
-char *dgettext(const char *domain, const char *msgid)
+char *
+dgettext(const char *domain, const char *msgid)
 {
 	(void)domain;
 	/* XXX */

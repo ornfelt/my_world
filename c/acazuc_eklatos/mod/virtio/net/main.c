@@ -117,7 +117,8 @@ struct virtio_net
 	struct mutex mutex;
 };
 
-static int emit_pkt(struct netif *netif, struct netpkt *pkt)
+static int
+emit_pkt(struct netif *netif, struct netpkt *pkt)
 {
 	struct virtio_net *net = netif->userdata;
 	struct virtio_net_header *header;
@@ -149,7 +150,7 @@ static int emit_pkt(struct netif *netif, struct netpkt *pkt)
 	ret = sg_add_dma_buf(&sg, tx_dma, sizeof(*header) + pkt->len, 0);
 	if (ret)
 		goto end;
-	ret = virtq_send(&net->dev.queues[1], &sg, 1, 0);
+	ret = virtq_send(&net->dev.queues[1], &sg, NULL);
 	if (ret)
 		goto end;
 	net->netif->stats.tx_packets++;
@@ -164,12 +165,14 @@ end:
 	return ret;
 }
 
-static const struct netif_op netif_op =
+static const struct netif_op
+netif_op =
 {
 	.emit = emit_pkt,
 };
 
-static inline void print_net_cfg(struct uio *uio, struct pci_map *net_cfg)
+static inline void
+print_net_cfg(struct uio *uio, struct pci_map *net_cfg)
 {
 	uprintf(uio, "mac: %02" PRIx8 ":%02" PRIx8 ":%02" PRIx8 ":%02" PRIx8 ":%02" PRIx8 ":%02" PRIx8 "\n",
 	        pci_r8(net_cfg, VIRTIO_NET_C_MAC0),
@@ -196,7 +199,8 @@ static inline void print_net_cfg(struct uio *uio, struct pci_map *net_cfg)
 	        pci_r32(net_cfg, VIRTIO_NET_C_SUPPORTED_HASHES));
 }
 
-static int add_rx_buf(struct virtio_net *net, uint16_t id)
+static int
+add_rx_buf(struct virtio_net *net, uint16_t id)
 {
 	struct sg_head sg;
 	int ret;
@@ -205,14 +209,15 @@ static int add_rx_buf(struct virtio_net *net, uint16_t id)
 	ret = sg_add_dma_buf(&sg, net->rxb_dma[id], PAGE_SIZE, 0);
 	if (ret)
 		goto end;
-	ret = virtq_send(&net->dev.queues[0], &sg, 0, 1);
+	ret = virtq_send(&net->dev.queues[0], NULL, &sg);
 
 end:
 	sg_free(&sg);
 	return ret;
 }
 
-static void on_recvq_msg(struct virtq *queue, uint16_t id, uint32_t len)
+static void
+on_recvq_msg(struct virtq *queue, uint16_t id, uint32_t len)
 {
 	struct virtio_net *net = (struct virtio_net*)queue->dev;
 	struct netpkt *pkt;
@@ -230,7 +235,8 @@ static void on_recvq_msg(struct virtq *queue, uint16_t id, uint32_t len)
 		TRACE("virtio_net: failed to add rx buf");
 }
 
-static void on_sendq_msg(struct virtq *queue, uint16_t id, uint32_t len)
+static void
+on_sendq_msg(struct virtq *queue, uint16_t id, uint32_t len)
 {
 	struct virtio_net *net = (struct virtio_net*)queue->dev;
 
@@ -241,7 +247,8 @@ static void on_sendq_msg(struct virtq *queue, uint16_t id, uint32_t len)
 	waitq_broadcast(&net->waitq, 0);
 }
 
-static void virtio_net_delete(struct virtio_net *net)
+static void
+virtio_net_delete(struct virtio_net *net)
 {
 	if (!net)
 		return;
@@ -260,7 +267,8 @@ static void virtio_net_delete(struct virtio_net *net)
 	free(net);
 }
 
-int init_pci(struct pci_device *device, void *userdata)
+int
+init_pci(struct pci_device *device, void *userdata)
 {
 	struct virtio_net *net;
 	uint8_t features[(VIRTIO_NET_F_SPEED_DUPLEX + 7) / 8];
@@ -394,17 +402,20 @@ err:
 	return ret;
 }
 
-static int init(void)
+static int
+init(void)
 {
 	pci_probe(0x1AF4, 0x1000, init_pci, NULL);
 	return 0;
 }
 
-static void fini(void)
+static void
+fini(void)
 {
 }
 
-struct kmod_info kmod =
+struct kmod_info
+kmod =
 {
 	.magic = KMOD_MAGIC,
 	.version = 1,

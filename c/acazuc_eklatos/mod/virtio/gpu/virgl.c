@@ -113,7 +113,8 @@ struct virgl
 
 int virgl_res_fault(struct vm_zone *zone, off_t off, struct page **page);
 
-static const struct vm_zone_op res_vm_op =
+static const struct vm_zone_op
+res_vm_op =
 {
 	.fault = virgl_res_fault,
 };
@@ -123,7 +124,8 @@ int virgl_res_mmap(struct file *file, struct vm_zone *zone);
 int virgl_res_ioctl(struct file *file, unsigned long request, uintptr_t data);
 int virgl_res_release(struct file *file);
 
-static const struct file_op res_fop =
+static const struct file_op
+res_fop =
 {
 	.open = virgl_res_open,
 	.mmap = virgl_res_mmap,
@@ -135,7 +137,8 @@ int virgl_ctx_open(struct file *file, struct node *node);
 int virgl_ctx_ioctl(struct file *file, unsigned long request, uintptr_t data);
 int virgl_ctx_release(struct file *file);
 
-static const struct file_op ctx_fop =
+static const struct file_op
+ctx_fop =
 {
 	.open = virgl_ctx_open,
 	.ioctl = virgl_ctx_ioctl,
@@ -144,12 +147,14 @@ static const struct file_op ctx_fop =
 
 int virgl_ioctl(struct file *file, unsigned long request, uintptr_t data);
 
-static const struct file_op fop =
+static const struct file_op
+fop =
 {
 	.ioctl = virgl_ioctl,
 };
 
-static void virgl_res_free(struct virgl_res *res)
+static void
+virgl_res_free(struct virgl_res *res)
 {
 	if (!res)
 		return;
@@ -172,8 +177,10 @@ static void virgl_res_free(struct virgl_res *res)
 	free(res);
 }
 
-static int virgl_res_alloc(struct virgl_ctx *ctx, size_t bytes,
-                           struct virgl_res **resp)
+static int
+virgl_res_alloc(struct virgl_ctx *ctx,
+                size_t bytes,
+                struct virgl_res **resp)
 {
 	struct virgl_res *res = NULL;
 	char name[16];
@@ -216,7 +223,13 @@ static int virgl_res_alloc(struct virgl_ctx *ctx, size_t bytes,
 		goto err;
 	}
 	snprintf(name, sizeof(name), "virgl_res%" PRIu32, res->id);
-	ret = cdev_alloc(name, 0, 0, 0000, makedev(14, res->id), &res_fop, &res->cdev);
+	ret = cdev_alloc(name,
+	                 0,
+	                 0,
+	                 0000,
+	                 makedev(14, res->id),
+	                 &res_fop,
+	                 &res->cdev);
 	if (ret)
 	{
 		TRACE("virgl: failed to create resource cdev");
@@ -231,13 +244,15 @@ err:
 	return ret;
 }
 
-static uint32_t alloc_ctx_id(struct virgl *virgl)
+static uint32_t
+alloc_ctx_id(struct virgl *virgl)
 {
 	/* XXX bitmap; max 16 bits (because of cdev) */
 	return __atomic_add_fetch(&virgl->ctx_id, 1, __ATOMIC_SEQ_CST);
 }
 
-void virgl_ctx_free(struct virgl_ctx *ctx)
+void
+virgl_ctx_free(struct virgl_ctx *ctx)
 {
 	struct virgl_res *res;
 
@@ -255,7 +270,8 @@ void virgl_ctx_free(struct virgl_ctx *ctx)
 	free(ctx);
 }
 
-int virgl_ctx_alloc(struct virgl *virgl, struct virgl_ctx **ctxp)
+int
+virgl_ctx_alloc(struct virgl *virgl, struct virgl_ctx **ctxp)
 {
 	struct virgl_ctx *ctx = NULL;
 	char name[16];
@@ -272,7 +288,10 @@ int virgl_ctx_alloc(struct virgl *virgl, struct virgl_ctx **ctxp)
 	ctx->id = alloc_ctx_id(virgl);
 	TAILQ_INIT(&ctx->res);
 	TAILQ_INSERT_TAIL(&virgl->ctx, ctx, chain);
-	ret = cmd_ctx_create(virgl->gpu, ctx->id, virgl->capset_info.capset_id, "main");
+	ret = cmd_ctx_create(virgl->gpu,
+	                     ctx->id,
+	                     virgl->capset_info.capset_id,
+	                     "main");
 	if (ret)
 	{
 		ctx->id = 0;
@@ -280,7 +299,13 @@ int virgl_ctx_alloc(struct virgl *virgl, struct virgl_ctx **ctxp)
 		goto err;
 	}
 	snprintf(name, sizeof(name), "virgl_ctx%" PRIu32, ctx->id);
-	ret = cdev_alloc(name, 0, 0, 0000, makedev(13, ctx->id), &ctx_fop, &ctx->cdev);
+	ret = cdev_alloc(name,
+	                 0,
+	                 0,
+	                 0000,
+	                 makedev(13, ctx->id),
+	                 &ctx_fop,
+	                 &ctx->cdev);
 	if (ret)
 	{
 		TRACE("virgl: failed to create context cdev");
@@ -295,7 +320,8 @@ err:
 	return ret;
 }
 
-static struct virgl *getvirgl(struct file *file)
+static struct virgl *
+getvirgl(struct file *file)
 {
 	if (file->cdev)
 		return file->cdev->userdata;
@@ -304,7 +330,8 @@ static struct virgl *getvirgl(struct file *file)
 	return NULL;
 }
 
-static struct virgl_ctx *getctx(struct file *file)
+static struct virgl_ctx *
+getctx(struct file *file)
 {
 	if (file->cdev)
 		return file->cdev->userdata;
@@ -313,7 +340,8 @@ static struct virgl_ctx *getctx(struct file *file)
 	return NULL;
 }
 
-static struct virgl_res *getres(struct file *file)
+static struct virgl_res *
+getres(struct file *file)
 {
 	if (file->cdev)
 		return file->cdev->userdata;
@@ -322,7 +350,8 @@ static struct virgl_res *getres(struct file *file)
 	return NULL;
 }
 
-static int vgl_get_capset_info(struct virgl *virgl, void *udata)
+static int
+vgl_get_capset_info(struct virgl *virgl, void *udata)
 {
 	struct thread *thread = curcpu()->thread;
 	struct vgl_capset_info req;
@@ -333,16 +362,19 @@ static int vgl_get_capset_info(struct virgl *virgl, void *udata)
 	return vm_copyout(thread->proc->vm_space, udata, &req, sizeof(req));
 }
 
-static int vgl_get_capset(struct virgl *virgl, void *udata)
+static int
+vgl_get_capset(struct virgl *virgl, void *udata)
 {
 	struct thread *thread = curcpu()->thread;
 
-	return vm_copyout(thread->proc->vm_space, udata,
-	                  &virgl->capset,
+	return vm_copyout(thread->proc->vm_space,
+	                  udata,
+	                  virgl->capset,
 	                  virgl->capset_info.capset_max_size);
 }
 
-static int vgl_submit(struct virgl_ctx *ctx, void *udata)
+static int
+vgl_submit(struct virgl_ctx *ctx, void *udata)
 {
 	struct thread *thread = curcpu()->thread;
 	struct vgl_submit req;
@@ -354,7 +386,8 @@ static int vgl_submit(struct virgl_ctx *ctx, void *udata)
 	return cmd_submit_3d(ctx->virgl->gpu, ctx->id, req.data, req.size);
 }
 
-static int vgl_create_ctx(struct virgl *virgl, void *udata)
+static int
+vgl_create_ctx(struct virgl *virgl, void *udata)
 {
 	struct thread *thread = curcpu()->thread;
 	struct vgl_create_ctx req;
@@ -368,7 +401,10 @@ static int vgl_create_ctx(struct virgl *virgl, void *udata)
 	if (!req.fb)
 	{
 		req.fb = virgl->gpu->framebuffer.id;
-		ret = vm_copyout(thread->proc->vm_space, udata, &req, sizeof(req));
+		ret = vm_copyout(thread->proc->vm_space,
+		                 udata,
+		                 &req,
+		                 sizeof(req));
 		if (ret)
 			goto err;
 	}
@@ -404,7 +440,8 @@ err:
 	return ret;
 }
 
-static int vgl_flush(struct virgl *virgl, void *udata)
+static int
+vgl_flush(struct virgl *virgl, void *udata)
 {
 	(void)udata;
 	return cmd_resource_flush(virgl->gpu,
@@ -415,7 +452,8 @@ static int vgl_flush(struct virgl *virgl, void *udata)
 	                          virgl->gpu->fb->height);
 }
 
-static int vgl_create_res(struct virgl_ctx *ctx, void *udata)
+static int
+vgl_create_res(struct virgl_ctx *ctx, void *udata)
 {
 	struct thread *thread = curcpu()->thread;
 	struct vgl_create_res req;
@@ -443,8 +481,10 @@ static int vgl_create_res(struct virgl_ctx *ctx, void *udata)
 	                             req.flags);
 	if (ret)
 		goto err;
-	ret = cmd_resource_attach_backing(ctx->virgl->gpu, res->id,
-	                                  res->pages, res->pages_count);
+	ret = cmd_resource_attach_backing(ctx->virgl->gpu,
+	                                  res->id,
+	                                  res->pages,
+	                                  res->pages_count);
 	if (ret)
 		goto err;
 	ret = cmd_ctx_attach_resource(ctx->virgl->gpu, ctx->id, res->id);
@@ -470,7 +510,8 @@ err:
 	return ret;
 }
 
-static int vgl_transfer_in(struct virgl_res *res, void *udata)
+static int
+vgl_transfer_in(struct virgl_res *res, void *udata)
 {
 	struct thread *thread = curcpu()->thread;
 	struct vgl_transfer req;
@@ -493,7 +534,8 @@ static int vgl_transfer_in(struct virgl_res *res, void *udata)
 	                                 req.layer_stride);
 }
 
-static int vgl_transfer_out(struct virgl_res *res, void *udata)
+static int
+vgl_transfer_out(struct virgl_res *res, void *udata)
 {
 	struct thread *thread = curcpu()->thread;
 	struct vgl_transfer req;
@@ -516,7 +558,8 @@ static int vgl_transfer_out(struct virgl_res *res, void *udata)
 	                               req.layer_stride);
 }
 
-int virgl_res_open(struct file *file, struct node *node)
+int
+virgl_res_open(struct file *file, struct node *node)
 {
 	struct virgl_res *res = getres(file);
 
@@ -526,7 +569,8 @@ int virgl_res_open(struct file *file, struct node *node)
 	return 0;
 }
 
-int virgl_res_fault(struct vm_zone *zone, off_t off, struct page **page)
+int
+virgl_res_fault(struct vm_zone *zone, off_t off, struct page **page)
 {
 	struct virgl_res *res = getres(zone->file);
 	size_t poff;
@@ -543,7 +587,8 @@ int virgl_res_fault(struct vm_zone *zone, off_t off, struct page **page)
 	return 0;
 }
 
-int virgl_res_release(struct file *file)
+int
+virgl_res_release(struct file *file)
 {
 	struct virgl_res *res = getres(file);
 
@@ -556,14 +601,16 @@ int virgl_res_release(struct file *file)
 	return 0;
 }
 
-int virgl_res_mmap(struct file *file, struct vm_zone *zone)
+int
+virgl_res_mmap(struct file *file, struct vm_zone *zone)
 {
 	(void)file;
 	zone->op = &res_vm_op;
 	return 0;
 }
 
-int virgl_res_ioctl(struct file *file, unsigned long request, uintptr_t data)
+int
+virgl_res_ioctl(struct file *file, unsigned long request, uintptr_t data)
 {
 	struct virgl_res *res = getres(file);
 
@@ -580,12 +627,15 @@ int virgl_res_ioctl(struct file *file, unsigned long request, uintptr_t data)
 			return vgl_transfer_out(res, (void*)data);
 		case VGLGID:
 			return vm_copyout(curcpu()->thread->proc->vm_space,
-			                  (void*)data, &res->id, sizeof(res->id));
+			                  (void*)data,
+			                  &res->id,
+			                  sizeof(res->id));
 	}
 	return -EINVAL;
 }
 
-int virgl_ctx_release(struct file *file)
+int
+virgl_ctx_release(struct file *file)
 {
 	struct virgl_ctx *ctx = getctx(file);
 
@@ -598,7 +648,8 @@ int virgl_ctx_release(struct file *file)
 	return 0;
 }
 
-int virgl_ctx_open(struct file *file, struct node *node)
+int
+virgl_ctx_open(struct file *file, struct node *node)
 {
 	struct virgl_ctx *ctx = getctx(file);
 
@@ -611,7 +662,8 @@ int virgl_ctx_open(struct file *file, struct node *node)
 	return 0;
 }
 
-int virgl_ctx_ioctl(struct file *file, unsigned long request, uintptr_t data)
+int
+virgl_ctx_ioctl(struct file *file, unsigned long request, uintptr_t data)
 {
 	struct virgl_ctx *ctx = getctx(file);
 
@@ -628,13 +680,16 @@ int virgl_ctx_ioctl(struct file *file, unsigned long request, uintptr_t data)
 			return vgl_submit(ctx, (void*)data);
 		case VGLGID:
 			return vm_copyout(curcpu()->thread->proc->vm_space,
-			                  (void*)data, &ctx->id, sizeof(ctx->id));
+			                  (void*)data,
+			                  &ctx->id,
+			                  sizeof(ctx->id));
 	}
 	TRACE("virgl: invalid ctx request");
 	return -EINVAL;
 }
 
-int virgl_ioctl(struct file *file, unsigned long request, uintptr_t data)
+int
+virgl_ioctl(struct file *file, unsigned long request, uintptr_t data)
 {
 	struct virgl *virgl = getvirgl(file);
 
@@ -658,7 +713,8 @@ int virgl_ioctl(struct file *file, unsigned long request, uintptr_t data)
 	return -EINVAL;
 }
 
-void virgl_free(struct virgl *virgl)
+void
+virgl_free(struct virgl *virgl)
 {
 	struct virgl_ctx *ctx;
 
@@ -671,7 +727,8 @@ void virgl_free(struct virgl *virgl)
 	free(virgl);
 }
 
-int virgl_init(struct virtio_gpu *gpu, struct virtio_gpu_resp_capset_info *info)
+int
+virgl_init(struct virtio_gpu *gpu, struct virtio_gpu_resp_capset_info *info)
 {
 	struct virgl *virgl = NULL;
 	int ret;
@@ -692,8 +749,11 @@ int virgl_init(struct virtio_gpu *gpu, struct virtio_gpu_resp_capset_info *info)
 		ret = -ENOMEM;
 		goto err;
 	}
-	ret = cmd_get_capset(gpu, info->capset_id, info->capset_max_version,
-	                     virgl->capset, info->capset_max_size);
+	ret = cmd_get_capset(gpu,
+	                     info->capset_id,
+	                     info->capset_max_version,
+	                     virgl->capset,
+	                     info->capset_max_size);
 	if (ret)
 	{
 		TRACE("virgl: failed to get capset");

@@ -1,6 +1,7 @@
 #include <time.h>
 
-char *strptime(const char *s, const char *format, struct tm *tm)
+char *
+strptime(const char *s, const char *format, struct tm *tm)
 {
 	(void)s;
 	(void)format;

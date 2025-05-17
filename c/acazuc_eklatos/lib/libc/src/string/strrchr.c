@@ -2,7 +2,8 @@
 
 #include <string.h>
 
-char *strrchr(const char *s, int c)
+char *
+strrchr(const char *s, int c)
 {
 	char *ret = NULL;
 	size_t i = 0;

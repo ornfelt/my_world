@@ -227,9 +227,12 @@ int evdev_alloc(struct evdev **evdev);
 void evdev_free(struct evdev *evdev);
 void evdev_ref(struct evdev *evdev);
 
-void ev_send_key_event(struct evdev *evdev, enum kbd_key key,
-                       enum kbd_mod mods, int pressed);
-void ev_send_mouse_event(struct evdev *evdev, enum mouse_button button,
+void ev_send_key_event(struct evdev *evdev,
+                       enum kbd_key key,
+                       enum kbd_mod mods,
+                       int pressed);
+void ev_send_mouse_event(struct evdev *evdev,
+                         enum mouse_button button,
                          int pressed);
 void ev_send_pointer_event(struct evdev *evdev, int x, int y);
 void ev_send_scroll_event(struct evdev *evdev, int x, int y);

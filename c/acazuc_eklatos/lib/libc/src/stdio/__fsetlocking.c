@@ -2,7 +2,8 @@
 
 #include <stdio.h>
 
-int __fsetlocking(FILE *fp, int type)
+int
+__fsetlocking(FILE *fp, int type)
 {
 	(void)fp;
 	(void)type;

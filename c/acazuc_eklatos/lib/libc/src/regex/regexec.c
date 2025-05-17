@@ -2,11 +2,17 @@
 #include <regex.h>
 #include <stdio.h>
 
-int regexec(const regex_t *regex, const char *str, size_t nmatch,
-            regmatch_t *matches, int flags)
+int
+regexec(const regex_t *regex,
+        const char *str,
+        size_t nmatch,
+        regmatch_t *matches,
+        int flags)
 {
+	char *it;
+
 	(void)flags;
-	char *it = strstr(str, regex->regex);
+	it = strstr(str, regex->regex);
 	if (!it)
 		return REG_NOMATCH;
 	if (nmatch)

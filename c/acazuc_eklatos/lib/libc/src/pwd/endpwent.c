@@ -2,7 +2,8 @@
 
 #include <pwd.h>
 
-void endpwent(void)
+void
+endpwent(void)
 {
 	if (!pwent_fp)
 		return;

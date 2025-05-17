@@ -5,7 +5,8 @@
 #include <fcntl.h>
 #include <errno.h>
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-f frequency] [-l length] [-r repeat] [-d delay] [-h]\n", progname);
 	printf("-f frequency: set the frequency in Hz (default 440Hz)\n");
@@ -14,7 +15,8 @@ static void usage(const char *progname)
 	printf("-d delay    : set the delay between two sounds in ms (default 100ms)\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	unsigned freq = 440;
 	unsigned len = 200;
@@ -22,6 +24,7 @@ int main(int argc, char **argv)
 	unsigned delay = 100;
 	int fd;
 	int c;
+
 	while ((c = getopt(argc, argv, "f:l:r:d:h")) != -1)
 	{
 		switch (c)

@@ -9,9 +9,15 @@
 #include <stdio.h>
 #include <errno.h>
 
-Display *XOpenDisplay(const char *display_name)
+Display *
+XOpenDisplay(const char *display_name)
 {
-	Display *display = malloc(sizeof(*display));
+	xcb_screen_iterator_t screen_it;
+	const xcb_setup_t *setup;
+	XGCValues gc_values;
+	Display *display;
+
+	display = malloc(sizeof(*display));
 	if (!display)
 		return NULL;
 	display->conn = xcb_connect(display_name, &display->screen);
@@ -36,7 +42,8 @@ Display *XOpenDisplay(const char *display_name)
 	display->white.flags = 0;
 	display->white.pad = 0;
 	XDisplayKeycodes(display, &display->min_keycode, &display->max_keycode);
-	display->keysyms = XGetKeyboardMapping(display, display->min_keycode,
+	display->keysyms = XGetKeyboardMapping(display,
+	                                       display->min_keycode,
 	                                       display->max_keycode - display->min_keycode,
 	                                       &display->keysyms_per_keycode);
 	if (!display->keysyms)
@@ -45,7 +52,7 @@ Display *XOpenDisplay(const char *display_name)
 		free(display);
 		return NULL;
 	}
-	const xcb_setup_t *setup = xcb_get_setup(display->conn);
+	setup = xcb_get_setup(display->conn);
 	display->screens_count = xcb_setup_roots_length(setup);
 	display->screens = malloc(sizeof(*display->screens)
 	                        * display->screens_count);
@@ -56,24 +63,24 @@ Display *XOpenDisplay(const char *display_name)
 		free(display);
 		return NULL;
 	}
-	xcb_screen_iterator_t it = xcb_setup_roots_iterator(setup);
+	screen_it = xcb_setup_roots_iterator(setup);
 	for (int i = 0; i < display->screens_count; ++i)
 	{
 		display->screens[i].display = display;
-		display->screens[i].screen = it.data;
-		XGCValues gc_values;
-		gc_values.background = it.data->black_pixel;
-		gc_values.foreground = it.data->white_pixel;
+		display->screens[i].screen = screen_it.data;
+		gc_values.background = screen_it.data->black_pixel;
+		gc_values.foreground = screen_it.data->white_pixel;
 		display->screens[i].default_gc = XCreateGC(display,
-		                                           it.data->root,
+		                                           screen_it.data->root,
 		                                           GCForeground | GCBackground,
 		                                           &gc_values);
-		xcb_screen_next(&it);
+		xcb_screen_next(&screen_it);
 	}
 	return display;
 }
 
-void XCloseDisplay(Display *display)
+void
+XCloseDisplay(Display *display)
 {
 	if (!display)
 		return;
@@ -83,44 +90,55 @@ void XCloseDisplay(Display *display)
 	free(display);
 }
 
-void XFree(void *ptr)
+void
+XFree(void *ptr)
 {
 	free(ptr);
 }
 
-unsigned long XBlackPixel(Display *display, int screen)
+unsigned long
+XBlackPixel(Display *display, int screen)
 {
 	return BlackPixelOfScreen(ScreenOfDisplay(display, screen));
 }
 
-unsigned long XWhitePixel(Display *display, int screen)
+unsigned long
+XWhitePixel(Display *display, int screen)
 {
 	return WhitePixelOfScreen(ScreenOfDisplay(display, screen));
 }
 
-int XConnectionNumber(Display *display)
+int
+XConnectionNumber(Display *display)
 {
 	return xcb_get_file_descriptor(display->conn);
 }
 
-Colormap XDefaultColormap(Display *display, int screen)
+Colormap
+XDefaultColormap(Display *display, int screen)
 {
 	return ScreenOfDisplay(display, screen)->screen->default_colormap;
 }
 
-int XDefaultDepth(Display *display, int screen)
+int
+XDefaultDepth(Display *display, int screen)
 {
 	return ScreenOfDisplay(display, screen)->screen->root_depth;
 }
 
-int *XListDepths(Display *display, int screen, int *count)
+int *
+XListDepths(Display *display, int screen, int *count)
 {
-	Screen *scr = ScreenOfDisplay(display, screen);
+	xcb_depth_iterator_t it;
+	Screen *scr;
+	int *ret;
+
+	scr = ScreenOfDisplay(display, screen);
 	*count = xcb_screen_allowed_depths_length(scr->screen);
-	int *ret = malloc(sizeof(*ret) * *count);
+	ret = malloc(sizeof(*ret) * *count);
 	if (!ret)
 		return NULL;
-	xcb_depth_iterator_t it = xcb_screen_allowed_depths_iterator(scr->screen);
+	it = xcb_screen_allowed_depths_iterator(scr->screen);
 	for (int i = 0; i < *count; ++i)
 	{
 		ret[i] = it.data->depth;
@@ -129,176 +147,211 @@ int *XListDepths(Display *display, int screen, int *count)
 	return ret;
 }
 
-GC XDefaultGC(Display *display, int screen)
+GC
+XDefaultGC(Display *display, int screen)
 {
 	return DefaultGCOfScreen(ScreenOfDisplay(display, screen));
 }
 
-Window XDefaultRootWindow(Display *display)
+Window
+XDefaultRootWindow(Display *display)
 {
 	return RootWindowOfScreen(DefaultScreenOfDisplay(display));
 }
 
-Screen *XDefaultScreenOfDisplay(Display *display)
+Screen *
+XDefaultScreenOfDisplay(Display *display)
 {
 	return ScreenOfDisplay(display, DefaultScreen(display));
 }
 
-int XDefaultScreen(Display *display)
+int
+XDefaultScreen(Display *display)
 {
 	return display->screen;
 }
 
-Visual *XDefaultVisual(Display *display, int screen)
+Visual *
+XDefaultVisual(Display *display, int screen)
 {
 	return DefaultVisualOfScreen(ScreenOfDisplay(display, screen));
 }
 
-int XDisplayCells(Display *display, int screen)
+int
+XDisplayCells(Display *display, int screen)
 {
 	return CellsOfScreen(ScreenOfDisplay(display, screen));
 }
 
-int XDisplayPlanes(Display *display, int screen)
+int
+XDisplayPlanes(Display *display, int screen)
 {
 	return PlanesOfScreen(ScreenOfDisplay(display, screen));
 }
 
-char *XDisplayString(Display *display)
+char *
+XDisplayString(Display *display)
 {
 	return display->conn->display;
 }
 
-long XMaxRequestSize(Display *display)
+long
+XMaxRequestSize(Display *display)
 {
 	return xcb_get_setup(display->conn)->maximum_request_length;
 }
 
-long XExtendedMaxRequestSize(Display *display)
+long
+XExtendedMaxRequestSize(Display *display)
 {
 	return XMaxRequestSize(display);
 }
 
-unsigned long XLastKnownRequestProcessed(Display *display)
+unsigned long
+XLastKnownRequestProcessed(Display *display)
 {
 	(void)display;
 	/* XXX */
 	return 0;
 }
 
-unsigned long XNextRequest(Display *display)
+unsigned long
+XNextRequest(Display *display)
 {
 	return display->conn->sequence + 1;
 }
 
-int XProtocolVersion(Display *display)
+int
+XProtocolVersion(Display *display)
 {
 	return xcb_get_setup(display->conn)->protocol_major_version;
 }
 
-int XProtocolRevision(Display *display)
+int
+XProtocolRevision(Display *display)
 {
 	return xcb_get_setup(display->conn)->protocol_minor_version;
 }
 
-int XQLength(Display *display)
+int
+XQLength(Display *display)
 {
 	(void)display;
 	/* XXX */
 	return 0;
 }
 
-Window XRootWindow(Display *display, int screen)
+Window
+XRootWindow(Display *display, int screen)
 {
 	return ScreenOfDisplay(display, screen)->screen->root;
 }
 
-int XScreenCount(Display *display)
+int
+XScreenCount(Display *display)
 {
 	return display->screens_count;
 }
 
-Screen *XScreenOfDisplay(Display *display, int screen)
+Screen *
+XScreenOfDisplay(Display *display, int screen)
 {
 	if (screen < 0 || screen >= display->screens_count)
 		return NULL;
 	return &display->screens[screen];
 }
 
-char *XServerVendor(Display *display)
+char *
+XServerVendor(Display *display)
 {
 	return xcb_setup_vendor(xcb_get_setup(display->conn));
 }
 
-int XVendorRelease(Display *display)
+int
+XVendorRelease(Display *display)
 {
 	return xcb_get_setup(display->conn)->release_number;
 }
 
-int XImageByteOrder(Display *display)
+int
+XImageByteOrder(Display *display)
 {
 	return xcb_get_setup(display->conn)->image_byte_order;
 }
 
-int XBitmapBitOrder(Display *display)
+int
+XBitmapBitOrder(Display *display)
 {
 	return xcb_get_setup(display->conn)->bitmap_format_bit_order;
 }
 
-int XBitmapPad(Display *display)
+int
+XBitmapPad(Display *display)
 {
 	return xcb_get_setup(display->conn)->bitmap_format_scanline_pad;
 }
 
-int XBitmapUnit(Display *display)
+int
+XBitmapUnit(Display *display)
 {
 	return xcb_get_setup(display->conn)->bitmap_format_scanline_unit;
 }
 
-int XDisplayHeight(Display *display, int screen)
+int
+XDisplayHeight(Display *display, int screen)
 {
 	return HeightOfScreen(ScreenOfDisplay(display, screen));
 }
 
-int XDisplayHeightMM(Display *display, int screen)
+int
+XDisplayHeightMM(Display *display, int screen)
 {
 	return HeightMMOfScreen(ScreenOfDisplay(display, screen));
 }
 
-int XDisplayWidth(Display *display, int screen)
+int
+XDisplayWidth(Display *display, int screen)
 {
 	return WidthOfScreen(ScreenOfDisplay(display, screen));
 }
 
-int XDisplayWidthMM(Display *display, int screen)
+int
+XDisplayWidthMM(Display *display, int screen)
 {
 	return WidthMMOfScreen(ScreenOfDisplay(display, screen));
 }
 
-int XDisplayKeycodes(Display *display, int *min_keycodes,
-                            int *max_keycodes)
+int
+XDisplayKeycodes(Display *display, int *min_keycodes, int *max_keycodes)
 {
 	*min_keycodes = xcb_get_setup(display->conn)->min_keycode;
 	*max_keycodes = xcb_get_setup(display->conn)->max_keycode;
 	return Success;
 }
 
-VisualID XVisualIDFromVisual(Visual *visual)
+VisualID
+XVisualIDFromVisual(Visual *visual)
 {
 	return visual->visual.visual_id;
 }
 
-XPixmapFormatValues *XListPixmapFormats(Display *display, int *count)
+XPixmapFormatValues *
+XListPixmapFormats(Display *display, int *count)
 {
-	const xcb_setup_t *setup = xcb_get_setup(display->conn);
+	xcb_format_iterator_t it;
+	XPixmapFormatValues *formats;
+	const xcb_setup_t *setup;
+
+	setup = xcb_get_setup(display->conn);
 	*count = xcb_setup_pixmap_formats_length(setup);
-	XPixmapFormatValues *formats = malloc(sizeof(*formats) * *count);
+	formats = malloc(sizeof(*formats) * *count);
 	if (!formats)
 		return NULL;
-	xcb_format_iterator_t it = xcb_setup_pixmap_formats_iterator(setup);
+	it = xcb_setup_pixmap_formats_iterator(setup);
 	for (int i = 0; i < *count; ++i)
 	{
 		xcb_format_t *format = it.data;
+
 		formats[i].depth = format->depth;
 		formats[i].bits_per_pixel = format->bpp;
 		formats[i].scanline_pad = format->scanline_pad;
@@ -307,49 +360,59 @@ XPixmapFormatValues *XListPixmapFormats(Display *display, int *count)
 	return formats;
 }
 
-unsigned long XDisplayMotionBufferSize(Display *display)
+unsigned long
+XDisplayMotionBufferSize(Display *display)
 {
 	const xcb_setup_t *setup = xcb_get_setup(display->conn);
 	return setup->motion_buffer_size;
 }
 
-unsigned long XBlackPixelOfScreen(Screen *screen)
+unsigned long
+XBlackPixelOfScreen(Screen *screen)
 {
 	return screen->screen->black_pixel;
 }
 
-unsigned long XWhitePixelOfScreen(Screen *screen)
+unsigned long
+XWhitePixelOfScreen(Screen *screen)
 {
 	return screen->screen->white_pixel;
 }
 
-int XCellsOfScreen(Screen *screen)
+int
+XCellsOfScreen(Screen *screen)
 {
 	(void)screen;
 	/* XXX */
 	return 0;
 }
 
-Colormap XDefaultColormapOfScreen(Screen *screen)
+Colormap
+XDefaultColormapOfScreen(Screen *screen)
 {
 	return screen->screen->default_colormap;
 }
 
-int XDefaultDepthOfScreen(Screen *screen)
+int
+XDefaultDepthOfScreen(Screen *screen)
 {
 	(void)screen;
 	/* XXX */
 	return 0;
 }
 
-GC XDefaultGCOfScreen(Screen *screen)
+GC
+XDefaultGCOfScreen(Screen *screen)
 {
 	return screen->default_gc;
 }
 
-Visual *XDefaultVisualOfScreen(Screen *screen)
+Visual *
+XDefaultVisualOfScreen(Screen *screen)
 {
-	xcb_depth_iterator_t it = xcb_screen_allowed_depths_iterator(screen->screen);
+	xcb_depth_iterator_t it;
+
+	it = xcb_screen_allowed_depths_iterator(screen->screen);
 	while (it.rem)
 	{
 		xcb_depth_t *depth = it.data;
@@ -366,74 +429,88 @@ Visual *XDefaultVisualOfScreen(Screen *screen)
 	return NULL;
 }
 
-int XDoesBackingStore(Screen *screen)
+int
+XDoesBackingStore(Screen *screen)
 {
 	return screen->screen->backing_stores;
 }
 
-Bool XDoesSaveUnders(Screen *screen)
+Bool
+XDoesSaveUnders(Screen *screen)
 {
 	return screen->screen->save_unders;
 }
 
-Display *XDisplayOfScreen(Screen *screen)
+Display *
+XDisplayOfScreen(Screen *screen)
 {
 	return screen->display;
 }
 
-int XScreenNumberOfScreen(Screen *screen)
+int
+XScreenNumberOfScreen(Screen *screen)
 {
 	(void)screen;
 	/* XXX */
 	return 1;
 }
 
-long XEventMaskOfScreen(Screen *screen)
+long
+XEventMaskOfScreen(Screen *screen)
 {
 	return screen->screen->current_input_mask;
 }
 
-int XHeightOfScreen(Screen *screen)
+int
+XHeightOfScreen(Screen *screen)
 {
 	return screen->screen->height_in_pixels;
 }
 
-int XHeightMMOfScreen(Screen *screen)
+int
+XHeightMMOfScreen(Screen *screen)
 {
 	return screen->screen->height_in_millimeters;
 }
 
-int XMaxCmapsOfScreen(Screen *screen)
+int
+XMaxCmapsOfScreen(Screen *screen)
 {
 	return screen->screen->max_installed_maps;
 }
 
-int XMinCmapsOfScreen(Screen *screen)
+int
+XMinCmapsOfScreen(Screen *screen)
 {
 	return screen->screen->min_installed_maps;
 }
 
-int XPlanesOfScreen(Screen *screen)
+int
+XPlanesOfScreen(Screen *screen)
 {
 	return screen->screen->root_depth;
 }
 
-Window XRootWindowOfScreen(Screen *screen)
+Window
+XRootWindowOfScreen(Screen *screen)
 {
 	return screen->screen->root;
 }
 
-int XWidthOfScreen(Screen *screen)
+int
+XWidthOfScreen(Screen *screen)
 {
 	return screen->screen->width_in_pixels;
 }
 
-int XWidthMMOfScreen(Screen *screen)
+int
+XWidthMMOfScreen(Screen *screen)
 {
 	return screen->screen->width_in_millimeters;
 }
 
-char **XListExtensions(Display *display, int *nextensions)
+char **
+XListExtensions(Display *display, int *nextensions)
 {
 	REPLY_REQ(display, list_extensions);
 	if (error)
@@ -473,11 +550,12 @@ char **XListExtensions(Display *display, int *nextensions)
 	return extensions;
 }
 
-Bool XQueryExtension(Display *display,
-                     char *name,
-                     int *major_opcode,
-                     int *first_event,
-                     int *first_error)
+Bool
+XQueryExtension(Display *display,
+                char *name,
+                int *major_opcode,
+                int *first_event,
+                int *first_error)
 {
 	REPLY_REQ(display, query_extension, strlen(name), name);
 	if (error)
@@ -499,7 +577,36 @@ Bool XQueryExtension(Display *display,
 	return ret;
 }
 
-int XIfEvent(Display *display,
+int
+XIfEvent(Display *display,
+         XEvent *event_return,
+         Bool (*predicate)(),
+         XPointer arg)
+{
+	(void)display;
+	(void)event_return;
+	(void)predicate;
+	(void)arg;
+	/* XXX */
+	return False;
+}
+
+Bool
+XCheckIfEvent(Display *display,
+              XEvent *event_return,
+              Bool (*predicate)(),
+              XPointer arg)
+{
+	(void)display;
+	(void)event_return;
+	(void)predicate;
+	(void)arg;
+	/* XXX */
+	return False;
+}
+
+Bool
+XPeekIfEvent(Display *display,
              XEvent *event_return,
              Bool (*predicate)(),
              XPointer arg)
@@ -512,35 +619,12 @@ int XIfEvent(Display *display,
 	return False;
 }
 
-Bool XCheckIfEvent(Display *display,
-                   XEvent *event_return,
-                   Bool (*predicate)(),
-                   XPointer arg)
+int
+XNextEvent(Display *display, XEvent *event_return)
 {
-	(void)display;
-	(void)event_return;
-	(void)predicate;
-	(void)arg;
-	/* XXX */
-	return False;
-}
+	xcb_generic_event_t *event;
 
-Bool XPeekIfEvent(Display *display,
-                  XEvent *event_return,
-                  Bool (*predicate)(),
-                  XPointer arg)
-{
-	(void)display;
-	(void)event_return;
-	(void)predicate;
-	(void)arg;
-	/* XXX */
-	return False;
-}
-
-int XNextEvent(Display *display, XEvent *event_return)
-{
-	xcb_generic_event_t *event = xcb_wait_for_event(display->conn);
+	event = xcb_wait_for_event(display->conn);
 	if (!event)
 		return BadAlloc;
 	xlib_copy_event(display, event_return, event);
@@ -548,9 +632,12 @@ int XNextEvent(Display *display, XEvent *event_return)
 	return Success;
 }
 
-int XPeekEvent(Display *display, XEvent *event_return)
+int
+XPeekEvent(Display *display, XEvent *event_return)
 {
-	xcb_generic_event_t *event = xcb_peek_event(display->conn);
+	xcb_generic_event_t *event;
+
+	event = xcb_peek_event(display->conn);
 	if (!event)
 		return BadAlloc; /* XXX */
 	xlib_copy_event(display, event_return, event);
@@ -558,7 +645,8 @@ int XPeekEvent(Display *display, XEvent *event_return)
 	return Success;
 }
 
-int XPutBackEvent(Display *display, XEvent *event)
+int
+XPutBackEvent(Display *display, XEvent *event)
 {
 	(void)display;
 	(void)event;
@@ -566,43 +654,52 @@ int XPutBackEvent(Display *display, XEvent *event)
 	return False;
 }
 
-int XFlush(Display *display)
+int
+XFlush(Display *display)
 {
 	if (!xcb_flush(display->conn))
 		return BadRequest;
 	return Success;
 }
 
-int XPending(Display *display)
+int
+XPending(Display *display)
 {
 	return xcb_pending_event(display->conn);
 }
 
-int XSync(Display *display, Bool discard)
+int
+XSync(Display *display, Bool discard)
 {
 	(void)discard; /* XXX */
 	XGetInputFocus(display, NULL, NULL);
 	return Success;
 }
 
-int XSynchronize(Display *display, int onoff)
+int
+XSynchronize(Display *display, int onoff)
 {
-	int prev = display->synchronize;
+	int prev;
+
+	prev = display->synchronize;
 	display->synchronize = onoff;
 	return prev;
 }
 
-XErrorHandler XSetErrorHandler(Display *display, XErrorHandler handler)
-
+XErrorHandler
+XSetErrorHandler(Display *display, XErrorHandler handler)
 {
-	XErrorHandler prev = display->error_handler;
+	XErrorHandler prev;
+
+	prev = display->error_handler;
 	display->error_handler = handler;
 	return prev;
 }
 
-static void gen_window_attributes(uint32_t *values,
-                                  unsigned valuemask,
-                                  XSetWindowAttributes *attributes)
+static void
+gen_window_attributes(uint32_t *values,
+                      unsigned valuemask,
+                      XSetWindowAttributes *attributes)
 {
 	size_t n = 0;
 	if (valuemask & CWBackPixmap)
@@ -637,22 +734,25 @@ static void gen_window_attributes(uint32_t *values,
 		values[n++] = attributes->cursor;
 }
 
-Window XCreateWindow(Display *display,
-                     Window parent,
-                     int x,
-                     int y,
-                     unsigned width,
-                     unsigned height,
-                     unsigned border_width,
-                     int depth,
-                     unsigned _class,
-                     Visual *visual,
-                     unsigned valuemask,
-                     XSetWindowAttributes *attributes)
+Window
+XCreateWindow(Display *display,
+              Window parent,
+              int x,
+              int y,
+              unsigned width,
+              unsigned height,
+              unsigned border_width,
+              int depth,
+              unsigned _class,
+              Visual *visual,
+              unsigned valuemask,
+              XSetWindowAttributes *attributes)
 {
 	uint32_t values[15];
+	Window id;
+
 	gen_window_attributes(values, valuemask, attributes);
-	Window id = xcb_generate_id(display->conn);
+	id = xcb_generate_id(display->conn);
 	return XID_REQ(display, id, create_window,
 	               depth,
 	               id,
@@ -668,61 +768,80 @@ Window XCreateWindow(Display *display,
 	               values);
 }
 
-Window XCreateSimpleWindow(Display *display,
-                           Window parent,
-                           int x,
-                           int y,
-                           unsigned width,
-                           unsigned height,
-                           unsigned border_width,
-                           unsigned long border,
-                           unsigned long background)
+Window
+XCreateSimpleWindow(Display *display,
+                    Window parent,
+                    int x,
+                    int y,
+                    unsigned width,
+                    unsigned height,
+                    unsigned border_width,
+                    unsigned long border,
+                    unsigned long background)
 {
 	XSetWindowAttributes attributes;
+
 	attributes.background_pixel = background;
 	attributes.border_pixel = border;
-	return XCreateWindow(display, parent, x, y, width, height, border_width,
-	                     0, InputOutput, NULL, CWBorderPixel | CWBackPixel,
+	return XCreateWindow(display,
+	                     parent,
+	                     x,
+	                     y,
+	                     width,
+	                     height,
+	                     border_width,
+	                     0,
+	                     InputOutput,
+	                     NULL,
+	                     CWBorderPixel | CWBackPixel,
 	                     &attributes);
 }
 
-int XDestroyWindow(Display *display, Window window)
+int
+XDestroyWindow(Display *display, Window window)
 {
 	return REQUEST(display, destroy_window, window);
 }
 
-int XDestroySubwindows(Display *display, Window window)
+int
+XDestroySubwindows(Display *display, Window window)
 {
 	return REQUEST(display, destroy_subwindows, window);
 }
 
-int XMapWindow(Display *display, Window window)
+int
+XMapWindow(Display *display, Window window)
 {
 	return REQUEST(display, map_window, window);
 }
 
-int XUnmapWindow(Display *display, Window window)
+int
+XUnmapWindow(Display *display, Window window)
 {
 	return REQUEST(display, unmap_window, window);
 }
 
-int XMapSubwindows(Display *display, Window window)
+int
+XMapSubwindows(Display *display, Window window)
 {
 	return REQUEST(display, map_subwindows, window);
 }
 
-int XUnmapSubwindows(Display *display, Window window)
+int
+XUnmapSubwindows(Display *display, Window window)
 {
 	return REQUEST(display, unmap_subwindows, window);
 }
 
-int XMapRaised(Display *display, Window window)
+int
+XMapRaised(Display *display, Window window)
 {
 	return XMapWindow(display, window)
 	    || XRaiseWindow(display, window);
 }
 
-Atom XInternAtom(Display *display, char *atom_name, Bool only_if_exists)
+Atom
+XInternAtom(Display *display, char *atom_name, Bool only_if_exists)
 {
 	REPLY_REQ(display, intern_atom,
 	          only_if_exists,
@@ -747,7 +866,8 @@ Atom XInternAtom(Display *display, char *atom_name, Bool only_if_exists)
 	return ret;
 }
 
-char *XGetAtomName(Display *display, Atom atom)
+char *
+XGetAtomName(Display *display, Atom atom)
 {
 	REPLY_REQ(display, get_atom_name,
 	          atom);
@@ -769,7 +889,8 @@ char *XGetAtomName(Display *display, Atom atom)
 	return name;
 }
 
-Status XGetAtomNames(Display *display, Atom *atoms, int count, char **names)
+Status
+XGetAtomNames(Display *display, Atom *atoms, int count, char **names)
 {
 	if (count < 0)
 		return 0;
@@ -814,14 +935,15 @@ err:
 	return 0;
 }
 
-int XChangeProperty(Display *display,
-                    Window window,
-                    Atom property,
-                    Atom type,
-                    int format,
-                    int mode,
-                    const uint8_t *data,
-                    int nelements)
+int
+XChangeProperty(Display *display,
+                Window window,
+                Atom property,
+                Atom type,
+                int format,
+                int mode,
+                const uint8_t *data,
+                int nelements)
 {
 	return REQUEST(display, change_property,
 	               mode,
@@ -833,18 +955,19 @@ int XChangeProperty(Display *display,
 	               data);
 }
 
-int XGetWindowProperty(Display *display,
-                       Window window,
-                       Atom property,
-                       long long_offset,
-                       long long_length,
-                       Bool delete,
-                       Atom req_type,
-                       Atom *actual_type,
-                       int *actual_format,
-                       unsigned long *nitems,
-                       unsigned long *bytes_after,
-                       unsigned char **prop)
+int
+XGetWindowProperty(Display *display,
+                   Window window,
+                   Atom property,
+                   long long_offset,
+                   long long_length,
+                   Bool delete,
+                   Atom req_type,
+                   Atom *actual_type,
+                   int *actual_format,
+                   unsigned long *nitems,
+                   unsigned long *bytes_after,
+                   unsigned char **prop)
 {
 	REPLY_REQ(display, get_property,
 	          delete,
@@ -886,7 +1009,8 @@ int XGetWindowProperty(Display *display,
 	return Success;
 }
 
-Atom *XListProperties(Display *display, Window window, int *nprops)
+Atom *
+XListProperties(Display *display, Window window, int *nprops)
 {
 	REPLY_REQ(display, list_properties,
 	          window);
@@ -911,18 +1035,20 @@ Atom *XListProperties(Display *display, Window window, int *nprops)
 	return props;
 }
 
-int XDeleteProperty(Display *display, Window window, Atom property)
+int
+XDeleteProperty(Display *display, Window window, Atom property)
 {
 	return REQUEST(display, delete_property,
 	               window,
 	               property);
 }
 
-int XRotateWindowProperties(Display *display,
-                            Window window,
-                            Atom *properties,
-                            int nprops,
-                            int npositions)
+int
+XRotateWindowProperties(Display *display,
+                        Window window,
+                        Atom *properties,
+                        int nprops,
+                        int npositions)
 {
 	return REQUEST(display, rotate_properties,
 	               window,
@@ -931,13 +1057,15 @@ int XRotateWindowProperties(Display *display,
 	               properties);
 }
 
-int XConfigureWindow(Display *display,
-                     Window window,
-                     unsigned value_mask,
-                     XWindowChanges *values)
+int
+XConfigureWindow(Display *display,
+                 Window window,
+                 unsigned value_mask,
+                 XWindowChanges *values)
 {
 	uint32_t v[7];
 	size_t n = 0;
+
 	if (value_mask & CWX)
 		v[n++] = values->x;
 	if (value_mask & CWY)
@@ -958,88 +1086,106 @@ int XConfigureWindow(Display *display,
 	               v);
 }
 
-int XMoveWindow(Display *display, Window window, int x, int y)
+int
+XMoveWindow(Display *display, Window window, int x, int y)
 {
 	XWindowChanges changes;
+
 	changes.x = x;
 	changes.y = y;
 	return XConfigureWindow(display, window, CWX | CWY, &changes);
 }
 
-int XResizeWindow(Display *display,
-                  Window window,
-                  unsigned width,
-                  unsigned height)
+int
+XResizeWindow(Display *display,
+              Window window,
+              unsigned width,
+              unsigned height)
 {
 	XWindowChanges changes;
+
 	changes.width = width;
 	changes.height = height;
 	return XConfigureWindow(display, window, CWWidth | CWHeight, &changes);
 }
 
-int XMoveResizeWindow(Display *display,
-                      Window window,
-                      int x,
-                      int y,
-                      unsigned width,
-                      unsigned height)
+int
+XMoveResizeWindow(Display *display,
+                  Window window,
+                  int x,
+                  int y,
+                  unsigned width,
+                  unsigned height)
 {
 	XWindowChanges changes;
+
 	changes.x = x;
 	changes.y = y;
 	changes.width = width;
 	changes.height = height;
-	return XConfigureWindow(display, window, CWX | CWY | CWWidth | CWHeight,
+	return XConfigureWindow(display,
+	                        window,
+	                        CWX | CWY | CWWidth | CWHeight,
 	                        &changes);
 }
 
-int XSetWindowBorderWidth(Display *display, Window window, unsigned width)
+int
+XSetWindowBorderWidth(Display *display, Window window, unsigned width)
 {
 	XWindowChanges changes;
+
 	changes.border_width = width;
 	return XConfigureWindow(display, window, CWBorderWidth, &changes);
 }
 
-int XRaiseWindow(Display *display, Window window)
+int
+XRaiseWindow(Display *display, Window window)
 {
 	XWindowChanges changes;
+
 	changes.stack_mode = Above;
 	return XConfigureWindow(display, window, CWStackMode, &changes);
 }
 
-int XLowerWindow(Display *display, Window window)
+int
+XLowerWindow(Display *display, Window window)
 {
 	XWindowChanges changes;
+
 	changes.stack_mode = Below;
 	return XConfigureWindow(display, window, CWStackMode, &changes);
 }
 
-int XCirculateSubwindows(Display *display, Window window, int direction)
+int
+XCirculateSubwindows(Display *display, Window window, int direction)
 {
 	return REQUEST(display, circulate_window,
 	               direction,
 	               window);
 }
 
-int XCirculateSubwindowsUp(Display *display, Window window)
+int
+XCirculateSubwindowsUp(Display *display, Window window)
 {
 	return XCirculateSubwindows(display, window, RaiseLowest);
 }
 
-int XCirculateSubwindowsDown(Display *display, Window window)
+int
+XCirculateSubwindowsDown(Display *display, Window window)
 {
 	return XCirculateSubwindows(display, window, LowerHighest);
 }
 
-Status XGetGeometry(Display *display,
-                    Drawable drawable,
-                    Window *root,
-                    int *x,
-                    int *y,
-                    unsigned *width,
-                    unsigned *height,
-                    unsigned *border_width,
-                    unsigned *depth)
+Status
+XGetGeometry(Display *display,
+             Drawable drawable,
+             Window *root,
+             int *x,
+             int *y,
+             unsigned *width,
+             unsigned *height,
+             unsigned *border_width,
+             unsigned *depth)
 {
 	REPLY_REQ(display, get_geometry, drawable);
 	if (error)
@@ -1061,9 +1207,10 @@ Status XGetGeometry(Display *display,
 	return True;
 }
 
-Status XGetWindowAttributes(Display *display,
-                            Window window,
-                            XWindowAttributes *attributes)
+Status
+XGetWindowAttributes(Display *display,
+                     Window window,
+                     XWindowAttributes *attributes)
 {
 	if (!XGetGeometry(display, window,
 	                  &attributes->root,
@@ -1125,12 +1272,14 @@ end:
 	return True;
 }
 
-int XChangeWindowAttributes(Display *display,
-                            Window window,
-                            unsigned long valuemask,
-                            XSetWindowAttributes *attributes)
+int
+XChangeWindowAttributes(Display *display,
+                        Window window,
+                        unsigned long valuemask,
+                        XSetWindowAttributes *attributes)
 {
 	uint32_t values[15];
+
 	gen_window_attributes(values, valuemask, attributes);
 	return REQUEST(display, change_window_attributes,
 	               window,
@@ -1138,81 +1287,109 @@ int XChangeWindowAttributes(Display *display,
 	               values);
 }
 
-int XSetWindowBackground(Display *display,
-                         Window window,
-                         unsigned long background_pixel)
-{
-	XSetWindowAttributes attributes;
-	attributes.background_pixel = background_pixel;
-	return XChangeWindowAttributes(display, window, CWBackPixel,
-	                               &attributes);
-}
-
-int XSetWindowBackgroundPixmap(Display *display,
-                               Window window,
-                               Pixmap background_pixmap)
-{
-	XSetWindowAttributes attributes;
-	attributes.background_pixmap = background_pixmap;
-	return XChangeWindowAttributes(display, window, CWBackPixmap,
-	                               &attributes);
-}
-
-int XSetWindowBorder(Display *display,
+int
+XSetWindowBackground(Display *display,
                      Window window,
-                     unsigned long border_pixel)
+                     unsigned long background_pixel)
 {
 	XSetWindowAttributes attributes;
-	attributes.border_pixel = border_pixel;
-	return XChangeWindowAttributes(display, window, CWBorderPixel,
+
+	attributes.background_pixel = background_pixel;
+	return XChangeWindowAttributes(display,
+	                               window,
+	                               CWBackPixel,
 	                               &attributes);
 }
 
-int XSetWindowBorderPixmap(Display *display,
+int
+XSetWindowBackgroundPixmap(Display *display,
                            Window window,
-                           Pixmap border_pixmap)
+                           Pixmap background_pixmap)
 {
 	XSetWindowAttributes attributes;
-	attributes.border_pixmap = border_pixmap;
-	return XChangeWindowAttributes(display, window, CWBorderPixmap,
+
+	attributes.background_pixmap = background_pixmap;
+	return XChangeWindowAttributes(display,
+	                               window,
+	                               CWBackPixmap,
 	                               &attributes);
 }
 
-int XSetWindowColormap(Display *display,
+int
+XSetWindowBorder(Display *display,
+                 Window window,
+                 unsigned long border_pixel)
+{
+	XSetWindowAttributes attributes;
+
+	attributes.border_pixel = border_pixel;
+	return XChangeWindowAttributes(display,
+	                               window,
+	                               CWBorderPixel,
+	                               &attributes);
+}
+
+int
+XSetWindowBorderPixmap(Display *display,
                        Window window,
-                       Colormap colormap)
+                       Pixmap border_pixmap)
 {
 	XSetWindowAttributes attributes;
-	attributes.colormap = colormap;
-	return XChangeWindowAttributes(display, window, CWColormap,
+
+	attributes.border_pixmap = border_pixmap;
+	return XChangeWindowAttributes(display,
+	                               window,
+	                               CWBorderPixmap,
 	                               &attributes);
 }
 
-int XDefineCursor(Display *display, Window window, Cursor cursor)
+int
+XSetWindowColormap(Display *display,
+                   Window window,
+                   Colormap colormap)
 {
 	XSetWindowAttributes attributes;
+
+	attributes.colormap = colormap;
+	return XChangeWindowAttributes(display,
+	                               window,
+	                               CWColormap,
+	                               &attributes);
+}
+
+int
+XDefineCursor(Display *display, Window window, Cursor cursor)
+{
+	XSetWindowAttributes attributes;
+
 	attributes.cursor = cursor;
 	return XChangeWindowAttributes(display, window, CWCursor, &attributes);
 }
 
-int XUndefineCursor(Display *display, Window window)
+int
+XUndefineCursor(Display *display, Window window)
 {
 	return XDefineCursor(display, window, None);
 }
 
-Status XSelectInput(Display *display, Window window, uint32_t mask)
+Status
+XSelectInput(Display *display, Window window, uint32_t mask)
 {
 	XSetWindowAttributes attributes;
+
 	attributes.event_mask = mask;
-	return XChangeWindowAttributes(display, window, CWEventMask,
+	return XChangeWindowAttributes(display,
+	                               window,
+	                               CWEventMask,
 	                               &attributes);
 }
 
-int XReparentWindow(Display *display,
-                    Window window,
-                    Window parent,
-                    int x,
-                    int y)
+int
+XReparentWindow(Display *display,
+                Window window,
+                Window parent,
+                int x,
+                int y)
 {
 	return REQUEST(display, reparent_window,
 	               window,
@@ -1221,9 +1398,11 @@ int XReparentWindow(Display *display,
 	               y);
 }
 
-static void gen_gc_values(uint32_t *v, unsigned valuemask, XGCValues *values)
+static void
+gen_gc_values(uint32_t *v, unsigned valuemask, XGCValues *values)
 {
 	uint32_t n = 0;
+
 	if (valuemask & GCFunction)
 		v[n++] = values->function;
 	if (valuemask & GCPlaneMask)
@@ -1272,18 +1451,21 @@ static void gen_gc_values(uint32_t *v, unsigned valuemask, XGCValues *values)
 		v[n++] = values->arc_mode;
 }
 
-GC XCreateGC(Display *display,
-             Drawable drawable,
-             unsigned long valuemask,
-             XGCValues *values)
+GC
+XCreateGC(Display *display,
+          Drawable drawable,
+          unsigned long valuemask,
+          XGCValues *values)
 {
-	GC gc = malloc(sizeof(*gc));
+	uint32_t v[23];
+	GC gc;
+
+	gc = malloc(sizeof(*gc));
 	if (!gc)
 		return NULL;
 	gc->gc = xcb_generate_id(display->conn);
 	gc->display = display;
 	gc->batch_mask = 0;
-	uint32_t v[23];
 	gen_gc_values(v, valuemask, values);
 	XID xid = XID_REQ(display, gc->gc, create_gc,
 	                  gc->gc,
@@ -1298,7 +1480,8 @@ GC XCreateGC(Display *display,
 	return gc;
 }
 
-int XCopyGC(Display *display, GC src, GC dst, unsigned long valuemask)
+int
+XCopyGC(Display *display, GC src, GC dst, unsigned long valuemask)
 {
 	return REQUEST(display, copy_gc,
 	               src->gc,
@@ -1306,21 +1489,25 @@ int XCopyGC(Display *display, GC src, GC dst, unsigned long valuemask)
 	               valuemask);
 }
 
-int XFreeGC(Display *display, GC gc)
+int
+XFreeGC(Display *display, GC gc)
 {
+	Status status;
+
 	if (!gc)
 		return Success;
-	Status status = REQUEST(display, free_gc, gc->gc);
+	status = REQUEST(display, free_gc, gc->gc);
 	free(gc);
 	return status;
 }
 
-int XDrawPoints(Display *display,
-                Drawable drawable,
-                GC gc,
-                XPoint *points,
-                int npoints,
-                int mode)
+int
+XDrawPoints(Display *display,
+            Drawable drawable,
+            GC gc,
+            XPoint *points,
+            int npoints,
+            int mode)
 {
 	XFlushGC(gc);
 	return REQUEST(display, poly_point,
@@ -1331,21 +1518,24 @@ int XDrawPoints(Display *display,
 	               (xcb_point_t*)points);
 }
 
-int XDrawPoint(Display *display, Drawable drawable, GC gc, int x, int y)
+int
+XDrawPoint(Display *display, Drawable drawable, GC gc, int x, int y)
 {
-	XFlushGC(gc);
 	XPoint point;
+
+	XFlushGC(gc);
 	point.x = x;
 	point.y = y;
 	return XDrawPoints(display, drawable, gc, &point, 1, CoordModeOrigin);
 }
 
-int XDrawLines(Display *display,
-               Drawable drawable,
-               GC gc,
-               XPoint *points,
-               int npoints,
-               int mode)
+int
+XDrawLines(Display *display,
+           Drawable drawable,
+           GC gc,
+           XPoint *points,
+           int npoints,
+           int mode)
 {
 	XFlushGC(gc);
 	return REQUEST(display, poly_line,
@@ -1356,16 +1546,18 @@ int XDrawLines(Display *display,
 	               (xcb_point_t*)points);
 }
 
-int XDrawLine(Display *display,
-              Drawable drawable,
-              GC gc,
-              int x1,
-              int y1,
-              int x2,
-              int y2)
+int
+XDrawLine(Display *display,
+          Drawable drawable,
+          GC gc,
+          int x1,
+          int y1,
+          int x2,
+          int y2)
 {
-	XFlushGC(gc);
 	XPoint points[2];
+
+	XFlushGC(gc);
 	points[0].x = x1;
 	points[0].y = y1;
 	points[1].x = x2;
@@ -1373,11 +1565,12 @@ int XDrawLine(Display *display,
 	return XDrawLines(display, drawable, gc, points, 2, CoordModeOrigin);
 }
 
-int XDrawSegments(Display *display,
-                  Drawable drawable,
-                  GC gc,
-                  XSegment *segments,
-                  int nsegments)
+int
+XDrawSegments(Display *display,
+              Drawable drawable,
+              GC gc,
+              XSegment *segments,
+              int nsegments)
 {
 	XFlushGC(gc);
 	return REQUEST(display, poly_segment,
@@ -1387,11 +1580,12 @@ int XDrawSegments(Display *display,
 	               (xcb_segment_t*)segments);
 }
 
-int XDrawRectangles(Display *display,
-                    Drawable drawable,
-                    GC gc,
-                    XRectangle *rectangles,
-                    int nrectangles)
+int
+XDrawRectangles(Display *display,
+                Drawable drawable,
+                GC gc,
+                XRectangle *rectangles,
+                int nrectangles)
 {
 	XFlushGC(gc);
 	return REQUEST(display, poly_rectangle,
@@ -1401,16 +1595,18 @@ int XDrawRectangles(Display *display,
 	               (xcb_rectangle_t*)rectangles);
 }
 
-int XDrawRectangle(Display *display,
-                   Drawable drawable,
-                   GC gc,
-                   int x,
-                   int y,
-                   unsigned width,
-                   unsigned height)
+int
+XDrawRectangle(Display *display,
+               Drawable drawable,
+               GC gc,
+               int x,
+               int y,
+               unsigned width,
+               unsigned height)
 {
-	XFlushGC(gc);
 	XRectangle rectangle;
+
+	XFlushGC(gc);
 	rectangle.x = x;
 	rectangle.y = y;
 	rectangle.width = width;
@@ -1418,11 +1614,12 @@ int XDrawRectangle(Display *display,
 	return XDrawRectangles(display, drawable, gc, &rectangle, 1);
 }
 
-int XDrawArcs(Display *display,
-              Drawable drawable,
-              GC gc,
-              XArc *arcs,
-              int narcs)
+int
+XDrawArcs(Display *display,
+          Drawable drawable,
+          GC gc,
+          XArc *arcs,
+          int narcs)
 {
 	XFlushGC(gc);
 	return REQUEST(display, poly_arc,
@@ -1432,18 +1629,20 @@ int XDrawArcs(Display *display,
 	               (xcb_arc_t*)arcs);
 }
 
-int XDrawArc(Display *display,
-             Drawable drawable,
-             GC gc,
-             int x,
-             int y,
-             unsigned width,
-             unsigned height,
-             int angle1,
-             int angle2)
+int
+XDrawArc(Display *display,
+         Drawable drawable,
+         GC gc,
+         int x,
+         int y,
+         unsigned width,
+         unsigned height,
+         int angle1,
+         int angle2)
 {
-	XFlushGC(gc);
 	XArc arc;
+
+	XFlushGC(gc);
 	arc.x = x;
 	arc.y = y;
 	arc.width = width;
@@ -1453,12 +1652,14 @@ int XDrawArc(Display *display,
 	return XDrawArcs(display, drawable, gc, &arc, 1);
 }
 
-int XFillPolygon(Display *display,
-                 Drawable drawable, GC gc,
-                 XPoint *points,
-                 int npoints,
-                 int shape,
-                 int mode)
+int
+XFillPolygon(Display *display,
+             Drawable drawable,
+             GC gc,
+             XPoint *points,
+             int npoints,
+             int shape,
+             int mode)
 {
 	XFlushGC(gc);
 	return REQUEST(display, fill_poly,
@@ -1470,11 +1671,12 @@ int XFillPolygon(Display *display,
 	               (xcb_point_t*)points);
 }
 
-int XFillRectangles(Display *display,
-                    Drawable drawable,
-                    GC gc,
-                    XRectangle *rectangles,
-                    int nrectangles)
+int
+XFillRectangles(Display *display,
+                Drawable drawable,
+                GC gc,
+                XRectangle *rectangles,
+                int nrectangles)
 {
 	XFlushGC(gc);
 	return REQUEST(display, poly_fill_rectangle,
@@ -1484,16 +1686,18 @@ int XFillRectangles(Display *display,
 	               (xcb_rectangle_t*)rectangles);
 }
 
-int XFillRectangle(Display *display,
-                   Drawable drawable,
-                   GC gc,
-                   int x,
-                   int y,
-                   unsigned width,
-                   unsigned height)
+int
+XFillRectangle(Display *display,
+               Drawable drawable,
+               GC gc,
+               int x,
+               int y,
+               unsigned width,
+               unsigned height)
 {
-	XFlushGC(gc);
 	XRectangle rectangle;
+
+	XFlushGC(gc);
 	rectangle.x = x;
 	rectangle.y = y;
 	rectangle.width = width;
@@ -1501,11 +1705,12 @@ int XFillRectangle(Display *display,
 	return XFillRectangles(display, drawable, gc, &rectangle, 1);
 }
 
-int XFillArcs(Display *display,
-              Drawable drawable,
-              GC gc,
-              XArc *arcs,
-              int narcs)
+int
+XFillArcs(Display *display,
+          Drawable drawable,
+          GC gc,
+          XArc *arcs,
+          int narcs)
 {
 	XFlushGC(gc);
 	return REQUEST(display, poly_fill_arc,
@@ -1515,18 +1720,20 @@ int XFillArcs(Display *display,
 	               (xcb_arc_t*)arcs);
 }
 
-int XFillArc(Display *display,
-             Drawable drawable,
-             GC gc,
-             int x,
-             int y,
-             unsigned width,
-             unsigned height,
-             int angle1,
-             int angle2)
+int
+XFillArc(Display *display,
+         Drawable drawable,
+         GC gc,
+         int x,
+         int y,
+         unsigned width,
+         unsigned height,
+         int angle1,
+         int angle2)
 {
-	XFlushGC(gc);
 	XArc arc;
+
+	XFlushGC(gc);
 	arc.x = x;
 	arc.y = y;
 	arc.width = width;
@@ -1536,27 +1743,32 @@ int XFillArc(Display *display,
 	return XFillArcs(display, drawable, gc, &arc, 1);
 }
 
-Font XLoadFont(Display *display, char *name)
+Font
+XLoadFont(Display *display, char *name)
 {
-	Font font = xcb_generate_id(display->conn);
+	Font font;
+
+	font = xcb_generate_id(display->conn);
 	return XID_REQ(display, font, open_font,
 	               font,
 	               strlen(name),
 	               name);
 }
 
-int XUnloadFont(Display *display, Font font)
+int
+XUnloadFont(Display *display, Font font)
 {
 	return REQUEST(display, close_font, font);
 }
 
-int XDrawString(Display *display,
-                Drawable drawable,
-                GC gc,
-                int x,
-                int y,
-                char *string,
-                int length)
+int
+XDrawString(Display *display,
+            Drawable drawable,
+            GC gc,
+            int x,
+            int y,
+            char *string,
+            int length)
 {
 	(void)length; /* XXX */
 	XFlushGC(gc);
@@ -1568,14 +1780,15 @@ int XDrawString(Display *display,
 	               string);
 }
 
-int XQueryTextExtents(Display *display,
-                      XID font,
-                      char *string,
-                      int nchars,
-                      int *direction,
-                      int *ascent,
-                      int *descent,
-                      XCharStruct *overall)
+int
+XQueryTextExtents(Display *display,
+                  XID font,
+                  char *string,
+                  int nchars,
+                  int *direction,
+                  int *ascent,
+                  int *descent,
+                  XCharStruct *overall)
 {
 	(void)display;
 	(void)font;
@@ -1611,15 +1824,18 @@ int XQueryTextExtents(Display *display,
 	return Success;*/
 }
 
-Cursor XCreateGlyphCursor(Display *display,
-                          Font source_font,
-                          Font mask_font,
-                          unsigned source_char,
-                          unsigned mask_char,
-                          XColor *foreground_color,
-                          XColor *background_color)
+Cursor
+XCreateGlyphCursor(Display *display,
+                   Font source_font,
+                   Font mask_font,
+                   unsigned source_char,
+                   unsigned mask_char,
+                   XColor *foreground_color,
+                   XColor *background_color)
 {
-	Cursor cursor = xcb_generate_id(display->conn);
+	Cursor cursor;
+
+	cursor = xcb_generate_id(display->conn);
 	return XID_REQ(display, cursor, create_glyph_cursor,
 	               cursor,
 	               source_font,
@@ -1634,22 +1850,30 @@ Cursor XCreateGlyphCursor(Display *display,
 	               background_color->blue);
 }
 
-Cursor XCreateFontCursor(Display *display, unsigned int shape)
+Cursor
+XCreateFontCursor(Display *display, unsigned int shape)
 {
-	return XCreateGlyphCursor(display, display->cursor_font,
-	                          display->cursor_font, shape, shape + 1,
-	                          &display->black, &display->white);
+	return XCreateGlyphCursor(display,
+	                          display->cursor_font,
+	                          display->cursor_font,
+	                          shape,
+	                          shape + 1,
+	                          &display->black,
+	                          &display->white);
 }
 
-Cursor XCreatePixmapCursor(Display *display,
-                           Pixmap source,
-                           Pixmap mask,
-                           XColor *foreground_color,
-                           XColor *background_color,
-                           unsigned x,
-                           unsigned y)
+Cursor
+XCreatePixmapCursor(Display *display,
+                    Pixmap source,
+                    Pixmap mask,
+                    XColor *foreground_color,
+                    XColor *background_color,
+                    unsigned x,
+                    unsigned y)
 {
-	Cursor cursor = xcb_generate_id(display->conn);
+	Cursor cursor;
+
+	cursor = xcb_generate_id(display->conn);
 	return XID_REQ(display, cursor, create_cursor,
 	               cursor,
 	               source,
@@ -1665,10 +1889,11 @@ Cursor XCreatePixmapCursor(Display *display,
 
 }
 
-int XRecolorCursor(Display *display,
-                   Cursor cursor,
-                   XColor *foreground_color,
-                   XColor *background_color)
+int
+XRecolorCursor(Display *display,
+               Cursor cursor,
+               XColor *foreground_color,
+               XColor *background_color)
 {
 	return REQUEST(display, recolor_cursor,
 	               cursor,
@@ -1680,19 +1905,23 @@ int XRecolorCursor(Display *display,
 	               background_color->blue);
 }
 
-int XFreeCursor(Display *display, Cursor cursor)
+int
+XFreeCursor(Display *display, Cursor cursor)
 {
 	return REQUEST(display, free_cursor,
 	               cursor);
 }
 
-Pixmap XCreatePixmap(Display *display,
-                     Drawable drawable,
-                     unsigned width,
-                     unsigned height,
-                     unsigned depth)
+Pixmap
+XCreatePixmap(Display *display,
+              Drawable drawable,
+              unsigned width,
+              unsigned height,
+              unsigned depth)
 {
-	Pixmap pixmap = xcb_generate_id(display->conn);
+	Pixmap pixmap;
+
+	pixmap = xcb_generate_id(display->conn);
 	return XID_REQ(display, pixmap, create_pixmap,
 	               depth,
 	               pixmap,
@@ -1701,25 +1930,29 @@ Pixmap XCreatePixmap(Display *display,
 	               height);
 }
 
-int XFreePixmap(Display *display, Pixmap pixmap)
+int
+XFreePixmap(Display *display, Pixmap pixmap)
 {
 	return REQUEST(display, free_pixmap, pixmap);
 }
 
-XImage *XCreateImage(Display *display,
-                     Visual *visual,
-                     unsigned int depth,
-                     int format,
-                     int offset,
-                     char *data,
-                     unsigned int width,
-                     unsigned int height,
-                     int bitmap_pad,
-                     int bytes_per_line)
+XImage *
+XCreateImage(Display *display,
+             Visual *visual,
+             unsigned int depth,
+             int format,
+             int offset,
+             char *data,
+             unsigned int width,
+             unsigned int height,
+             int bitmap_pad,
+             int bytes_per_line)
 {
+	XImage *image;
+
 	(void)display; /* XXX */
 	(void)visual; /* XXX */
-	XImage *image = malloc(sizeof(*image));
+	image = malloc(sizeof(*image));
 	if (!image)
 		return NULL;
 	image->width = width;
@@ -1741,22 +1974,24 @@ XImage *XCreateImage(Display *display,
 	return image;
 }
 
-void XDestroyImage(XImage *image)
+void
+XDestroyImage(XImage *image)
 {
 	free(image->data);
 	free(image);
 }
 
-int XPutImage(Display *display,
-              Drawable drawable,
-              GC gc,
-              XImage *image,
-              int src_x,
-              int src_y,
-              int dst_x,
-              int dst_y,
-              unsigned width,
-              unsigned height)
+int
+XPutImage(Display *display,
+          Drawable drawable,
+          GC gc,
+          XImage *image,
+          int src_x,
+          int src_y,
+          int dst_x,
+          int dst_y,
+          unsigned width,
+          unsigned height)
 {
 	(void)src_x; /* XXX */
 	(void)src_y; /* XXX */
@@ -1775,14 +2010,15 @@ int XPutImage(Display *display,
 	               (uint8_t*)image->data);
 }
 
-XImage *XGetImage(Display *display,
-                  Drawable drawable,
-                  int x,
-                  int y,
-                  unsigned width,
-                  unsigned height,
-                  unsigned long plane_mask,
-                  int format)
+XImage *
+XGetImage(Display *display,
+          Drawable drawable,
+          int x,
+          int y,
+          unsigned width,
+          unsigned height,
+          unsigned long plane_mask,
+          int format)
 {
 	REPLY_REQ(display, get_image,
 	          format,
@@ -1833,16 +2069,17 @@ XImage *XGetImage(Display *display,
 	return image;
 }
 
-int XCopyArea(Display *display,
-              Drawable src,
-              Drawable dst,
-              GC gc,
-              int src_x,
-              int src_y,
-              unsigned width,
-              unsigned height,
-              int dst_x,
-              int dst_y)
+int
+XCopyArea(Display *display,
+          Drawable src,
+          Drawable dst,
+          GC gc,
+          int src_x,
+          int src_y,
+          unsigned width,
+          unsigned height,
+          int dst_x,
+          int dst_y)
 {
 	XFlushGC(gc);
 	return REQUEST(display, copy_area,
@@ -1857,13 +2094,14 @@ int XCopyArea(Display *display,
 	               height);
 }
 
-int XClearArea(Display *display,
-               Window window,
-               int x,
-               int y,
-               unsigned width,
-               unsigned height,
-               Bool exposures)
+int
+XClearArea(Display *display,
+           Window window,
+           int x,
+           int y,
+           unsigned width,
+           unsigned height,
+           Bool exposures)
 {
 	return REQUEST(display, clear_area,
 	               exposures,
@@ -1874,15 +2112,17 @@ int XClearArea(Display *display,
 	               height);
 }
 
-int XClearWindow(Display *display, Window window)
+int
+XClearWindow(Display *display, Window window)
 {
 	return XClearArea(display, window, 0, 0, 0, 0, False);
 }
 
-char **XListFonts(Display *display,
-                  char *pattern,
-                  int maxnames,
-                  int *count)
+char **
+XListFonts(Display *display,
+           char *pattern,
+           int maxnames,
+           int *count)
 {
 	REPLY_REQ(display, list_fonts,
 	          maxnames,
@@ -1925,10 +2165,11 @@ char **XListFonts(Display *display,
 	return fonts;
 }
 
-KeySym *XGetKeyboardMapping(Display *display,
-                            KeyCode first,
-                            int count,
-                            int *keysyms_per_keycode)
+KeySym *
+XGetKeyboardMapping(Display *display,
+                    KeyCode first,
+                    int count,
+                    int *keysyms_per_keycode)
 {
 	REPLY_REQ(display, get_keyboard_mapping, first, count);
 	if (error)
@@ -1954,11 +2195,12 @@ KeySym *XGetKeyboardMapping(Display *display,
 	return keysyms;
 }
 
-int XChangeKeyboardMapping(Display *display,
-                           int first_keycode,
-                           int keysyms_per_keycode,
-                           KeySym *keysyms,
-                           int num_codes)
+int
+XChangeKeyboardMapping(Display *display,
+                       int first_keycode,
+                       int keysyms_per_keycode,
+                       KeySym *keysyms,
+                       int num_codes)
 {
 	return REQUEST(display, change_keyboard_mapping,
 	               num_codes,
@@ -1967,7 +2209,8 @@ int XChangeKeyboardMapping(Display *display,
 	               keysyms);
 }
 
-void XRefreshKeyboardMapping(XMappingEvent *event)
+void
+XRefreshKeyboardMapping(XMappingEvent *event)
 {
 	free(event->display->keysyms);
 	event->display->keysyms = XGetKeyboardMapping(event->display,
@@ -1976,9 +2219,11 @@ void XRefreshKeyboardMapping(XMappingEvent *event)
 	                                              &event->display->keysyms_per_keycode);
 }
 
-KeySym XLookupKeysym(XKeyEvent *event, int index)
+KeySym
+XLookupKeysym(XKeyEvent *event, int index)
 {
 	Display *display = event->display;
+
 	if (event->keycode < (unsigned)display->min_keycode
 	 || event->keycode > (unsigned)display->max_keycode)
 		return NoSymbol;
@@ -2009,7 +2254,8 @@ KeySym XLookupKeysym(XKeyEvent *event, int index)
 	return NoSymbol;
 }
 
-XModifierKeymap *XGetModifierMapping(Display *display)
+XModifierKeymap *
+XGetModifierMapping(Display *display)
 {
 	REPLY_REQ(display, get_modifier_mapping);
 	if (error)
@@ -2032,7 +2278,8 @@ XModifierKeymap *XGetModifierMapping(Display *display)
 	return modmap;
 }
 
-int XSetModifierMapping(Display *display, XModifierKeymap *modmap)
+int
+XSetModifierMapping(Display *display, XModifierKeymap *modmap)
 {
 	REPLY_REQ(display, set_modifier_mapping,
 	           modmap->max_keypermod,
@@ -2050,7 +2297,8 @@ int XSetModifierMapping(Display *display, XModifierKeymap *modmap)
 	return ret;
 }
 
-XModifierKeymap *XNewModifiermap(int max_keys_per_mod)
+XModifierKeymap *
+XNewModifiermap(int max_keys_per_mod)
 {
 	if (max_keys_per_mod < 0)
 		return NULL;
@@ -2068,7 +2316,8 @@ XModifierKeymap *XNewModifiermap(int max_keys_per_mod)
 	return modmap;
 }
 
-void XFreeModifiermap(XModifierKeymap *modmap)
+void
+XFreeModifiermap(XModifierKeymap *modmap)
 {
 	if (!modmap)
 		return;
@@ -2076,9 +2325,10 @@ void XFreeModifiermap(XModifierKeymap *modmap)
 	free(modmap);
 }
 
-XModifierKeymap *XInsertModifiermapEntry(XModifierKeymap *modmap,
-                                         KeyCode keycode,
-                                         int modifier)
+XModifierKeymap *
+XInsertModifiermapEntry(XModifierKeymap *modmap,
+                        KeyCode keycode,
+                        int modifier)
 {
 	if (!modmap || modifier < 0 || modifier > 7)
 		return modmap;
@@ -2087,9 +2337,10 @@ XModifierKeymap *XInsertModifiermapEntry(XModifierKeymap *modmap,
 	return modmap;
 }
 
-XModifierKeymap *XDeleteModifiermapEntry(XModifierKeymap *modmap,
-                                         KeyCode keycode,
-                                         int modifier)
+XModifierKeymap *
+XDeleteModifiermapEntry(XModifierKeymap *modmap,
+                        KeyCode keycode,
+                        int modifier)
 {
 	if (!modmap || modifier < 0 || modifier > 7)
 		return modmap;
@@ -2098,17 +2349,30 @@ XModifierKeymap *XDeleteModifiermapEntry(XModifierKeymap *modmap,
 	return modmap;
 }
 
-Pixmap XCreateBitmapFromData(Display *display,
-                             Drawable drawable,
-                             char *data,
-                             unsigned width,
-                             unsigned height)
+Pixmap
+XCreateBitmapFromData(Display *display,
+                      Drawable drawable,
+                      char *data,
+                      unsigned width,
+                      unsigned height)
 {
-	XImage *image = XCreateImage(display, NULL, 1, XYPixmap, 0, data,
-	                             width, height, 8, (width + 7) / 8);
+	XImage *image;
+	Pixmap pixmap;
+	GC gc;
+
+	image = XCreateImage(display,
+	                     NULL,
+	                     1,
+	                     XYPixmap,
+	                     0,
+	                     data,
+	                     width,
+	                     height,
+	                     8,
+	                     (width + 7) / 8);
 	image->bits_per_pixel = 1;
-	Pixmap pixmap = XCreatePixmap(display, drawable, width, height, 1);
-	GC gc = XCreateGC(display, pixmap, 0, NULL);
+	pixmap = XCreatePixmap(display, drawable, width, height, 1);
+	gc = XCreateGC(display, pixmap, 0, NULL);
 	XPutImage(display, pixmap, gc, image, 0, 0, 0, 0, width, height);
 	image->data = NULL;
 	XDestroyImage(image);
@@ -2116,7 +2380,8 @@ Pixmap XCreateBitmapFromData(Display *display,
 	return pixmap;
 }
 
-void XFreeStringList(char **list)
+void
+XFreeStringList(char **list)
 {
 	if (!list)
 		return;
@@ -2125,7 +2390,8 @@ void XFreeStringList(char **list)
 	free(list);
 }
 
-void XFlushGC(GC gc)
+void
+XFlushGC(GC gc)
 {
 	if (!gc->batch_mask)
 		return;
@@ -2133,17 +2399,20 @@ void XFlushGC(GC gc)
 	gc->batch_mask = 0;
 }
 
-GContext XGContextFromGC(GC gc)
+GContext
+XGContextFromGC(GC gc)
 {
 	return gc->gc;
 }
 
-int XChangeGC(Display *display,
-              GC gc,
-              unsigned long mask,
-              XGCValues *values)
+int
+XChangeGC(Display *display,
+          GC gc,
+          unsigned long mask,
+          XGCValues *values)
 {
 	uint32_t v[23];
+
 	gen_gc_values(v, mask, values);
 	return REQUEST(display, change_gc,
 	               gc->gc,
@@ -2151,7 +2420,8 @@ int XChangeGC(Display *display,
 	               v);
 }
 
-int XSetFunction(Display *display, GC gc, int function)
+int
+XSetFunction(Display *display, GC gc, int function)
 {
 	(void)display;
 	gc->batch_mask |= GCFunction;
@@ -2159,7 +2429,8 @@ int XSetFunction(Display *display, GC gc, int function)
 	return Success;
 }
 
-int XSetPlaneMask(Display *display, GC gc, unsigned long plane_mask)
+int
+XSetPlaneMask(Display *display, GC gc, unsigned long plane_mask)
 {
 	(void)display;
 	gc->batch_mask |= GCPlaneMask;
@@ -2167,7 +2438,8 @@ int XSetPlaneMask(Display *display, GC gc, unsigned long plane_mask)
 	return Success;
 }
 
-int XSetForeground(Display *display, GC gc, unsigned long foreground)
+int
+XSetForeground(Display *display, GC gc, unsigned long foreground)
 {
 	(void)display;
 	gc->batch_mask |= GCForeground;
@@ -2175,7 +2447,8 @@ int XSetForeground(Display *display, GC gc, unsigned long foreground)
 	return Success;
 }
 
-int XSetBackground(Display *display, GC gc, unsigned long background)
+int
+XSetBackground(Display *display, GC gc, unsigned long background)
 {
 	(void)display;
 	gc->batch_mask |= GCBackground;
@@ -2183,12 +2456,13 @@ int XSetBackground(Display *display, GC gc, unsigned long background)
 	return Success;
 }
 
-int XSetLineAttributes(Display *display,
-                       GC gc,
-                       unsigned int line_width,
-                       int line_style,
-                       int cap_style,
-                       int join_style)
+int
+XSetLineAttributes(Display *display,
+                   GC gc,
+                   unsigned int line_width,
+                   int line_style,
+                   int cap_style,
+                   int join_style)
 {
 	(void)display;
 	gc->batch_mask |= GCLineWidth | GCLineStyle | GCCapStyle | GCJoinStyle;
@@ -2199,7 +2473,8 @@ int XSetLineAttributes(Display *display,
 	return Success;
 }
 
-int XSetFillStyle(Display *display, GC gc, int fill_style)
+int
+XSetFillStyle(Display *display, GC gc, int fill_style)
 {
 	(void)display;
 	gc->batch_mask |= GCFillStyle;
@@ -2207,7 +2482,8 @@ int XSetFillStyle(Display *display, GC gc, int fill_style)
 	return Success;
 }
 
-int XSetFillRule(Display *display, GC gc, int fill_rule)
+int
+XSetFillRule(Display *display, GC gc, int fill_rule)
 {
 	(void)display;
 	gc->batch_mask |= GCFillRule;
@@ -2215,7 +2491,8 @@ int XSetFillRule(Display *display, GC gc, int fill_rule)
 	return Success;
 }
 
-int XSetArcMode(Display *display, GC gc, int arc_mode)
+int
+XSetArcMode(Display *display, GC gc, int arc_mode)
 {
 	(void)display;
 	gc->batch_mask |= GCArcMode;
@@ -2223,7 +2500,8 @@ int XSetArcMode(Display *display, GC gc, int arc_mode)
 	return Success;
 }
 
-int XSetTile(Display *display, GC gc, Pixmap tile)
+int
+XSetTile(Display *display, GC gc, Pixmap tile)
 {
 	(void)display;
 	gc->batch_mask |= GCTile;
@@ -2231,7 +2509,8 @@ int XSetTile(Display *display, GC gc, Pixmap tile)
 	return Success;
 }
 
-int XSetStipple(Display *display, GC gc, Pixmap stipple)
+int
+XSetStipple(Display *display, GC gc, Pixmap stipple)
 {
 	(void)display;
 	gc->batch_mask |= GCStipple;
@@ -2239,7 +2518,8 @@ int XSetStipple(Display *display, GC gc, Pixmap stipple)
 	return Success;
 }
 
-int XSetTSOrigin(Display *display, GC gc, int ts_x_origin, int ts_y_origin)
+int
+XSetTSOrigin(Display *display, GC gc, int ts_x_origin, int ts_y_origin)
 {
 	(void)display;
 	gc->batch_mask |= GCTileStipXOrigin | GCTileStipYOrigin;
@@ -2248,7 +2528,8 @@ int XSetTSOrigin(Display *display, GC gc, int ts_x_origin, int ts_y_origin)
 	return Success;
 }
 
-int XSetFont(Display *display, GC gc, Font font)
+int
+XSetFont(Display *display, GC gc, Font font)
 {
 	(void)display;
 	gc->batch_mask |= GCFont;
@@ -2256,7 +2537,8 @@ int XSetFont(Display *display, GC gc, Font font)
 	return Success;
 }
 
-int XSetClipOrigin(Display *display, GC gc, int clip_x_origin, int clip_y_origin)
+int
+XSetClipOrigin(Display *display, GC gc, int clip_x_origin, int clip_y_origin)
 {
 	(void)display;
 	gc->batch_mask |= GCClipXOrigin | GCClipYOrigin;
@@ -2265,7 +2547,8 @@ int XSetClipOrigin(Display *display, GC gc, int clip_x_origin, int clip_y_origin
 	return Success;
 }
 
-int XSetClipMask(Display *display, GC gc, Pixmap pixmap)
+int
+XSetClipMask(Display *display, GC gc, Pixmap pixmap)
 {
 	(void)display;
 	gc->batch_mask |= GCClipMask;
@@ -2273,13 +2556,14 @@ int XSetClipMask(Display *display, GC gc, Pixmap pixmap)
 	return Success;
 }
 
-int XSetClipRectangles(Display *display,
-                       GC gc,
-                       int clip_x_origin,
-                       int clip_y_origin,
-                       XRectangle *rectangles,
-                       int n,
-                       int ordering)
+int
+XSetClipRectangles(Display *display,
+                   GC gc,
+                   int clip_x_origin,
+                   int clip_y_origin,
+                   XRectangle *rectangles,
+                   int n,
+                   int ordering)
 {
 	return REQUEST(display, set_clip_rectangles,
 	               ordering,
@@ -2290,7 +2574,8 @@ int XSetClipRectangles(Display *display,
 	               (xcb_rectangle_t*)rectangles);
 }
 
-int XSetDashes(Display *display, GC gc, int dash_offset, char *dash_list, int n)
+int
+XSetDashes(Display *display, GC gc, int dash_offset, char *dash_list, int n)
 {
 	return REQUEST(display, set_dashes,
 	               gc->gc,
@@ -2299,7 +2584,8 @@ int XSetDashes(Display *display, GC gc, int dash_offset, char *dash_list, int n)
 	               (uint8_t*)dash_list);
 }
 
-int XSetRegion(Display *display, GC gc, Region r)
+int
+XSetRegion(Display *display, GC gc, Region r)
 {
 	(void)display;
 	(void)gc;
@@ -2308,20 +2594,22 @@ int XSetRegion(Display *display, GC gc, Region r)
 	return Success;
 }
 
-int XBell(Display *display, int percent)
+int
+XBell(Display *display, int percent)
 {
 	return REQUEST(display, bell, percent);
 }
 
-Bool XQueryPointer(Display *display,
-                   Window win,
-                   Window *root,
-                   Window *window,
-                   int *root_x,
-                   int *root_y,
-                   int *win_x,
-                   int *win_y,
-                   unsigned *mask)
+Bool
+XQueryPointer(Display *display,
+              Window win,
+              Window *root,
+              Window *window,
+              int *root_x,
+              int *root_y,
+              int *win_x,
+              int *win_y,
+              unsigned *mask)
 {
 	REPLY_REQ(display, query_pointer, win);
 	if (error)
@@ -2350,15 +2638,16 @@ Bool XQueryPointer(Display *display,
 	return True;
 }
 
-int XWarpPointer(Display *display,
-                 Window src_w,
-                 Window dst_w,
-                 int src_x,
-                 int src_y,
-                 unsigned src_width,
-                 unsigned src_height,
-                 int dst_x,
-                 int dst_y)
+int
+XWarpPointer(Display *display,
+             Window src_w,
+             Window dst_w,
+             int src_x,
+             int src_y,
+             unsigned src_width,
+             unsigned src_height,
+             int dst_x,
+             int dst_y)
 {
 	return REQUEST(display, warp_pointer,
 	               src_w,
@@ -2371,7 +2660,8 @@ int XWarpPointer(Display *display,
 	               dst_y);
 }
 
-Bool XGetInputFocus(Display *display, Window *window, int *revert_to)
+Bool
+XGetInputFocus(Display *display, Window *window, int *revert_to)
 {
 	REPLY_REQ(display, get_input_focus);
 	if (error)
@@ -2390,7 +2680,8 @@ Bool XGetInputFocus(Display *display, Window *window, int *revert_to)
 	return True;
 }
 
-int XSetInputFocus(Display *display, Window window, int revert_to, Time time)
+int
+XSetInputFocus(Display *display, Window window, int revert_to, Time time)
 {
 	return REQUEST(display, set_input_focus,
 	               revert_to,
@@ -2398,22 +2689,25 @@ int XSetInputFocus(Display *display, Window window, int revert_to, Time time)
 	               time);
 }
 
-int XGrabServer(Display *display)
+int
+XGrabServer(Display *display)
 {
 	return REQUEST(display, grab_server);
 }
 
-int XUngrabServer(Display *display)
+int
+XUngrabServer(Display *display)
 {
 	return REQUEST(display, ungrab_server);
 }
 
-Status XQueryTree(Display *display,
-                  Window window,
-                  Window *root,
-                  Window *parent,
-                  Window **children,
-                  unsigned *nchildren)
+Status
+XQueryTree(Display *display,
+           Window window,
+           Window *root,
+           Window *parent,
+           Window **children,
+           unsigned *nchildren)
 {
 	REPLY_REQ(display, query_tree, window);
 	if (error)
@@ -2445,16 +2739,17 @@ Status XQueryTree(Display *display,
 	return True;
 }
 
-int XGrabButton(Display *display,
-                unsigned button,
-                unsigned modifiers,
-                Window grab_window,
-                Bool owner_events,
-                unsigned event_mask,
-                int pointer_mode,
-                int keyboard_mode,
-                Window confine_to,
-                Cursor cursor)
+int
+XGrabButton(Display *display,
+            unsigned button,
+            unsigned modifiers,
+            Window grab_window,
+            Bool owner_events,
+            unsigned event_mask,
+            int pointer_mode,
+            int keyboard_mode,
+            Window confine_to,
+            Cursor cursor)
 {
 	return REQUEST(display, grab_button,
 	               owner_events,
@@ -2468,10 +2763,11 @@ int XGrabButton(Display *display,
 	               modifiers);
 }
 
-int XUngrabButton(Display *display,
-                  unsigned button,
-                  unsigned modifiers,
-                  Window grab_window)
+int
+XUngrabButton(Display *display,
+              unsigned button,
+              unsigned modifiers,
+              Window grab_window)
 {
 	return REQUEST(display, ungrab_button,
 	               button,
@@ -2479,15 +2775,16 @@ int XUngrabButton(Display *display,
 	               modifiers);
 }
 
-int XGrabPointer(Display *display,
-                 Window grab_window,
-                 Bool owner_events,
-                 unsigned event_mask,
-                 int pointer_mode,
-                 int keyboard_mode,
-                 Window confine_to,
-                 Cursor cursor,
-                 Time time)
+int
+XGrabPointer(Display *display,
+             Window grab_window,
+             Bool owner_events,
+             unsigned event_mask,
+             int pointer_mode,
+             int keyboard_mode,
+             Window confine_to,
+             Cursor cursor,
+             Time time)
 {
 	REPLY_REQ(display, grab_pointer,
 	          owner_events,
@@ -2511,13 +2808,15 @@ int XGrabPointer(Display *display,
 	return ret;
 }
 
-int XUngrabPointer(Display *display, Time time)
+int
+XUngrabPointer(Display *display, Time time)
 {
 	return REQUEST(display, ungrab_pointer,
 	               time);
 }
 
-int XSetPointerMapping(Display *display, uint8_t *map, int nmap)
+int
+XSetPointerMapping(Display *display, uint8_t *map, int nmap)
 {
 	REPLY_REQ(display, set_pointer_mapping,
 	          nmap, map);
@@ -2534,7 +2833,8 @@ int XSetPointerMapping(Display *display, uint8_t *map, int nmap)
 	return ret;
 }
 
-int XGetPointerMapping(Display *display, uint8_t *map, int nmap)
+int
+XGetPointerMapping(Display *display, uint8_t *map, int nmap)
 {
 	REPLY_REQ(display, get_pointer_mapping);
 	if (error)
@@ -2555,12 +2855,13 @@ int XGetPointerMapping(Display *display, uint8_t *map, int nmap)
 	return ret;
 }
 
-int XChangePointerControl(Display *display,
-                          Bool do_accel,
-                          Bool do_threshold,
-                          int accel_numerator,
-                          int accel_denominator,
-                          int threshold)
+int
+XChangePointerControl(Display *display,
+                      Bool do_accel,
+                      Bool do_threshold,
+                      int accel_numerator,
+                      int accel_denominator,
+                      int threshold)
 {
 	return REQUEST(display, change_pointer_control,
 	               accel_numerator,
@@ -2570,10 +2871,11 @@ int XChangePointerControl(Display *display,
 	               do_threshold);
 }
 
-int XGetPointerControl(Display *display,
-                       int *accel_numerator,
-                       int *accel_denominator,
-                       int *threshold)
+int
+XGetPointerControl(Display *display,
+                   int *accel_numerator,
+                   int *accel_denominator,
+                   int *threshold)
 {
 	REPLY_REQ(display, get_pointer_control);
 	if (error)
@@ -2594,13 +2896,14 @@ int XGetPointerControl(Display *display,
 	return 1;
 }
 
-Status XQueryBestSize(Display *display,
-                      int class,
-                      Drawable drawable,
-                      unsigned width,
-                      unsigned height,
-                      unsigned *best_width,
-                      unsigned *best_height)
+Status
+XQueryBestSize(Display *display,
+               int class,
+               Drawable drawable,
+               unsigned width,
+               unsigned height,
+               unsigned *best_width,
+               unsigned *best_height)
 {
 	REPLY_REQ(display, query_best_size,
 	          class,
@@ -2623,45 +2926,65 @@ Status XQueryBestSize(Display *display,
 	return 1;
 }
 
-Status XQueryBestTile(Display *display,
-                      Drawable drawable,
-                      unsigned width,
-                      unsigned height,
-                      unsigned *best_width,
-                      unsigned *best_height)
+Status
+XQueryBestTile(Display *display,
+               Drawable drawable,
+               unsigned width,
+               unsigned height,
+               unsigned *best_width,
+               unsigned *best_height)
 {
-	return XQueryBestSize(display, TileShape, drawable,
-	                      width, height, best_width, best_height);
+	return XQueryBestSize(display,
+	                      TileShape,
+	                      drawable,
+	                      width,
+	                      height,
+	                      best_width,
+	                      best_height);
 }
 
-Status XQueryBestStipple(Display *display,
-                         Drawable drawable,
-                         unsigned width,
-                         unsigned height,
-                         unsigned *best_width,
-                         unsigned *best_height)
+Status
+XQueryBestStipple(Display *display,
+                  Drawable drawable,
+                  unsigned width,
+                  unsigned height,
+                  unsigned *best_width,
+                  unsigned *best_height)
 {
-	return XQueryBestSize(display, StippleShape, drawable,
-	                      width, height, best_width, best_height);
+	return XQueryBestSize(display,
+	                      StippleShape,
+	                      drawable,
+	                      width,
+	                      height,
+	                      best_width,
+	                      best_height);
 }
 
-Status XQueryBestCursor(Display *display,
-                        Drawable drawable,
-                        unsigned width,
-                        unsigned height,
-                        unsigned *best_width,
-                        unsigned *best_height)
+Status
+XQueryBestCursor(Display *display,
+                 Drawable drawable,
+                 unsigned width,
+                 unsigned height,
+                 unsigned *best_width,
+                 unsigned *best_height)
 {
-	return XQueryBestSize(display, CursorShape, drawable,
-	                      width, height, best_width, best_height);
+	return XQueryBestSize(display,
+	                      CursorShape,
+	                      drawable,
+	                      width,
+	                      height,
+	                      best_width,
+	                      best_height);
 }
 
-int XChangeKeyboardControl(Display *display,
-                           unsigned long value_mask,
-                           XKeyboardControl *values)
+int
+XChangeKeyboardControl(Display *display,
+                       unsigned long value_mask,
+                       XKeyboardControl *values)
 {
 	uint32_t v[8];
 	size_t n = 0;
+
 	if (value_mask & KBKeyClickPercent)
 		v[n++] = values->key_click_percent;
 	if (value_mask & KBBellPercent)
@@ -2683,7 +3006,8 @@ int XChangeKeyboardControl(Display *display,
 	               v);
 }
 
-int XGetKeyboardControl(Display *display, XKeyboardState *values)
+int
+XGetKeyboardControl(Display *display, XKeyboardState *values)
 {
 	REPLY_REQ(display, get_keyboard_control);
 	if (error)
@@ -2709,16 +3033,20 @@ int XGetKeyboardControl(Display *display, XKeyboardState *values)
 	return 1;
 }
 
-int XAutoRepeatOn(Display *display)
+int
+XAutoRepeatOn(Display *display)
 {
 	XKeyboardControl values;
+
 	values.auto_repeat_mode = AutoRepeatModeOn;
 	return XChangeKeyboardControl(display, KBAutoRepeatMode, &values);
 }
 
-int XAutoRepeatOff(Display *display)
+int
+XAutoRepeatOff(Display *display)
 {
 	XKeyboardControl values;
+
 	values.auto_repeat_mode = AutoRepeatModeOff;
 	return XChangeKeyboardControl(display, KBAutoRepeatMode, &values);
 }

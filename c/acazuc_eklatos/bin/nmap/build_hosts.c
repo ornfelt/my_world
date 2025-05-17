@@ -9,7 +9,8 @@
 #include <netdb.h>
 #include <time.h>
 
-static int build_addr(struct env *env, struct host *host)
+static int
+build_addr(struct env *env, struct host *host)
 {
 	host->addrlen = sizeof(struct sockaddr_in);
 	host->addr = malloc(host->addrlen);
@@ -29,7 +30,8 @@ static int build_addr(struct env *env, struct host *host)
 	return 0;
 }
 
-static int resolve_ip(struct env *env, struct host *host)
+static int
+resolve_ip(struct env *env, struct host *host)
 {
 	struct hostent *hostent;
 	struct in_addr *tmp;
@@ -67,13 +69,16 @@ static int resolve_ip(struct env *env, struct host *host)
 	return 0;
 }
 
-static int push_host(struct env *env, struct host *host)
+static int
+push_host(struct env *env, struct host *host)
 {
-	struct host **hosts = realloc(env->hosts,
-	                              sizeof(*hosts) * (env->hosts_count + 1));
+	struct host **hosts;
+
+	hosts = realloc(env->hosts, sizeof(*hosts) * (env->hosts_count + 1));
 	if (!hosts)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", env->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
@@ -82,7 +87,8 @@ static int push_host(struct env *env, struct host *host)
 	return 0;
 }
 
-int build_hosts(struct env *env)
+int
+build_hosts(struct env *env)
 {
 	for (size_t i = 0; i < env->ips_count; ++i)
 	{

@@ -1,7 +1,8 @@
 #include <pthread.h>
 #include <errno.h>
 
-int pthread_spin_init(pthread_spinlock_t *lock, int pshared)
+int
+pthread_spin_init(pthread_spinlock_t *lock, int pshared)
 {
 	(void)pshared; /* XXX */
 	if (!lock)
@@ -11,14 +12,16 @@ int pthread_spin_init(pthread_spinlock_t *lock, int pshared)
 	return 0;
 }
 
-int pthread_spin_destroy(pthread_spinlock_t *lock)
+int
+pthread_spin_destroy(pthread_spinlock_t *lock)
 {
 	if (!lock)
 		return EINVAL;
 	return 0;
 }
 
-static int acquire(pthread_spinlock_t *lock)
+static int
+acquire(pthread_spinlock_t *lock)
 {
 	int expected = 0;
 	return __atomic_compare_exchange_n(&lock->value, &expected, 1, 0,
@@ -26,7 +29,8 @@ static int acquire(pthread_spinlock_t *lock)
 	                                   __ATOMIC_RELAXED);
 }
 
-int pthread_spin_lock(pthread_spinlock_t *lock)
+int
+pthread_spin_lock(pthread_spinlock_t *lock)
 {
 	if (!lock)
 		return EINVAL;
@@ -46,7 +50,8 @@ int pthread_spin_lock(pthread_spinlock_t *lock)
 	return 0;
 }
 
-int pthread_spin_trylock(pthread_spinlock_t *lock)
+int
+pthread_spin_trylock(pthread_spinlock_t *lock)
 {
 	if (!lock)
 		return EINVAL;
@@ -56,7 +61,8 @@ int pthread_spin_trylock(pthread_spinlock_t *lock)
 	return 0;
 }
 
-int pthread_spin_unlock(pthread_spinlock_t *lock)
+int
+pthread_spin_unlock(pthread_spinlock_t *lock)
 {
 	if (!lock)
 		return EINVAL;

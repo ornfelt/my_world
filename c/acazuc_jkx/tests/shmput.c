@@ -11,80 +11,125 @@
 #include <errno.h>
 #include <stdio.h>
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
+	XSetWindowAttributes swa;
+	XShmSegmentInfo shminfo;
+	XVisualInfo vi;
+	XGCValues gc_values;
+	Display *display;
+	XImage *image;
+	Pixmap pixmap;
+	Window window;
+	Window root;
+	Bool xshm_pixmaps;
+	GC gc;
+	int xshm_major_opcode;
+	int xshm_first_event;
+	int xshm_first_error;
+	int xshm_major;
+	int xshm_minor;
+	int screen;
+
 	(void)argc;
-	Display *display = XOpenDisplay(NULL);
+	display = XOpenDisplay(NULL);
 	if (!display)
 	{
 		fprintf(stderr, "%s: failed to open display\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	int xshm_major_opcode;
-	int xshm_first_event;
-	int xshm_first_error;
-	if (!XQueryExtension(display, "MIT-SHM", &xshm_major_opcode,
-	                     &xshm_first_event, &xshm_first_error))
+	if (!XQueryExtension(display,
+	                     "MIT-SHM",
+	                     &xshm_major_opcode,
+	                     &xshm_first_event,
+	                     &xshm_first_error))
 	{
 		fprintf(stderr, "%s: no xshm\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	int xshm_major;
-	int xshm_minor;
-	Bool xshm_pixmaps;
 	if (!XShmQueryVersion(display, &xshm_major, &xshm_minor, &xshm_pixmaps))
 	{
 		fprintf(stderr, "%s: failed to get xshm version\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	printf("major opcode: %d, first event: %d, first error: %d, "
-	       "major version: %d, minor_version: %d, shared pixmaps: %d\n",
-	       xshm_major_opcode, xshm_first_event, xshm_first_error, xshm_major,
-	       xshm_minor, xshm_pixmaps);
-	Window root = XRootWindow(display, 0);
-	int screen = DefaultScreen(display);
-	XVisualInfo vi;
+	printf("major opcode: %d, "
+	       "first event: %d, "
+	       "first error: %d, "
+	       "major version: %d, "
+	       "minor_version: %d, "
+	       "shared pixmaps: %d\n",
+	       xshm_major_opcode,
+	       xshm_first_event,
+	       xshm_first_error,
+	       xshm_major,
+	       xshm_minor,
+	       xshm_pixmaps);
+	root = XRootWindow(display, 0);
+	screen = DefaultScreen(display);
 	if (!XMatchVisualInfo(display, screen, 24, TrueColor, &vi))
 	{
 		fprintf(stderr, "%s: failed to get vi\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	XSetWindowAttributes swa;
 	swa.event_mask = ExposureMask;
-	Window window = XCreateWindow(display, root, 0, 0, 640, 480, 0, vi.depth,
-	                              InputOutput, vi.visual, CWEventMask, &swa);
+	window = XCreateWindow(display,
+	                       root,
+	                       0,
+	                       0,
+	                       640,
+	                       480,
+	                       0,
+	                       vi.depth,
+	                       InputOutput,
+	                       vi.visual,
+	                       CWEventMask,
+	                       &swa);
 	if (!window)
 	{
 		fprintf(stderr, "%s: failed to create window\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	XChangeProperty(display, window, XA_WM_NAME, XA_STRING, 8,
-	                PropModeReplace, (uint8_t*)"shmput", 6);
-	Pixmap pixmap = XCreatePixmap(display, window, 640, 480, 24);
+	XChangeProperty(display,
+	                window,
+	                XA_WM_NAME,
+	                XA_STRING,
+	                8,
+	                PropModeReplace,
+	                (uint8_t*)"shmput",
+	                6);
+	pixmap = XCreatePixmap(display, window, 640, 480, 24);
 	if (!pixmap)
 	{
 		fprintf(stderr, "%s: failed to create pixmap\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	XGCValues gc_values;
 	gc_values.foreground = 0xFFFFFFFF;
 	gc_values.graphics_exposures = 0;
-	GC gc = XCreateGC(display, window, GCForeground | GCGraphicsExposures,
-	                  &gc_values);
+	gc = XCreateGC(display,
+	               window,
+	               GCForeground | GCGraphicsExposures,
+	               &gc_values);
 	if (!gc)
 	{
 		fprintf(stderr, "%s: failed to create GC\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	XShmSegmentInfo shminfo;
-	XImage *image = XShmCreateImage(display, vi.visual, 24, ZPixmap, NULL,
-	                                &shminfo, 128, 128);
+	image = XShmCreateImage(display,
+	                        vi.visual,
+	                        24,
+	                        ZPixmap,
+	                        NULL,
+	                        &shminfo,
+	                        128,
+	                        128);
 	if (!image)
 	{
 		fprintf(stderr, "%s: failed to create image\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	shminfo.shmid = shmget(IPC_PRIVATE, image->bytes_per_line * image->height,
+	shminfo.shmid = shmget(IPC_PRIVATE,
+	                       image->bytes_per_line * image->height,
 	                       IPC_CREAT | 0777);
 	if (shminfo.shmid == -1)
 	{
@@ -122,6 +167,7 @@ int main(int argc, char **argv)
 	while (1)
 	{
 		XEvent event;
+
 		if (XNextEvent(display, &event))
 			continue;
 		if (event.type == Expose)

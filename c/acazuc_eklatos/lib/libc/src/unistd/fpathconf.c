@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <errno.h>
 
-long fpathconf(int fd, int name)
+long
+fpathconf(int fd, int name)
 {
 	(void)fd;
 	/* XXX use fd */

@@ -3,7 +3,8 @@
 
 #include <unistd.h>
 
-pid_t fork(void)
+pid_t
+fork(void)
 {
 	/* XXX there is multithread stuff to be done here
 	 * linker thread blocks must be cleanup up

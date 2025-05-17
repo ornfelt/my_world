@@ -33,6 +33,9 @@ constant 1 model_block
 	mat4 v
 	mat4 mv
 	mat4 mvp
+	mat4 shadow_v
+	mat4 shadow_mv
+	mat4 shadow_mvp
 	ivec4 lights_count
 	light lights[4]
 	mat4 bone_mats[256]
@@ -45,6 +48,7 @@ constant 2 scene_block
 	vec4 diffuse_color
 	vec4 ambient_color
 	vec2 fog_range
+	int shadow
 }
 
 sampler 0 2d tex1

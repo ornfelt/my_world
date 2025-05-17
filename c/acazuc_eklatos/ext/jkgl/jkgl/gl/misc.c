@@ -3,172 +3,122 @@
 #include <stdlib.h>
 #include <assert.h>
 
-void glLineWidth(GLfloat width)
+void
+glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 {
-	if (width <= 0)
-	{
-		g_ctx->errno = GL_INVALID_VALUE;
-		return;
-	}
-	g_ctx->line_width = width;
-}
+	struct gl_ctx *ctx = g_ctx;
 
-void glPointSize(GLfloat size)
-{
-	if (size <= 0)
-	{
-		g_ctx->errno = GL_INVALID_VALUE;
-		return;
-	}
-	g_ctx->point_size = size;
-}
-
-void glColorMask(GLboolean red, GLboolean green, GLboolean blue,
-                 GLboolean alpha)
-{
-	if (g_ctx->color_mask[0] != red)
-	{
-		g_ctx->color_mask[0] = red;
-		g_ctx->dirty |= GL_CTX_DIRTY_COLOR_MASK_R;
-	}
-	if (g_ctx->color_mask[1] != green)
-	{
-		g_ctx->color_mask[1] = green;
-		g_ctx->dirty |= GL_CTX_DIRTY_COLOR_MASK_G;
-	}
-	if (g_ctx->color_mask[2] != blue)
-	{
-		g_ctx->color_mask[2] = blue;
-		g_ctx->dirty |= GL_CTX_DIRTY_COLOR_MASK_B;
-	}
-	if (g_ctx->color_mask[3] != alpha)
-	{
-		g_ctx->color_mask[3] = alpha;
-		g_ctx->dirty |= GL_CTX_DIRTY_COLOR_MASK_A;
-	}
-}
-
-void glViewport(GLsizei width, GLsizei height)
-{
 	if (width < 0 || height < 0)
 	{
-		g_ctx->errno = GL_INVALID_VALUE;
+		GL_SET_ERR(ctx, GL_INVALID_VALUE);
 		return;
 	}
-	if (width == g_ctx->width
-	 && height == g_ctx->height)
-		return;
-	free(g_ctx->color_buffer);
-	free(g_ctx->depth_buffer);
-	free(g_ctx->stencil_buffer);
-	g_ctx->width = width;
-	g_ctx->height = height;
-	if (width == 0 && height == 0)
+	if (ctx->viewport[0] != x)
 	{
-		g_ctx->color_buffer = malloc(1);
-		assert(g_ctx->color_buffer);
-		g_ctx->depth_buffer = malloc(1);
-		assert(g_ctx->depth_buffer);
-		g_ctx->stencil_buffer = malloc(1);
-		assert(g_ctx->stencil_buffer);
+		ctx->viewport[0] = x;
+		ctx->dirty |= GL_CTX_DIRTY_VIEWPORT;
 	}
-	else
+	if (ctx->viewport[1] != y)
 	{
-		g_ctx->color_buffer = malloc(sizeof(*g_ctx->color_buffer) * g_ctx->height * g_ctx->width * 4);
-		assert(g_ctx->color_buffer);
-		g_ctx->depth_buffer = malloc(sizeof(*g_ctx->depth_buffer) * g_ctx->height * g_ctx->width);
-		assert(g_ctx->depth_buffer);
-		g_ctx->stencil_buffer = malloc(sizeof(*g_ctx->stencil_buffer) * g_ctx->height * g_ctx->width);
-		assert(g_ctx->stencil_buffer);
+		ctx->viewport[1] = y;
+		ctx->dirty |= GL_CTX_DIRTY_VIEWPORT;
+	}
+	if (ctx->viewport[2] != width)
+	{
+		ctx->viewport[2] = width;
+		ctx->dirty |= GL_CTX_DIRTY_VIEWPORT;
+	}
+	if (ctx->viewport[3] != height)
+	{
+		ctx->viewport[3] = height;
+		ctx->dirty |= GL_CTX_DIRTY_VIEWPORT;
 	}
 }
 
-GLsizei glSizeof(GLenum type)
+void
+glShadeModel(GLenum mode)
 {
-	switch (type)
-	{
-		case GL_BYTE:
-			return sizeof(GLbyte);
-		case GL_UNSIGNED_BYTE:
-			return sizeof(GLubyte);
-		case GL_SHORT:
-			return sizeof(GLshort);
-		case GL_UNSIGNED_SHORT:
-			return sizeof(GLushort);
-		case GL_INT:
-			return sizeof(GLint);
-		case GL_UNSIGNED_INT:
-			return sizeof(GLuint);
-		case GL_FLOAT:
-			return sizeof(GLfloat);
-		case GL_DOUBLE:
-			return sizeof(GLdouble);
-		default:
-			return 0;
-	}
-}
+	struct gl_ctx *ctx = g_ctx;
 
-void glShadeModel(GLenum mode)
-{
 	switch (mode)
 	{
 		case GL_SMOOTH:
 		case GL_FLAT:
-			g_ctx->shade_model = mode;
+			ctx->fixed.shade_model = mode;
 			break;
 		default:
-			g_ctx->errno = GL_INVALID_VALUE;
+			GL_SET_ERR(ctx, GL_INVALID_VALUE);
 			return;
 	}
 }
 
-GLenum glGetError(void)
+GLenum
+glGetError(void)
 {
+	struct gl_ctx *ctx = g_ctx;
 	GLenum error;
 
-	error = g_ctx->errno;
-	g_ctx->errno = GL_NO_ERROR;
+	error = ctx->err;
+	GL_SET_ERR(ctx, GL_NO_ERROR);
 	return error;
 }
 
-void glFrontFace(GLenum mode)
+void
+glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
 {
-	switch (mode)
-	{
-		case GL_CW:
-		case GL_CCW:
-			g_ctx->front_face = mode;
-			break;
-		default:
-			g_ctx->errno = GL_INVALID_VALUE;
-			return;
-	}
-}
+	struct gl_ctx *ctx = g_ctx;
 
-void glCullFace(GLenum mode)
-{
-	switch (mode)
-	{
-		case GL_FRONT:
-		case GL_BACK:
-		case GL_FRONT_AND_BACK:
-			g_ctx->cull_face = mode;
-			break;
-		default:
-			g_ctx->errno = GL_INVALID_VALUE;
-			return;
-	}
-}
-
-void glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
-{
 	if (width < 0 || height < 0)
 	{
-		g_ctx->errno = GL_INVALID_VALUE;
+		GL_SET_ERR(ctx, GL_INVALID_VALUE);
 		return;
 	}
-	g_ctx->scissor_x = x;
-	g_ctx->scissor_y = y;
-	g_ctx->scissor_width = width;
-	g_ctx->scissor_height = height;
+	if (ctx->scissor[0] != x)
+	{
+		ctx->scissor[0] = x;
+		ctx->dirty |= GL_CTX_DIRTY_SCISSOR;
+	}
+	if (ctx->scissor[1] != y)
+	{
+		ctx->scissor[1] = y;
+		ctx->dirty |= GL_CTX_DIRTY_SCISSOR;
+	}
+	if (ctx->scissor[2] != width)
+	{
+		ctx->scissor[2] = width;
+		ctx->dirty |= GL_CTX_DIRTY_SCISSOR;
+	}
+	if (ctx->scissor[3] != height)
+	{
+		ctx->scissor[3] = height;
+		ctx->dirty |= GL_CTX_DIRTY_SCISSOR;
+	}
+}
+
+static void
+flush(struct gl_ctx *ctx)
+{
+	int ret;
+
+	ret = ctx->jkg_op->flush(ctx->jkg_ctx);
+	if (ret)
+	{
+		GL_SET_ERR(ctx, get_jkg_error(ret));
+		return;
+	}
+}
+
+void
+glFlush(void)
+{
+	flush(g_ctx);
+}
+
+void
+glFinish(void)
+{
+	struct gl_ctx *ctx = g_ctx;
+
+	flush(ctx);
+	update_default_fbo(ctx);
 }

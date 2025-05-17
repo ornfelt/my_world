@@ -5,8 +5,12 @@
 #include <unistd.h>
 #include <errno.h>
 
-int system(const char *command)
+int
+system(const char *command)
 {
+	int ret;
+	pid_t pid;
+
 	if (!command)
 		return 1;
 	sighandler_t intret = signal(SIGINT, SIG_IGN);
@@ -18,7 +22,7 @@ int system(const char *command)
 		signal(SIGINT, intret);
 		return -1;
 	}
-	int pid = vfork();
+	pid = vfork();
 	if (pid == -1)
 	{
 		signal(SIGINT, intret);
@@ -37,10 +41,10 @@ int system(const char *command)
 		execv("/bin/sh", argv);
 		exit(EXIT_FAILURE);
 	}
-	int ret;
 	while (1)
 	{
 		int wstatus;
+
 		ret = waitpid(pid, &wstatus, 0);
 		if (ret != -1)
 		{

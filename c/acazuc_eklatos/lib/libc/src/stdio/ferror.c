@@ -2,10 +2,13 @@
 
 #include <stdio.h>
 
-int ferror(FILE *fp)
+int
+ferror(FILE *fp)
 {
+	int ret;
+
 	flockfile(fp);
-	int ret = fp->err;
+	ret = fp->err;
 	funlockfile(fp);
 	return ret;
 }

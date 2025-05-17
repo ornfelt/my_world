@@ -1,6 +1,7 @@
 #include <wchar.h>
 
-uintmax_t wcstoumax(const wchar_t *nptr, wchar_t **endptr, int base)
+uintmax_t
+wcstoumax(const wchar_t *nptr, wchar_t **endptr, int base)
 {
 #if __SIZE_WIDTH__ == 32
 	return wcstoull(nptr, endptr, base);

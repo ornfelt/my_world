@@ -1,7 +1,8 @@
 #include <wctype.h>
 #include <wchar.h>
 
-int wcscasecmp(const wchar_t *s1, const wchar_t *s2)
+int
+wcscasecmp(const wchar_t *s1, const wchar_t *s2)
 {
 	size_t i = 0;
 	while (s1[i] && s2[i])

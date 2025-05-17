@@ -1,6 +1,7 @@
 #include <wchar.h>
 
-size_t mbsnrtowcs(wchar_t *d, const char **s, size_t n, size_t len, mbstate_t *ps)
+size_t
+mbsnrtowcs(wchar_t *d, const char **s, size_t n, size_t len, mbstate_t *ps)
 {
 	size_t sum = 0;
 	while (**s)

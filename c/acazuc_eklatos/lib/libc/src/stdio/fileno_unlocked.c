@@ -3,7 +3,8 @@
 #include <stdio.h>
 #include <errno.h>
 
-int fileno_unlocked(FILE *fp)
+int
+fileno_unlocked(FILE *fp)
 {
 	if (!fp)
 	{

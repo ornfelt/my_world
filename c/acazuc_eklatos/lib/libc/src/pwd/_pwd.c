@@ -10,8 +10,11 @@ struct passwd pwd_ent;
 char pwd_buf[1024];
 FILE *pwent_fp;
 
-int parse_pwline(struct passwd *passwd, char *buf, size_t buflen,
-                 const char *line)
+int
+parse_pwline(struct passwd *passwd,
+             char *buf,
+             size_t buflen,
+             const char *line)
 {
 	const char *name = line;
 	const char *pass = strchr(line, ':');
@@ -98,34 +101,36 @@ int parse_pwline(struct passwd *passwd, char *buf, size_t buflen,
 	return 0;
 }
 
-int search_pwnam(struct passwd *pwd, char *buf, size_t buflen,
-                 struct passwd **result,
-                 int (*cmp_fn)(struct passwd *pwd, const void *ptr),
-                 const void *cmp_ptr)
+int
+search_pwnam(struct passwd *pwd,
+             char *buf,
+             size_t buflen,
+             struct passwd **result,
+             int (*cmp_fn)(struct passwd *pwd, const void *ptr),
+             const void *cmp_ptr)
 {
-	FILE *fp = fopen("/etc/passwd", "rb");
+	FILE *fp;
+	char *line = NULL;
+	size_t line_size = 0;
+	ssize_t ret;
+
+	fp = fopen("/etc/passwd", "rb");
 	if (!fp)
 	{
 		*result = NULL;
 		return errno;
 	}
-	char *line = NULL;
-	size_t line_size = 0;
-	int ret;
 	while (1)
 	{
-		ssize_t res = getline(&line, &line_size, fp);
-		if (res == -1)
+		ret = getline(&line, &line_size, fp);
+		if (ret == -1)
 		{
 			ret = ENOENT;
 			goto err;
 		}
-		res = parse_pwline(pwd, buf, buflen, line);
-		if (res)
-		{
-			ret = res;
+		ret = parse_pwline(pwd, buf, buflen, line);
+		if (ret)
 			goto err;
-		}
 		if (!cmp_fn(pwd, cmp_ptr))
 		{
 			free(line);

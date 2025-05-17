@@ -11,12 +11,15 @@ struct env
 	const char *progname;
 };
 
-static int more_fp(struct env *env, FILE *fp)
+static int
+more_fp(struct env *env, FILE *fp)
 {
 	int ret = 1;
 	size_t line_len = 0;
 	char *line = NULL;
-	Keymap keymap = rl_make_bare_keymap();
+	Keymap keymap;
+
+	keymap = rl_make_bare_keymap();
 	if (!keymap)
 	{
 		fprintf(stderr, "%s: keymap allocation failed\n",
@@ -28,7 +31,10 @@ static int more_fp(struct env *env, FILE *fp)
 	rl_tty_set_echoing(0);
 	while (1)
 	{
-		char *rl = readline("");
+		ssize_t rd;
+		char *rl;
+
+		rl = readline("");
 		if (!rl)
 		{
 			fprintf(stderr, "%s: input read failed\n",
@@ -36,7 +42,7 @@ static int more_fp(struct env *env, FILE *fp)
 			goto end;
 		}
 		free(rl);
-		ssize_t rd = getline(&line, &line_len, fp);
+		rd = getline(&line, &line_len, fp);
 		if (!rd || feof(fp))
 			break;
 		if (rd < 0)
@@ -55,27 +61,35 @@ end:
 	return ret;
 }
 
-static int more_file(struct env *env, const char *file)
+static int
+more_file(struct env *env, const char *file)
 {
-	FILE *fp = fopen(file, "rb");
+	FILE *fp;
+	int ret;
+
+	fp = fopen(file, "rb");
 	if (!fp)
 	{
-		fprintf(stderr, "%s: open: %s\n", env->progname,
+		fprintf(stderr, "%s: open(%s): %s\n",
+		        env->progname,
+		        file,
 		        strerror(errno));
 		return 1;
 	}
-	int ret = more_fp(env, fp);
+	ret = more_fp(env, fp);
 	fclose(fp);
 	return ret;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-h] [file]\n", progname);
 	printf("-h: display this help\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

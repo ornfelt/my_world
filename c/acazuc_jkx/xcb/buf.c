@@ -6,7 +6,8 @@
 #include <string.h>
 #include <errno.h>
 
-void buf_init(struct buf *buf)
+void
+buf_init(struct buf *buf)
 {
 	buf->data = NULL;
 	buf->capacity = 0;
@@ -14,43 +15,56 @@ void buf_init(struct buf *buf)
 	buf->pos = 0;
 }
 
-void buf_destroy(struct buf *buf)
+void
+buf_destroy(struct buf *buf)
 {
 	free(buf->data);
 }
 
-void *buf_grow(struct buf *buf, size_t size)
+void *
+buf_grow(struct buf *buf, size_t size)
 {
+	void *ptr;
+
 	if (!buf_reserve(buf, buf->size + size))
 		return NULL;
-	void *ptr = &buf->data[buf->size];
+	ptr = &buf->data[buf->size];
 	buf->size += size;
 	return ptr;
 }
 
-int buf_reserve(struct buf *buf, size_t size)
+int
+buf_reserve(struct buf *buf, size_t size)
 {
+	uint8_t *data;
+
 	if (size <= buf->capacity)
 		return 1;
-	uint8_t *d = realloc(buf->data, size);
-	if (!d)
+	data = realloc(buf->data, size);
+	if (!data)
 		return 0;
-	buf->data = d;
+	buf->data = data;
 	buf->capacity = size;
 	return 1;
 }
 
-int buf_send(struct buf *buf, int fd)
+int
+buf_send(struct buf *buf, int fd)
 {
+	int ret;
+
 	if (buf->pos >= buf->size)
 		return 0;
-again:;
-	int ret = send(fd, &buf->data[buf->pos], buf->size - buf->pos, 0);
-	if (ret < 0)
+	while (1)
 	{
-		if (ret == EINTR)
-			goto again;
-		return ret;
+		ret = send(fd, &buf->data[buf->pos], buf->size - buf->pos, 0);
+		if (ret < 0)
+		{
+			if (ret == EINTR)
+				continue;
+			return ret;
+		}
+		break;
 	}
 	buf->pos += ret;
 	if (buf->pos == buf->size)
@@ -61,27 +75,34 @@ again:;
 	return ret;
 }
 
-int buf_recv(struct buf *buf, int fd)
+int
+buf_recv(struct buf *buf, int fd)
 {
+	int ret;
+
 	buf_rrst(buf);
 	if (buf->size >= buf->capacity)
 	{
 		errno = EAGAIN;
 		return -1;
 	}
-again:;
-	int ret = recv(fd, &buf->data[buf->size], buf->capacity - buf->size, 0);
-	if (ret <= 0)
+	while (1)
 	{
-		if (ret == EINTR)
-			goto again;
-		return ret;
+		ret = recv(fd, &buf->data[buf->size], buf->capacity - buf->size, 0);
+		if (ret <= 0)
+		{
+			if (ret == EINTR)
+				continue;
+			return ret;
+		}
+		break;
 	}
 	buf->size += ret;
 	return ret;
 }
 
-int buf_write(struct buf *buf, const void *data, size_t size)
+int
+buf_write(struct buf *buf, const void *data, size_t size)
 {
 	if (!buf_reserve(buf, buf->size + size))
 		return 0;
@@ -93,23 +114,27 @@ int buf_write(struct buf *buf, const void *data, size_t size)
 	return 1;
 }
 
-int buf_wpad(struct buf *buf)
+int
+buf_wpad(struct buf *buf)
 {
 	static const char z[4] = {0};
 	size_t m = buf->size % 4;
+
 	if (!m)
 		return 1;
 	return buf_write(buf, z, 4 - m);
 }
 
-void buf_rrst(struct buf *buf)
+void
+buf_rrst(struct buf *buf)
 {
 	memmove(buf->data, &buf->data[buf->pos], buf->size - buf->pos);
 	buf->size -= buf->pos;
 	buf->pos = 0;
 }
 
-int buf_read(struct buf *buf, void *data, size_t size)
+int
+buf_read(struct buf *buf, void *data, size_t size)
 {
 	if (buf->pos + size > buf->size)
 		return 0;
@@ -119,9 +144,11 @@ int buf_read(struct buf *buf, void *data, size_t size)
 	return 1;
 }
 
-const char *buf_rstr(struct buf *buf)
+const char *
+buf_rstr(struct buf *buf)
 {
 	const char *base = (const char*)buf->data;
+
 	while (buf->pos < buf->size)
 	{
 		buf->pos++;

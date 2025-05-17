@@ -14,6 +14,7 @@
 #include "gx/wdl.h"
 #include "gx/blp.h"
 #include "gx/m2.h"
+#include "gx/gx.h"
 
 #include "obj/player.h"
 
@@ -21,7 +22,6 @@
 #include "map/map.h"
 
 #include "performance.h"
-#include "graphics.h"
 #include "shaders.h"
 #include "camera.h"
 #include "memory.h"
@@ -55,59 +55,7 @@ struct map *map_new(void)
 	map->id = -1;
 	map->fog_divisor = 1300;
 	map->minimap.texture = GFX_TEXTURE_INIT();
-	map->water_texture = GFX_TEXTURE_INIT();
 	pthread_mutex_init(&map->minimap.mutex, NULL);
-	simplex_noise_init(&map->water_noise, 1, 1, rand());
-	for (uint32_t i = 0; i < sizeof(map->lavag_textures) / sizeof(*map->lavag_textures); ++i)
-	{
-		char filename[256];
-		snprintf(filename, sizeof(filename), "XTEXTURES\\LAVAGREEN\\LAVAGREEN.%u.BLP", i + 1);
-		if (cache_ref_blp(g_wow->cache, filename, &map->lavag_textures[i]))
-			gx_blp_ask_load(map->lavag_textures[i]);
-		else
-			LOG_ERROR("failed to ref %s", filename);
-	}
-	for (uint32_t i = 0; i < sizeof(map->river_textures) / sizeof(*map->river_textures); ++i)
-	{
-		char filename[256];
-		snprintf(filename, sizeof(filename), "XTEXTURES\\RIVER\\LAKE_A.%u.BLP", i + 1);
-		if (cache_ref_blp(g_wow->cache, filename, &map->river_textures[i]))
-			gx_blp_ask_load(map->river_textures[i]);
-		else
-			LOG_ERROR("failed to ref %s", filename);
-	}
-	for (uint32_t i = 0; i < sizeof(map->ocean_textures) / sizeof(*map->ocean_textures); ++i)
-	{
-		char filename[256];
-		snprintf(filename, sizeof(filename), "XTEXTURES\\OCEAN\\OCEAN_H.%u.blp", i + 1);
-		if (cache_ref_blp(g_wow->cache, filename, &map->ocean_textures[i]))
-			gx_blp_ask_load(map->ocean_textures[i]);
-		else
-			LOG_ERROR("failed to ref %s", filename);
-	}
-	for (uint32_t i = 0; i < sizeof(map->magma_textures) / sizeof(*map->magma_textures); ++i)
-	{
-		char filename[256];
-		snprintf(filename, sizeof(filename), "XTEXTURES\\LAVA\\LAVA.%u.BLP", i + 1);
-		if (cache_ref_blp(g_wow->cache, filename, &map->magma_textures[i]))
-			gx_blp_ask_load(map->magma_textures[i]);
-		else
-			LOG_ERROR("failed to ref %s", filename);
-	}
-	for (uint32_t i = 0; i < sizeof(map->slime_textures) / sizeof(*map->slime_textures); ++i)
-	{
-		char filename[256];
-		snprintf(filename, sizeof(filename), "XTEXTURES\\SLIME\\SLIME.%u.BLP", i + 1);
-		if (cache_ref_blp(g_wow->cache, filename, &map->slime_textures[i]))
-			gx_blp_ask_load(map->slime_textures[i]);
-		else
-			LOG_ERROR("failed to ref %s", filename);
-	}
-	map->particles_indices_buffer = GFX_BUFFER_INIT();
-	map->mcnk_vertexes_buffer = GFX_BUFFER_INIT();
-	map->aabb_vertexes_buffer = GFX_BUFFER_INIT();
-	map->mcnk_indices_buffer = GFX_BUFFER_INIT();
-	map->aabb_indices_buffer = GFX_BUFFER_INIT();
 	return map;
 }
 
@@ -117,21 +65,6 @@ void map_delete(struct map *map)
 		return;
 	for (uint32_t i = 0; i < map->tiles_nb; ++i)
 		map_tile_free(map->tile_array[map->tiles[i]]);
-	gfx_delete_buffer(g_wow->device, &map->particles_indices_buffer);
-	gfx_delete_buffer(g_wow->device, &map->mcnk_vertexes_buffer);
-	gfx_delete_buffer(g_wow->device, &map->aabb_vertexes_buffer);
-	gfx_delete_buffer(g_wow->device, &map->mcnk_indices_buffer);
-	gfx_delete_buffer(g_wow->device, &map->aabb_indices_buffer);
-	for (uint32_t i = 0; i < sizeof(map->lavag_textures) / sizeof(*map->lavag_textures); ++i)
-		gx_blp_free(map->lavag_textures[i]);
-	for (uint32_t i = 0; i < sizeof(map->ocean_textures) / sizeof(*map->ocean_textures); ++i)
-		gx_blp_free(map->ocean_textures[i]);
-	for (uint32_t i = 0; i < sizeof(map->river_textures) / sizeof(*map->river_textures); ++i)
-		gx_blp_free(map->river_textures[i]);
-	for (uint32_t i = 0; i < sizeof(map->magma_textures) / sizeof(*map->magma_textures); ++i)
-		gx_blp_free(map->magma_textures[i]);
-	for (uint32_t i = 0; i < sizeof(map->slime_textures) / sizeof(*map->slime_textures); ++i)
-		gx_blp_free(map->slime_textures[i]);
 	gx_wmo_instance_free(map->wmo);
 	mem_free(MEM_MAP, map->name);
 	gx_skybox_delete(map->gx_skybox);
@@ -334,244 +267,6 @@ static bool create_wdl(struct map *map)
 	return true;
 }
 
-/*
-LOD 1: 256
-
- 1    2    3    4    5    6    7    8    9
-   10   11   12   13   14   15   16   17
- 18   19   20   21   22   23   24   25   26
-   27   28   29   30   31   32   33   34
- 35   36   37   38   39   40   41   42   43
-   44   45   46   47   48   49   50   51
- 52   53   54   55   56   57   58   59   60
-   61   62   63   64   65   66   67   68
- 69   70   71   72   73   74   75   76   77
-   78   79   80   81   82   83   84   85
- 86   87   88   89   90   91   92   93   94
-   95   96   97   98  99  100  101  102
-103  104  105  106  107  108  109  110  111
-  112  113  114  115  116  117  118  119
-120  121  122  123  124  125  126  127  128
-  129  130  131  132  133  134  135  136
-137  138  139  140  141  142  143  144  145
- */
-
-/* 
-LOD 2: 128
-
- 1    2    3    4    5    6    7    8    9
-
- 18   19   20   21   22   23   24   25   26
-
- 35   36   37   38   39   40   41   42   43
-
- 52   53   54   55   56   57   58   59   60
-
- 69   70   71   72   73   74   75   76   77
-
- 86   87   88   89   90   91   92   93   94
-
-103  104  105  106  107  108  109  110  111
-
-120  121  122  123  124  125  126  127  128
-
-137  138  139  140  141  142  143  144  145
- */
-
-/*
-LOD 3: 48
-
- 1    2    3    4    5    6    7    8    9
-
- 18                                      26
-
- 35        37        39        41        43
-
- 52                                      60
-
- 69        71        73        75        77
-
- 86                                      94
-
-103       105       107       109       111
-
-120                                     128
-
-137  138  139  140  141  142  143  144  145*/
-
-/* Possible lod opti: if no holes, place sync points only near other chunks */
-/* One more lod if no holes ? */
-static bool init_mcnk_buffers(struct map *map)
-{
-	bool ret = false;
-	uint16_t *indices = NULL;
-	uint32_t points_nb = (16 * 16 * (9 * 9 + 8 * 8));
-	struct
-	{
-		struct vec2f xz;
-		struct vec2f uv;
-	} *vertexes = NULL;
-	uint32_t indices_pos = 0;
-	indices = mem_malloc(MEM_GX, sizeof(*indices) * (16 * 16 * ((8 * 8 * 4 * 3) + (8 * 8 * 2 * 3) + (48 * 3))));
-	if (!indices)
-		goto err;
-	vertexes = mem_malloc(MEM_GX, sizeof(*vertexes) * points_nb);
-	if (!vertexes)
-		goto err;
-	for (size_t cz = 0; cz < 16; ++cz)
-	{
-		for (size_t cx = 0; cx < 16; ++cx)
-		{
-			size_t base = (cz * 16 + cx) * (9 * 9 + 8 * 8);
-			for (size_t i = 0; i < 9 * 9 + 8 * 8; ++i)
-			{
-				size_t y2 = i % 17;
-				float z = i / 17 * 2;
-				float x;
-				if (y2 < 9)
-				{
-					x = y2 * 2;
-				}
-				else
-				{
-					z++;
-					x = (y2 - 9) * 2 + 1;
-				}
-				vertexes[base + i].xz = (struct vec2f){(-1 - (ssize_t)cz + (16 - z) / 16.f) * CHUNK_WIDTH, ((1 + cx - (16 - x) / 16.f) * CHUNK_WIDTH)};
-				vertexes[base + i].uv = (struct vec2f){x / 16.f, z / 16.f};
-			}
-			for (size_t z = 0; z < 8; ++z)
-			{
-				for (size_t x = 0; x < 8; ++x)
-				{
-					uint16_t idx = base + 9 + z * 17 + x;
-					uint16_t p1 = idx - 9;
-					uint16_t p2 = idx - 8;
-					uint16_t p3 = idx + 9;
-					uint16_t p4 = idx + 8;
-					indices[indices_pos++] = p2;
-					indices[indices_pos++] = p1;
-					indices[indices_pos++] = idx;
-					indices[indices_pos++] = p3;
-					indices[indices_pos++] = p2;
-					indices[indices_pos++] = idx;
-					indices[indices_pos++] = p4;
-					indices[indices_pos++] = p3;
-					indices[indices_pos++] = idx;
-					indices[indices_pos++] = p1;
-					indices[indices_pos++] = p4;
-					indices[indices_pos++] = idx;
-				}
-			}
-			for (size_t z = 0; z < 8; ++z)
-			{
-				for (size_t x = 0; x < 8; ++x)
-				{
-					uint16_t idx = base + 9 + z * 17 + x;
-					uint16_t p1 = idx - 9;
-					uint16_t p2 = idx - 8;
-					uint16_t p3 = idx + 9;
-					uint16_t p4 = idx + 8;
-					indices[indices_pos++] = p2;
-					indices[indices_pos++] = p1;
-					indices[indices_pos++] = p3;
-					indices[indices_pos++] = p3;
-					indices[indices_pos++] = p1;
-					indices[indices_pos++] = p4;
-				}
-			}
-			static const uint16_t points[144] =
-			{
-				1  , 0  , 17 , 36 , 17 , 34 , 36 , 2  , 1  , 36 , 1  , 17,
-				36 , 3  , 2  , 38 , 4  , 3  , 38 , 3  , 36,
-				38 , 5  , 4  , 40 , 6  , 5  , 40 , 5  , 38,
-				25 , 8  , 7  , 40 , 42 , 25 , 40 , 7  , 6  , 40 , 25 , 7,
-				70 , 51 , 68 , 36 , 34 , 51 , 36 , 51 , 70,
-				36 , 70 , 72 , 72 , 38 , 36 ,
-				40 , 38 , 72 , 72 , 74 , 40 ,
-				40 , 59 , 42 , 74 , 76 , 59 , 74 , 59 , 40,
-				104, 85 , 102, 70 , 68 , 85 , 70 , 85 , 104,
-				104, 106, 72 , 72 , 70 , 104,
-				72 , 106, 108, 108, 74 , 72 ,
-				74 , 93 , 76 , 108, 110, 93 , 108, 93 , 74,
-				119, 136, 137, 104, 102, 119, 104, 137, 138, 104, 119, 137,
-				106, 139, 140, 104, 138, 139, 104, 139, 106,
-				108, 141, 142, 106, 140, 141, 106, 141, 108,
-				143, 144, 127, 108, 142, 143, 108, 127, 110, 108, 143, 127
-			};
-			for (size_t i = 0; i < 144; ++i)
-				indices[indices_pos++] = base + points[i];
-		}
-	}
-	map->mcnk_indices_nb = indices_pos;
-	gfx_delete_buffer(g_wow->device, &map->mcnk_vertexes_buffer);
-	gfx_delete_buffer(g_wow->device, &map->mcnk_indices_buffer);
-	map->mcnk_vertexes_buffer = GFX_BUFFER_INIT();
-	map->mcnk_indices_buffer = GFX_BUFFER_INIT();
-	gfx_create_buffer(g_wow->device, &map->mcnk_vertexes_buffer, GFX_BUFFER_VERTEXES, vertexes, points_nb * sizeof(*vertexes), GFX_BUFFER_IMMUTABLE);
-	gfx_create_buffer(g_wow->device, &map->mcnk_indices_buffer, GFX_BUFFER_INDICES, indices, indices_pos * sizeof(*indices), GFX_BUFFER_IMMUTABLE);
-	ret = true;
-
-err:
-	mem_free(MEM_GX, vertexes);
-	mem_free(MEM_GX, indices);
-	return ret;
-}
-
-static bool init_particles_buffers(struct map *map)
-{
-	uint16_t *indices = mem_malloc(MEM_GX, sizeof(*indices) * MAX_PARTICLES * 6);
-	if (!indices)
-		return false;
-	for (size_t i = 0; i < MAX_PARTICLES; ++i)
-	{
-		uint16_t *tmp = &indices[i * 6];
-		size_t n = i * 4;
-		tmp[0] = n + 0;
-		tmp[1] = n + 1;
-		tmp[2] = n + 2;
-		tmp[3] = n + 0;
-		tmp[4] = n + 2;
-		tmp[5] = n + 3;
-	}
-	gfx_delete_buffer(g_wow->device, &map->particles_indices_buffer);
-	map->particles_indices_buffer = GFX_BUFFER_INIT();
-	gfx_create_buffer(g_wow->device, &map->particles_indices_buffer, GFX_BUFFER_INDICES, indices, 6 * MAX_PARTICLES * sizeof(*indices), GFX_BUFFER_IMMUTABLE);
-	mem_free(MEM_GX, indices);
-	return true;
-}
-
-static bool init_aabb_buffers(struct map *map)
-{
-	static const struct vec3f vertexes[8] =
-	{
-		{0, 0, 0},
-		{1, 0, 0},
-		{0, 1, 0},
-		{1, 1, 0},
-		{0, 0, 1},
-		{1, 0, 1},
-		{0, 1, 1},
-		{1, 1, 1},
-	};
-	static const uint16_t indices[24] =
-	{
-		0, 1, 1, 3,
-		3, 2, 2, 0,
-		0, 4, 1, 5,
-		2, 6, 3, 7,
-		4, 5, 5, 7,
-		7, 6, 6, 4,
-	};
-	gfx_delete_buffer(g_wow->device, &map->aabb_vertexes_buffer);
-	gfx_delete_buffer(g_wow->device, &map->aabb_indices_buffer);
-	map->aabb_vertexes_buffer = GFX_BUFFER_INIT();
-	map->aabb_indices_buffer = GFX_BUFFER_INIT();
-	gfx_create_buffer(g_wow->device, &map->aabb_vertexes_buffer, GFX_BUFFER_VERTEXES, vertexes, sizeof(vertexes), GFX_BUFFER_IMMUTABLE);
-	gfx_create_buffer(g_wow->device, &map->aabb_indices_buffer, GFX_BUFFER_INDICES, indices, sizeof(indices), GFX_BUFFER_IMMUTABLE);
-	return true;
-}
-
 static bool load_wdt(struct map *map, struct wow_wdt_file *file)
 {
 	for (uint32_t i = 0; i < map->tiles_nb; ++i)
@@ -599,18 +294,8 @@ static bool load_wdt(struct map *map, struct wow_wdt_file *file)
 			}
 		}
 	}
-	if (!init_particles_buffers(map))
-	{
-		LOG_ERROR("failed to load particles buffers");
-		return false;
-	}
-	if (!init_aabb_buffers(map))
-	{
-		LOG_ERROR("failed to load aabb buffers");
-		return false;
-	}
 	if (map_flag_get(map, MAP_FLAG_HAS_ADT))
-		return init_mcnk_buffers(map);
+		return true;
 	char filename[512];
 	snprintf(filename, sizeof(filename), "%s", &file->mwmo.data[0]);
 	wow_mpq_normalize_mpq_fn(filename, sizeof(filename));
@@ -933,234 +618,38 @@ bool map_setid(struct map *map, uint32_t id)
 
 static void render_skybox(struct map *map, struct gx_frame *frame)
 {
-	if (!(g_wow->render_opt & RENDER_OPT_SKYBOX))
+	if (!(g_wow->gx->opt & GX_OPT_SKYBOX))
 		return;
-	PERFORMANCE_BEGIN(SKYBOX_RENDER);
-	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->skybox_pipeline_state);
+	gfx_bind_pipeline_state(g_wow->device, &g_wow->gx->skybox_pipeline_state);
 	gx_skybox_render(map->gx_skybox, frame);
-	PERFORMANCE_END(SKYBOX_RENDER);
 }
 
 static void render_wdl(struct map *map, struct gx_frame *frame)
 {
 	if (!map->gx_wdl)
 		return;
-	if (!(g_wow->render_opt & RENDER_OPT_WDL))
+	if (!(g_wow->gx->opt & GX_OPT_WDL))
 		return;
-	PERFORMANCE_BEGIN(WDL_RENDER);
-	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->wdl_pipeline_state);
+	gfx_bind_pipeline_state(g_wow->device, &g_wow->gx->wdl_pipeline_state);
 	gx_wdl_render(map->gx_wdl, frame);
-	PERFORMANCE_END(WDL_RENDER);
-}
-
-static void render_mcnk(struct gx_frame *frame)
-{
-	if (!(g_wow->render_opt & RENDER_OPT_MCNK) || !frame->render_lists.mcnk.entries.size)
-		return;
-	PERFORMANCE_BEGIN(MCNK_RENDER);
-	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->mcnk_pipeline_state);
-	gfx_bind_constant(g_wow->device, 2, &frame->mcnk_uniform_buffer, sizeof(struct shader_mcnk_scene_block), 0);
-	for (uint32_t i = 0; i < frame->render_lists.mcnk.entries.size; ++i)
-		gx_mcnk_render(*JKS_ARRAY_GET(&frame->render_lists.mcnk.entries, i, struct gx_mcnk*), frame);
-	PERFORMANCE_END(MCNK_RENDER);
-}
-
-static void render_wmo(struct gx_frame *frame)
-{
-	if (!(g_wow->render_opt & RENDER_OPT_WMO) || !frame->render_lists.wmo.entries.size)
-		return;
-	PERFORMANCE_BEGIN(WMO_RENDER);
-	gfx_bind_constant(g_wow->device, 2, &frame->wmo_uniform_buffer, sizeof(struct shader_wmo_scene_block), 0);
-	for (size_t i = 0; i < frame->render_lists.wmo.entries.size; ++i)
-		gx_wmo_render(*JKS_ARRAY_GET(&frame->render_lists.wmo.entries, i, struct gx_wmo*), frame);
-	PERFORMANCE_END(WMO_RENDER);
-}
-
-static void render_opaque_m2(struct gx_frame *frame)
-{
-	if (!(g_wow->render_opt & RENDER_OPT_M2) || !frame->render_lists.m2_opaque.entries.size)
-		return;
-	PERFORMANCE_BEGIN(M2_RENDER);
-	frame->m2_lighting_type = GX_M2_LIGHTING_WORLD;
-	gfx_bind_constant(g_wow->device, 2, &frame->m2_world_uniform_buffer, sizeof(struct shader_m2_scene_block), 0);
-	for (size_t i = 0; i < frame->render_lists.m2_opaque.entries.size; ++i)
-		gx_m2_render(*JKS_ARRAY_GET(&frame->render_lists.m2_opaque.entries, i, struct gx_m2*), frame, false);
-	PERFORMANCE_END(M2_RENDER);
-}
-
-static void render_transparent_m2(struct gx_frame *frame)
-{
-	if (!(g_wow->render_opt & RENDER_OPT_M2) || !frame->render_lists.m2_transparent.entries.size)
-		return;
-	PERFORMANCE_BEGIN(M2_RENDER);
-	frame->m2_lighting_type = GX_M2_LIGHTING_WORLD;
-	gfx_bind_constant(g_wow->device, 2, &frame->m2_world_uniform_buffer, sizeof(struct shader_m2_scene_block), 0);
-	for (size_t i = 0; i < frame->render_lists.m2_transparent.entries.size; ++i)
-		gx_m2_instance_render(*JKS_ARRAY_GET(&frame->render_lists.m2_transparent.entries, i, struct gx_m2_instance*), frame, true, &frame->m2_params);
-	PERFORMANCE_END(M2_RENDER);
-}
-
-static void render_ground_m2(struct gx_frame *frame)
-{
-	if (!(g_wow->render_opt & RENDER_OPT_M2) || !frame->render_lists.m2_ground.entries.size)
-		return;
-	PERFORMANCE_BEGIN(M2_RENDER);
-	frame->m2_lighting_type = GX_M2_LIGHTING_WORLD;
-	gfx_bind_constant(g_wow->device, 2, &frame->m2_world_uniform_buffer, sizeof(struct shader_m2_scene_block), 0);
-	for (size_t i = 0; i < frame->render_lists.m2_ground.entries.size; ++i)
-		gx_m2_ground_batch_render(*JKS_ARRAY_GET(&frame->render_lists.m2_ground.entries, i, struct gx_m2_ground_batch*), frame);
-	PERFORMANCE_END(M2_RENDER);
-}
-
-static void render_m2_particles(struct gx_frame *frame)
-{
-	if (!(g_wow->render_opt & RENDER_OPT_M2_PARTICLES) || !frame->render_lists.m2_particles.entries.size)
-		return;
-	PERFORMANCE_BEGIN(M2_PARTICLES_RENDER);
-	gfx_bind_constant(g_wow->device, 2, &frame->particle_uniform_buffer, sizeof(struct shader_particle_scene_block), 0);
-	for (size_t i = 0; i < frame->render_lists.m2_particles.entries.size; ++i)
-		gx_m2_instance_render_particles(*JKS_ARRAY_GET(&frame->render_lists.m2_particles.entries, i, struct gx_m2_instance*), frame, &frame->m2_params);
-	PERFORMANCE_END(M2_PARTICLES_RENDER);
-}
-
-static void render_m2_ribbons(struct gx_frame *frame)
-{
-	if (!(g_wow->render_opt & RENDER_OPT_M2_RIBBONS) || !frame->render_lists.m2_ribbons.entries.size)
-		return;
-	PERFORMANCE_BEGIN(M2_RIBBONS_RENDER);
-	gfx_bind_constant(g_wow->device, 2, &frame->ribbon_uniform_buffer, sizeof(struct shader_ribbon_scene_block), 0);
-	for (size_t i = 0; i < frame->render_lists.m2_ribbons.entries.size; ++i)
-		gx_m2_instance_render_ribbons(*JKS_ARRAY_GET(&frame->render_lists.m2_ribbons.entries, i, struct gx_m2_instance*), frame, &frame->m2_params);
-	PERFORMANCE_END(M2_RIBBONS_RENDER);
-}
-
-static void render_texts(struct gx_frame *frame)
-{
-	if (!frame->render_lists.text.entries.size)
-		return;
-	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->text_pipeline_state);
-	for (size_t i = 0; i < frame->render_lists.text.entries.size; ++i)
-		gx_text_render(*JKS_ARRAY_GET(&frame->render_lists.text.entries, i, struct gx_text*), frame);
 }
 
 #ifdef WITH_DEBUG_RENDERING
-static void render_aabb(struct gx_frame *frame)
-{
-	PERFORMANCE_BEGIN(AABB_RENDER);
-	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->aabb_pipeline_state);
-	for (size_t line_width = 0; line_width < sizeof(frame->render_lists.aabb) / sizeof(*frame->render_lists.aabb); ++line_width)
-		gx_aabb_batch_render(&frame->render_lists.aabb[line_width].batch);
-	PERFORMANCE_END(AABB_RENDER);
-}
-
-static void render_wmo_portals(struct gx_frame *frame)
-{
-	if (!(g_wow->render_opt & RENDER_OPT_WMO_PORTALS) || !frame->render_lists.wmo.entries.size)
-		return;
-	PERFORMANCE_BEGIN(WMO_PORTALS_RENDER);
-	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->wmo_portals_pipeline_state);
-	for (size_t i = 0; i < frame->render_lists.wmo.entries.size; ++i)
-		gx_wmo_render_portals(*JKS_ARRAY_GET(&frame->render_lists.wmo.entries, i, struct gx_wmo*), frame);
-	PERFORMANCE_END(WMO_PORTALS_RENDER);
-}
-
-static void render_wmo_lights(struct gx_frame *frame)
-{
-	if (!(g_wow->render_opt & RENDER_OPT_WMO_LIGHTS) || !frame->render_lists.wmo.entries.size)
-		return;
-	PERFORMANCE_BEGIN(WMO_LIGHTS_RENDER);
-	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->wmo_lights_pipeline_state);
-	for (size_t i = 0; i < frame->render_lists.wmo.entries.size; ++i)
-		gx_wmo_render_lights(*JKS_ARRAY_GET(&frame->render_lists.wmo.entries, i, struct gx_wmo*), frame);
-	PERFORMANCE_END(WMO_LIGHTS_RENDER);
-}
-
-static void render_m2_lights(struct gx_frame *frame)
-{
-	if (!(g_wow->render_opt & RENDER_OPT_M2_LIGHTS) || !frame->render_lists.m2.entries.size)
-		return;
-	PERFORMANCE_BEGIN(M2_LIGHTS_RENDER);
-	gfx_set_point_size(g_wow->device, 5);
-	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->m2_lights_pipeline_state);
-	for (size_t i = 0; i < frame->render_lists.m2.entries.size; ++i)
-		gx_m2_render_lights(*JKS_ARRAY_GET(&frame->render_lists.m2.entries, i, struct gx_m2*), frame);
-	PERFORMANCE_END(M2_LIGHTS_RENDER);
-}
-
-static void render_m2_bones(struct gx_frame *frame)
-{
-	if (!(g_wow->render_opt & RENDER_OPT_M2_BONES) || !frame->render_lists.m2.entries.size)
-		return;
-	PERFORMANCE_BEGIN(M2_BONES_RENDER);
-	gfx_set_line_width(g_wow->device, 1);
-	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->m2_bones_lines_pipeline_state);
-	for (size_t i = 0; i < frame->render_lists.m2.entries.size; ++i)
-		gx_m2_render_bones_lines(*JKS_ARRAY_GET(&frame->render_lists.m2.entries, i, struct gx_m2*), frame);
-	gfx_set_point_size(g_wow->device, 5);
-	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->m2_bones_points_pipeline_state);
-	for (size_t i = 0; i < frame->render_lists.m2.entries.size; ++i)
-		gx_m2_render_bones_points(*JKS_ARRAY_GET(&frame->render_lists.m2.entries, i, struct gx_m2*), frame);
-	PERFORMANCE_END(M2_BONES_RENDER);
-}
-
-static void render_m2_collisions(struct gx_frame *frame)
-{
-	if (!(g_wow->render_opt & RENDER_OPT_M2_COLLISIONS) || !frame->render_lists.m2.entries.size)
-		return;
-	PERFORMANCE_BEGIN(M2_COLLISIONS_RENDER);
-	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->m2_collisions_lines_pipeline_state);
-	for (size_t i = 0; i < frame->render_lists.m2.entries.size; ++i)
-		gx_m2_render_collisions(*JKS_ARRAY_GET(&frame->render_lists.m2.entries, i, struct gx_m2*), frame, false);
-	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->m2_collisions_triangles_pipeline_state);
-	for (size_t i = 0; i < frame->render_lists.m2.entries.size; ++i)
-		gx_m2_render_collisions(*JKS_ARRAY_GET(&frame->render_lists.m2.entries, i, struct gx_m2*), frame, true);
-	PERFORMANCE_END(M2_COLLISIONS_RENDER);
-}
-
-static void render_wmo_collisions(struct gx_frame *frame)
-{
-	if (!(g_wow->render_opt & RENDER_OPT_WMO_COLLISIONS) || !frame->render_lists.wmo.entries.size)
-		return;
-	PERFORMANCE_BEGIN(WMO_COLLISIONS_RENDER);
-	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->wmo_collisions_lines_pipeline_state);
-	for (size_t i = 0; i < frame->render_lists.wmo.entries.size; ++i)
-		gx_wmo_render_collisions(*JKS_ARRAY_GET(&frame->render_lists.wmo.entries, i, struct gx_wmo*), frame, false);
-	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->wmo_collisions_triangles_pipeline_state);
-	for (size_t i = 0; i < frame->render_lists.wmo.entries.size; ++i)
-		gx_wmo_render_collisions(*JKS_ARRAY_GET(&frame->render_lists.wmo.entries, i, struct gx_wmo*), frame, true);
-	PERFORMANCE_END(WMO_COLLISIONS_RENDER);
-}
-
-static void render_collisions(struct gx_frame *frame)
-{
-	if (!(g_wow->render_opt & RENDER_OPT_COLLISIONS))
-		return;
-	PERFORMANCE_BEGIN(COLLISIONS_RENDER);
-	gfx_set_line_width(g_wow->device, 1);
-	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->collisions_lines_pipeline_state);
-	gx_collisions_render(&frame->gx_collisions, frame, false);
-	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->collisions_triangles_pipeline_state);
-	gx_collisions_render(&frame->gx_collisions, frame, true);
-	PERFORMANCE_END(COLLISIONS_RENDER);
-}
-
 static void render_taxi(struct map *map, struct gx_frame *frame)
 {
-	if (!(g_wow->render_opt & RENDER_OPT_TAXI))
+	if (!(g_wow->gx->opt & GX_OPT_TAXI))
 		return;
-	PERFORMANCE_BEGIN(TAXI_RENDER);
-	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->taxi_pipeline_state);
+	gfx_bind_pipeline_state(g_wow->device, &g_wow->gx->taxi_pipeline_state);
 	gx_taxi_render(map->gx_taxi, frame);
-	PERFORMANCE_END(TAXI_RENDER);
 }
 #endif
 
 static void render_wmo_mliq(struct map *map, struct gx_frame *frame)
 {
-	if (!(g_wow->render_opt & RENDER_OPT_WMO_LIQUIDS) || !frame->render_lists.wmo.entries.size)
+	if (!(g_wow->gx->opt & GX_OPT_WMO_LIQUIDS) || !frame->render_lists.wmo.entries.size)
 		return;
 	PERFORMANCE_BEGIN(WMO_LIQUIDS_RENDER);
-	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->wmo_mliq_pipeline_state);
+	gfx_bind_pipeline_state(g_wow->device, &g_wow->gx->wmo_mliq_pipeline_state);
 	gfx_bind_constant(g_wow->device, 2, &frame->mliq_uniform_buffer, sizeof(struct shader_mliq_scene_block), 0);
 	uint8_t idx = (g_wow->frametime / 30000000) % 30;
 	for (size_t type = 0; type < 9; ++type)
@@ -1170,33 +659,33 @@ static void render_wmo_mliq(struct map *map, struct gx_frame *frame)
 		switch (type)
 		{
 			case 0:
-				gx_blp_bind(map->river_textures[idx], 0);
+				gx_blp_bind(g_wow->gx->river_textures[idx], 0);
 				break;
 			case 1:
-				gx_blp_bind(map->ocean_textures[idx], 0);
+				gx_blp_bind(g_wow->gx->ocean_textures[idx], 0);
 				break;
 			case 2:
 				if (map->id == 530)
-					gx_blp_bind(map->lavag_textures[idx], 0);
+					gx_blp_bind(g_wow->gx->lavag_textures[idx], 0);
 				else
-					gx_blp_bind(map->magma_textures[idx], 0);
+					gx_blp_bind(g_wow->gx->magma_textures[idx], 0);
 				break;
 			case 3:
-				gx_blp_bind(map->slime_textures[idx], 0);
+				gx_blp_bind(g_wow->gx->slime_textures[idx], 0);
 				break;
 			case 4:
-				gx_blp_bind(map->river_textures[idx], 0);
+				gx_blp_bind(g_wow->gx->river_textures[idx], 0);
 				break;
 			case 5:
 				continue;
 			case 6:
 				if (map->id == 530)
-					gx_blp_bind(map->lavag_textures[idx], 0);
+					gx_blp_bind(g_wow->gx->lavag_textures[idx], 0);
 				else
-					gx_blp_bind(map->magma_textures[idx], 0);
+					gx_blp_bind(g_wow->gx->magma_textures[idx], 0);
 				break;
 			case 7:
-				gx_blp_bind(map->slime_textures[idx], 0);
+				gx_blp_bind(g_wow->gx->slime_textures[idx], 0);
 				break;
 			case 8:
 				continue;
@@ -1207,88 +696,6 @@ static void render_wmo_mliq(struct map *map, struct gx_frame *frame)
 			gx_wmo_mliq_render(*JKS_ARRAY_GET(&frame->render_lists.wmo_mliq[type].entries, i, struct gx_wmo_mliq*), frame, type);
 	}
 	PERFORMANCE_END(WMO_LIQUIDS_RENDER);
-}
-
-static void render_mclq(struct map *map, struct gx_frame *frame)
-{
-	if (!(g_wow->render_opt & RENDER_OPT_MCLQ))
-		return;
-	PERFORMANCE_BEGIN(MCLQ_RENDER);
-	if (g_wow->render_opt & RENDER_OPT_SSR)
-	{
-		const gfx_texture_t *textures[] =
-		{
-			&g_wow->post_process.dummy1->color_texture,
-			&g_wow->post_process.dummy1->normal_texture,
-			&g_wow->post_process.dummy1->position_texture,
-		};
-		gfx_bind_samplers(g_wow->device, 1, 3, textures);
-	}
-	uint8_t idx = (g_wow->frametime / 30000000) % 30;
-	for (size_t type = 0; type < 4; ++type)
-	{
-		if (!frame->render_lists.mclq[type].entries.size)
-			continue;
-		switch (type)
-		{
-			case 0:
-				if (g_wow->render_opt & RENDER_OPT_DYN_WATER)
-					gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->mclq_water_dyn_pipeline_state);
-				else
-					gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->mclq_water_pipeline_state);
-				gfx_bind_constant(g_wow->device, 2, &frame->river_uniform_buffer, sizeof(struct shader_mclq_water_scene_block), 0);
-				break;
-			case 1:
-				if (g_wow->render_opt & RENDER_OPT_DYN_WATER)
-					gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->mclq_water_dyn_pipeline_state);
-				else
-					gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->mclq_water_pipeline_state);
-				gfx_bind_constant(g_wow->device, 2, &frame->ocean_uniform_buffer, sizeof(struct shader_mclq_water_scene_block), 0);
-				break;
-			case 2:
-			case 3:
-				gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->mclq_magma_pipeline_state);
-				gfx_bind_constant(g_wow->device, 2, &frame->magma_uniform_buffer, sizeof(struct shader_mclq_magma_scene_block), 0);
-				break;
-		}
-		switch (type)
-		{
-			case 0:
-				if (g_wow->render_opt & RENDER_OPT_DYN_WATER)
-				{
-					const gfx_texture_t *ref = &map->water_texture;
-					gfx_bind_samplers(g_wow->device, 0, 1, &ref);
-				}
-				else
-				{
-					gx_blp_bind(map->river_textures[idx], 0);
-				}
-				break;
-			case 1:
-				if (g_wow->render_opt & RENDER_OPT_DYN_WATER)
-				{
-					const gfx_texture_t *ref = &map->water_texture;
-					gfx_bind_samplers(g_wow->device, 0, 1, &ref);
-				}
-				else
-				{
-					gx_blp_bind(map->ocean_textures[idx], 0);
-				}
-				break;
-			case 2:
-				if (map->id == 530)
-					gx_blp_bind(map->lavag_textures[idx], 0);
-				else
-					gx_blp_bind(map->magma_textures[idx], 0);
-				break;
-			case 3:
-				gx_blp_bind(map->slime_textures[idx], 0);
-				break;
-		}
-		for (uint32_t i = 0; i < frame->render_lists.mclq[type].entries.size; ++i)
-			gx_mclq_render(*JKS_ARRAY_GET(&frame->render_lists.mclq[type].entries, i, struct gx_mclq*), frame, type);
-	}
-	PERFORMANCE_END(MCLQ_RENDER);
 }
 
 static void cull_wdl(struct map *map, struct gx_frame *frame)
@@ -1351,100 +758,26 @@ static void update_minimap_texture(struct map *map)
 	pthread_mutex_unlock(&map->minimap.mutex);
 }
 
-#define WATER_WIDTH 512
-
-static float data1[WATER_WIDTH * WATER_WIDTH];
-static float data2[WATER_WIDTH * WATER_WIDTH];
-static bool flip_flop;
-
-static void water_update(void)
+static void
+render_shadow_pass(struct map *map, struct gx_frame *frame)
 {
-	float *src;
-	float *dst;
-	if (flip_flop)
-	{
-		src = data1;
-		dst = data2;
-	}
-	else
-	{
-		src = data2;
-		dst = data1;
-	}
-	flip_flop = !flip_flop;
-	for (size_t y = 0; y < WATER_WIDTH; ++y)
-	{
-		for (size_t x = 0; x < WATER_WIDTH; ++x)
-		{
-			size_t i = y * WATER_WIDTH + x;
-			if (!x || x == WATER_WIDTH - 1 || !y || y == WATER_WIDTH - 1)
-				dst[i] = 0;
-			else
-				dst[i] = ((src[i - 1] + src[i + 1] + src[i - WATER_WIDTH] + src[i + WATER_WIDTH]) / 2 - dst[i]);
-			if (dst[i] < -1)
-				dst[i] = -1;
-			else if (dst[i] > 1)
-				dst[i] = 1;
-			if (fabs(dst[i]) < .2)
-				dst[i] *= .9;
-		}
-	}
+	float shadow_width = 4000;
+	render_target_resize(g_wow->post_process.shadow, shadow_width, shadow_width);
+	render_target_bind(g_wow->post_process.shadow, 0);
+	gfx_set_viewport(g_wow->device, 0, 0, shadow_width, shadow_width);
+	gfx_set_scissor(g_wow->device, 0, 0, shadow_width, shadow_width);
+	gfx_clear_depth_stencil(g_wow->device, &g_wow->post_process.shadow->render_target, 1, 0);
+	gfx_set_scissor(g_wow->device, 1, 1, shadow_width - 2, shadow_width - 2);
+	gx_frame_render_shadow_m2(frame);
 }
 
-static void update_water_texture(struct map *map)
-{
-	water_update();
-	uint8_t water_data[WATER_WIDTH * WATER_WIDTH];
-	float *data = flip_flop ? data1 : data2;
-	if (rand() < RAND_MAX)
-	{
-		int rx = 2 + rand() / (float)RAND_MAX * (WATER_WIDTH - 4);
-		int ry = 2 + rand() / (float)RAND_MAX * (WATER_WIDTH - 4);
-		data[rx + 0 + (ry + 0) * WATER_WIDTH] = -1;
-		data[rx + 1 + (ry + 0) * WATER_WIDTH] = -1;
-		data[rx - 1 + (ry + 0) * WATER_WIDTH] = -1;
-		data[rx + 0 + (ry + 1) * WATER_WIDTH] = -1;
-		data[rx + 0 + (ry - 1) * WATER_WIDTH] = -1;
-		data[rx + 2 + (ry + 0) * WATER_WIDTH] = -1;
-		data[rx - 2 + (ry + 0) * WATER_WIDTH] = -1;
-		data[rx + 0 + (ry + 2) * WATER_WIDTH] = -1;
-		data[rx + 0 + (ry - 2) * WATER_WIDTH] = -1;
-		data[rx + 1 + (ry + 1) * WATER_WIDTH] = -1;
-		data[rx + 1 + (ry - 1) * WATER_WIDTH] = -1;
-		data[rx - 1 + (ry + 1) * WATER_WIDTH] = -1;
-		data[rx - 1 + (ry - 1) * WATER_WIDTH] = -1;
-	}
-	float t = g_wow->frametime / 1000000000.;
-	for (size_t y = 0; y < WATER_WIDTH; ++y)
-	{
-		for (size_t x = 0; x < WATER_WIDTH; ++x)
-		{
-			float v = simplex_noise_get3(&map->water_noise, x / (float)WATER_WIDTH * 4, y / (float)WATER_WIDTH *4 , t);
-			size_t i = y * WATER_WIDTH + x;
-			water_data[i] = 127 + (v * .3 + .5 + data[i]) * 127;
-		}
-	}
-	gfx_set_texture_data(&map->water_texture, 0, 0, WATER_WIDTH, WATER_WIDTH, 0, sizeof(water_data), water_data);
-}
-
-void map_render(struct map *map, struct gx_frame *frame)
+void
+map_render(struct map *map, struct gx_frame *frame)
 {
 	if (map->id == (uint32_t)-1)
 		return;
 	update_minimap_texture(map);
-	if (g_wow->render_opt & RENDER_OPT_DYN_WATER)
-	{
-		if (!map->water_texture.handle.ptr)
-		{
-			gfx_create_texture(g_wow->device, &map->water_texture, GFX_TEXTURE_2D, GFX_R8, 1, WATER_WIDTH, WATER_WIDTH, 0);
-			gfx_set_texture_levels(&map->water_texture, 0, 0);
-			gfx_set_texture_anisotropy(&map->water_texture, g_wow->anisotropy);
-			gfx_set_texture_filtering(&map->water_texture, GFX_FILTERING_LINEAR, GFX_FILTERING_LINEAR, GFX_FILTERING_LINEAR);
-			gfx_set_texture_addressing(&map->water_texture, GFX_TEXTURE_ADDRESSING_REPEAT, GFX_TEXTURE_ADDRESSING_REPEAT, GFX_TEXTURE_ADDRESSING_REPEAT);
-			gfx_finalize_texture(&map->water_texture);
-		}
-		update_water_texture(map);
-	}
+	render_shadow_pass(map, frame);
 	struct render_pass_def
 	{
 		struct render_pass *render_pass;
@@ -1457,7 +790,7 @@ void map_render(struct map *map, struct gx_frame *frame)
 	if (g_wow->post_process.ssao->enabled)
 		render_passes[render_passes_nb++] = (struct render_pass_def){g_wow->post_process.ssao, RENDER_TARGET_NORMAL_BUFFER_BIT | RENDER_TARGET_POSITION_BUFFER_BIT};
 	if (g_wow->post_process.sobel->enabled)
-		render_passes[render_passes_nb++] = (struct render_pass_def){g_wow->post_process.sobel, RENDER_TARGET_NORMAL_BUFFER_BIT};
+		render_passes[render_passes_nb++] = (struct render_pass_def){g_wow->post_process.sobel, RENDER_TARGET_NORMAL_BUFFER_BIT | RENDER_TARGET_POSITION_BUFFER_BIT};
 	if (g_wow->post_process.glow->enabled)
 		render_passes[render_passes_nb++] = (struct render_pass_def){g_wow->post_process.glow, 0};
 	if (g_wow->post_process.bloom->enabled)
@@ -1470,28 +803,41 @@ void map_render(struct map *map, struct gx_frame *frame)
 		render_passes[render_passes_nb++] = (struct render_pass_def){g_wow->post_process.sharpen, 0};
 	if (g_wow->post_process.chromaber->enabled)
 		render_passes[render_passes_nb++] = (struct render_pass_def){g_wow->post_process.chromaber, 0};
-	if (g_wow->render_opt & RENDER_OPT_SSR)
+	if (g_wow->post_process.death->enabled)
+		render_passes[render_passes_nb++] = (struct render_pass_def){g_wow->post_process.death, 0};
+	if (g_wow->gx->opt & GX_OPT_DYN_WATER)
 		render_buffer_bits |= RENDER_TARGET_NORMAL_BUFFER_BIT | RENDER_TARGET_POSITION_BUFFER_BIT;
 	for (size_t i = render_passes_nb; i > 0; --i)
 	{
 		render_buffer_bits |= render_passes[i - 1].targets;
 		render_passes[i - 1].targets = render_buffer_bits;
 	}
+	uint32_t render_width = g_wow->render_width * g_wow->fsaa;
+	uint32_t render_height = g_wow->render_height * g_wow->fsaa;
+	for (size_t i = 0; i < render_passes_nb; ++i)
+		render_pass_resize(render_passes[i].render_pass,
+		                   render_width,
+		                   render_height);
+	if (g_wow->post_process.msaa->enabled)
+		render_target_resize(g_wow->post_process.msaa,
+		                     render_width,
+		                     render_height);
+	if (render_passes_nb || g_wow->fsaa != 1 || (g_wow->gx->opt & GX_OPT_DYN_WATER))
+	{
+		render_target_resize(g_wow->post_process.dummy1,
+		                     render_width,
+		                     render_height);
+		render_target_resize(g_wow->post_process.dummy2,
+		                     render_width,
+		                     render_height);
+	}
 	if (g_wow->post_process.msaa->enabled)
 	{
 		render_target = g_wow->post_process.msaa;
 		render_target_bind(g_wow->post_process.msaa, render_buffer_bits);
 		post_process = true;
-		/* Force shading of more MSAA samples
-		 * Can be almost compared to FSAA when 1
-		 * Can be used to mimic CSAA
-		 */
-		/*glEnable(GL_SAMPLE_SHADING);
-		glMinSampleShading(1);*/
-		/*glEnable(GL_SAMPLE_COVERAGE);
-		glSampleCoverage(.5, false);*/
 	}
-	else if (render_passes_nb || g_wow->fsaa != 1 || (g_wow->render_opt & RENDER_OPT_SSR))
+	else if (render_passes_nb || g_wow->fsaa != 1 || (g_wow->gx->opt & GX_OPT_DYN_WATER))
 	{
 		render_target = g_wow->post_process.dummy1;
 		render_target_bind(g_wow->post_process.dummy1, render_buffer_bits);
@@ -1501,11 +847,11 @@ void map_render(struct map *map, struct gx_frame *frame)
 	{
 		render_target = NULL;
 		gfx_bind_render_target(g_wow->device, NULL);
-		gfx_set_viewport(g_wow->device, 0, 0, g_wow->render_width, g_wow->render_height);
 		post_process = false;
 	}
 
-	gfx_set_scissor(g_wow->device, 0, 0, g_wow->render_width * g_wow->fsaa, g_wow->render_height * g_wow->fsaa);
+	gfx_set_viewport(g_wow->device, 0, 0, render_width, render_height);
+	gfx_set_scissor(g_wow->device, 0, 0, render_width, render_height);
 	/* XXX: gfx_bind_depth_stencil_state(g_wow->device, &world->depth_stencil_states[WORLD_DEPTH_STENCIL_RW_RW]); */
 	if (render_target)
 	{
@@ -1516,28 +862,64 @@ void map_render(struct map *map, struct gx_frame *frame)
 		gfx_clear_color(g_wow->device, NULL, GFX_RENDERTARGET_ATTACHMENT_COLOR0, (struct vec4f){0, 1, 0, 1});
 		gfx_clear_depth_stencil(g_wow->device, NULL, 1, 0);
 	}
+
 	gx_skybox_update(map->gx_skybox, frame);
 	gx_frame_build_uniform_buffers(frame);
-	render_wmo(frame);
-	render_opaque_m2(frame);
-	render_ground_m2(frame);
-	render_mcnk(frame);
+
+	PERFORMANCE_BEGIN(WMO_RENDER);
+	gx_frame_render_wmo(frame);
+	PERFORMANCE_END(WMO_RENDER);
+
+	PERFORMANCE_BEGIN(M2_RENDER);
+	gx_frame_render_opaque_m2(frame);
+	PERFORMANCE_END(M2_RENDER);
+
+	PERFORMANCE_BEGIN(M2_RENDER);
+	gx_frame_render_ground_m2(frame);
+	PERFORMANCE_END(M2_RENDER);
+
+	PERFORMANCE_BEGIN(MCNK_RENDER);
+	gx_frame_render_mcnk(frame);
+	PERFORMANCE_END(MCNK_RENDER);
+
 	/* XXX: SSAO & sobel here (how to handle MSAA / CSAA ?) */
 	if (post_process)
 	{
 		uint32_t draw_buffers[3] = {GFX_RENDERTARGET_ATTACHMENT_COLOR0, GFX_RENDERTARGET_ATTACHMENT_NONE, GFX_RENDERTARGET_ATTACHMENT_NONE};
 		gfx_set_render_target_draw_buffers(&render_target->render_target, draw_buffers, 3);
 	}
+
+	PERFORMANCE_BEGIN(WDL_RENDER);
 	render_wdl(map, frame);
+	PERFORMANCE_END(WDL_RENDER);
+
+	PERFORMANCE_BEGIN(SKYBOX_RENDER);
 	render_skybox(map, frame);
+	PERFORMANCE_END(SKYBOX_RENDER);
+
 #ifdef WITH_DEBUG_RENDERING
-	render_aabb(frame);
-	render_collisions(frame);
-	render_wmo_portals(frame);
-	render_wmo_lights(frame);
-	render_m2_lights(frame);
+	PERFORMANCE_BEGIN(AABB_RENDER);
+	gx_frame_render_aabb(frame);
+	PERFORMANCE_END(AABB_RENDER);
+
+	PERFORMANCE_BEGIN(COLLISIONS_RENDER);
+	gx_frame_render_collisions(frame);
+	PERFORMANCE_END(COLLISIONS_RENDER);
+
+	PERFORMANCE_BEGIN(WMO_PORTALS_RENDER);
+	gx_frame_render_wmo_portals(frame);
+	PERFORMANCE_END(WMO_PORTALS_RENDER);
+
+	PERFORMANCE_BEGIN(WMO_LIGHTS_RENDER);
+	gx_frame_render_wmo_lights(frame);
+	PERFORMANCE_END(WMO_LIGHTS_RENDER);
+
+	PERFORMANCE_BEGIN(M2_LIGHTS_RENDER);
+	gx_frame_render_m2_lights(frame);
+	PERFORMANCE_END(M2_LIGHTS_RENDER);
+
 #endif
-	if (g_wow->render_opt & RENDER_OPT_SSR)
+	if (g_wow->gx->opt & GX_OPT_DYN_WATER)
 	{
 		gfx_bind_render_target(g_wow->device, NULL);
 		gfx_set_viewport(g_wow->device, 0, 0, g_wow->render_width, g_wow->render_height);
@@ -1547,18 +929,46 @@ void map_render(struct map *map, struct gx_frame *frame)
 		post_process = false;
 	}
 	render_wmo_mliq(map, frame);
-	render_mclq(map, frame);
-	render_m2_particles(frame);
-	render_m2_ribbons(frame);
-	render_transparent_m2(frame);
-	render_texts(frame);
+
+	PERFORMANCE_BEGIN(MCLQ_RENDER);
+	gx_frame_render_mclq(frame);
+	PERFORMANCE_END(MCLQ_RENDER);
+
+	PERFORMANCE_BEGIN(M2_PARTICLES_RENDER);
+	gx_frame_render_m2_particles(frame);
+	PERFORMANCE_END(M2_PARTICLES_RENDER);
+
+	PERFORMANCE_BEGIN(M2_RIBBONS_RENDER);
+	gx_frame_render_m2_ribbons(frame);
+	PERFORMANCE_END(M2_RIBBONS_RENDER);
+
+	PERFORMANCE_BEGIN(M2_RENDER);
+	gx_frame_render_transparent_m2(frame);
+	PERFORMANCE_END(M2_RENDER);
+
+	PERFORMANCE_BEGIN(TEXT_RENDER);
+	gx_frame_render_texts(frame);
+	PERFORMANCE_END(TEXT_RENDER);
+
 #ifdef WITH_DEBUG_RENDERING
-	render_wmo_collisions(frame);
-	render_m2_collisions(frame);
-	render_m2_bones(frame);
+	PERFORMANCE_BEGIN(WMO_COLLISIONS_RENDER);
+	gx_frame_render_wmo_collisions(frame);
+	PERFORMANCE_END(WMO_COLLISIONS_RENDER);
+
+	PERFORMANCE_BEGIN(M2_COLLISIONS_RENDER);
+	gx_frame_render_m2_collisions(frame);
+	PERFORMANCE_END(M2_COLLISIONS_RENDER);
+
+	PERFORMANCE_BEGIN(M2_BONES_RENDER);
+	gx_frame_render_m2_bones(frame);
+	PERFORMANCE_END(M2_BONES_RENDER);
+
+	PERFORMANCE_BEGIN(TAXI_RENDER);
 	render_taxi(map, frame);
+	PERFORMANCE_END(TAXI_RENDER);
 #endif
-	gfx_set_scissor(g_wow->device, 0, 0, g_wow->render_width, g_wow->render_height);
+
+	gfx_set_scissor(g_wow->device, 0, 0, render_width, render_height);
 	if (!post_process)
 		return;
 	struct render_target *output = (render_passes_nb || g_wow->fsaa != 1) ? g_wow->post_process.dummy1 : NULL;

@@ -4,12 +4,14 @@ use crate::{
 use crate::header::{
     DbcHeader, HEADER_SIZE, parse_header,
 };
+use crate::util::StringCache;
 use crate::vanilla_tables::chr_races::ChrRacesKey;
 use crate::vanilla_tables::sound_entries::SoundEntriesKey;
 use std::io::Write;
 use wow_world_base::vanilla::Gender;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SoundCharacterMacroLines {
     pub rows: Vec<SoundCharacterMacroLinesRow>,
 }
@@ -18,6 +20,8 @@ impl DbcTable for SoundCharacterMacroLines {
     type Row = SoundCharacterMacroLinesRow;
 
     const FILENAME: &'static str = "SoundCharacterMacroLines.dbc";
+    const FIELD_COUNT: usize = 5;
+    const ROW_SIZE: usize = 20;
 
     fn rows(&self) -> &[Self::Row] { &self.rows }
     fn rows_mut(&mut self) -> &mut [Self::Row] { &mut self.rows }
@@ -27,19 +31,19 @@ impl DbcTable for SoundCharacterMacroLines {
         b.read_exact(&mut header)?;
         let header = parse_header(&header)?;
 
-        if header.record_size != 20 {
+        if header.record_size != Self::ROW_SIZE as u32 {
             return Err(crate::DbcError::InvalidHeader(
                 crate::InvalidHeaderError::RecordSize {
-                    expected: 20,
+                    expected: Self::ROW_SIZE as u32,
                     actual: header.record_size,
                 },
             ));
         }
 
-        if header.field_count != 5 {
+        if header.field_count != Self::FIELD_COUNT as u32 {
             return Err(crate::DbcError::InvalidHeader(
                 crate::InvalidHeaderError::FieldCount {
-                    expected: 5,
+                    expected: Self::FIELD_COUNT as u32,
                     actual: header.field_count,
                 },
             ));
@@ -81,15 +85,10 @@ impl DbcTable for SoundCharacterMacroLines {
         Ok(SoundCharacterMacroLines { rows, })
     }
 
-    fn write(&self, b: &mut impl Write) -> Result<(), std::io::Error> {
-        let header = DbcHeader {
-            record_count: self.rows.len() as u32,
-            field_count: 5,
-            record_size: 20,
-            string_block_size: 1,
-        };
+    fn write(&self, w: &mut impl Write) -> Result<(), std::io::Error> {
+        let mut b = Vec::with_capacity(self.rows.len() * Self::ROW_SIZE);
 
-        b.write_all(&header.write_header())?;
+        let  string_cache = StringCache::new();
 
         for row in &self.rows {
             // id: primary_key (SoundCharacterMacroLines) uint32
@@ -109,8 +108,17 @@ impl DbcTable for SoundCharacterMacroLines {
 
         }
 
-        b.write_all(&[0_u8])?;
+        assert_eq!(b.len(), self.rows.len() * Self::ROW_SIZE);
+        let header = DbcHeader {
+            record_count: self.rows.len() as u32,
+            field_count: Self::FIELD_COUNT as u32,
+            record_size: Self::ROW_SIZE as u32,
+            string_block_size: string_cache.size(),
+        };
 
+        w.write_all(&header.write_header())?;
+        w.write_all(&b)?;
+        w.write_all(string_cache.buffer())?;
         Ok(())
     }
 
@@ -130,6 +138,7 @@ impl Indexable for SoundCharacterMacroLines {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Hash, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SoundCharacterMacroLinesKey {
     pub id: u32
 }
@@ -209,6 +218,7 @@ impl TryFrom<isize> for SoundCharacterMacroLinesKey {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SoundCharacterMacroLinesRow {
     pub id: SoundCharacterMacroLinesKey,
     pub unknown: u32,

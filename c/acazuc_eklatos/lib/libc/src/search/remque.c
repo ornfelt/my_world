@@ -6,9 +6,12 @@ struct elem
 	struct elem *prev;
 };
 
-void remque(void *elem)
+void
+remque(void *elem)
 {
-	struct elem *cur = elem;
+	struct elem *cur;
+
+	cur = elem;
 	if (cur->prev)
 		cur->prev->next = cur->next;
 	if (cur->next)

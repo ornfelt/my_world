@@ -2,7 +2,8 @@
 
 #include <sched.h>
 
-pid_t clone(int flags)
+pid_t
+clone(int flags)
 {
 	return syscall1(SYS_clone, flags);
 }

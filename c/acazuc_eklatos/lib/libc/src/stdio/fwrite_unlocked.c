@@ -3,8 +3,11 @@
 #include <string.h>
 #include <stdio.h>
 
-static size_t write_buffered(FILE *fp, const void *data, size_t count)
+static size_t
+write_buffered(FILE *fp, const void *data, size_t count)
 {
+	size_t ret = 0;
+
 	if (!fp->buf_type)
 	{
 		if (fflush_unlocked(fp))
@@ -14,7 +17,6 @@ static size_t write_buffered(FILE *fp, const void *data, size_t count)
 		}
 	}
 	fp->buf_type = 1;
-	size_t ret = 0;
 	while (ret < count)
 	{
 		size_t rem = count - ret;
@@ -46,10 +48,12 @@ static size_t write_buffered(FILE *fp, const void *data, size_t count)
 	return ret;
 }
 
-size_t fwrite_unlocked(const void *ptr, size_t size, size_t nmemb, FILE *fp)
+size_t
+fwrite_unlocked(const void *ptr, size_t size, size_t nmemb, FILE *fp)
 {
 	size_t total;
 	size_t ret;
+
 	if (__builtin_mul_overflow(size, nmemb, &total))
 	{
 		fp->err = 1;

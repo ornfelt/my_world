@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-char *tmpnam(char *s)
+char *
+tmpnam(char *s)
 {
 	/* XXX better */
 	static char tmpbuf[1024];

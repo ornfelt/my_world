@@ -2,7 +2,8 @@
 
 #include <termios.h>
 
-int tcflush(int fd, int queue)
+int
+tcflush(int fd, int queue)
 {
 	return ioctl(fd, TCFLSH, queue);
 }

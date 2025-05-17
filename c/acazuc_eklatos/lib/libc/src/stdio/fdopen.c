@@ -2,12 +2,15 @@
 
 #include <stdio.h>
 
-FILE *fdopen(int fd, const char *mode)
+FILE *
+fdopen(int fd, const char *mode)
 {
+	FILE *fp;
 	int flags;
+
 	if (!parse_flags(mode, &flags))
 		return NULL;
-	FILE *fp = mkfp();
+	fp = mkfp();
 	if (!fp)
 		return NULL;
 	fp->fd = fd;

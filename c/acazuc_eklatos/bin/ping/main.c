@@ -58,7 +58,8 @@ struct packet
 
 static struct env *g_env;
 
-static int resolve_destination(struct env *env)
+static int
+resolve_destination(struct env *env)
 {
 	struct addrinfo *res;
 	struct addrinfo hints;
@@ -72,15 +73,19 @@ static int resolve_destination(struct env *env)
 	ret = getaddrinfo(env->destination, NULL, &hints, &res);
 	if (ret)
 	{
-		fprintf(stderr, "%s: unknown host: %s\n", env->progname,
+		fprintf(stderr, "%s: unknown host: %s\n",
+		        env->progname,
 		        gai_strerror(ret));
 		return 1;
 	}
 	memset(tmp, 0, sizeof(tmp));
-	if (!inet_ntop(AF_INET, &((struct sockaddr_in*)res->ai_addr)->sin_addr,
-	               tmp, sizeof(tmp)))
+	if (!inet_ntop(AF_INET,
+	               &((struct sockaddr_in*)res->ai_addr)->sin_addr,
+	               tmp,
+	               sizeof(tmp)))
 	{
-		fprintf(stderr, "%s: unknown host: %s\n", env->progname,
+		fprintf(stderr, "%s: unknown host: %s\n",
+		        env->progname,
 		        env->destination);
 		freeaddrinfo(res);
 		return 1;
@@ -88,7 +93,8 @@ static int resolve_destination(struct env *env)
 	env->ip = strdup(tmp);
 	if (!env->ip)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", env->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        env->progname,
 		        strerror(errno));
 		freeaddrinfo(res);
 		return 1;
@@ -97,7 +103,8 @@ static int resolve_destination(struct env *env)
 	env->addr = malloc(res->ai_addrlen);
 	if (!env->addr)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", env->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        env->progname,
 		        strerror(errno));
 		freeaddrinfo(res);
 		return 1;
@@ -107,7 +114,8 @@ static int resolve_destination(struct env *env)
 	return 0;
 }
 
-static int create_socket(struct env *env)
+static int
+create_socket(struct env *env)
 {
 	struct timeval tv;
 	int val;
@@ -115,38 +123,52 @@ static int create_socket(struct env *env)
 	env->socket = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
 	if (env->socket == -1)
 	{
-		fprintf(stderr, "%s: socket: %s\n", env->progname,
+		fprintf(stderr, "%s: socket: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
 	val = 1;
-	if (setsockopt(env->socket, IPPROTO_IP, IP_HDRINCL, &val,
+	if (setsockopt(env->socket,
+	               IPPROTO_IP,
+	               IP_HDRINCL,
+	               &val,
 	               sizeof(val)) == -1)
 	{
 		fprintf(stderr, "%s: setsockopt(IP_HDRINCL): %s\n",
-		        env->progname, strerror(errno));
+		        env->progname,
+		        strerror(errno));
 		return 1;
 	}
 	tv.tv_sec = 1;
 	tv.tv_usec = 0;
-	if (setsockopt(env->socket, SOL_SOCKET, SO_RCVTIMEO, &tv,
+	if (setsockopt(env->socket,
+	               SOL_SOCKET,
+	               SO_RCVTIMEO,
+	               &tv,
 	               sizeof(tv)) == -1)
 	{
 		fprintf(stderr, "%s: setsockopt(SO_RCVTIMEO): %s\n",
-		        env->progname, strerror(errno));
+		        env->progname,
+		        strerror(errno));
 		return 1;
 	}
-	if (setsockopt(env->socket, SOL_SOCKET, SO_SNDTIMEO, &tv,
+	if (setsockopt(env->socket,
+	               SOL_SOCKET,
+	               SO_SNDTIMEO,
+	               &tv,
 	               sizeof(tv)) == -1)
 	{
 		fprintf(stderr, "%s: setsockopt(SO_SNDTIMEO): %s\n",
-		        env->progname, strerror(errno));
+		        env->progname,
+		        strerror(errno));
 		return 1;
 	}
 	return 0;
 }
 
-static void print_results(struct env *env)
+static void
+print_results(struct env *env)
 {
 	struct value *value;
 	uint32_t min;
@@ -186,7 +208,8 @@ static void print_results(struct env *env)
 	printf("\n");
 }
 
-static uint16_t ip_checksum(const void *addr, size_t len)
+static uint16_t
+ip_checksum(const void *addr, size_t len)
 {
 	uint64_t result;
 	uint16_t *tmp;
@@ -205,7 +228,8 @@ static uint16_t ip_checksum(const void *addr, size_t len)
 	return (~((uint16_t)result));
 }
 
-static int ping_send(struct env *env)
+static int
+ping_send(struct env *env)
 {
 	struct packet packet;
 	struct timespec ts;
@@ -220,7 +244,8 @@ static int ping_send(struct env *env)
 	env->has_received = 0;
 	if (clock_gettime(CLOCK_MONOTONIC, &ts))
 	{
-		fprintf(stderr, "%s: clock_gettime: %s\n", env->progname,
+		fprintf(stderr, "%s: clock_gettime: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
@@ -252,7 +277,8 @@ static int ping_send(struct env *env)
 	if (sendto(env->socket, &packet, sizeof(packet), 0, env->addr,
 	           env->addrlen) == -1)
 	{
-		fprintf(stderr, "%s: sendto: %s\n", env->progname,
+		fprintf(stderr, "%s: sendto: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
@@ -261,14 +287,16 @@ static int ping_send(struct env *env)
 	return 0;
 }
 
-static int value_add(struct env *env, uint64_t time)
+static int
+value_add(struct env *env, uint64_t time)
 {
 	struct value *value;
 
 	value = malloc(sizeof(*value));
 	if (!value)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", env->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
@@ -278,7 +306,8 @@ static int value_add(struct env *env, uint64_t time)
 	return 0;
 }
 
-static int ping_receive(struct env *env)
+static int
+ping_receive(struct env *env)
 {
 	struct msghdr msghdr;
 	struct iovec iovec;
@@ -301,13 +330,15 @@ static int ping_receive(struct env *env)
 	{
 		if (errno == EAGAIN)
 			return 0;
-		fprintf(stderr, "%s: recvmsg: %s\n", env->progname,
+		fprintf(stderr, "%s: recvmsg: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
 	if (clock_gettime(CLOCK_MONOTONIC, &ts) == -1)
 	{
-		fprintf(stderr, "%s: clock_gettime: %s\n", env->progname,
+		fprintf(stderr, "%s: clock_gettime: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
@@ -338,14 +369,16 @@ static int ping_receive(struct env *env)
 	return 0;
 }
 
-static void sigint_handler(int sig)
+static void
+sigint_handler(int sig)
 {
 	(void)sig;
 	print_results(g_env);
 	exit(EXIT_SUCCESS);
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-v] [-h] [-c count] HOST\n", progname);
 	printf("-v      : verbose non-answered packets\n");
@@ -353,7 +386,8 @@ static void usage(const char *progname)
 	printf("-c count: send n ping requests\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;
@@ -410,6 +444,9 @@ int main(int argc, char **argv)
 	for (size_t i = 0; i < env.nping; ++i)
 	{
 		struct timespec started;
+		struct timespec ended;
+		struct timespec diff;
+
 		if (clock_gettime(CLOCK_MONOTONIC, &started) == -1)
 		{
 			fprintf(stderr, "%s: clock_gettime: %s\n", argv[0],
@@ -419,7 +456,6 @@ int main(int argc, char **argv)
 		if (ping_send(&env)
 		 || ping_receive(&env))
 			return EXIT_FAILURE;
-		struct timespec ended;
 		if (clock_gettime(CLOCK_MONOTONIC, &ended) == -1)
 		{
 			fprintf(stderr, "%s: clock_gettime: %s\n", argv[0],
@@ -430,7 +466,6 @@ int main(int argc, char **argv)
 			continue;
 		if (i == env.nping - 1)
 			break;
-		struct timespec diff;
 		if (ended.tv_nsec < started.tv_nsec)
 		{
 			diff.tv_sec = ended.tv_sec - started.tv_sec - 1;

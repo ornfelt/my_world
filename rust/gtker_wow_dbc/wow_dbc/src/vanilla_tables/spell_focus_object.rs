@@ -4,9 +4,12 @@ use crate::{
 use crate::header::{
     DbcHeader, HEADER_SIZE, parse_header,
 };
+use crate::tys::WritableString;
+use crate::util::StringCache;
 use std::io::Write;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SpellFocusObject {
     pub rows: Vec<SpellFocusObjectRow>,
 }
@@ -15,6 +18,8 @@ impl DbcTable for SpellFocusObject {
     type Row = SpellFocusObjectRow;
 
     const FILENAME: &'static str = "SpellFocusObject.dbc";
+    const FIELD_COUNT: usize = 10;
+    const ROW_SIZE: usize = 40;
 
     fn rows(&self) -> &[Self::Row] { &self.rows }
     fn rows_mut(&mut self) -> &mut [Self::Row] { &mut self.rows }
@@ -24,19 +29,19 @@ impl DbcTable for SpellFocusObject {
         b.read_exact(&mut header)?;
         let header = parse_header(&header)?;
 
-        if header.record_size != 40 {
+        if header.record_size != Self::ROW_SIZE as u32 {
             return Err(crate::DbcError::InvalidHeader(
                 crate::InvalidHeaderError::RecordSize {
-                    expected: 40,
+                    expected: Self::ROW_SIZE as u32,
                     actual: header.record_size,
                 },
             ));
         }
 
-        if header.field_count != 10 {
+        if header.field_count != Self::FIELD_COUNT as u32 {
             return Err(crate::DbcError::InvalidHeader(
                 crate::InvalidHeaderError::FieldCount {
-                    expected: 10,
+                    expected: Self::FIELD_COUNT as u32,
                     actual: header.field_count,
                 },
             ));
@@ -68,28 +73,31 @@ impl DbcTable for SpellFocusObject {
         Ok(SpellFocusObject { rows, })
     }
 
-    fn write(&self, b: &mut impl Write) -> Result<(), std::io::Error> {
-        let header = DbcHeader {
-            record_count: self.rows.len() as u32,
-            field_count: 10,
-            record_size: 40,
-            string_block_size: self.string_block_size(),
-        };
+    fn write(&self, w: &mut impl Write) -> Result<(), std::io::Error> {
+        let mut b = Vec::with_capacity(self.rows.len() * Self::ROW_SIZE);
 
-        b.write_all(&header.write_header())?;
+        let mut string_cache = StringCache::new();
 
-        let mut string_index = 1;
         for row in &self.rows {
             // id: primary_key (SpellFocusObject) uint32
             b.write_all(&row.id.id.to_le_bytes())?;
 
             // name: string_ref_loc
-            b.write_all(&row.name.string_indices_as_array(&mut string_index))?;
+            b.write_all(&row.name.string_indices_as_array(&mut string_cache))?;
 
         }
 
-        self.write_string_block(b)?;
+        assert_eq!(b.len(), self.rows.len() * Self::ROW_SIZE);
+        let header = DbcHeader {
+            record_count: self.rows.len() as u32,
+            field_count: Self::FIELD_COUNT as u32,
+            record_size: Self::ROW_SIZE as u32,
+            string_block_size: string_cache.size(),
+        };
 
+        w.write_all(&header.write_header())?;
+        w.write_all(&b)?;
+        w.write_all(string_cache.buffer())?;
         Ok(())
     }
 
@@ -108,29 +116,8 @@ impl Indexable for SpellFocusObject {
     }
 }
 
-impl SpellFocusObject {
-    fn write_string_block(&self, b: &mut impl Write) -> Result<(), std::io::Error> {
-        b.write_all(&[0])?;
-
-        for row in &self.rows {
-            row.name.string_block_as_array(b)?;
-        }
-
-        Ok(())
-    }
-
-    fn string_block_size(&self) -> u32 {
-        let mut sum = 1;
-        for row in &self.rows {
-            sum += row.name.string_block_size();
-        }
-
-        sum as u32
-    }
-
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Hash, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SpellFocusObjectKey {
     pub id: u32
 }
@@ -210,8 +197,28 @@ impl TryFrom<isize> for SpellFocusObjectKey {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SpellFocusObjectRow {
     pub id: SpellFocusObjectKey,
     pub name: LocalizedString,
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::fs::File;
+    use std::io::Read;
+
+    #[test]
+    #[ignore = "requires DBC files"]
+    fn spell_focus_object() {
+        let mut file = File::open("../vanilla-dbc/SpellFocusObject.dbc").expect("Failed to open DBC file");
+        let mut contents = Vec::new();
+        file.read_to_end(&mut contents).expect("Failed to read DBC file");
+        let actual = SpellFocusObject::read(&mut contents.as_slice()).unwrap();
+        let mut v = Vec::with_capacity(contents.len());
+        actual.write(&mut v).unwrap();
+        let new = SpellFocusObject::read(&mut v.as_slice()).unwrap();
+        assert_eq!(actual, new);
+    }
+}

@@ -18,9 +18,9 @@ do \
 do \
 { \
 	intmax_t a, b; \
-	enum status ret = getints(argc, argv, &a, &b); \
-	if (ret) \
-		return ret; \
+	enum status ret_ints = getints(argc, argv, &a, &b); \
+	if (ret_ints) \
+		return ret_ints; \
 	return a cmp b ? STATUS_OK : STATUS_KO; \
 } while (0)
 
@@ -35,10 +35,12 @@ static const char *progname;
 
 static enum status eval_op(int *argc, char ***argv);
 
-static enum status getint(int *argc, char ***argv, intmax_t *n)
+static enum status
+getint(int *argc, char ***argv, intmax_t *n)
 {
-	errno = 0;
 	char *endptr;
+
+	errno = 0;
 	*n = strtoimax(**argv, &endptr, 10);
 	if (errno || *endptr)
 	{
@@ -49,9 +51,11 @@ static enum status getint(int *argc, char ***argv, intmax_t *n)
 	return STATUS_OK;
 }
 
-static enum status getints(int *argc, char ***argv, intmax_t *a, intmax_t *b)
+static enum status
+getints(int *argc, char ***argv, intmax_t *a, intmax_t *b)
 {
 	enum status ret;
+
 	ret = getint(argc, argv, a);
 	if (ret)
 		return ret;
@@ -62,7 +66,8 @@ static enum status getints(int *argc, char ***argv, intmax_t *a, intmax_t *b)
 	return STATUS_OK;
 }
 
-static enum status stat_file(int *argc, char ***argv, struct stat *st)
+static enum status
+stat_file(int *argc, char ***argv, struct stat *st)
 {
 	if (!*argc)
 		return STATUS_ERR;
@@ -75,27 +80,34 @@ static enum status stat_file(int *argc, char ***argv, struct stat *st)
 	return STATUS_OK;
 }
 
-static enum status test_file_type(int *argc, char ***argv, mode_t type)
+static enum status
+test_file_type(int *argc, char ***argv, mode_t type)
 {
-	ARG_NEXT();
 	struct stat st;
-	enum status ret = stat_file(argc, argv, &st);
+	enum status ret;
+
+	ARG_NEXT();
+	ret = stat_file(argc, argv, &st);
 	if (ret)
 		return ret;
 	return ((st.st_mode & S_IFMT) == type) ? STATUS_OK : STATUS_KO;
 }
 
-static enum status test_file_mode(int *argc, char ***argv, mode_t mode)
+static enum status
+test_file_mode(int *argc, char ***argv, mode_t mode)
 {
-	ARG_NEXT();
 	struct stat st;
-	enum status ret = stat_file(argc, argv, &st);
+	enum status ret;
+
+	ARG_NEXT();
+	ret = stat_file(argc, argv, &st);
 	if (ret)
 		return ret;
 	return (st.st_mode & mode) ? STATUS_OK : STATUS_KO;
 }
 
-static enum status test_file_access(int *argc, char ***argv, int mode)
+static enum status
+test_file_access(int *argc, char ***argv, int mode)
 {
 	ARG_NEXT();
 	if (!*argc)
@@ -109,25 +121,32 @@ static enum status test_file_access(int *argc, char ***argv, int mode)
 	return STATUS_OK;
 }
 
-static enum status eval_logical(int *argc, char ***argv)
+static enum status
+eval_logical(int *argc, char ***argv)
 {
-	enum status ret = eval_op(argc, argv);
+	enum status ret;
+
+	ret = eval_op(argc, argv);
 	if (ret == STATUS_ERR)
 		return STATUS_ERR;
 	if (!*argc)
 		return ret;
 	if (!strcmp(**argv, "-a"))
 	{
+		enum status ret2;
+
 		ARG_NEXT();
-		enum status ret2 = eval_op(argc, argv);
+		ret2 = eval_op(argc, argv);
 		if (ret2 == STATUS_ERR)
 			return STATUS_ERR;
 		return ret || ret2;
 	}
 	if (!strcmp(**argv, "-o"))
 	{
+		enum status ret2;
+
 		ARG_NEXT();
-		enum status ret2 = eval_op(argc, argv);
+		ret2 = eval_op(argc, argv);
 		if (ret2 == STATUS_ERR)
 			return STATUS_ERR;
 		return ret && ret2;
@@ -135,10 +154,13 @@ static enum status eval_logical(int *argc, char ***argv)
 	return ret;
 }
 
-static enum status eval_parenthesis(int *argc, char ***argv)
+static enum status
+eval_parenthesis(int *argc, char ***argv)
 {
+	enum status ret;
+
 	ARG_NEXT();
-	enum status ret = eval_logical(argc, argv);
+	ret = eval_logical(argc, argv);
 	if (ret == STATUS_ERR)
 		return STATUS_ERR;
 	if (strcmp(**argv, ")"))
@@ -147,14 +169,18 @@ static enum status eval_parenthesis(int *argc, char ***argv)
 	return ret;
 }
 
-static enum status eval_op(int *argc, char ***argv)
+static enum status
+eval_op(int *argc, char ***argv)
 {
+	enum status ret;
+	struct stat st;
+
 	if (!strcmp(**argv, "("))
 		return eval_parenthesis(argc, argv);
 	if (!strcmp(**argv, "!"))
 	{
 		ARG_NEXT();
-		enum status ret = eval_op(argc, argv);
+		ret = eval_op(argc, argv);
 		if (ret == STATUS_ERR)
 			return STATUS_ERR;
 		return !ret;
@@ -168,7 +194,6 @@ static enum status eval_op(int *argc, char ***argv)
 	if (!strcmp(**argv, "-e"))
 	{
 		ARG_NEXT();
-		struct stat st;
 		return stat_file(argc, argv, &st);
 	}
 	if (!strcmp(**argv, "-f"))
@@ -197,11 +222,12 @@ static enum status eval_op(int *argc, char ***argv)
 	if (!strcmp(**argv, "-s"))
 	{
 		ARG_NEXT();
-		struct stat st;
-		enum status ret = stat_file(argc, argv, &st);
+		ret = stat_file(argc, argv, &st);
 		if (ret)
 			return ret;
-		return st.st_size ? STATUS_OK : STATUS_KO;
+		if (!st.st_size)
+			return STATUS_KO;
+		return STATUS_OK;
 	}
 	if (!strcmp(**argv, "-u"))
 		return test_file_mode(argc, argv, S_ISUID);
@@ -228,32 +254,35 @@ static enum status eval_op(int *argc, char ***argv)
 		ARG_NEXT();
 		if (!*argc)
 			return STATUS_ERR;
-		struct stat st;
 		if (lstat(**argv, &st) == -1)
 		{
 			ARG_NEXT();
 			return STATUS_KO;
 		}
 		ARG_NEXT();
-		return ((st.st_mode & S_IFMT) == S_IFLNK) ? STATUS_OK : STATUS_KO;
+		if (!S_ISLNK(st.st_mode))
+			return STATUS_KO;
+		return STATUS_OK;
 	}
 	if (!strcmp(**argv, "-O"))
 	{
+		ret = stat_file(argc, argv, &st);
 		ARG_NEXT();
-		struct stat st;
-		enum status ret = stat_file(argc, argv, &st);
 		if (ret)
 			return ret;
-		return st.st_uid == geteuid() ? STATUS_OK : STATUS_KO;
+		if (st.st_uid != geteuid())
+			return STATUS_KO;
+		return STATUS_OK;
 	}
 	if (!strcmp(**argv, "-G"))
 	{
 		ARG_NEXT();
-		struct stat st;
-		enum status ret = stat_file(argc, argv, &st);
+		ret = stat_file(argc, argv, &st);
 		if (ret)
 			return ret;
-		return st.st_gid == getegid() ? STATUS_OK : STATUS_KO;
+		if (st.st_gid != getegid())
+			return STATUS_KO;
+		return STATUS_OK;
 	}
 	if (!strcmp(**argv, "-s"))
 		return test_file_type(argc, argv, S_IFSOCK);
@@ -264,7 +293,10 @@ static enum status eval_op(int *argc, char ***argv)
 	if (!strcmp((*argv)[1], "=")
 	 || !strcmp((*argv)[1], "=="))
 	{
-		enum status ret = strcmp((*argv)[0], (*argv)[2]) ? STATUS_KO : STATUS_OK;
+		if (strcmp((*argv)[0], (*argv)[2]))
+			ret = STATUS_KO;
+		else
+			ret = STATUS_OK;
 		ARG_NEXT();
 		ARG_NEXT();
 		ARG_NEXT();
@@ -272,7 +304,10 @@ static enum status eval_op(int *argc, char ***argv)
 	}
 	if (!strcmp((*argv)[1], "!="))
 	{
-		enum status ret = strcmp((*argv)[0], (*argv)[2]) ? STATUS_OK : STATUS_KO;
+		if (strcmp((*argv)[0], (*argv)[2]))
+			ret = STATUS_OK;
+		else
+			ret = STATUS_KO;
 		ARG_NEXT();
 		ARG_NEXT();
 		ARG_NEXT();
@@ -293,7 +328,8 @@ static enum status eval_op(int *argc, char ***argv)
 	return STATUS_ERR;
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	progname = argv[0];
 	if (!strcmp(argv[0], "["))

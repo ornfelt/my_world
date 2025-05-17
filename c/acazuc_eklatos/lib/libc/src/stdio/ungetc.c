@@ -2,10 +2,13 @@
 
 #include <stdio.h>
 
-int ungetc(int c, FILE *fp)
+int
+ungetc(int c, FILE *fp)
 {
+	int ret;
+
 	flockfile(fp);
-	int ret = ungetc_unlocked(c, fp);
+	ret = ungetc_unlocked(c, fp);
 	funlockfile(fp);
 	return ret;
 }

@@ -9,46 +9,71 @@
 #include <math.h>
 #include <time.h>
 
-static uint64_t nanotime(void)
+static uint64_t
+nanotime(void)
 {
 	struct timespec ts;
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 	return ts.tv_nsec + ts.tv_sec * 1000000000;
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
+	XVisualInfo vi;
+	XGCValues gc_values;
+	Display *display;
+	Window window;
+	Window root;
+	int screen;
+	GC gc;
+
 	(void)argc;
-	Display *display = XOpenDisplay(NULL);
+	display = XOpenDisplay(NULL);
 	if (!display)
 	{
 		fprintf(stderr, "%s: failed to open display\n", argv[0]);
 		return EXIT_FAILURE;
 	}
 	XSynchronize(display, False);
-	Window root = DefaultRootWindow(display);
-	int screen = DefaultScreen(display);
-	XVisualInfo vi;
+	root = DefaultRootWindow(display);
+	screen = DefaultScreen(display);
 	if (!XMatchVisualInfo(display, screen, 24, TrueColor, &vi))
 	{
 		fprintf(stderr, "%s: failed to get vi\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	Window window = XCreateWindow(display, root, 0, 0, 640, 480, 0,
-	                              vi.depth, InputOutput,
-	                              vi.visual, 0, NULL);
+	window = XCreateWindow(display,
+	                       root,
+	                       0,
+	                       0,
+	                       640,
+	                       480,
+	                       0,
+	                       vi.depth,
+	                       InputOutput,
+	                       vi.visual,
+	                       0,
+	                       NULL);
 	if (!window)
 	{
 		fprintf(stderr, "%s: failed to create window\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	XChangeProperty(display, window, XA_WM_NAME, XA_STRING, 8,
-	                PropModeReplace, (uint8_t*)"anim", 4);
-	XGCValues gc_values;
+	XChangeProperty(display,
+	                window,
+	                XA_WM_NAME,
+	                XA_STRING,
+	                8,
+	                PropModeReplace,
+	                (uint8_t*)"anim",
+	                4);
 	gc_values.foreground = 0xFFFFFFFF;
 	gc_values.graphics_exposures = 0;
-	GC gc = XCreateGC(display, window, GCForeground | GCGraphicsExposures,
-	                  &gc_values);
+	gc = XCreateGC(display,
+	               window,
+	               GCForeground | GCGraphicsExposures,
+	               &gc_values);
 	if (!gc)
 	{
 		fprintf(stderr, "%s: failed to create GC\n", argv[0]);
@@ -58,6 +83,7 @@ int main(int argc, char **argv)
 	while (1)
 	{
 		XEvent event;
+
 		while (XPending(display))
 			XNextEvent(display, &event);
 		float t = nanotime() / 1000000000.f * M_PI;

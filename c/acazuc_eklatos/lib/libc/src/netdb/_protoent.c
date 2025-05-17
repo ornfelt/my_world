@@ -9,12 +9,14 @@
 FILE *protoent_fp;
 int protoent_stayopen;
 
-struct protoent *next_protoent(void)
+struct protoent *
+next_protoent(void)
 {
 	static char protoent_name[256];
 	static struct protoent protoent;
 	size_t n = 0;
 	char *line = NULL;
+
 	while (getline(&line, &n, protoent_fp) > 0)
 	{
 		char *tmp = strchr(line, '#');

@@ -3,17 +3,21 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
+	Display *display;
+	char **fonts;
+	int nfonts;
+
 	(void)argc;
-	Display *display = XOpenDisplay(NULL);
+	display = XOpenDisplay(NULL);
 	if (!display)
 	{
 		fprintf(stderr, "%s: failed to open display\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	int nfonts;
-	char **fonts = XListFonts(display, "*", 4096, &nfonts);
+	fonts = XListFonts(display, "*", 4096, &nfonts);
 	if (!fonts)
 	{
 		fprintf(stderr, "%s: failed to list fonts\n", argv[0]);

@@ -2,12 +2,15 @@
 
 #include <stdio.h>
 
-int fflush(FILE *fp)
+int
+fflush(FILE *fp)
 {
+	int res = 0;
+	FILE *f;
+	int ret;
+
 	if (!fp)
 	{
-		int res = 0;
-		FILE *f;
 		TAILQ_FOREACH(f, &files, chain)
 		{
 			if (fflush(f))
@@ -16,7 +19,7 @@ int fflush(FILE *fp)
 		return res;
 	}
 	flockfile(fp);
-	int ret = fflush_unlocked(fp);
+	ret = fflush_unlocked(fp);
 	funlockfile(fp);
 	return ret;
 }

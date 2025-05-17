@@ -31,3 +31,6 @@
 [submodule "libaudio/libaudio"]
 	path = libaudio/libaudio
 	url = https://git.sr.ht/~acazuc/libaudio
+[submodule "libnbt/libnbt"]
+	path = libnbt/libnbt
+	url = https://git.sr.ht/~acazuc/libnbt

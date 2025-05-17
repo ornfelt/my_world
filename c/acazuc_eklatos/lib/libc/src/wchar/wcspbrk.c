@@ -1,6 +1,7 @@
 #include <wchar.h>
 
-wchar_t *wcspbrk(const wchar_t *s, const wchar_t *accept)
+wchar_t *
+wcspbrk(const wchar_t *s, const wchar_t *accept)
 {
 	while (*s)
 	{

@@ -15,8 +15,8 @@ struct env
 	int opt;
 };
 
-static void display_image_colored(uint32_t width, uint32_t height,
-                                  const uint8_t *data)
+static void
+display_image_colored(uint32_t width, uint32_t height, const uint8_t *data)
 {
 	for (uint32_t y = 0; y < height; ++y)
 	{
@@ -33,8 +33,8 @@ static void display_image_colored(uint32_t width, uint32_t height,
 	printf("\033[0m");
 }
 
-static void display_image_ascii(uint32_t width, uint32_t height,
-                                const uint8_t *data)
+static void
+display_image_ascii(uint32_t width, uint32_t height, const uint8_t *data)
 {
 	for (uint32_t y = 0; y < height; ++y)
 	{
@@ -58,8 +58,8 @@ static void display_image_ascii(uint32_t width, uint32_t height,
 	}
 }
 
-static int load_png(const char *file, uint8_t **data, uint32_t *width,
-                    uint32_t *height)
+static int
+load_png(const char *file, uint8_t **data, uint32_t *width, uint32_t *height)
 {
 	int ret = 1;
 	png_structp png_ptr = NULL;
@@ -68,6 +68,7 @@ static int load_png(const char *file, uint8_t **data, uint32_t *width,
 	png_bytep *row_pointers = NULL;
 	FILE *fp = NULL;
 	int row_bytes;
+
 	fp = fopen(file, "rb");
 	if (!fp)
 		goto end;
@@ -107,12 +108,14 @@ end:
 
 }
 
-static int print_png(struct env *env, const char *file)
+static int
+print_png(struct env *env, const char *file)
 {
 	int ret = 1;
 	uint32_t width;
 	uint32_t height;
 	uint8_t *data = NULL;
+
 	if (load_png(file, &data, &width, &height))
 		goto end;
 	if (env->opt & OPT_c)
@@ -126,14 +129,16 @@ end:
 	return ret;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-h] [-c] FILES\n", progname);
 	printf("-h: display this help\n");
 	printf("-c: display colored\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

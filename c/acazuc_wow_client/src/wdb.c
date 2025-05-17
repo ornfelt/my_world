@@ -344,6 +344,7 @@ static void list_set_entry(struct wdb_list *list, jks_hmap_key_t key, void *data
 {
 	pthread_mutex_lock(&list->mutex);
 	void *ret = jks_hmap_set(&list->hmap, key, data);
+	(void)ret; /* XXX return error? */
 	assert(ret);
 	list->dirty = true;
 	pthread_mutex_unlock(&list->mutex);

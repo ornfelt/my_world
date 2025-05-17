@@ -3,7 +3,8 @@
 #include <inttypes.h>
 #include <string.h>
 
-static const uint32_t mba_values[] =
+static const uint32_t
+mba_values[] =
 {
 	0x01, 0x03, 0x02, 0x03, 0x02, 0x03, 0x02, 0x07,
 	0x06, 0x0B, 0x0A, 0x09, 0x08, 0x07, 0x06, 0x17,
@@ -12,7 +13,8 @@ static const uint32_t mba_values[] =
 	0x18, 0x0F,
 };
 
-static const uint8_t mba_bits[] =
+static const uint8_t
+mba_bits[] =
 {
 	0x01, 0x03, 0x03, 0x04, 0x04, 0x05, 0x05, 0x07,
 	0x07, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x0A,
@@ -21,7 +23,8 @@ static const uint8_t mba_bits[] =
 	0x0B, 0x0B,
 };
 
-static const uint32_t mvd_values[] =
+static const uint32_t
+mvd_values[] =
 {
 	0x01, 0x02, 0x03, 0x02, 0x03, 0x02, 0x03, 0x06,
 	0x07, 0x0A, 0x0B, 0x08, 0x09, 0x06, 0x07, 0x16,
@@ -29,7 +32,8 @@ static const uint32_t mvd_values[] =
 	0x21, 0x1E, 0x1F, 0x1C, 0x1D, 0x1A, 0x1B, 0x19,
 };
 
-static const uint8_t mvd_bits[] =
+static const uint8_t
+mvd_bits[] =
 {
 	0x01, 0x03, 0x03, 0x04, 0x04, 0x05, 0x05, 0x07,
 	0x07, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x0A,
@@ -37,7 +41,8 @@ static const uint8_t mvd_bits[] =
 	0x0B, 0x0B, 0x0B, 0x0B, 0x0B, 0x0B, 0x0B, 0x0B,
 };
 
-static const uint32_t cbp_values[] =
+static const uint32_t
+cbp_values[] =
 {
 	0x07, 0x0D, 0x0C, 0x0B, 0x0A, 0x13, 0x12, 0x11,
 	0x10, 0x0F, 0x0E, 0x0D, 0x0C, 0x0B, 0x0A, 0x09,
@@ -49,7 +54,8 @@ static const uint32_t cbp_values[] =
 	0x04, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02,
 };
 
-static const uint8_t cbp_bits[] =
+static const uint8_t
+cbp_bits[] =
 {
 	0x03, 0x04, 0x04, 0x04, 0x04, 0x05, 0x05, 0x05,
 	0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05,
@@ -61,7 +67,8 @@ static const uint8_t cbp_bits[] =
 	0x08, 0x09, 0x09, 0x09, 0x09, 0x09, 0x09,
 };
 
-static const uint8_t cbp_val[] =
+static const uint8_t
+cbp_val[] =
 {
 	60,  4,  8, 16, 32, 12, 48, 20,
 	40, 28, 44, 52, 56,  1, 61,  2,
@@ -74,7 +81,8 @@ static const uint8_t cbp_val[] =
 };
 
 /* XXX should be huffman-like structure to make decoding faster */
-static const uint32_t tcoeff_values[] =
+static const uint32_t
+tcoeff_values[] =
 {
 	0x02, 0x06, 0x07, 0x06, 0x07, 0x08, 0x09, 0x0A,
 	0x0B, 0x01, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
@@ -94,7 +102,8 @@ static const uint32_t tcoeff_values[] =
 	0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F,
 };
 
-static const uint8_t tcoeff_bits[] =
+static const uint8_t
+tcoeff_bits[] =
 {
 	0x02, 0x03, 0x03, 0x04, 0x04, 0x05, 0x05, 0x05,
 	0x05, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06,
@@ -114,7 +123,8 @@ static const uint8_t tcoeff_bits[] =
 	0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E,
 };
 
-static const uint8_t tcoeff_run[] =
+static const uint8_t
+tcoeff_run[] =
 {
 	0x00, 0x00, 0x00, 0x01, 0x01, 0x00, 0x00, 0x02,
 	0x02, 0xFF, 0x00, 0x00, 0x04, 0x04, 0x03, 0x03,
@@ -134,7 +144,8 @@ static const uint8_t tcoeff_run[] =
 	0x19, 0x19, 0x18, 0x18, 0x17, 0x17, 0x16, 0x16,
 };
 
-static const uint8_t tcoeff_level[] =
+static const uint8_t
+tcoeff_level[] =
 {
 	0x01, 0x01, 0x01, 0x01, 0x01, 0x02, 0x02, 0x01,
 	0x01, 0xFF, 0x03, 0x03, 0x01, 0x01, 0x01, 0x01,
@@ -154,7 +165,8 @@ static const uint8_t tcoeff_level[] =
 	0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
 };
 
-static const uint8_t inv_zigzag_table[64] =
+static const uint8_t
+inv_zigzag_table[64] =
 {
 	 0,  1,  5,  6, 14, 15, 27, 28,
 	 2,  4,  7, 13, 16, 26, 29, 42,
@@ -173,7 +185,8 @@ static const uint8_t inv_zigzag_table[64] =
 #define MTYPE_TCOEFF (1 << 4)
 #define MTYPE_FIL    (1 << 5)
 
-static const uint8_t mtype_flags[] =
+static const uint8_t
+mtype_flags[] =
 {
 	MTYPE_CBP | MTYPE_TCOEFF,
 	MTYPE_MVD | MTYPE_CBP | MTYPE_TCOEFF | MTYPE_FIL,
@@ -187,7 +200,8 @@ static const uint8_t mtype_flags[] =
 	MTYPE_MQUANT | MTYPE_MVD | MTYPE_CBP | MTYPE_TCOEFF,
 };
 
-static void idct1(int32_t *restrict dst, const int32_t *restrict src)
+static void
+idct1(int32_t * restrict dst, const int32_t * restrict src)
 {
 	for (size_t x = 0; x < 8; ++x)
 	{
@@ -235,7 +249,8 @@ static void idct1(int32_t *restrict dst, const int32_t *restrict src)
 	}
 }
 
-static void idct2(int32_t *restrict dst, const int32_t *restrict src)
+static void
+idct2(int32_t * restrict dst, const int32_t * restrict src)
 {
 	for (size_t y = 0; y < 8; ++y)
 	{
@@ -284,21 +299,26 @@ static void idct2(int32_t *restrict dst, const int32_t *restrict src)
 	}
 }
 
-static void idct(int32_t *restrict dst, const int32_t *restrict src)
+static void
+idct(int32_t * restrict dst, const int32_t * restrict src)
 {
 	int32_t tmp[64];
 	idct1(tmp, src);
 	idct2(dst, tmp);
 }
 
-static void dezigzag(int32_t *restrict dst, const int32_t *restrict src)
+static void
+dezigzag(int32_t * restrict dst, const int32_t * restrict src)
 {
 	for (size_t i = 0; i < 64; ++i)
 		dst[i] = src[inv_zigzag_table[i]];
 }
 
-static void dequantify(int32_t *restrict dst, const int32_t *restrict src,
-                       int32_t quant, int is_intra)
+static void
+dequantify(int32_t * restrict dst,
+           const int32_t * restrict src,
+           int32_t quant,
+           int is_intra)
 {
 	if (quant & 1)
 	{
@@ -343,8 +363,11 @@ static void dequantify(int32_t *restrict dst, const int32_t *restrict src,
 	}
 }
 
-static uint32_t decode_vlc(struct h261 *h261, const uint32_t *values,
-                           const uint8_t *bits, size_t codes)
+static uint32_t
+decode_vlc(struct h261 *h261,
+           const uint32_t *values,
+           const uint8_t *bits,
+           size_t codes)
 {
 	uint32_t v = 0;
 	size_t n = 0;
@@ -367,7 +390,8 @@ static uint32_t decode_vlc(struct h261 *h261, const uint32_t *values,
 	return (uint32_t)-1;
 }
 
-static uint32_t decode_mtype(struct h261 *h261)
+static uint32_t
+decode_mtype(struct h261 *h261)
 {
 	size_t n = 0;
 	while (n < 10)
@@ -382,7 +406,8 @@ static uint32_t decode_mtype(struct h261 *h261)
 	return (uint32_t)-1;
 }
 
-static int decode_block(struct h261 *h261, int32_t *data, int is_intra)
+static int
+decode_block(struct h261 *h261, int32_t *data, int is_intra)
 {
 	size_t i = 0;
 	if (is_intra)
@@ -485,7 +510,8 @@ static int decode_block(struct h261 *h261, int32_t *data, int is_intra)
 	return 0;
 }
 
-static int32_t decode_mvd(struct h261 *h261)
+static int32_t
+decode_mvd(struct h261 *h261)
 {
 	uint32_t mvd = decode_vlc(h261, mvd_values, mvd_bits, sizeof(mvd_bits));
 	if (mvd == (uint32_t)-1)
@@ -500,8 +526,10 @@ static int32_t decode_mvd(struct h261 *h261)
 	return -(int32_t)((mvd + 1) >> 1);
 }
 
-static void store_intra_luma(struct h261 *h261, int32_t *restrict dst,
-                             const int32_t *restrict src)
+static void
+store_intra_luma(struct h261 *h261,
+                 int32_t * restrict dst,
+                 const int32_t * restrict src)
 {
 	struct h261_frame *frame = h261->frame;
 	uint32_t w = frame->width;
@@ -516,8 +544,10 @@ static void store_intra_luma(struct h261 *h261, int32_t *restrict dst,
 	}
 }
 
-static void store_intra_chroma(struct h261 *h261, int32_t *restrict dst,
-                               const int32_t *restrict src)
+static void
+store_intra_chroma(struct h261 *h261,
+                   int32_t * restrict dst,
+                   const int32_t * restrict src)
 {
 	struct h261_frame *frame = h261->frame;
 	uint32_t w = frame->width;
@@ -537,8 +567,11 @@ static void store_intra_chroma(struct h261 *h261, int32_t *restrict dst,
 	}
 }
 
-static void store_intra_block(struct h261 *h261, int32_t blocks[6][64],
-                              uint32_t x, uint32_t y)
+static void
+store_intra_block(struct h261 *h261,
+                  int32_t blocks[6][64],
+                  uint32_t x,
+                  uint32_t y)
 {
 	struct h261_frame *frame = h261->frame;
 	uint32_t w = frame->width;
@@ -554,9 +587,11 @@ static void store_intra_block(struct h261 *h261, int32_t blocks[6][64],
 	store_intra_chroma(h261, Cr_data, blocks[5]);
 }
 
-static void store_inter_luma(struct h261 *h261, int32_t *restrict dst,
-                             const int32_t *restrict src1,
-                             const int32_t *restrict src2)
+static void
+store_inter_luma(struct h261 *h261,
+                 int32_t * restrict dst,
+                 const int32_t * restrict src1,
+                 const int32_t * restrict src2)
 {
 	struct h261_frame *frame = h261->frame;
 	uint32_t w = frame->width;
@@ -573,9 +608,11 @@ static void store_inter_luma(struct h261 *h261, int32_t *restrict dst,
 	}
 }
 
-static void store_inter_chroma(struct h261 *h261, int32_t *restrict dst,
-                               const int32_t *restrict src1,
-                               const int32_t *restrict src2)
+static void
+store_inter_chroma(struct h261 *h261,
+                   int32_t * restrict dst,
+                   const int32_t * restrict src1,
+                   const int32_t * restrict src2)
 {
 	struct h261_frame *frame = h261->frame;
 	uint32_t w = frame->width;
@@ -597,8 +634,11 @@ static void store_inter_chroma(struct h261 *h261, int32_t *restrict dst,
 	}
 }
 
-static void store_inter_block(struct h261 *h261, int32_t blocks[6][64],
-                              uint32_t x, uint32_t y)
+static void
+store_inter_block(struct h261 *h261,
+                  int32_t blocks[6][64],
+                  uint32_t x,
+                  uint32_t y)
 {
 	struct h261_frame *frame = h261->frame;
 	struct h261_frame *prev_frame = h261->prev_frame;
@@ -619,8 +659,10 @@ static void store_inter_block(struct h261 *h261, int32_t blocks[6][64],
 	store_inter_chroma(h261, Cr_data, Cr_prev, blocks[5]);
 }
 
-static void store_copy(struct h261 *h261, int32_t *restrict dst,
-                       const int32_t *restrict src)
+static void
+store_copy(struct h261 *h261,
+           int32_t * restrict dst,
+           const int32_t * restrict src)
 {
 	struct h261_frame *frame = h261->frame;
 	uint32_t w = frame->width;
@@ -635,7 +677,8 @@ static void store_copy(struct h261 *h261, int32_t *restrict dst,
 	}
 }
 
-static void store_copy_block(struct h261 *h261, uint32_t x, uint32_t y)
+static void
+store_copy_block(struct h261 *h261, uint32_t x, uint32_t y)
 {
 	struct h261_frame *frame = h261->frame;
 	struct h261_frame *prev_frame = h261->prev_frame;
@@ -652,7 +695,8 @@ static void store_copy_block(struct h261 *h261, uint32_t x, uint32_t y)
 	store_copy(h261, Cr_data, Cr_prev);
 }
 
-static void store_moved_block(struct h261 *h261, uint32_t x, uint32_t y)
+static void
+store_moved_block(struct h261 *h261, uint32_t x, uint32_t y)
 {
 	struct h261_frame *frame = h261->frame;
 	struct h261_frame *prev_frame = h261->prev_frame;
@@ -670,7 +714,8 @@ static void store_moved_block(struct h261 *h261, uint32_t x, uint32_t y)
 	store_copy(h261, Cr_data, Cr_prev);
 }
 
-static void loop_filter(int32_t *block)
+static void
+loop_filter(int32_t *block)
 {
 	int32_t tmp[64];
 	for (size_t x = 0; x < 8; ++x)
@@ -701,8 +746,12 @@ static void loop_filter(int32_t *block)
 	}
 }
 
-static int decode_mb(struct h261 *h261, uint32_t x, uint32_t y,
-                     uint32_t mba, uint32_t mbad)
+static int
+decode_mb(struct h261 *h261,
+          uint32_t x,
+          uint32_t y,
+          uint32_t mba,
+          uint32_t mbad)
 {
 	uint32_t mtype = decode_mtype(h261);
 	if (mtype == (uint32_t)-1)
@@ -802,7 +851,8 @@ static int decode_mb(struct h261 *h261, uint32_t x, uint32_t y,
 	return 0;
 }
 
-static void get_mba_coords(uint32_t mba, uint32_t *x, uint32_t *y)
+static void
+get_mba_coords(uint32_t mba, uint32_t *x, uint32_t *y)
 {
 	if (mba >= 22)
 	{
@@ -821,7 +871,8 @@ static void get_mba_coords(uint32_t mba, uint32_t *x, uint32_t *y)
 	}
 }
 
-static int decode_gob(struct h261 *h261)
+static int
+decode_gob(struct h261 *h261)
 {
 	uint32_t gbsc = bs_getbits(&h261->bs, 16);
 	if (gbsc == (uint32_t)-1)
@@ -932,11 +983,12 @@ end:
 	return 0;
 }
 
-static void merge_rgb_pixel(uint8_t *restrict row,
-                            const int32_t *restrict Y_row,
-                            const int32_t *restrict Cb_row,
-                            const int32_t *restrict Cr_row,
-                            size_t x)
+static void
+merge_rgb_pixel(uint8_t * restrict row,
+                const int32_t * restrict Y_row,
+                const int32_t * restrict Cb_row,
+                const int32_t * restrict Cr_row,
+                size_t x)
 {
 	int32_t Y = Y_row[x];
 	int32_t Cr = Cr_row[x] - 128;
@@ -968,7 +1020,8 @@ static void merge_rgb_pixel(uint8_t *restrict row,
 	row[x * 3 + 2] = b;
 }
 
-static void merge_rgb(struct h261 *h261, uint8_t *dst)
+static void
+merge_rgb(struct h261 *h261, uint8_t *dst)
 {
 	struct h261_frame *frame = h261->frame;
 	uint32_t w = frame->width;
@@ -987,8 +1040,11 @@ static void merge_rgb(struct h261 *h261, uint8_t *dst)
 	}
 }
 
-int h261_decode_frame(struct h261 *h261, void *data,
-                      uint32_t *width, uint32_t *height)
+int
+h261_decode_frame(struct h261 *h261,
+                  void *data,
+                  uint32_t *width,
+                  uint32_t *height)
 {
 	if (h261->eof)
 		return -1;

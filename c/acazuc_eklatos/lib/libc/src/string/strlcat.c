@@ -2,7 +2,8 @@
 
 #include <string.h>
 
-size_t strlcat(char *d, const char *s, size_t n)
+size_t
+strlcat(char *d, const char *s, size_t n)
 {
 	if (!n)
 		return strlen(d) + strlen(s);

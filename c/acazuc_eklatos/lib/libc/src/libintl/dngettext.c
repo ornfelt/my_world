@@ -1,7 +1,10 @@
 #include <libintl.h>
 
-char *dngettext(const char *domain, const char *msgid,
-                const char *msgid_plural, unsigned long n)
+char *
+dngettext(const char *domain,
+          const char *msgid,
+          const char *msgid_plural,
+          unsigned long n)
 {
 	(void)domain;
 	/* XXX */

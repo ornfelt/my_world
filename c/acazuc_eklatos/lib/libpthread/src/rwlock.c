@@ -9,22 +9,25 @@
 #define RWLOCK_WRITING 0x7FFFFFFF
 #define RWLOCK_MAX     0x7FFFFFFE
 
-int pthread_rwlockattr_init(pthread_rwlockattr_t *attr)
+int
+pthread_rwlockattr_init(pthread_rwlockattr_t *attr)
 {
 	if (!attr)
 		return EINVAL;
 	return 0;
 }
 
-int pthread_rwlockattr_destroy(pthread_rwlockattr_t *attr)
+int
+pthread_rwlockattr_destroy(pthread_rwlockattr_t *attr)
 {
 	if (!attr)
 		return EINVAL;
 	return 0;
 }
 
-int pthread_rwlock_init(pthread_rwlock_t *rwlock,
-                        const pthread_rwlockattr_t *attr)
+int
+pthread_rwlock_init(pthread_rwlock_t *rwlock,
+                    const pthread_rwlockattr_t *attr)
 {
 	(void)attr;
 	if (!rwlock)
@@ -34,7 +37,8 @@ int pthread_rwlock_init(pthread_rwlock_t *rwlock,
 	return 0;
 }
 
-int pthread_rwlock_destroy(pthread_rwlock_t *rwlock)
+int
+pthread_rwlock_destroy(pthread_rwlock_t *rwlock)
 {
 	if (!rwlock)
 		return EINVAL;
@@ -43,12 +47,14 @@ int pthread_rwlock_destroy(pthread_rwlock_t *rwlock)
 	return 0;
 }
 
-int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock)
+int
+pthread_rwlock_rdlock(pthread_rwlock_t *rwlock)
 {
 	return pthread_rwlock_timedrdlock(rwlock, NULL);
 }
 
-static int rdacquire(pthread_rwlock_t *rwlock, uint32_t *val)
+static int
+rdacquire(pthread_rwlock_t *rwlock, uint32_t *val)
 {
 	uint32_t cur = __atomic_load_n(&rwlock->value, __ATOMIC_ACQUIRE);
 	while (1)
@@ -68,15 +74,17 @@ static int rdacquire(pthread_rwlock_t *rwlock, uint32_t *val)
 	}
 }
 
-int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock)
+int
+pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock)
 {
 	if (!rwlock)
 		return EINVAL;
 	return rdacquire(rwlock, NULL);
 }
 
-int pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock,
-                               const struct timespec *abstime)
+int
+pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock,
+                           const struct timespec *abstime)
 {
 	if (!rwlock)
 		return EINVAL;
@@ -105,12 +113,14 @@ int pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock,
 	}
 }
 
-int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock)
+int
+pthread_rwlock_wrlock(pthread_rwlock_t *rwlock)
 {
 	return pthread_rwlock_timedwrlock(rwlock, NULL);
 }
 
-static int wracquire(pthread_rwlock_t *rwlock, uint32_t *cur)
+static int
+wracquire(pthread_rwlock_t *rwlock, uint32_t *cur)
 {
 	uint32_t expected = 0;
 	if (__atomic_compare_exchange_n(&rwlock->value, &expected,
@@ -126,15 +136,17 @@ static int wracquire(pthread_rwlock_t *rwlock, uint32_t *cur)
 	return EBUSY;
 }
 
-int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock)
+int
+pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock)
 {
 	if (!rwlock)
 		return EINVAL;
 	return wracquire(rwlock, NULL);
 }
 
-int pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock,
-                               const struct timespec *abstime)
+int
+pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock,
+                           const struct timespec *abstime)
 {
 	if (!rwlock)
 		return EINVAL;
@@ -163,7 +175,8 @@ int pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock,
 	return 0;
 }
 
-int pthread_rwlock_unlock(pthread_rwlock_t *rwlock)
+int
+pthread_rwlock_unlock(pthread_rwlock_t *rwlock)
 {
 	if (!rwlock)
 		return EINVAL;

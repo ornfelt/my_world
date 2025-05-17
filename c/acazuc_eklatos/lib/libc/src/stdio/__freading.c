@@ -2,7 +2,8 @@
 
 #include <stdio.h>
 
-int __freading(FILE *fp)
+int
+__freading(FILE *fp)
 {
 	return fp->mode == O_RDONLY;
 }

@@ -2,7 +2,8 @@
 
 #include <netdb.h>
 
-void setnetent(int stayopen)
+void
+setnetent(int stayopen)
 {
 	if (netent_fp)
 		fclose(netent_fp);

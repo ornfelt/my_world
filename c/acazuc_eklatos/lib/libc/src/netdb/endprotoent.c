@@ -2,7 +2,8 @@
 
 #include <netdb.h>
 
-void endprotoent(void)
+void
+endprotoent(void)
 {
 	if (!protoent_fp)
 		return;

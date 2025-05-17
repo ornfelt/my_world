@@ -8,22 +8,28 @@ int optind = 1;
 int opterr = 1;
 int optopt;
 
-static const struct option *parse_long(int argc, char * const argv[],
-                                       const struct option *longopts,
-                                       int longopt_type, char *cur)
+static const struct option *
+parse_long(int argc,
+           char * const argv[],
+           const struct option *longopts,
+           int longopt_type,
+           char *cur)
 {
+	char *eq;
+
 	if (*cur == '-')
 	{
 		if (longopt_type != LONGOPT_ONLY)
 			return NULL;
 		cur++;
 	}
-	char *eq = strchr(cur, '=');
+	eq = strchr(cur, '=');
 	if (eq)
 	{
 		for (size_t i = 0; longopts[i].name; ++i)
 		{
 			const struct option *opt = &longopts[i];
+
 			if (strlen(opt->name) != (size_t)(eq - cur)
 			 || strcmp(opt->name, cur))
 				continue;
@@ -37,6 +43,7 @@ static const struct option *parse_long(int argc, char * const argv[],
 	for (size_t i = 0; longopts[i].name; ++i)
 	{
 		const struct option *opt = &longopts[i];
+
 		if (strcmp(opt->name, cur))
 			continue;
 		if (opt->has_arg == no_argument)
@@ -73,11 +80,18 @@ static const struct option *parse_long(int argc, char * const argv[],
 	return NULL;
 }
 
-int getopt_impl(int argc, char * const argv[], const char *optstring,
-                const struct option *longopts, int *longindex,
-                int longopt_type)
+int
+getopt_impl(int argc,
+            char * const argv[],
+            const char *optstring,
+            const struct option *longopts,
+            int *longindex,
+            int longopt_type)
 {
 	static char *cur = NULL;
+	char *optptr;
+	char optc;
+
 	if (optind >= argc)
 		return -1;
 	if (!cur)
@@ -92,6 +106,7 @@ int getopt_impl(int argc, char * const argv[], const char *optstring,
 		if (longopt_type != LONGOPT_NONE)
 		{
 			const struct option *matched;
+
 			matched = parse_long(argc, argv, longopts, longopt_type,
 			                     cur);
 			if (matched == (struct option*)-1)
@@ -114,8 +129,8 @@ int getopt_impl(int argc, char * const argv[], const char *optstring,
 			}
 		}
 	}
-	char optc = *cur;
-	char *optptr = strchr(optstring, optc);
+	optc = *cur;
+	optptr = strchr(optstring, optc);
 	if (!optptr)
 	{
 		if (opterr)

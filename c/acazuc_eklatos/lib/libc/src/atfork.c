@@ -3,8 +3,10 @@
 
 #include "_atfork.h"
 
-int __libc_atfork(void (*prepare)(void), void (*parent)(void),
-                  void (*child)(void))
+int
+__libc_atfork(void (*prepare)(void),
+              void (*parent)(void),
+              void (*child)(void))
 {
 	if (prepare && g_atfork_prepare_nb >= ATFORK_MAX)
 		return ENOMEM;

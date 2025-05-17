@@ -25,8 +25,11 @@ struct env
 	int opt;
 };
 
-static int resolve_addr(struct env *env, struct sockaddr_in *sin,
-                        const char *host, const char *port)
+static int
+resolve_addr(struct env *env,
+             struct sockaddr_in *sin,
+             const char *host,
+             const char *port)
 {
 	struct addrinfo *addrs;
 	int ret;
@@ -41,7 +44,8 @@ static int resolve_addr(struct env *env, struct sockaddr_in *sin,
 	ret = getaddrinfo(host, port, NULL, &addrs);
 	if (ret)
 	{
-		fprintf(stderr, "%s: getaddrinfo: %s\n", env->progname,
+		fprintf(stderr, "%s: getaddrinfo: %s\n",
+		        env->progname,
 		        gai_strerror(ret));
 		return 1;
 	}
@@ -64,42 +68,52 @@ end:
 	return ret;
 }
 
-static int open_sock(struct env *env)
+static int
+open_sock(struct env *env)
 {
 	env->sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (env->sock == -1)
 	{
-		fprintf(stderr, "%s: socket: %s\n", env->progname,
+		fprintf(stderr, "%s: socket: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
 	return 0;
 }
 
-static int handle_stdin(struct env *env, int fd)
+static int
+handle_stdin(struct env *env, int fd)
 {
 	char buf[4096];
-	ssize_t rd = read(0, buf, sizeof(buf));
+	ssize_t rd;
+
+	rd = read(0, buf, sizeof(buf));
 	if (!rd)
 		return 1;
 	if (send(fd, buf, rd, 0) == -1)
 	{
-		fprintf(stderr, "%s: send: %s\n", env->progname,
+		fprintf(stderr, "%s: send: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
 	return 0;
 }
 
-static int handle_sock(struct env *env, int fd)
+static int
+handle_sock(struct env *env, int fd)
 {
 	char buf[4096];
-	ssize_t rd = recv(fd, buf, sizeof(buf), MSG_DONTWAIT);
+	ssize_t rd;
+
+	rd = recv(fd, buf, sizeof(buf), MSG_DONTWAIT);
 	if (rd == -1)
 	{
 		if (errno == EAGAIN)
 			return 0;
-		fprintf(stderr, "%s: recv: %s\n", env->progname,
+		fprintf(stderr, "%s: recv: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
@@ -109,19 +123,23 @@ static int handle_sock(struct env *env, int fd)
 	return 0;
 }
 
-static int handle_conn(struct env *env, int fd)
+static int
+handle_conn(struct env *env, int fd)
 {
 	while (1)
 	{
 		struct pollfd fds[2];
+		int ret;
+
 		fds[0].fd = 0;
 		fds[0].events = POLLIN;
 		fds[1].fd = fd;
 		fds[1].events = POLLIN;
-		int ret = poll(fds, sizeof(fds) / sizeof(*fds), -1);
+		ret = poll(fds, sizeof(fds) / sizeof(*fds), -1);
 		if (ret == -1)
 		{
-			fprintf(stderr, "%s: poll: %s\n", env->progname,
+			fprintf(stderr, "%s: poll: %s\n",
+			        env->progname,
 			        strerror(errno));
 			return 1;
 		}
@@ -144,22 +162,26 @@ static int handle_conn(struct env *env, int fd)
 	return 0;
 }
 
-static int run_listen(struct env *env)
+static int
+run_listen(struct env *env)
 {
 	if (resolve_addr(env, &env->src, env->src_host, env->src_port))
 		return 1;
 	if (open_sock(env))
 		return 1;
-	if (bind(env->sock, (struct sockaddr*)&env->src,
-	                    sizeof(env->src)) == -1)
+	if (bind(env->sock,
+	         (struct sockaddr*)&env->src,
+	         sizeof(env->src)) == -1)
 	{
-		fprintf(stderr, "%s: bind: %s\n", env->progname,
+		fprintf(stderr, "%s: bind: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
 	if (listen(env->sock, 256) == -1)
 	{
-		fprintf(stderr, "%s: listen: %s\n", env->progname,
+		fprintf(stderr, "%s: listen: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
@@ -167,7 +189,9 @@ static int run_listen(struct env *env)
 	{
 		struct sockaddr_in sin;
 		socklen_t len = sizeof(sin);
-		int fd = accept(env->sock, (struct sockaddr*)&sin, &len);
+		int fd;
+
+		fd = accept(env->sock, (struct sockaddr*)&sin, &len);
 		if (fd == -1)
 		{
 			if (errno == EINTR || errno == EAGAIN)
@@ -179,7 +203,8 @@ static int run_listen(struct env *env)
 	return 0;
 }
 
-static int run_connect(struct env *env)
+static int
+run_connect(struct env *env)
 {
 	if (resolve_addr(env, &env->dst, env->dst_host, env->dst_port))
 		return 1;
@@ -188,14 +213,16 @@ static int run_connect(struct env *env)
 	if (connect(env->sock, (struct sockaddr*)&env->dst,
 	            sizeof(env->dst)) == -1)
 	{
-		fprintf(stderr, "%s: connect: %s\n", env->progname,
+		fprintf(stderr, "%s: connect: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
 	return handle_conn(env, env->sock);
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-h] [-s source] [-p port] [-l] [destination] [port]\n", progname);
 	printf("-h: show this help\n");
@@ -204,7 +231,8 @@ static void usage(const char *progname)
 	printf("-l       : enable listen mode\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

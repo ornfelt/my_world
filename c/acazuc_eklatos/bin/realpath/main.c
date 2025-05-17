@@ -9,24 +9,31 @@ struct env
 	const char *progname;
 };
 
-static void print_realpath(struct env *env, const char *file)
+static void
+print_realpath(struct env *env, const char *file)
 {
-	char *ret = realpath(file, NULL);
+	char *ret;
+
+	ret = realpath(file, NULL);
 	if (!ret)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", env->progname, strerror(errno));
+		fprintf(stderr, "%s: malloc: %s\n",
+		        env->progname,
+		        strerror(errno));
 		return;
 	}
 	puts(ret);
 	free(ret);
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s FILES\n", progname);
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

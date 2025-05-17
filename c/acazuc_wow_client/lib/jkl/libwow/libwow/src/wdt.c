@@ -6,9 +6,12 @@
 #include <string.h>
 #include <stdlib.h>
 
-struct wow_wdt_file *wow_wdt_file_new(struct wow_mpq_file *mpq)
+struct wow_wdt_file *
+wow_wdt_file_new(struct wow_mpq_file *mpq)
 {
-	struct wow_wdt_file *file = WOW_MALLOC(sizeof(*file));
+	struct wow_wdt_file *file;
+
+	file = WOW_MALLOC(sizeof(*file));
 	if (!file)
 		return NULL;
 	file->modf.data = NULL;
@@ -51,7 +54,8 @@ err:
 	return NULL;
 }
 
-void wow_wdt_file_delete(struct wow_wdt_file *file)
+void
+wow_wdt_file_delete(struct wow_wdt_file *file)
 {
 	if (!file)
 		return;

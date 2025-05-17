@@ -11,13 +11,15 @@
 FILE *servent_fp;
 int servent_stayopen;
 
-struct servent *next_servent(void)
+struct servent *
+next_servent(void)
 {
 	static char servent_name[256];
 	static char servent_proto[256];
 	static struct servent servent;
 	size_t n = 0;
 	char *line = NULL;
+
 	while (getline(&line, &n, servent_fp) > 0)
 	{
 		char *tmp = strchr(line, '#');

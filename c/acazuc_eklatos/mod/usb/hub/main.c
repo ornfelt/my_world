@@ -18,7 +18,8 @@
 
 #define MAX_PORTS 8
 
-static const struct usb_itf_probe probes[] =
+static const struct usb_itf_probe
+probes[] =
 {
 	{USB_CLASS_HUB, 0, 0},
 };
@@ -32,7 +33,8 @@ struct usb_hub
 	struct usb_device *devices[MAX_PORTS];
 };
 
-static int reset_port(struct usb_hub *hub, size_t port)
+static int
+reset_port(struct usb_hub *hub, size_t port)
 {
 	enum usb_speed speed;
 	uint32_t status;
@@ -89,15 +91,18 @@ static int reset_port(struct usb_hub *hub, size_t port)
 	return -ETIMEDOUT;
 }
 
-static void usb_hub_free(struct usb_hub *hub)
+static void
+usb_hub_free(struct usb_hub *hub)
 {
 	if (!hub)
 		return;
 	free(hub);
 }
 
-static int usb_init(struct usb_device *device, struct usb_interface *interface,
-                    void *userdata)
+static int
+usb_init(struct usb_device *device,
+         struct usb_interface *interface,
+         void *userdata)
 {
 	struct usb_hub *hub = NULL;
 	int ret;
@@ -144,7 +149,8 @@ err:
 	return ret;
 }
 
-int init(void)
+int
+init(void)
 {
 	int ret;
 
@@ -153,17 +159,19 @@ int init(void)
 	                              usb_init, NULL);
 	if (ret)
 	{
-		TRACE("usb_mouse: failed to register probes");
+		TRACE("usb_hub: failed to register probes");
 		return ret;
 	}
 	return 0;
 }
 
-void fini(void)
+void
+fini(void)
 {
 }
 
-struct kmod_info kmod =
+struct kmod_info
+kmod =
 {
 	.magic = KMOD_MAGIC,
 	.version = 1,

@@ -19,14 +19,16 @@ struct output_file
 	TAILQ_ENTRY(output_file) chain;
 };
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-h] [-a] FILES\n", progname);
 	printf("-h: show this help\n");
 	printf("-a: open the given files in append mode\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

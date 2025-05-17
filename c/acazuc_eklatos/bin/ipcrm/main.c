@@ -23,82 +23,93 @@ struct env
 	int id;
 };
 
-static int rm_shm_id(struct env *env)
+static int
+rm_shm_id(struct env *env)
 {
-	int ret = shmctl(env->id, IPC_RMID, NULL);
-	if (ret == -1)
+	if (shmctl(env->id, IPC_RMID, NULL) == -1)
 	{
-		fprintf(stderr, "%s: shmctl: %s\n", env->progname,
+		fprintf(stderr, "%s: shmctl: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
 	return 0;
 }
 
-static int rm_shm_key(struct env *env)
+static int
+rm_shm_key(struct env *env)
 {
 	env->id = shmget(env->key, 0, 0);
 	if (env->id == -1)
 	{
-		fprintf(stderr, "%s: shmget: %s\n", env->progname,
+		fprintf(stderr, "%s: shmget: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
 	return rm_shm_id(env);
 }
 
-static int rm_sem_id(struct env *env)
+static int
+rm_sem_id(struct env *env)
 {
-	int ret = semctl(env->id, 0, IPC_RMID, NULL);
-	if (ret == -1)
+	if (semctl(env->id, 0, IPC_RMID, NULL) == -1)
 	{
-		fprintf(stderr, "%s: semctl: %s\n", env->progname,
+		fprintf(stderr, "%s: semctl: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
 	return 0;
 }
 
-static int rm_sem_key(struct env *env)
+static int
+rm_sem_key(struct env *env)
 {
 	env->id = semget(env->key, 0, 0);
 	if (env->id == -1)
 	{
-		fprintf(stderr, "%s: semget: %s\n", env->progname,
+		fprintf(stderr, "%s: semget: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
 	return rm_sem_id(env);
 }
 
-static int rm_msg_id(struct env *env)
+static int
+rm_msg_id(struct env *env)
 {
-	int ret = msgctl(env->id, IPC_RMID, NULL);
-	if (ret == -1)
+	if (msgctl(env->id, IPC_RMID, NULL) == -1)
 	{
-		fprintf(stderr, "%s: msgctl: %s\n", env->progname,
+		fprintf(stderr, "%s: msgctl: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
 	return 0;
 }
 
-static int rm_msg_key(struct env *env)
+static int
+rm_msg_key(struct env *env)
 {
 	env->id = msgget(env->key, 0);
 	if (env->id == -1)
 	{
-		fprintf(stderr, "%s: msgget: %s\n", env->progname,
+		fprintf(stderr, "%s: msgget: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
 	return rm_msg_id(env);
 }
 
-static int parse_key(struct env *env, const char *value)
+static int
+parse_key(struct env *env, const char *value)
 {
-	errno = 0;
 	char *endptr;
+
+	errno = 0;
 	env->key = strtoul(value, &endptr, 0);
 	if (errno || *endptr || !env->key)
 	{
@@ -108,10 +119,12 @@ static int parse_key(struct env *env, const char *value)
 	return 0;
 }
 
-static int parse_id(struct env *env, const char *value)
+static int
+parse_id(struct env *env, const char *value)
 {
-	errno = 0;
 	char *endptr;
+
+	errno = 0;
 	env->id = strtol(value, &endptr, 0);
 	if (errno || *endptr || env->id < 0)
 	{
@@ -121,7 +134,8 @@ static int parse_id(struct env *env, const char *value)
 	return 0;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-M key] [-m id] [-Q key] [-q id] [-S key] [-s id] [-h]\n", progname);
 	printf("-M key: remove the shared memory segment with the given key\n");
@@ -133,7 +147,8 @@ static void usage(const char *progname)
 	printf("-h    : show this help\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

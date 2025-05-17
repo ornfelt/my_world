@@ -2,7 +2,8 @@
 
 #include <string.h>
 
-char *stpncpy(char *d, const char *s, size_t n)
+char *
+stpncpy(char *d, const char *s, size_t n)
 {
 	size_t i = 0;
 	while (((size_t)s + i) % sizeof(size_t))

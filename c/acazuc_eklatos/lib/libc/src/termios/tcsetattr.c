@@ -3,7 +3,8 @@
 #include <termios.h>
 #include <errno.h>
 
-int tcsetattr(int fd, int actions, const struct termios *termios)
+int
+tcsetattr(int fd, int actions, const struct termios *termios)
 {
 	switch (actions)
 	{

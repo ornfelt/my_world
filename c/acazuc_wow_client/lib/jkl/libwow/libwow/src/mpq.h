@@ -108,11 +108,16 @@ void wow_mpq_archive_delete(struct wow_mpq_archive *archive);
 
 struct wow_mpq_compound *wow_mpq_compound_new(void);
 void wow_mpq_compound_delete(struct wow_mpq_compound *compound);
-bool wow_mpq_compound_add_archive(struct wow_mpq_compound *compound, const struct wow_mpq_archive *archive);
-const struct wow_mpq_block *wow_mpq_get_archive_block(const struct wow_mpq_archive_view *archive, const char *filename);
-struct wow_mpq_file *wow_mpq_get_archive_file(const struct wow_mpq_archive_view *archive, const char *filename);
-const struct wow_mpq_block *wow_mpq_get_block(const struct wow_mpq_compound *compound, const char *filename);
-struct wow_mpq_file *wow_mpq_get_file(const struct wow_mpq_compound *compound, const char *filename);
+bool wow_mpq_compound_add_archive(struct wow_mpq_compound *compound,
+                                  const struct wow_mpq_archive *archive);
+const struct wow_mpq_block *wow_mpq_get_archive_block(const struct wow_mpq_archive_view *archive,
+                                                      const char *filename);
+struct wow_mpq_file *wow_mpq_get_archive_file(const struct wow_mpq_archive_view *archive,
+                                              const char *filename);
+const struct wow_mpq_block *wow_mpq_get_block(const struct wow_mpq_compound *compound,
+                                              const char *filename);
+struct wow_mpq_file *wow_mpq_get_file(const struct wow_mpq_compound *compound,
+                                      const char *filename);
 
 void wow_mpq_file_delete(struct wow_mpq_file *file);
 uint32_t wow_mpq_read(struct wow_mpq_file *file, void *data, uint32_t len);

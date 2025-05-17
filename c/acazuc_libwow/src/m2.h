@@ -520,13 +520,13 @@ struct wow_m2_texture_transform *wow_m2_texture_transforms_dup(const struct wow_
 void wow_m2_texture_transforms_delete(struct wow_m2_texture_transform *val, uint32_t nb);
 
 struct wow_m2_texture_weight *wow_m2_texture_weights_dup(const struct wow_m2_texture_weight *dup, uint32_t nb);
-void wow_m2_texture_weights_delete(struct wow_m2_texture_weight *val, uint32_t ptr);
+void wow_m2_texture_weights_delete(struct wow_m2_texture_weight *val, uint32_t nb);
+
+struct wow_m2_skin_profile *wow_m2_skin_profiles_dup(const struct wow_m2_skin_profile *dup, uint32_t nb);
+void wow_m2_skin_profiles_delete(struct wow_m2_skin_profile *val, uint32_t nb);
 
 struct wow_m2_attachment *wow_m2_attachments_dup(const struct wow_m2_attachment *dup, uint32_t nb);
 void wow_m2_attachments_delete(struct wow_m2_attachment *val, uint32_t nb);
-
-struct wow_m2_sequence *wow_m2_sequences_dup(const struct wow_m2_sequence *dup, uint32_t nb);
-void wow_m2_sequences_delete(struct wow_m2_sequence *val, uint32_t nb);
 
 struct wow_m2_particle *wow_m2_particles_dup(const struct wow_m2_particle *dup, uint32_t nb);
 void wow_m2_particles_delete(struct wow_m2_particle *val, uint32_t nb);

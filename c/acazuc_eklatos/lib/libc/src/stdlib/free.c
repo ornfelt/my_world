@@ -2,7 +2,8 @@
 
 #include <stdlib.h>
 
-void free(void *ptr)
+void
+free(void *ptr)
 {
 	if (!ptr)
 		return;

@@ -12,12 +12,16 @@
 #include <stdio.h>
 #include <errno.h>
 
-static int conn_init(xcb_connection_t *conn, int8_t endian, uint16_t major,
-                         uint16_t minor, const char *protoname,
-                         const char *protodata);
+static int conn_init(xcb_connection_t *conn,
+                     int8_t endian,
+                     uint16_t major,
+                     uint16_t minor,
+                     const char *protoname,
+                     const char *protodata);
 static int conn_init_reply(xcb_connection_t *conn);
 
-static inline uint32_t xcb_pad(uint32_t length)
+static inline uint32_t
+xcb_pad(uint32_t length)
 {
 	uint32_t n = length % 4;
 	if (!n)
@@ -25,7 +29,8 @@ static inline uint32_t xcb_pad(uint32_t length)
 	return 4 - n;
 }
 
-xcb_connection_t *xcb_connect(const char *display_name, int *screenp)
+xcb_connection_t *
+xcb_connect(const char *display_name, int *screenp)
 {
 	if (!display_name)
 	{
@@ -104,7 +109,8 @@ err:
 	return NULL;
 }
 
-static void setup_free(xcb_priv_setup_t *setup)
+static void
+setup_free(xcb_priv_setup_t *setup)
 {
 	if (!setup)
 		return;
@@ -127,7 +133,8 @@ static void setup_free(xcb_priv_setup_t *setup)
 	free(setup);
 }
 
-void xcb_disconnect(xcb_connection_t *conn)
+void
+xcb_disconnect(xcb_connection_t *conn)
 {
 	if (!conn)
 		return;
@@ -145,8 +152,11 @@ void xcb_disconnect(xcb_connection_t *conn)
 	free(conn);
 }
 
-int xcb_parse_display(const char *name, char **host, int *display,
-                             int *screenp)
+int
+xcb_parse_display(const char *name,
+                  char **host,
+                  int *display,
+                  int *screenp)
 {
 	if (!name)
 	{
@@ -194,13 +204,15 @@ int xcb_parse_display(const char *name, char **host, int *display,
 	return 0;
 }
 
-uint32_t xcb_generate_id(xcb_connection_t *conn)
+uint32_t
+xcb_generate_id(xcb_connection_t *conn)
 {
 	/* XXX implement bitmap ? */
 	return conn->res_id++;
 }
 
-static void process_input(xcb_connection_t *conn)
+static void
+process_input(xcb_connection_t *conn)
 {
 	while (buf_remaining(&conn->rbuf) >= 32)
 	{
@@ -268,30 +280,38 @@ static void process_input(xcb_connection_t *conn)
 	}
 }
 
-static int xcb_wait(xcb_connection_t *conn, int wr)
+static int
+xcb_wait(xcb_connection_t *conn, int wr)
 {
 	fd_set fds;
+	int ret;
+
 	FD_ZERO(&fds);
 	FD_SET(conn->fd, &fds);
-again:;
-	int ret = select(conn->fd + 1,
-	                 wr ? NULL : &fds,
-	                 wr ? &fds : NULL,
-	                 NULL, NULL);
-	if (ret == -1)
+	while (1)
 	{
-		if (errno == EINTR)
-			goto again;
-		return -1;
+		ret = select(conn->fd + 1,
+		             wr ? NULL : &fds,
+		             wr ? &fds : NULL,
+		             NULL,
+		             NULL);
+		if (ret == -1)
+		{
+			if (errno == EINTR)
+				continue;
+			return -1;
+		}
+		if (ret)
+			break;
 	}
-	if (ret == 0)
-		goto again;
 	return 1;
 }
 
-int xcb_recv(xcb_connection_t *conn, int wait)
+int
+xcb_recv(xcb_connection_t *conn, int wait)
 {
 	int ret;
+
 	if (wait)
 	{
 		ret = xcb_flush(conn);
@@ -314,16 +334,19 @@ int xcb_recv(xcb_connection_t *conn, int wait)
 	return ret;
 }
 
-int xcb_send(xcb_connection_t *conn)
+int
+xcb_send(xcb_connection_t *conn)
 {
-	int ret = buf_send(&conn->wbuf, conn->fd);
+	int ret;
+
+	ret = buf_send(&conn->wbuf, conn->fd);
 	if (ret < 0 && errno != EAGAIN)
 		abort(); /* XXX */
 	return ret;
 }
 
-const xcb_query_extension_reply_t *xcb_get_extension_data(xcb_connection_t *conn,
-                                                                 xcb_extension_t *ext)
+const xcb_query_extension_reply_t *
+xcb_get_extension_data(xcb_connection_t *conn, xcb_extension_t *ext)
 {
 	if (ext->global_id)
 	{
@@ -355,11 +378,14 @@ const xcb_query_extension_reply_t *xcb_get_extension_data(xcb_connection_t *conn
 	return reply;
 }
 
-int xcb_flush(xcb_connection_t *conn)
+int
+xcb_flush(xcb_connection_t *conn)
 {
+	int ret;
+
 	while (buf_remaining(&conn->wbuf))
 	{
-		int ret = xcb_send(conn);
+		ret = xcb_send(conn);
 		if (ret == -1)
 		{
 			if (errno == EAGAIN)
@@ -377,34 +403,44 @@ int xcb_flush(xcb_connection_t *conn)
 	return 1;
 }
 
-xcb_generic_event_t *xcb_copy_event(xcb_generic_event_t *event)
+xcb_generic_event_t *
+xcb_copy_event(xcb_generic_event_t *event)
 {
-	xcb_generic_event_t *dup = malloc(sizeof(*dup));
+	xcb_generic_event_t *dup;
+
+	dup = malloc(sizeof(*dup));
 	if (!dup)
 		return NULL;
 	memcpy(dup, event, sizeof(*dup));
 	return dup;
 }
 
-xcb_generic_error_t *xcb_copy_error(xcb_generic_error_t *error)
+xcb_generic_error_t *
+xcb_copy_error(xcb_generic_error_t *error)
 {
-	xcb_generic_error_t *dup = malloc(sizeof(*dup));
+	xcb_generic_error_t *dup;
+
+	dup = malloc(sizeof(*dup));
 	if (!dup)
 		return NULL;
 	memcpy(dup, error, sizeof(*dup));
 	return dup;
 }
 
-xcb_generic_event_t *xcb_wait_for_event(xcb_connection_t *conn)
+xcb_generic_event_t *
+xcb_wait_for_event(xcb_connection_t *conn)
 {
+	xcb_generic_answer_t *answer;
+
 	while (1)
 	{
-		xcb_generic_answer_t *answer;
 		TAILQ_FOREACH(answer, &conn->answers, chain)
 		{
+			xcb_generic_event_t *ret;
+
 			if (answer->response_type == 1)
 				continue;
-			xcb_generic_event_t *ret = xcb_copy_event(&answer->event);
+			ret = xcb_copy_event(&answer->event);
 			TAILQ_REMOVE(&conn->answers, answer, chain);
 			free(answer);
 			return ret;
@@ -421,16 +457,20 @@ xcb_generic_event_t *xcb_wait_for_event(xcb_connection_t *conn)
 	return NULL;
 }
 
-xcb_generic_event_t *xcb_poll_for_event(xcb_connection_t *conn)
+xcb_generic_event_t *
+xcb_poll_for_event(xcb_connection_t *conn)
 {
+	xcb_generic_answer_t *answer;
+
 	while (1)
 	{
-		xcb_generic_answer_t *answer;
 		TAILQ_FOREACH(answer, &conn->answers, chain)
 		{
+			xcb_generic_event_t *ret;
+
 			if (answer->response_type == 1)
 				continue;
-			xcb_generic_event_t *ret = xcb_copy_event(&answer->event);
+			ret = xcb_copy_event(&answer->event);
 			TAILQ_REMOVE(&conn->answers, answer, chain);
 			free(answer);
 			return ret;
@@ -440,11 +480,13 @@ xcb_generic_event_t *xcb_poll_for_event(xcb_connection_t *conn)
 	}
 }
 
-xcb_generic_event_t *xcb_peek_event(xcb_connection_t *conn)
+xcb_generic_event_t *
+xcb_peek_event(xcb_connection_t *conn)
 {
+	xcb_generic_answer_t *answer;
+
 	while (1)
 	{
-		xcb_generic_answer_t *answer;
 		TAILQ_FOREACH(answer, &conn->answers, chain)
 		{
 			if (answer->response_type == 1)
@@ -456,9 +498,11 @@ xcb_generic_event_t *xcb_peek_event(xcb_connection_t *conn)
 	}
 }
 
-int xcb_pending_event(xcb_connection_t *conn)
+int
+xcb_pending_event(xcb_connection_t *conn)
 {
 	xcb_generic_answer_t *answer;
+
 	TAILQ_FOREACH(answer, &conn->answers, chain)
 	{
 		if (answer->response_type != 1)
@@ -474,11 +518,13 @@ int xcb_pending_event(xcb_connection_t *conn)
 	return 0;
 }
 
-xcb_generic_answer_t *xcb_find_answer(xcb_connection_t *conn,
+xcb_generic_answer_t *
+xcb_find_answer(xcb_connection_t *conn,
                                              uint32_t sequence)
 {
 	xcb_generic_answer_t *answer;
 	uint16_t searched = sequence & 0xFFFF;
+
 	while (1)
 	{
 		TAILQ_FOREACH(answer, &conn->answers, chain)
@@ -501,12 +547,17 @@ xcb_generic_answer_t *xcb_find_answer(xcb_connection_t *conn,
 	}
 }
 
-static int conn_init(xcb_connection_t *conn, int8_t endian, uint16_t major,
-                     uint16_t minor, const char *protoname,
-                     const char *protodata)
+static int
+conn_init(xcb_connection_t *conn,
+          int8_t endian,
+          uint16_t major,
+          uint16_t minor,
+          const char *protoname,
+          const char *protodata)
 {
 	size_t protonamelen = strlen(protoname);
 	size_t protodatalen = strlen(protodata);
+
 	return buf_wi8(&conn->wbuf, endian)
 	    && buf_wi8(&conn->wbuf, 0)
 	    && buf_wu16(&conn->wbuf, major)
@@ -520,7 +571,8 @@ static int conn_init(xcb_connection_t *conn, int8_t endian, uint16_t major,
 	    && buf_wpad(&conn->wbuf);
 }
 
-static int conn_init_reply(xcb_connection_t *conn)
+static int
+conn_init_reply(xcb_connection_t *conn)
 {
 	switch (xcb_recv(conn, 1))
 	{
@@ -647,27 +699,31 @@ err:
 	return -1;
 }
 
-int xcb_get_file_descriptor(xcb_connection_t *conn)
+int
+xcb_get_file_descriptor(xcb_connection_t *conn)
 {
 	return conn->fd;
 }
 
-const xcb_setup_t *xcb_get_setup(xcb_connection_t *conn)
+const xcb_setup_t *
+xcb_get_setup(xcb_connection_t *conn)
 {
 	return &conn->setup->setup;
 }
 
-char *xcb_setup_vendor(const xcb_setup_t *setup)
+char *
+xcb_setup_vendor(const xcb_setup_t *setup)
 {
 	const xcb_priv_setup_t *priv_setup = (const xcb_priv_setup_t*)setup;
 	return priv_setup->vendor;
 }
 
-xcb_generic_error_t *xcb_request_check(xcb_connection_t *conn,
-                                              xcb_void_cookie_t cookie)
+xcb_generic_error_t *
+xcb_request_check(xcb_connection_t *conn, xcb_void_cookie_t cookie)
 {
 	xcb_generic_answer_t *answer;
 	uint16_t searched = cookie.sequence & 0xFFFF;
+
 	while (1)
 	{
 		TAILQ_FOREACH(answer, &conn->answers, chain)
@@ -704,155 +760,184 @@ xcb_generic_error_t *xcb_request_check(xcb_connection_t *conn,
 	}
 }
 
-int xcb_setup_roots_length(const xcb_setup_t *setup)
+int
+xcb_setup_roots_length(const xcb_setup_t *setup)
 {
 	const xcb_priv_setup_t *priv_setup = (const xcb_priv_setup_t*)setup;
 	return priv_setup->setup.roots_len;
 }
 
-xcb_screen_iterator_t xcb_setup_roots_iterator(const xcb_setup_t *setup)
+xcb_screen_iterator_t
+xcb_setup_roots_iterator(const xcb_setup_t *setup)
 {
 	const xcb_priv_setup_t *priv_setup = (const xcb_priv_setup_t*)setup;
 	xcb_screen_iterator_t it;
+
 	it.data = &priv_setup->roots[0].screen;
 	it.rem = priv_setup->setup.roots_len;
 	it.index = 0;
 	return it;
 }
 
-void xcb_screen_next(xcb_screen_iterator_t *it)
+void
+xcb_screen_next(xcb_screen_iterator_t *it)
 {
 	it->data = (xcb_screen_t*)((xcb_priv_screen_t*)it->data + 1);
 	it->rem--;
 	it->index += sizeof(*it->data);
 }
 
-xcb_generic_iterator_t xcb_screen_end(xcb_screen_iterator_t it)
+xcb_generic_iterator_t
+xcb_screen_end(xcb_screen_iterator_t it)
 {
 	xcb_generic_iterator_t git;
+
 	git.data = (xcb_screen_t*)((xcb_priv_screen_t*)it.data + it.rem);
 	git.rem = 0;
 	git.index = it.index + it.rem * sizeof(*it.data);
 	return git;
 }
 
-int xcb_setup_pixmap_formats_length(const xcb_setup_t *setup)
+int
+xcb_setup_pixmap_formats_length(const xcb_setup_t *setup)
 {
 	const xcb_priv_setup_t *priv_setup = (const xcb_priv_setup_t*)setup;
 	return priv_setup->setup.pixmap_formats_len;
 }
 
-xcb_format_iterator_t xcb_setup_pixmap_formats_iterator(const xcb_setup_t *setup)
+xcb_format_iterator_t
+xcb_setup_pixmap_formats_iterator(const xcb_setup_t *setup)
 {
 	const xcb_priv_setup_t *priv_setup = (const xcb_priv_setup_t*)setup;
 	xcb_format_iterator_t it;
+
 	it.data = priv_setup->pixmap_formats;
 	it.rem = priv_setup->setup.pixmap_formats_len;
 	it.index = 0;
 	return it;
 }
 
-void xcb_format_next(xcb_format_iterator_t *it)
+void
+xcb_format_next(xcb_format_iterator_t *it)
 {
 	it->data++;
 	it->rem--;
 	it->index += sizeof(*it->data);
 }
 
-xcb_generic_iterator_t xcb_format_end(xcb_format_iterator_t it)
+xcb_generic_iterator_t
+xcb_format_end(xcb_format_iterator_t it)
 {
 	xcb_generic_iterator_t git;
+
 	git.data = it.data + it.rem;
 	git.rem = 0;
 	git.index = it.index + it.rem * sizeof(*it.data);
 	return git;
 }
 
-int xcb_screen_allowed_depths_length(const xcb_screen_t *screen)
+int
+xcb_screen_allowed_depths_length(const xcb_screen_t *screen)
 {
 	const xcb_priv_screen_t *priv_screen = (const xcb_priv_screen_t*)screen;
 	return priv_screen->screen.allowed_depths_len;
 }
 
-xcb_depth_iterator_t xcb_screen_allowed_depths_iterator(const xcb_screen_t *screen)
+xcb_depth_iterator_t
+xcb_screen_allowed_depths_iterator(const xcb_screen_t *screen)
 {
 	const xcb_priv_screen_t *priv_screen = (const xcb_priv_screen_t*)screen;
 	xcb_depth_iterator_t it;
+
 	it.data = &priv_screen->allowed_depths[0].depth;
 	it.rem = priv_screen->screen.allowed_depths_len;
 	it.index = 0;
 	return it;
 }
 
-void xcb_depth_next(xcb_depth_iterator_t *it)
+void
+xcb_depth_next(xcb_depth_iterator_t *it)
 {
 	it->data = (xcb_depth_t*)((xcb_priv_depth_t*)it->data + 1);
 	it->rem--;
 	it->index += sizeof(*it->data);
 }
 
-xcb_generic_iterator_t xcb_depth_end(xcb_depth_iterator_t it)
+xcb_generic_iterator_t
+xcb_depth_end(xcb_depth_iterator_t it)
 {
 	xcb_generic_iterator_t git;
+
 	git.data = (xcb_depth_t*)((xcb_priv_depth_t*)it.data + it.rem);
 	git.rem = 0;
 	git.index = it.index + it.rem * sizeof(*it.data);
 	return git;
 }
 
-int xcb_depth_visuals_length(const xcb_depth_t *depth)
+int
+xcb_depth_visuals_length(const xcb_depth_t *depth)
 {
 	const xcb_priv_depth_t *priv_depth = (const xcb_priv_depth_t*)depth;
 	return priv_depth->depth.visuals_len;
 }
 
-xcb_visualtype_iterator_t xcb_depth_visuals_iterator(const xcb_depth_t *depth)
+xcb_visualtype_iterator_t
+xcb_depth_visuals_iterator(const xcb_depth_t *depth)
 {
 	const xcb_priv_depth_t *priv_depth = (const xcb_priv_depth_t*)depth;
 	xcb_visualtype_iterator_t it;
+
 	it.data = priv_depth->visuals;
 	it.rem = priv_depth->depth.visuals_len;
 	it.index = 0;
 	return it;
 }
 
-void xcb_visualtype_next(xcb_visualtype_iterator_t *it)
+void
+xcb_visualtype_next(xcb_visualtype_iterator_t *it)
 {
 	it->data++;
 	it->rem--;
 	it->index += sizeof(*it->data);
 }
 
-xcb_generic_iterator_t xcb_visualtype_end(xcb_visualtype_iterator_t it)
+xcb_generic_iterator_t
+xcb_visualtype_end(xcb_visualtype_iterator_t it)
 {
 	xcb_generic_iterator_t git;
+
 	git.data = &it.data[it.rem];
 	git.rem = 0;
 	git.index = it.index + it.rem * sizeof(*it.data);
 	return git;
 }
 
-char *xcb_str_name(const xcb_str_t *str)
+char *
+xcb_str_name(const xcb_str_t *str)
 {
 	xcb_priv_str_t *priv_str = (xcb_priv_str_t*)str;
 	return priv_str->name;
 }
 
-int xcb_str_name_length(const xcb_str_t *str)
+int
+xcb_str_name_length(const xcb_str_t *str)
 {
 	return str->name_len;
 }
 
-void xcb_str_next(xcb_str_iterator_t *it)
+void
+xcb_str_next(xcb_str_iterator_t *it)
 {
 	it->data = (xcb_str_t*)((xcb_priv_str_t*)it->data + 1);
 	it->rem--;
 	it->index += sizeof(*it->data);
 }
 
-xcb_generic_iterator_t xcb_str_end(xcb_str_iterator_t it)
+xcb_generic_iterator_t
+xcb_str_end(xcb_str_iterator_t it)
 {
 	xcb_generic_iterator_t git;
+
 	git.data = (xcb_str_t*)((xcb_priv_str_t*)it.data + it.rem);
 	git.rem = 0;
 	git.index = it.index + it.rem * sizeof(*it.data);

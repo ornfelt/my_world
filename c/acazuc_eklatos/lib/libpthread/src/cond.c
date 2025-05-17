@@ -4,21 +4,24 @@
 #include <limits.h>
 #include <errno.h>
 
-int pthread_condattr_init(pthread_condattr_t *attr)
+int
+pthread_condattr_init(pthread_condattr_t *attr)
 {
 	if (!attr)
 		return EINVAL;
 	return 0;
 }
 
-int pthread_condattr_destroy(pthread_condattr_t *attr)
+int
+pthread_condattr_destroy(pthread_condattr_t *attr)
 {
 	if (!attr)
 		return EINVAL;
 	return 0;
 }
 
-int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr)
+int
+pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr)
 {
 	(void)attr;
 	if (!cond)
@@ -29,7 +32,8 @@ int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr)
 	return 0;
 }
 
-int pthread_cond_destroy(pthread_cond_t *cond)
+int
+pthread_cond_destroy(pthread_cond_t *cond)
 {
 	if (!cond)
 		return EINVAL;
@@ -38,13 +42,16 @@ int pthread_cond_destroy(pthread_cond_t *cond)
 	return 0;
 }
 
-int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex)
+int
+pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex)
 {
 	return pthread_cond_timedwait(cond, mutex, NULL);
 }
 
-int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
-                           const struct timespec *abstime)
+int
+pthread_cond_timedwait(pthread_cond_t *cond,
+                       pthread_mutex_t *mutex,
+                       const struct timespec *abstime)
 {
 	if (!cond || !mutex)
 		return EINVAL;
@@ -79,7 +86,8 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
 	return ret;
 }
 
-int pthread_cond_signal(pthread_cond_t *cond)
+int
+pthread_cond_signal(pthread_cond_t *cond)
 {
 	if (!cond)
 		return EINVAL;
@@ -87,7 +95,8 @@ int pthread_cond_signal(pthread_cond_t *cond)
 	return futex((int*)&cond->value, FUTEX_WAKE_PRIVATE, 1, NULL);
 }
 
-int pthread_cond_broadcast(pthread_cond_t *cond)
+int
+pthread_cond_broadcast(pthread_cond_t *cond)
 {
 	if (!cond)
 		return EINVAL;

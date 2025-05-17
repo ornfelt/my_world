@@ -4,14 +4,16 @@ lib_LTLIBRARIES = libxcb.la \
                   libxcb-shm.la \
                   libxcb-dbe.la \
                   libxcb-render.la \
-                  libXext.la
+                  libXext.la \
+                  libxcb-glx.la \
+                  libGLX.la
 
 libX11_la_SOURCES = X11/Xlib.c \
                     X11/Xlibint.c \
                     X11/Xlibint.h \
                     X11/Xutil.c
 libX11_la_LIBADD = libxcb.la
-libX11_la_LDFLAGS =  -Wl,--version-script=$(srcdir)/X11/libX11.map
+libX11_la_LDFLAGS = -Wl,--version-script=$(srcdir)/X11/libX11.map
 libX11_ladir = $(includedir)
 nobase_libX11_la_HEADERS = X11/X.h \
                            X11/Xlib.h \
@@ -32,43 +34,55 @@ libxcb_ladir = $(includedir)
 nobase_libxcb_la_HEADERS = xcb/xcb.h \
                            xcb/xproto.h
 
-libXext_la_SOURCES = X11/extensions/XShm.c \
-                     X11/extensions/Xdbe.c \
-                     X11/extensions/Xrender.c
+libXext_la_SOURCES = X11/extensions/Xdbe.c \
+                     X11/extensions/Xrender.c \
+                     X11/extensions/XShm.c
 libXext_la_LIBADD = libX11.la \
                     libxcb.la \
-                    libxcb-shm.la \
                     libxcb-dbe.la \
-                    libxcb-render.la
-libXext_la_LDFLAGS =  -Wl,--version-script=$(srcdir)/X11/libXext.map
+                    libxcb-render.la \
+                    libxcb-shm.la
+libXext_la_LDFLAGS = -Wl,--version-script=$(srcdir)/X11/libXext.map
 libXext_ladir = $(includedir)
-nobase_libXext_la_HEADERS = X11/extensions/XShm.h \
-                            X11/extensions/Xdbe.h \
-                            X11/extensions/Xrender.h
+nobase_libXext_la_HEADERS = X11/extensions/Xdbe.h \
+                            X11/extensions/Xrender.h \
+                            X11/extensions/XShm.h
+
+libGLX_la_SOURCES = GLX/glx.c
+libGLX_la_LIBADD = libxcb-glx.la
+libGLX_la_LDFLAGS = -Wl,--version-script=$(srcdir)/GLX/libGLX.map
+libGLX_ladir = $(includedir)
+nobase_libGLX_la_HEADERS = GLX/glx.h
 
 libxcb_shm_la_SOURCES = xcb/shm.c
 libxcb_shm_la_LIBADD = libxcb.la
-libxcb_shm_la_LDFLAGS =  -Wl,--version-script=$(srcdir)/xcb/libxcb-shm.map
+libxcb_shm_la_LDFLAGS = -Wl,--version-script=$(srcdir)/xcb/libxcb-shm.map
 libxcb_shm_ladir = $(includedir)
 nobase_libxcb_shm_la_HEADERS = xcb/shm.h
 
 libxcb_dbe_la_SOURCES = xcb/dbe.c
 libxcb_dbe_la_LIBADD = libxcb.la
-libxcb_dbe_la_LDFLAGS =  -Wl,--version-script=$(srcdir)/xcb/libxcb-dbe.map
+libxcb_dbe_la_LDFLAGS = -Wl,--version-script=$(srcdir)/xcb/libxcb-dbe.map
 libxcb_dbe_ladir = $(includedir)
 nobase_libxcb_dbe_la_HEADERS = xcb/dbe.h
 
 libX11_xcb_la_SOURCES = X11/Xlib-xcb.c
 libX11_xcb_la_LIBADD = libX11.la libxcb.la
-libX11_xcb_la_LDFLAGS =  -Wl,--version-script=$(srcdir)/X11/libX11-xcb.map
+libX11_xcb_la_LDFLAGS = -Wl,--version-script=$(srcdir)/X11/libX11-xcb.map
 libX11_xcb_ladir = $(includedir)
 nobase_libX11_xcb_la_HEADERS = X11/Xlib-xcb.h
 
 libxcb_render_la_SOURCES = xcb/render.c
 libxcb_render_la_LIBADD = libxcb.la
-libxcb_render_la_LDFLAGS =  -Wl,--version-script=$(srcdir)/xcb/libxcb-render.map
+libxcb_render_la_LDFLAGS = -Wl,--version-script=$(srcdir)/xcb/libxcb-render.map
 libxcb_render_ladir = $(includedir)
 nobase_libxcb_render_la_HEADERS = xcb/render.h
+
+libxcb_glx_la_SOURCES = xcb/glx.c
+libxcb_glx_la_LIBADD = libxcb.la
+libxcb_glx_la_LDFLAGS = -Wl,--version-script=$(srcdir)/xcb/libxcb-glx.map
+libxcb_glx_ladir = $(includedir)
+nobase_libxcb_glx_la_HEADERS = xcb/glx.h
 
 bin_PROGRAMS = xdpyinfo \
                xlsfonts \
@@ -102,7 +116,8 @@ bin_PROGRAMS+= draw \
                pointer \
                getimage \
                background_pixel \
-               xrender
+               xrender \
+               glx
 
 endif
 
@@ -127,34 +142,37 @@ xev_LDADD = libX11.la
 cursors_SOURCES = tests/cursors.c
 cursors_LDADD = libX11.la
 
-xsrv_SOURCES = src/xsrv/main.c \
-               src/xsrv/xsrv.h \
+xsrv_SOURCES = src/xsrv/8x8.c \
+               src/xsrv/backend.c \
+               src/xsrv/client.c \
+               src/xsrv/colormap.c \
+               src/xsrv/cursor.c \
+               src/xsrv/drawable.c \
+               src/xsrv/font.c \
+               src/xsrv/framebuffer.c \
+               src/xsrv/gcontext.c \
+               src/xsrv/main.c \
+               src/xsrv/object.c \
+               src/xsrv/pixmap.c \
+               src/xsrv/poly.c \
                src/xsrv/proto.c \
                src/xsrv/ringbuf.c \
                src/xsrv/ringbuf.h \
-               src/xsrv/client.c \
-               src/xsrv/backend.c \
                src/xsrv/window.c \
-               src/xsrv/colormap.c \
-               src/xsrv/font.c \
-               src/xsrv/gcontext.c \
-               src/xsrv/pixmap.c \
-               src/xsrv/cursor.c \
-               src/xsrv/framebuffer.c \
-               src/xsrv/poly.c \
-               src/xsrv/object.c \
-               src/xsrv/drawable.c \
-               src/xsrv/8x8.c \
                src/xsrv/xcursor.c \
+               src/xsrv/xsrv.h \
+               src/xsrv/shm/proto.c \
                src/xsrv/shm/shm.c \
                src/xsrv/shm/shm.h \
                src/xsrv/shm/shmseg.c \
-               src/xsrv/shm/proto.c \
+               src/xsrv/render/glyphset.c \
+               src/xsrv/render/picture.c \
+               src/xsrv/render/proto.c \
                src/xsrv/render/render.c \
                src/xsrv/render/render.h \
-               src/xsrv/render/picture.c \
-               src/xsrv/render/glyphset.c \
-               src/xsrv/render/proto.c
+               src/xsrv/glx/glx.c \
+               src/xsrv/glx/glx.h \
+               src/xsrv/glx/proto.c
 xsrv_CFLAGS = -I$(srcdir)/src/xsrv
 xsrv_LDADD = libX11.la libXext.la
 
@@ -259,13 +277,29 @@ xrender_LDADD = libX11.la libXext.la
 xsysmon_SOURCES = src/xsysmon.c
 xsysmon_LDADD = libX11.la
 
+glx_SOURCES = tests/glx.c
+glx_LDADD = libX11.la libGLX.la
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = GLX/glx.pc \
+                 xcb/xcb.pc \
+                 xcb/xcb-dbe.pc \
+                 xcb/xcb-glx.pc \
+                 xcb/xcb-shm.pc \
+                 xcb/xcb-render.pc \
+                 X11/x11.pc \
+                 X11/x11-xcb.pc \
+                 X11/xext.pc
+
 EXTRA_DIST = LICENSE \
-             X11/libX11.map \
-             X11/libXext.map \
-             X11/libX11-xcb.map \
+             GLX/libGLX.map \
              xcb/libxcb.map \
-             xcb/libxcb-shm.map \
              xcb/libxcb-dbe.map \
-             xcb/libxcb-render.map
+             xcb/libxcb-glx.map \
+             xcb/libxcb-render.map \
+             xcb/libxcb-shm.map \
+             X11/libX11.map \
+             X11/libX11-xcb.map \
+             X11/libXext.map
 AUTOMAKE_OPTIONS = subdir-objects
 ACLOCAL_AMFLAGS = -I m4

@@ -18,19 +18,22 @@ struct env
 	int opt;
 };
 
-static char hexchar(uint8_t v)
+static char
+hexchar(uint8_t v)
 {
 	if (v < 10)
 		return '0' + v;
 	return 'a' + v - 10;
 }
 
-static char octchar(uint8_t v)
+static char
+octchar(uint8_t v)
 {
 	return '0' + v;
 }
 
-static void print_octal(uint32_t sum, const uint8_t *buf, size_t rd)
+static void
+print_octal(uint32_t sum, const uint8_t *buf, size_t rd)
 {
 	printf("%07" PRIx32, sum);
 	for (size_t i = 0; i < rd; ++i)
@@ -43,7 +46,8 @@ static void print_octal(uint32_t sum, const uint8_t *buf, size_t rd)
 	putchar('\n');
 }
 
-static void print_ascii(uint32_t sum, const uint8_t *buf, size_t rd)
+static void
+print_ascii(uint32_t sum, const uint8_t *buf, size_t rd)
 {
 	printf("%07" PRIx32, sum);
 	for (size_t i = 0; i < rd; ++i)
@@ -57,19 +61,21 @@ static void print_ascii(uint32_t sum, const uint8_t *buf, size_t rd)
 	putchar('\n');
 }
 
-static void print_decimal(uint32_t sum, const uint8_t *buf, size_t rd)
+static void 
+print_decimal(uint32_t sum, const uint8_t *buf, size_t rd)
 {
 	printf("%07" PRIx32, sum);
 	for (size_t i = 0; i < rd; i += 2)
 	{
-		fputs("   ", stdout);
 		uint16_t v = buf[i] | ((uint16_t)buf[i + 1] << 8);
+		fputs("   ", stdout);
 		printf("%05" PRIu16, v);
 	}
 	putchar('\n');
 }
 
-static void print_double_octal(uint32_t sum, const uint8_t *buf, size_t rd)
+static void
+print_double_octal(uint32_t sum, const uint8_t *buf, size_t rd)
 {
 	printf("%07" PRIx32, sum);
 	for (size_t i = 0; i < rd; i += 2)
@@ -86,7 +92,8 @@ static void print_double_octal(uint32_t sum, const uint8_t *buf, size_t rd)
 	putchar('\n');
 }
 
-static void print_double_hex(uint32_t sum, const uint8_t *buf, size_t rd)
+static void
+print_double_hex(uint32_t sum, const uint8_t *buf, size_t rd)
 {
 	printf("%07" PRIx32, sum);
 	for (size_t i = 0; i < rd; i += 2)
@@ -100,7 +107,8 @@ static void print_double_hex(uint32_t sum, const uint8_t *buf, size_t rd)
 	putchar('\n');
 }
 
-static void print_classic(uint32_t sum, const uint8_t *buf, size_t rd)
+static void
+print_classic(uint32_t sum, const uint8_t *buf, size_t rd)
 {
 	printf("%07" PRIx32, sum);
 	for (size_t i = 0; i < rd; i += 2)
@@ -114,7 +122,8 @@ static void print_classic(uint32_t sum, const uint8_t *buf, size_t rd)
 	putchar('\n');
 }
 
-static void print_canonical(uint32_t sum, const uint8_t *buf, size_t rd)
+static void
+print_canonical(uint32_t sum, const uint8_t *buf, size_t rd)
 {
 	printf("%08" PRIx32, sum);
 	for (size_t i = 0; i < rd; ++i)
@@ -142,16 +151,21 @@ static void print_canonical(uint32_t sum, const uint8_t *buf, size_t rd)
 	fputs("|\n", stdout);
 }
 
-static int hexdump_fp(struct env *env, FILE *fp)
+static int
+hexdump_fp(struct env *env, FILE *fp)
 {
 	uint32_t sum = 0;
 	uint8_t buf[16];
+
 	while (1)
 	{
-		size_t rd = fread(buf, 1, 16, fp);
+		size_t rd;
+
+		rd = fread(buf, 1, 16, fp);
 		if (ferror(fp))
 		{
-			fprintf(stderr, "%s: read: %s\n", env->progname,
+			fprintf(stderr, "%s: read: %s\n",
+			        env->progname,
 			        strerror(errno));
 			return 1;
 		}
@@ -185,21 +199,28 @@ static int hexdump_fp(struct env *env, FILE *fp)
 	return 0;
 }
 
-static int hexdump_file(struct env *env, const char *file)
+static int
+hexdump_file(struct env *env, const char *file)
 {
-	FILE *fp = fopen(file, "r");
+	FILE *fp;
+	int ret;
+
+	fp = fopen(file, "r");
 	if (!fp)
 	{
-		fprintf(stderr, "%s: open: %s\n", env->progname,
+		fprintf(stderr, "%s: open(%s): %s\n",
+		        env->progname,
+		        file,
 		        strerror(errno));
 		return 1;
 	}
-	int ret = hexdump_fp(env, fp);
+	ret = hexdump_fp(env, fp);
 	fclose(fp);
 	return ret;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-b] [-c] [-C] [-d] [-o] [-x] [-h] [FILES]\n", progname);
 	printf("-b: octal display\n");
@@ -211,7 +232,8 @@ static void usage(const char *progname)
 	printf("-h: show this help\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

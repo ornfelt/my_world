@@ -1,7 +1,11 @@
 #ifndef X11_XUTIL_H
 #define X11_XUTIL_H
 
-#include <X11/Xlib.h>
+#include "Xlib.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define VisualNoMask            0
 #define VisualIDMask           (1 << 0)
@@ -111,5 +115,9 @@ XClassHint *XAllocClassHint(void);
 XWMHints *XAllocWMHints(void);
 XSizeHints *XAllocSizeHints(void);
 Status XStringListToTextProperty(char **list, int count, XTextProperty **prop);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

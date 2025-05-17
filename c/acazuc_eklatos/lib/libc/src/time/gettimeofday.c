@@ -1,10 +1,11 @@
 #include <time.h>
 
-int gettimeofday(struct timeval *tv, struct timezone *tz)
+int
+gettimeofday(struct timeval *tv, struct timezone *tz)
 {
 	struct timespec ts;
-	int ret = clock_gettime(CLOCK_REALTIME, &ts);
-	if (ret == -1)
+
+	if (clock_gettime(CLOCK_REALTIME, &ts) == -1)
 		return -1;
 	if (tv)
 	{

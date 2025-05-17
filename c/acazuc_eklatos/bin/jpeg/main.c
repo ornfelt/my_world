@@ -15,8 +15,13 @@ struct env
 	const char *output;
 };
 
-static int read_file(struct env *env, const char *filename, uint8_t **data,
-                     uint32_t *width, uint32_t *height, uint8_t *components)
+static int
+read_file(struct env *env,
+          const char *filename,
+          uint8_t **data,
+          uint32_t *width,
+          uint32_t *height,
+          uint8_t *components)
 {
 	FILE *fp = NULL;
 	struct jpeg *jpeg = NULL;
@@ -25,7 +30,9 @@ static int read_file(struct env *env, const char *filename, uint8_t **data,
 	fp = fopen(filename, "rb");
 	if (!fp)
 	{
-		fprintf(stderr, "%s: fopen(%s): %s\n", env->progname, filename,
+		fprintf(stderr, "%s: fopen(%s): %s\n",
+		        env->progname,
+		        filename,
 		        strerror(errno));
 		goto end;
 	}
@@ -38,7 +45,8 @@ static int read_file(struct env *env, const char *filename, uint8_t **data,
 	jpeg_init_io(jpeg, fp);
 	if (jpeg_read_headers(jpeg))
 	{
-		fprintf(stderr, "%s: jpeg_read_headers: %s\n", env->progname,
+		fprintf(stderr, "%s: jpeg_read_headers: %s\n",
+		        env->progname,
 		        jpeg_get_err(jpeg));
 		goto end;
 	}
@@ -46,13 +54,15 @@ static int read_file(struct env *env, const char *filename, uint8_t **data,
 	*data = malloc(*width * *height * *components);
 	if (!*data)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", env->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        env->progname,
 		        strerror(errno));
 		goto end;
 	}
 	if (jpeg_read_data(jpeg, *data))
 	{
-		fprintf(stderr, "%s: jpeg_read_data: %s\n", env->progname,
+		fprintf(stderr, "%s: jpeg_read_data: %s\n",
+		        env->progname,
 		        jpeg_get_err(jpeg));
 		goto end;
 	}
@@ -65,10 +75,16 @@ end:
 	return ret;
 }
 
-static int write_file(struct env *env, const char *filename,
-                      const uint8_t *data, uint32_t width, uint32_t height,
-                      uint8_t components, int quality, int subsampling,
-                      int restart_interval)
+static int
+write_file(struct env *env,
+           const char *filename,
+           const uint8_t *data,
+           uint32_t width,
+           uint32_t height,
+           uint8_t components,
+           int quality,
+           int subsampling,
+           int restart_interval)
 {
 	FILE *fp = NULL;
 	struct jpeg *jpeg = NULL;
@@ -77,7 +93,9 @@ static int write_file(struct env *env, const char *filename,
 	fp = fopen(filename, "wr");
 	if (!fp)
 	{
-		fprintf(stderr, "%s: fopen(%s): %s\n", env->progname, filename,
+		fprintf(stderr, "%s: fopen(%s): %s\n",
+		        env->progname,
+		        filename,
 		        strerror(errno));
 		goto end;
 	}
@@ -92,25 +110,29 @@ static int write_file(struct env *env, const char *filename,
 	jpeg_set_restart_interval(jpeg, restart_interval);
 	if (jpeg_set_subsampling(jpeg, subsampling))
 	{
-		fprintf(stderr, "%s: jpeg_set_subsampling: %s\n", env->progname,
+		fprintf(stderr, "%s: jpeg_set_subsampling: %s\n",
+		        env->progname,
 		        jpeg_get_err(jpeg));
 		goto end;
 	}
 	if (jpeg_set_info(jpeg, width, height, components))
 	{
-		fprintf(stderr, "%s: jpeg_set_info: %s\n", env->progname,
+		fprintf(stderr, "%s: jpeg_set_info: %s\n",
+		        env->progname,
 		        jpeg_get_err(jpeg));
 		goto end;
 	}
 	if (jpeg_write_headers(jpeg))
 	{
-		fprintf(stderr, "%s: jpeg_write_headers: %s\n", env->progname,
+		fprintf(stderr, "%s: jpeg_write_headers: %s\n",
+		        env->progname,
 		        jpeg_get_err(jpeg));
 		goto end;
 	}
 	if (jpeg_write_data(jpeg, data))
 	{
-		fprintf(stderr, "%s: jpeg_write_data: %s\n", env->progname,
+		fprintf(stderr, "%s: jpeg_write_data: %s\n",
+		        env->progname,
 		        jpeg_get_err(jpeg));
 		goto end;
 	}
@@ -123,7 +145,8 @@ end:
 	return ret;
 }
 
-static int recode_file(struct env *env, const char *filename)
+static int
+recode_file(struct env *env, const char *filename)
 {
 	uint8_t *data = NULL;
 	uint32_t width;
@@ -143,7 +166,8 @@ end:
 	return ret;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-h] [-q quality] [-s subsampling] [-r interval] -o output FILE\n",
 	       progname);
@@ -160,7 +184,8 @@ static void usage(const char *progname)
 	printf("-o output     : set the output file\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

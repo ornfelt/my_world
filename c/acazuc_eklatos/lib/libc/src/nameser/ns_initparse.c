@@ -1,7 +1,8 @@
 #include <arpa/nameser.h>
 #include <arpa/inet.h>
 
-int ns_initparse(const uint8_t *data, int len, ns_msg *msg)
+int
+ns_initparse(const uint8_t *data, int len, ns_msg *msg)
 {
 	if (len < 12)
 		return -1;

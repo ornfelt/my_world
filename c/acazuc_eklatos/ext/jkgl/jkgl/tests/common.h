@@ -7,8 +7,8 @@
 
 #include <stdint.h>
 
-#define TO_RADIANS(x) (x / 180. * M_PI)
-#define TO_DEGREES(x) (x * 180. / M_PI)
+#define TO_RADIANS(x) (x / 180.0 * M_PI)
+#define TO_DEGREES(x) (x * 180.0 / M_PI)
 
 #define GL_CALL(fn, ...) \
 do \
@@ -34,6 +34,8 @@ struct window
 	XImage *image;
 	XShmSegmentInfo shminfo;
 	void *userptr;
+	uint64_t fps;
+	uint64_t last_fps;
 	void (*on_key_down)(struct window *window, KeySym sym);
 	void (*on_key_up)(struct window *window, KeySym sym);
 };
@@ -42,5 +44,6 @@ uint64_t nanotime(void);
 int setup_window(const char *progname, struct window *window);
 void handle_events(struct window *window);
 void swap_buffers(struct window *window);
+void hsl2rgb(float *rgb, float *hsl);
 
 #endif

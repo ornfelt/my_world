@@ -2,13 +2,16 @@
 
 #include <wchar.h>
 
-int vswprintf(wchar_t *d, size_t n, const wchar_t *fmt, va_list va_arg)
+int
+vswprintf(wchar_t *d, size_t n, const wchar_t *fmt, va_list va_arg)
 {
 	struct buf buf;
+	int ret;
+
 	buf.type = PRINTF_BUF;
 	buf.data = d;
 	buf.size = n;
-	int ret = wprintf_buf(&buf, fmt, va_arg);
+	ret = wprintf_buf(&buf, fmt, va_arg);
 	if (buf.size)
 	{
 		if (buf.len < buf.size)

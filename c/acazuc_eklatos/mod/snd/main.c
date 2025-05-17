@@ -12,7 +12,8 @@
 
 static struct sma snd_sma;
 
-void snd_read(struct snd *snd, void *data, size_t size)
+void
+snd_read(struct snd *snd, void *data, size_t size)
 {
 	struct uio uio;
 	struct iovec iov;
@@ -26,33 +27,40 @@ void snd_read(struct snd *snd, void *data, size_t size)
 		memset(&((uint8_t*)data)[rd], 0, size - rd);
 }
 
-void snd_fill_buf(struct snd *snd, struct dma_buf *buf)
+void
+snd_fill_buf(struct snd *snd, struct dma_buf *buf)
 {
 	snd_read(snd, buf->data, PAGE_SIZE);
 }
 
-static int snd_cdev_open(struct file *file, struct node *node)
+static int
+snd_cdev_open(struct file *file, struct node *node)
 {
 	struct cdev *cdev = node->cdev;
+
 	if (!cdev)
 		return -EINVAL;
 	file->userdata = cdev->userdata;
 	return 0;
 }
 
-static ssize_t snd_cdev_write(struct file *file, struct uio *uio)
+static ssize_t
+snd_cdev_write(struct file *file, struct uio *uio)
 {
 	struct snd *snd = file->userdata;
+
 	return pipebuf_write(&snd->pipebuf, uio, uio->count, NULL);
 }
 
-static const struct file_op fop =
+static const struct file_op
+fop =
 {
 	.open = snd_cdev_open,
 	.write = snd_cdev_write,
 };
 
-int snd_alloc(struct snd **sndp)
+int
+snd_alloc(struct snd **sndp)
 {
 	struct snd *snd;
 	int ret;
@@ -132,7 +140,8 @@ int snd_alloc(struct snd **sndp)
 	return 0;
 }
 
-void snd_free(struct snd *snd)
+void
+snd_free(struct snd *snd)
 {
 	if (!snd)
 		return;
@@ -146,17 +155,20 @@ void snd_free(struct snd *snd)
 	sma_free(&snd_sma, snd);
 }
 
-int init(void)
+int
+init(void)
 {
 	sma_init(&snd_sma, sizeof(struct snd), NULL, NULL, "snd");
 	return 0;
 }
 
-void fini(void)
+void
+fini(void)
 {
 }
 
-struct kmod_info kmod =
+struct kmod_info
+kmod =
 {
 	.magic = KMOD_MAGIC,
 	.version = 1,

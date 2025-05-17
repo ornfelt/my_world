@@ -10,8 +10,16 @@ extern const char *__libc_progname;
 extern size_t *__libc_auxv;
 extern uintptr_t __stack_chk_guard;
 
-int __libc_start_main(int (*main)(int, char**, char**), int argc, char **argv, char **envp, size_t *auxv)
+int
+__libc_start_main(int (*main)(int, char**, char**),
+                  int argc,
+                  char **argv,
+                  char **envp,
+                  size_t *auxv)
 {
+	size_t envc = 0;
+	int ret;
+
 	__libc_progname = strchr(argv[0], '/');
 	if (__libc_progname)
 		__libc_progname++;
@@ -19,7 +27,6 @@ int __libc_start_main(int (*main)(int, char**, char**), int argc, char **argv, c
 		__libc_progname = argv[0];
 	__libc_auxv = auxv;
 	__stack_chk_guard = getauxval(AT_RANDOM);
-	size_t envc = 0;
 	while (envp[envc])
 		envc++;
 	environ = malloc(sizeof(*environ) * (envc + 1));
@@ -38,7 +45,7 @@ int __libc_start_main(int (*main)(int, char**, char**), int argc, char **argv, c
 		}
 	}
 	environ[envc] = NULL;
-	int ret = main(argc, argv, environ);
+	ret = main(argc, argv, environ);
 	fcloseall();
 	return ret;
 }

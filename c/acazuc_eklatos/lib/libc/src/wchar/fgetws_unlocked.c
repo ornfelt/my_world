@@ -1,7 +1,8 @@
 #include <wchar.h>
 #include <stdio.h>
 
-wchar_t *fgetws_unlocked(wchar_t *ws, int size, FILE *fp)
+wchar_t *
+fgetws_unlocked(wchar_t *ws, int size, FILE *fp)
 {
 	if (size <= 0)
 		return NULL;

@@ -2,8 +2,8 @@ in 0 vec3 position
 in 1 vec3 light_dir
 in 2 vec3 diffuse
 in 3 vec3 normal
-in 4 float alpha
-in 5 vec2 uv
+in 4 vec2 uv
+in 5 vec3 world_position
 
 out 0 vec4 color
 out 1 vec4 normal
@@ -18,6 +18,7 @@ constant 1 model_block
 {
 	mat4 p
 	mat4 v
+	mat4 m
 	mat4 mv
 	mat4 mvp
 }
@@ -32,23 +33,116 @@ constant 2 scene_block
 	vec4 fog_color
 	vec2 fog_range
 	vec2 alphas
+	vec2 screen_size
+	float t
+}
+
+vec2 perlin_grad(vec2 p)
+{
+	float tmp = dot(p, vec2(12.9898, 78.233));
+	return vec2
+	(
+		fract(sin(tmp) * 43758.5453) * 2.0 - 1.0,
+		fract(cos(tmp) * 43758.5453) * 2.0 - 1.0
+	);
+}
+
+float perlin_fade(float t)
+{
+	return t * t * t * (t * (t * 6.0 - 15.0) + 10.0);
+}
+
+float perlin_noise(vec2 p)
+{
+	vec2 p0 = floor(p);
+	vec2 p1 = p0 + vec2(1.0, 0.0);
+	vec2 p2 = p0 + vec2(0.0, 1.0);
+	vec2 p3 = p0 + vec2(1.0, 1.0);
+	vec2 g0 = perlin_grad(p0);
+	vec2 g1 = perlin_grad(p1);
+	vec2 g2 = perlin_grad(p2);
+	vec2 g3 = perlin_grad(p3);
+	float t0 = p.x - p0.x;
+	float fade_t0 = perlin_fade(t0);
+	float t1 = p.y - p0.y;
+	float fade_t1 = perlin_fade(t1);
+	float p0p1 = (1.0 - fade_t0) * dot(g0, (p - p0)) + fade_t0 * dot(g1, (p - p1));
+	float p2p3 = (1.0 - fade_t0) * dot(g2, (p - p2)) + fade_t0 * dot(g3, (p - p3));
+	return (1.0 - fade_t1) * p0p1 + fade_t1 * p2p3;
+}
+
+float sample_height(fs_input gfx_input, vec2 offset)
+{
+	vec2 base_uv = gfx_input.world_position.xz + offset * screen_size;
+	float noise = perlin_noise((base_uv + vec2(+t, +t)) * (10.0 / 64.0)) * 1.0
+	            + perlin_noise((base_uv + vec2(-t, +t)) * (10.0 / 32.0)) * 0.5
+	            + perlin_noise((base_uv + vec2(-t, -t)) * (10.0 / 16.0)) * 0.25
+	            + perlin_noise((base_uv + vec2(+t, -t)) * (10.0 /  8.0)) * 0.125;
+	float factor = 1.0 / 8.0;
+	return mix((gfx_sample(tex, gfx_input.uv * 0.5 + offset).x - 0.5) * 2.0 , noise, factor);
+}
+
+vec3 get_under_color(fs_input gfx_input, vec2 hd, float fresnel, float shallow, vec2 inv_screen_size, vec2 screen_position)
+{
+	float under_displacement_factor = 200.0;
+
+	vec2 under_offset = hd * under_displacement_factor * (1.0 - fresnel) * shallow;
+	vec2 under_coord = screen_position + inv_screen_size * under_offset;
+	vec3 under_pos = gfx_sample(position_tex, under_coord).xyz;
+	if (under_pos.z > gfx_input.position.z) /* avoid bleeding of objects between camera and water */
+		under_coord = screen_position;
+	return gfx_sample(color_tex, under_coord).xyz;
+}
+
+vec3 get_reflected_color(fs_input gfx_input, vec2 hd, vec2 inv_screen_size, vec2 screen_position)
+{
+	int enable_reflection = 0;
+	float reflection_displacement_factor = 2000.0;
+
+	if (enable_reflection == 0)
+		return fog_color.xyz;
+	vec2 reflected_coord = vec2(screen_position.x, 1.0 - screen_position.y + hd * reflection_displacement_factor * inv_screen_size);
+	vec3 reflected_pos = gfx_sample(position_tex, reflected_coord).xyz;
+	if (reflected_pos.z > gfx_input.position.z)
+		return fog_color.xyz;
+	return gfx_sample(color_tex, reflected_coord).xyz;
 }
 
 fs_output gfx_main(fs_input gfx_input)
 {
+	float shallow_bias = 0.2;
+	float shallow_factor = 1.0;
+	float specular_exponent = 10.0;
+	float specular_mult = 0.2;
+	float fresnel_exponent = 5.0;
+	float color_factor = 0.4;
+
 	fs_output gfx_output;
-	float v01 = gfx_sample_offset(tex, gfx_input.uv / 2.0, ivec2(-1, 0)).x;
-	float v21 = gfx_sample_offset(tex, gfx_input.uv / 2.0, ivec2( 1, 0)).x;
-	float v10 = gfx_sample_offset(tex, gfx_input.uv / 2.0, ivec2( 0,-1)).x;
-	float v12 = gfx_sample_offset(tex, gfx_input.uv / 2.0, ivec2( 0, 1)).x;
-	vec3 va = normalize(vec3(2.0, v21 - v01, 0.0));
-	vec3 vb = normalize(vec3(0.0, v12 - v10, 2.0));
-	vec3 vc = cross(va, vb);
-	vec3 normal = normalize(mul(vec4(vc, 0.0), mv).xyz);
-	float specular_factor = pow(clamp(dot(normalize(-gfx_input.position), normalize(reflect(-gfx_input.light_dir, normal))), 0.0, 1.0), 15.0) / 2.0;
-	vec3 color = gfx_input.diffuse + specular_color.xyz * specular_factor;
+	vec3 pos_dx = vec3(1.0, 0.0, 0.0);
+	vec3 pos_dy = vec3(0.0, 0.0, 1.0);
+	vec3 r1 = cross(pos_dy, gfx_input.normal);
+	vec3 r2 = cross(gfx_input.normal, pos_dx);
+	float det = dot(pos_dx, r1);
+	vec2 inv_screen_size = 1.0 / screen_size;
+	float hll = sample_height(gfx_input, vec2(0.0));
+	float hlr = sample_height(gfx_input, vec2(inv_screen_size.x, 0.0));
+	float hul = sample_height(gfx_input, vec2(0.0, inv_screen_size.y));
+	vec2 hd = vec2(hlr - hll, hul - hll);
+	vec3 surf_grad = sign(det) * (hd.x * r1 + hd.y * r2);
+	vec3 normal = normalize(abs(det) * gfx_input.normal - surf_grad);
+	vec3 eye_direction = normalize(-gfx_input.position);
+	float specular_factor = pow(clamp(dot(eye_direction, normalize(reflect(-gfx_input.light_dir, normal))), 0.0, 1.0), specular_exponent) * specular_mult;
+	float fresnel = clamp(pow(1.0 - dot(gfx_input.normal, eye_direction), fresnel_exponent), 0.0, 1.0);
+	vec3 color = final_color.xyz + specular_color.xyz * specular_factor;
+	vec2 screen_position = gl_FragCoord.xy * inv_screen_size;
+	float shallow = clamp(((gfx_input.position.z - gfx_sample(position_tex, screen_position).z - shallow_bias) * shallow_factor), 0.0, 1.0);
+	vec3 under_color = get_under_color(gfx_input, hd, fresnel, shallow, inv_screen_size, screen_position);
+	vec3 reflected_color = get_reflected_color(gfx_input, hd, inv_screen_size, screen_position);
 	float fog_factor = clamp((length(gfx_input.position) - fog_range.x) / (fog_range.y - fog_range.x), 0.0, 1.0);
-	gfx_output.color = vec4(mix(color, fog_color.xyz, fog_factor), gfx_input.alpha);
+	vec3 final_color;
+	final_color = mix(under_color, reflected_color, fresnel * shallow);
+	final_color = mix(final_color, color, color_factor * shallow * (1.0 - fog_factor));
+	gfx_output.color = vec4(final_color, 1.0);
 	gfx_output.normal = vec4(0.0, 1.0, 0.0, 0.0);
 	gfx_output.position = vec4(gfx_input.position, 1.0);
 	return gfx_output;

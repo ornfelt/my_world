@@ -5,11 +5,11 @@
 #include <stdio.h>
 #include <errno.h>
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	(void)argc;
-	int ret = reboot(REBOOT_SHUTDOWN);
-	if (ret)
+	if (reboot(REBOOT_SHUTDOWN))
 	{
 		fprintf(stderr, "%s: reboot: %s\n", argv[0], strerror(errno));
 		return EXIT_FAILURE;

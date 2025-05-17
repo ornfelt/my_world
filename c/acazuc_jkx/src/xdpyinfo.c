@@ -4,47 +4,57 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-static const char *byte_orders[] =
+static const char *
+byte_orders[] =
 {
 	[LSBFirst] = "LSBFirst",
 	[MSBFirst] = "MSBFirst",
 };
 
-static const char *backing_stores[] =
+static const char *
+backing_stores[] =
 {
 	[NotUseful]  = "NOT USEFUL",
 	[WhenMapped] = "WHEN MAPPED",
 	[Always]     = "ALWAYS",
 };
 
-static const char *revert_tos[] =
+static const char *
+revert_tos[] =
 {
 	[RevertToNone]        = "revert to None",
 	[RevertToPointerRoot] = "revert to Pointer root",
 	[RevertToParent]      = "revert to Parent",
 };
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
+	XPixmapFormatValues *pixmaps;
+	Display *display;
+	Window focus;
+	char **extensions;
+	int min_keycode;
+	int max_keycode;
+	int nextensions;
+	int npixmaps;
+	int revert_to;
+
 	(void)argc;
-	Display *display = XOpenDisplay(NULL);
+	display = XOpenDisplay(NULL);
 	if (!display)
 	{
 		fprintf(stderr, "%s: failed to open display\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	int min_keycode;
-	int max_keycode;
 	XDisplayKeycodes(display, &min_keycode, &max_keycode);
-	int nextensions;
-	char **extensions = XListExtensions(display, &nextensions);
+	extensions = XListExtensions(display, &nextensions);
 	if (!extensions)
 	{
 		fprintf(stderr, "%s: failed to list extensions\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	int npixmaps;
-	XPixmapFormatValues *pixmaps = XListPixmapFormats(display, &npixmaps);
+	pixmaps = XListPixmapFormats(display, &npixmaps);
 	if (!pixmaps)
 	{
 		fprintf(stderr, "%s: failed to list pixmap formats\n", argv[0]);
@@ -69,8 +79,6 @@ int main(int argc, char **argv)
 		       pixmaps[i].scanline_pad);
 	}
 	printf("keycode range: minimum %d maximum %d\n", min_keycode, max_keycode);
-	Window focus;
-	int revert_to;
 	if (!XGetInputFocus(display, &focus, &revert_to))
 	{
 		fprintf(stderr, "%s: failed to get input focus\n", argv[0]);
@@ -85,17 +93,27 @@ int main(int argc, char **argv)
 	       XScreenNumberOfScreen(DefaultScreenOfDisplay(display)));
 	for (int i = 0; i < ScreenCount(display); ++i)
 	{
-		Screen *screen = ScreenOfDisplay(display, i);
+		XVisualInfo *visuals;
+		Screen *screen;
+		unsigned cursor_width;
+		unsigned cursor_height;
 		int ndepths;
-		int *depths = XListDepths(display, i, &ndepths);
+		int *depths;
 		int nvisuals;
-		XVisualInfo *visuals = XGetVisualInfo(display, VisualNoMask, NULL,
-		                                      &nvisuals);
+
+		screen = ScreenOfDisplay(display, i);
+		depths = XListDepths(display, i, &ndepths);
+		visuals = XGetVisualInfo(display,
+		                         VisualNoMask,
+		                         NULL,
+		                         &nvisuals);
 		printf("\n");
 		printf("screen #%d:\n", i);
 		printf(" dimensions: %dx%d pixels (%dx%d millimeters)\n",
-		       WidthOfScreen(screen), HeightOfScreen(screen),
-		       WidthMMOfScreen(screen), HeightMMOfScreen(screen));
+		       WidthOfScreen(screen),
+		       HeightOfScreen(screen),
+		       WidthMMOfScreen(screen),
+		       HeightMMOfScreen(screen));
 		printf(" depths (%d):", ndepths);
 		for (int j = 0; j < ndepths; ++j)
 		{
@@ -104,31 +122,41 @@ int main(int argc, char **argv)
 				printf(",");
 		}
 		printf("\n");
-		printf(" root window id: %d\n", RootWindowOfScreen(screen));
-		printf(" depth of root window: %d planes\n", PlanesOfScreen(screen));
+		printf(" root window id: %d\n",
+		       RootWindowOfScreen(screen));
+		printf(" depth of root window: %d planes\n",
+		       PlanesOfScreen(screen));
 		printf(" number of colormaps: minimum %d maximum %d\n",
-		       MinCmapsOfScreen(screen), MaxCmapsOfScreen(screen));
-		printf(" default colormap: %d\n", DefaultColormapOfScreen(screen));
+		       MinCmapsOfScreen(screen),
+		       MaxCmapsOfScreen(screen));
+		printf(" default colormap: %d\n",
+		       DefaultColormapOfScreen(screen));
 		printf(" default number of colormap cells: %d\n",
 		       CellsOfScreen(screen));
 		printf(" preallocated pixels: black %lu, white %lu\n",
-		       BlackPixelOfScreen(screen), WhitePixelOfScreen(screen));
+		       BlackPixelOfScreen(screen),
+		       WhitePixelOfScreen(screen));
 		printf(" options: backing-store %s, save-unders %s\n",
 		       backing_stores[DoesBackingStore(screen)],
 		       DoesSaveUnders(screen) ? "YES" : "NO");
-		unsigned cursor_width;
-		unsigned cursor_height;
-		XQueryBestCursor(display, RootWindowOfScreen(screen), 0xFFFF,
-		                 0xFFFF, &cursor_width, &cursor_height);
-		printf(" largest cursor: %ux%u\n", cursor_width, cursor_height);
-
-		printf(" current input event mask: %ld\n", EventMaskOfScreen(screen));
+		XQueryBestCursor(display,
+		                 RootWindowOfScreen(screen),
+		                 0xFFFF,
+		                 0xFFFF,
+		                 &cursor_width,
+		                 &cursor_height);
+		printf(" largest cursor: %ux%u\n",
+		       cursor_width,
+		       cursor_height);
+		printf(" current input event mask: %ld\n",
+		       EventMaskOfScreen(screen));
 		printf(" number of visuals: %d\n", nvisuals);
 		printf(" default visual id: 0x%x\n",
 		       XVisualIDFromVisual(DefaultVisualOfScreen(screen)));
 		for (int j = 0; j < nvisuals; ++j)
 		{
-			static const char *classes[] =
+			static const char *
+			classes[] =
 			{
 				[StaticGray]  = "StaticGray",
 				[GrayScale]   = "GrayScale",

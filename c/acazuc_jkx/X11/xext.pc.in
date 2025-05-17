@@ -1,0 +1,13 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: Xext
+Description: X extension library
+URL: https://git.sr.ht/~acazuc/jkx
+Version: @VERSION@
+
+Cflags: -I${includedir}
+Libs: -L${libdir} -lXext
+Requires: x11 xcb-dbe xcb-render xcb-shm

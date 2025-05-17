@@ -8,9 +8,12 @@
 #include <utmp.h>
 #include <pty.h>
 
-int openpty(int *mainfd, int *childfd, char *name,
-            const struct termios *termios,
-            const struct winsize *winsize)
+int
+openpty(int *mainfd,
+        int *childfd,
+        char *name,
+        const struct termios *termios,
+        const struct winsize *winsize)
 {
 	*mainfd = posix_openpt(O_RDWR);
 	if (*mainfd == -1)
@@ -52,8 +55,11 @@ int openpty(int *mainfd, int *childfd, char *name,
 	return 0;
 }
 
-pid_t forkpty(int *mainfd, int *childfd, const struct termios *termios,
-              const struct winsize *winsize)
+pid_t
+forkpty(int *mainfd,
+        int *childfd,
+        const struct termios *termios,
+        const struct winsize *winsize)
 {
 	int cfd;
 	int ret = openpty(mainfd, &cfd, NULL, termios, winsize);

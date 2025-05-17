@@ -1,6 +1,7 @@
 #include <string.h>
 
-char *strpbrk(const char *s, const char *accept)
+char *
+strpbrk(const char *s, const char *accept)
 {
 	for (size_t i = 0; s[i]; ++i)
 	{

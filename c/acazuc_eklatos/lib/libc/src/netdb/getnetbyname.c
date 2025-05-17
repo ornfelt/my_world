@@ -3,14 +3,16 @@
 #include <string.h>
 #include <netdb.h>
 
-struct netent *getnetbyname(const char *name)
+struct netent *
+getnetbyname(const char *name)
 {
+	struct netent *netent;
+
 	if (!name)
 		return NULL;
 	setnetent(0);
 	if (!netent_fp)
 		return NULL;
-	struct netent *netent;
 	while (1)
 	{
 		netent = next_netent();

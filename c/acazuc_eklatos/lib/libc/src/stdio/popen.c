@@ -6,19 +6,22 @@
 #include <stdio.h>
 #include <errno.h>
 
-static ssize_t read_fn(void *cookie, char *buf, size_t size)
+static ssize_t
+read_fn(void *cookie, char *buf, size_t size)
 {
 	struct popen_data *data = cookie;
 	return read(data->fds[0], buf, size);
 }
 
-static ssize_t write_fn(void *cookie, const char *buf, size_t size)
+static ssize_t
+write_fn(void *cookie, const char *buf, size_t size)
 {
 	struct popen_data *data = cookie;
 	return write(data->fds[1], buf, size);
 }
 
-static int close_fn(void *cookie)
+static int
+close_fn(void *cookie)
 {
 	struct popen_data *data = cookie;
 	if (waitpid(data->pid, NULL, 0) == -1)
@@ -31,9 +34,14 @@ static int close_fn(void *cookie)
 	return 0;
 }
 
-FILE *popen(const char *cmd, const char *type)
+FILE *
+popen(const char *cmd, const char *type)
 {
+	struct popen_data *data;
 	int mode = O_RDONLY;
+	FILE *fp;
+	pid_t pid;
+
 	switch (type[0])
 	{
 		case 'r':
@@ -55,11 +63,11 @@ FILE *popen(const char *cmd, const char *type)
 		}
 		mode |= O_CLOEXEC;
 	}
-	FILE *fp = mkfp();
+	fp = mkfp();
 	if (!fp)
 		return NULL;
 	fp->mode = mode;
-	struct popen_data *data = malloc(sizeof(*data));
+	data = malloc(sizeof(*data));
 	if (!data)
 	{
 		free(fp);
@@ -78,7 +86,7 @@ FILE *popen(const char *cmd, const char *type)
 		free(fp);
 		return NULL;
 	}
-	pid_t pid = vfork();
+	pid = vfork();
 	if (pid == -1)
 	{
 		close(data->fds[0]);

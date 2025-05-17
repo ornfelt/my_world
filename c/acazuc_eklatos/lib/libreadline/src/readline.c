@@ -53,13 +53,15 @@ static struct termios prev_termios;
 static int echoing = 1;
 
 /* XXX remove usage of this function */
-static void repeat_str(const char *s, ssize_t n)
+static void
+repeat_str(const char *s, ssize_t n)
 {
 	for (ssize_t i = 0; i < n; ++i)
 		fputs(s, rl_outstream);
 }
 
-static int action_home(void)
+static int
+action_home(void)
 {
 	if (echoing)
 	{
@@ -70,7 +72,8 @@ static int action_home(void)
 	return 0;
 }
 
-static int action_delete(void)
+static int
+action_delete(void)
 {
 	if (rl_point == rl_end)
 		return 0;
@@ -78,7 +81,8 @@ static int action_delete(void)
 	return 0;
 }
 
-static int action_end(void)
+static int
+action_end(void)
 {
 	if (echoing)
 	{
@@ -89,7 +93,8 @@ static int action_end(void)
 	return 0;
 }
 
-static int action_backspace(void)
+static int
+action_backspace(void)
 {
 	if (rl_point <= 0)
 		return 0;
@@ -97,7 +102,8 @@ static int action_backspace(void)
 	return 0;
 }
 
-static int action_forward(void)
+static int
+action_forward(void)
 {
 	if (rl_point >= rl_end)
 		return 0;
@@ -110,9 +116,11 @@ static int action_forward(void)
 	return 0;
 }
 
-static int action_word_forward(void)
+static int
+action_word_forward(void)
 {
 	size_t n = 0;
+
 	while (rl_point < rl_end && strchr(rl_basic_word_break_characters,
 	                                   rl_line_buffer[rl_point]))
 	{
@@ -133,7 +141,8 @@ static int action_word_forward(void)
 	return 0;
 }
 
-static int action_backward(void)
+static int
+action_backward(void)
 {
 	if (rl_point <= 0)
 		return 0;
@@ -146,7 +155,8 @@ static int action_backward(void)
 	return 0;
 }
 
-static int action_word_backward(void)
+static int
+action_word_backward(void)
 {
 	size_t n = 0;
 	while (rl_point > 0 && strchr(rl_basic_word_break_characters,
@@ -169,7 +179,8 @@ static int action_word_backward(void)
 	return 0;
 }
 
-static int action_kill(void)
+static int
+action_kill(void)
 {
 	if (rl_point <= 0)
 		return 0;
@@ -177,7 +188,8 @@ static int action_kill(void)
 	return 0;
 }
 
-static int is_dir(DIR *dir, struct dirent *dirent)
+static int
+is_dir(DIR *dir, struct dirent *dirent)
 {
 	switch (dirent->d_type)
 	{
@@ -196,7 +208,8 @@ static int is_dir(DIR *dir, struct dirent *dirent)
 	}
 }
 
-char *rl_filename_completion_function(char *text, int state)
+char *
+rl_filename_completion_function(char *text, int state)
 {
 	static char *prefix;
 	static size_t prefix_len;
@@ -278,12 +291,14 @@ char *rl_filename_completion_function(char *text, int state)
 	return NULL;
 }
 
-static int match_cmp(const void *a, const void *b)
+static int
+match_cmp(const void *a, const void *b)
 {
 	return strcmp(*(const char**)a, *(const char**)b);
 }
 
-char **rl_completion_matches(char *text, Function *entry_func)
+char **
+rl_completion_matches(char *text, Function *entry_func)
 {
 	char **matches = calloc(sizeof(*matches) * 2, 1);
 	if (!matches)
@@ -332,7 +347,8 @@ err:
 	return NULL;
 }
 
-int rl_complete_internal(int what)
+int
+rl_complete_internal(int what)
 {
 	(void)what; /* XXX */
 	if (rl_point < 0)
@@ -392,21 +408,24 @@ end:
 	return 0;
 }
 
-int rl_complete(int ignore, int invoking_key)
+int
+rl_complete(int ignore, int invoking_key)
 {
 	(void)ignore;
 	(void)invoking_key;
 	return rl_complete_internal('\t');
 }
 
-int rl_possible_completions(int count, int invoking_key)
+int
+rl_possible_completions(int count, int invoking_key)
 {
 	(void)count;
 	(void)invoking_key;
 	return rl_complete_internal('?');
 }
 
-int rl_insert_completions(int count, int invoking_key)
+int
+rl_insert_completions(int count, int invoking_key)
 {
 	(void)count;
 	(void)invoking_key;
@@ -414,7 +433,8 @@ int rl_insert_completions(int count, int invoking_key)
 }
 
 __attribute__((constructor))
-static void rl_init(void)
+static void
+rl_init(void)
 {
 	rl_bind_key('\x01', action_home);
 	rl_bind_key('\x05', action_end);
@@ -439,12 +459,14 @@ static void rl_init(void)
 	rl_generic_bind(ISFUNC, "\033[8~", action_end, &default_keymap);
 }
 
-void rl_deprep_terminal(void)
+void
+rl_deprep_terminal(void)
 {
 	tcsetattr(0, TCSANOW, &prev_termios);
 }
 
-void rl_prep_terminal(int meta_flag)
+void
+rl_prep_terminal(int meta_flag)
 {
 	struct termios attr;
 
@@ -458,14 +480,16 @@ void rl_prep_terminal(int meta_flag)
 	tcsetattr(0, TCSANOW, &attr);
 }
 
-int rl_tty_set_echoing(int value)
+int
+rl_tty_set_echoing(int value)
 {
 	int prev = echoing;
 	echoing = value;
 	return prev;
 }
 
-int rl_insert_text(char *text)
+int
+rl_insert_text(char *text)
 {
 	size_t text_len = strlen(text);
 	char *newl = realloc(rl_line_buffer, rl_end + text_len + 1);
@@ -486,7 +510,8 @@ int rl_insert_text(char *text)
 	return 0;
 }
 
-int rl_delete_text(int start, int end)
+int
+rl_delete_text(int start, int end)
 {
 	if (start < 0 || start >= rl_end)
 		return 0;
@@ -519,7 +544,8 @@ int rl_delete_text(int start, int end)
 	return 0;
 }
 
-char *rl_copy_text(int start, int end)
+char *
+rl_copy_text(int start, int end)
 {
 	if (start < 0)
 		return NULL;
@@ -535,7 +561,8 @@ char *rl_copy_text(int start, int end)
 	return str;
 }
 
-static int process_char(char c)
+static int
+process_char(char c)
 {
 	if (c == '\033')
 	{
@@ -610,7 +637,8 @@ static int process_char(char c)
 	return 0;
 }
 
-char *readline(const char *prompt)
+char *
+readline(const char *prompt)
 {
 	if (!rl_instream)
 		rl_instream = stdin;
@@ -658,7 +686,8 @@ end:
 	return rl_line_buffer;
 }
 
-int rl_insert(char c)
+int
+rl_insert(char c)
 {
 	char tmp[2];
 	tmp[0] = c;
@@ -667,7 +696,8 @@ int rl_insert(char c)
 	return 0;
 }
 
-int rl_on_new_line(void)
+int
+rl_on_new_line(void)
 {
 	if (echoing)
 	{
@@ -678,7 +708,8 @@ int rl_on_new_line(void)
 	return 0;
 }
 
-Keymap rl_make_bare_keymap(void)
+Keymap
+rl_make_bare_keymap(void)
 {
 	Keymap map = malloc(sizeof(*map));
 	if (!map)
@@ -687,7 +718,8 @@ Keymap rl_make_bare_keymap(void)
 	return map;
 }
 
-Keymap rl_copy_keymap(Keymap map)
+Keymap
+rl_copy_keymap(Keymap map)
 {
 	Keymap dup = malloc(sizeof(*map));
 	if (!dup)
@@ -735,7 +767,8 @@ Keymap rl_copy_keymap(Keymap map)
 	return dup;
 }
 
-Keymap rl_make_keymap(void)
+Keymap
+rl_make_keymap(void)
 {
 	Keymap map = rl_make_bare_keymap();
 	if (!map)
@@ -746,7 +779,8 @@ Keymap rl_make_keymap(void)
 	return map;
 }
 
-void rl_discard_keymap(Keymap keymap)
+void
+rl_discard_keymap(Keymap keymap)
 {
 	if (!keymap)
 		return;
@@ -759,29 +793,34 @@ void rl_discard_keymap(Keymap keymap)
 	free(keymap);
 }
 
-Keymap rl_get_keymap(void)
+Keymap
+rl_get_keymap(void)
 {
 	return rl_keymap;
 }
 
-void rl_set_keymap(Keymap keymap)
+void
+rl_set_keymap(Keymap keymap)
 {
 	rl_keymap = keymap;
 }
 
-Keymap rl_get_keymap_by_name(const char *name)
+Keymap
+rl_get_keymap_by_name(const char *name)
 {
 	(void)name;
 	/* XXX */
 	return NULL;
 }
 
-int rl_bind_key(int key, Function *function)
+int
+rl_bind_key(int key, Function *function)
 {
 	return rl_bind_key_in_map(key, function, rl_keymap);
 }
 
-int rl_bind_key_in_map(int key, Function *function, Keymap map)
+int
+rl_bind_key_in_map(int key, Function *function, Keymap map)
 {
 	if (key <= 0 || key >= MAX_KEYS)
 		return 1;
@@ -789,17 +828,20 @@ int rl_bind_key_in_map(int key, Function *function, Keymap map)
 	return 0;
 }
 
-int rl_unbind_key(int key)
+int
+rl_unbind_key(int key)
 {
 	return rl_unbind_key_in_map(key, rl_keymap);
 }
 
-int rl_unbind_key_in_map(int key, Keymap map)
+int
+rl_unbind_key_in_map(int key, Keymap map)
 {
 	return rl_bind_key_in_map(key, NULL, map);
 }
 
-int rl_generic_bind(int type, const char *keyseq, void *data, Keymap map)
+int
+rl_generic_bind(int type, const char *keyseq, void *data, Keymap map)
 {
 	if (type != ISFUNC)
 		return 1; /* XXX */

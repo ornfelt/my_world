@@ -4,9 +4,14 @@
 #include <netdb.h>
 #include <errno.h>
 
-int getaddrinfo(const char *node, const char *service,
-                       const struct addrinfo *hints, struct addrinfo **result)
+int
+getaddrinfo(const char *node,
+            const char *service,
+            const struct addrinfo *hints,
+            struct addrinfo **result)
 {
+	struct sockaddr_in *sin;
+	struct addrinfo *addr;
 	struct in_addr in_addr;
 	uint16_t port;
 
@@ -30,6 +35,7 @@ int getaddrinfo(const char *node, const char *service,
 	if (service)
 	{
 		struct servent *servent;
+
 		servent = getservbyname(service, NULL);
 		if (servent)
 		{
@@ -38,8 +44,10 @@ int getaddrinfo(const char *node, const char *service,
 		else
 		{
 			char *endptr;
+			unsigned long tmp;
+
 			errno = 0;
-			unsigned long tmp = strtoul(service, &endptr, 0);
+			tmp = strtoul(service, &endptr, 0);
 			if (errno || *endptr || tmp > UINT16_MAX)
 				return EAI_NONAME;
 			port = ntohs(tmp);
@@ -49,7 +57,7 @@ int getaddrinfo(const char *node, const char *service,
 	{
 		port = 0;
 	}
-	struct addrinfo *addr = calloc(1, sizeof(*addr));
+	addr = calloc(1, sizeof(*addr));
 	if (!addr)
 		return EAI_MEMORY;
 	addr->ai_family = AF_INET;
@@ -60,7 +68,7 @@ int getaddrinfo(const char *node, const char *service,
 		free(addr);
 		return EAI_MEMORY;
 	}
-	struct sockaddr_in *sin = (struct sockaddr_in*)addr->ai_addr;
+	sin = (struct sockaddr_in*)addr->ai_addr;
 	sin->sin_family = AF_INET;
 	sin->sin_addr = in_addr;
 	sin->sin_port = port;

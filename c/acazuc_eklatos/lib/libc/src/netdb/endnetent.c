@@ -2,7 +2,8 @@
 
 #include <netdb.h>
 
-void endnetent(void)
+void
+endnetent(void)
 {
 	if (!netent_fp)
 		return;

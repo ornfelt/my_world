@@ -13,17 +13,21 @@
 #define DEBUG_REQ_TIMING
 #endif
 
-struct client *client_new(struct xsrv *xsrv, int fd)
+struct client *
+client_new(struct xsrv *xsrv, int fd)
 {
-	uint32_t id_base = xsrv_allocate_id_base(xsrv);
+	struct client *client = NULL;
+	uint32_t id_base;
+
+	id_base = xsrv_allocate_id_base(xsrv);
 	if (!id_base)
-		return NULL;
-	struct client *client = calloc(sizeof(*client), 1);
+		goto err;
+	client = calloc(sizeof(*client), 1);
 	if (!client)
 	{
 		fprintf(stderr, "%s: malloc: %s\n", xsrv->progname,
 		        strerror(errno));
-		return NULL;
+		goto err;
 	}
 	client->state = CLIENT_SETUP;
 	client->fd = -1;
@@ -49,15 +53,23 @@ struct client *client_new(struct xsrv *xsrv, int fd)
 	return client;
 
 err:
-	ringbuf_destroy(&client->rbuf);
-	ringbuf_destroy(&client->wbuf);
-	free(client);
+	if (client)
+	{
+		ringbuf_destroy(&client->rbuf);
+		ringbuf_destroy(&client->wbuf);
+		free(client);
+	}
 	return NULL;
 }
 
-void client_delete(struct xsrv *xsrv, struct client *client)
+void
+client_delete(struct xsrv *xsrv, struct client *client)
 {
-	struct window_event *event = TAILQ_FIRST(&client->events);
+	struct button_grab *button_grab;
+	struct window_event *event;
+	struct object *object;
+
+	event = TAILQ_FIRST(&client->events);
 	while (event)
 	{
 		TAILQ_REMOVE(&event->window->events, event, window_chain);
@@ -65,14 +77,14 @@ void client_delete(struct xsrv *xsrv, struct client *client)
 		free(event);
 		event = TAILQ_FIRST(&client->events);
 	}
-	struct object *object = TAILQ_FIRST(&client->objects);
+	object = TAILQ_FIRST(&client->objects);
 	while (object)
 	{
 		object_destroy(xsrv, object);
 		object_free(xsrv, object);
 		object = TAILQ_FIRST(&client->objects);
 	}
-	struct button_grab *button_grab = TAILQ_FIRST(&client->button_grabs);
+	button_grab = TAILQ_FIRST(&client->button_grabs);
 	while (button_grab)
 	{
 		delete_button_grab(xsrv, button_grab);
@@ -92,13 +104,16 @@ void client_delete(struct xsrv *xsrv, struct client *client)
 	free(client);
 }
 
-int client_recv(struct xsrv *xsrv, struct client *client)
+int
+client_recv(struct xsrv *xsrv, struct client *client)
 {
+	size_t avail;
+	ssize_t ret;
+
 	if (!(client->sock_state & CLIENT_SOCK_RECV))
 		return 0;
-	size_t avail = ringbuf_contiguous_write_size(&client->rbuf);
-	ssize_t ret = recv(client->fd, ringbuf_write_ptr(&client->rbuf),
-	                   avail, 0);
+	avail = ringbuf_contiguous_write_size(&client->rbuf);
+	ret = recv(client->fd, ringbuf_write_ptr(&client->rbuf), avail, 0);
 #if 0
 	printf("read %ld bytes\n", (long)ret);
 #endif
@@ -125,15 +140,18 @@ int client_recv(struct xsrv *xsrv, struct client *client)
 	return 0;
 }
 
-int client_send(struct xsrv *xsrv, struct client *client)
+int
+client_send(struct xsrv *xsrv, struct client *client)
 {
+	size_t avail;
+	ssize_t ret;
+
 	if (!(client->sock_state & CLIENT_SOCK_SEND))
 		return 0;
-	size_t avail = ringbuf_contiguous_read_size(&client->wbuf);
+	avail = ringbuf_contiguous_read_size(&client->wbuf);
 	if (!avail)
 		return 0;
-	ssize_t ret = send(client->fd, ringbuf_read_ptr(&client->wbuf),
-	                   avail, 0);
+	ret = send(client->fd, ringbuf_read_ptr(&client->wbuf), avail, 0);
 	if (ret == -1)
 	{
 		if (errno == EAGAIN)
@@ -155,7 +173,8 @@ int client_send(struct xsrv *xsrv, struct client *client)
 	return 0;
 }
 
-static int process_setup(struct xsrv *xsrv, struct client *client)
+static int
+process_setup(struct xsrv *xsrv, struct client *client)
 {
 	(void)xsrv;
 	if (ringbuf_read_size(&client->rbuf) < 12)
@@ -200,7 +219,8 @@ static int process_setup(struct xsrv *xsrv, struct client *client)
 	return 1;
 }
 
-static int process_connecting(struct xsrv *xsrv, struct client *client)
+static int
+process_connecting(struct xsrv *xsrv, struct client *client)
 {
 	if (ringbuf_read_size(&client->rbuf) < client->init_data.auth_proto_name_len
 	                                     + client->init_data.auth_proto_data_len)
@@ -304,9 +324,11 @@ static int process_connecting(struct xsrv *xsrv, struct client *client)
 	return 1;
 }
 
-static int process_connected(struct xsrv *xsrv, struct client *client)
+static int
+process_connected(struct xsrv *xsrv, struct client *client)
 {
 	int ret;
+
 	if (!client->has_req)
 	{
 		if (ringbuf_read_size(&client->rbuf) < 4)
@@ -328,7 +350,7 @@ static int process_connected(struct xsrv *xsrv, struct client *client)
 	uint64_t s = nanotime();
 	printf("handling opcode %u\n", client->request.opcode);
 #endif
-	req_handler_t handler = g_req_handlers[client->request.opcode];
+	req_handler_t handler = xsrv->req_handlers[client->request.opcode];
 	if (handler)
 	{
 		ret = handler(xsrv, client, &client->request);
@@ -350,7 +372,8 @@ static int process_connected(struct xsrv *xsrv, struct client *client)
 	return ret;
 }
 
-static int process_closing(struct xsrv *xsrv, struct client *client)
+static int
+process_closing(struct xsrv *xsrv, struct client *client)
 {
 	(void)xsrv;
 	/* XXX add timeout */
@@ -359,7 +382,8 @@ static int process_closing(struct xsrv *xsrv, struct client *client)
 	return 0;
 }
 
-static int process_closed(struct xsrv *xsrv, struct client *client)
+static int
+process_closed(struct xsrv *xsrv, struct client *client)
 {
 	/* XXX */
 	(void)xsrv;
@@ -367,7 +391,8 @@ static int process_closed(struct xsrv *xsrv, struct client *client)
 	return -1;
 }
 
-static int client_process(struct xsrv *xsrv, struct client *client)
+static int
+client_process(struct xsrv *xsrv, struct client *client)
 {
 	switch (client->state)
 	{
@@ -388,11 +413,13 @@ static int client_process(struct xsrv *xsrv, struct client *client)
 	}
 }
 
-int client_run(struct xsrv *xsrv, struct client *client)
+int
+client_run(struct xsrv *xsrv, struct client *client)
 {
+	int ret;
+
 	if (client_recv(xsrv, client))
 		return 1;
-	int ret;
 	do
 	{
 		ret = client_process(xsrv, client);
@@ -404,11 +431,15 @@ int client_run(struct xsrv *xsrv, struct client *client)
 	return 0;
 }
 
-int client_has_free_id(struct xsrv *xsrv, struct client *client, uint32_t id)
+int
+client_has_free_id(struct xsrv *xsrv, struct client *client, uint32_t id)
 {
-	if (id < client->id_base || id >= client->id_base + client->id_mask)
+	struct object *object;
+
+	if (id < client->id_base
+	 || id >= client->id_base + client->id_mask)
 		return 0;
-	struct object *object = object_get(xsrv, id);
+	object = object_get(xsrv, id);
 	if (object)
 	{
 		object_free(xsrv, object);

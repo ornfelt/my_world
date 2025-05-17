@@ -4,8 +4,11 @@
 
 #include <netdb.h>
 
-struct hostent *gethostbyaddr(const void *addr, socklen_t len, int type)
+struct hostent *
+gethostbyaddr(const void *addr, socklen_t len, int type)
 {
+	struct hostent *hostent;
+
 	if (type != AF_INET)
 		return NULL;
 	if (len < sizeof(struct in_addr))
@@ -13,7 +16,6 @@ struct hostent *gethostbyaddr(const void *addr, socklen_t len, int type)
 	sethostent(0);
 	if (!hostent_fp)
 		return NULL;
-	struct hostent *hostent;
 	while (1)
 	{
 		hostent = next_hostent();

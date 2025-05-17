@@ -1,6 +1,7 @@
 #include <string.h>
 
-char *strstr(const char *s1, const char *s2)
+char *
+strstr(const char *s1, const char *s2)
 {
 	if (!*s2)
 		return (char*)s1;

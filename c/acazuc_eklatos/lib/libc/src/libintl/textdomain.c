@@ -1,6 +1,7 @@
 #include <libintl.h>
 
-char *textdomain(const char *domain)
+char *
+textdomain(const char *domain)
 {
 	return (char*)domain;
 }

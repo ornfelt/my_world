@@ -153,14 +153,20 @@ int dbg_signal_from_name(const char *name);
 const struct dbg_errno *dbg_errno_get(int err);
 int dbg_errno_from_name(const char *name);
 
-typedef int (*dbg_peekdata_fn_t)(void *buf, size_t size,
-                                 uintptr_t addr, void *userptr);
+typedef int (*dbg_peekdata_fn_t)(void *buf,
+                                 size_t size,
+                                 uintptr_t addr,
+                                 void *userptr);
 
-int dbg_syscall_arg_print(char *buf, size_t size,
+int dbg_syscall_arg_print(char *buf,
+                          size_t size,
                           const struct dbg_syscall *syscall,
-                          const uintptr_t *values, size_t param,
-                          dbg_peekdata_fn_t peekdata, void *userptr);
-void dbg_syscall_ret_print(char *buf, size_t size,
+                          const uintptr_t *values,
+                          size_t param,
+                          dbg_peekdata_fn_t peekdata,
+                          void *userptr);
+void dbg_syscall_ret_print(char *buf,
+                           size_t size,
                            const struct dbg_syscall *syscall,
                            uintptr_t value);
 

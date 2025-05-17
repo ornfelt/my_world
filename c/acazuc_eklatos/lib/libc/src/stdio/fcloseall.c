@@ -2,10 +2,13 @@
 
 #include <stdio.h>
 
-int fcloseall(void)
+int
+fcloseall(void)
 {
-	FILE *f, *nxt;
+	FILE *f;
+	FILE *nxt;
 	int err = 0;
+
 	TAILQ_FOREACH_SAFE(f, &files, chain, nxt)
 	{
 		if (fclose(f))

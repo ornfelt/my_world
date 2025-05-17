@@ -2,63 +2,40 @@
 
 #include <limits.h>
 
-void glLightf(GLenum light, GLenum pname, GLfloat param)
+static void
+lightfv(struct gl_ctx *ctx,
+        GLenum id,
+        GLenum pname,
+        GLfloat *params)
 {
-	switch (pname)
-	{
-		case GL_AMBIENT:
-		case GL_DIFFUSE:
-		case GL_SPECULAR:
-		case GL_POSITION:
-		case GL_SPOT_DIRECTION:
-			g_ctx->errno = GL_INVALID_ENUM;
-			return;
-	}
-	glLightfv(light, pname, &param);
-}
+	struct light *light;
 
-void glLighti(GLenum light, GLenum pname, GLint param)
-{
-	switch (pname)
+	if (id < GL_LIGHT0
+	 || id >= GL_LIGHT0 + ctx->fixed.max_lights)
 	{
-		case GL_AMBIENT:
-		case GL_DIFFUSE:
-		case GL_SPECULAR:
-		case GL_POSITION:
-		case GL_SPOT_DIRECTION:
-			g_ctx->errno = GL_INVALID_ENUM;
-			return;
-	}
-	glLightiv(light, pname, &param);
-}
-
-void glLightfv(GLenum light, GLenum pname, GLfloat *params)
-{
-	if (light < GL_LIGHT0 || light >= GL_LIGHT0 + g_ctx->max_lights)
-	{
-		g_ctx->errno = GL_INVALID_ENUM;
+		GL_SET_ERR(ctx, GL_INVALID_ENUM);
 		return;
 	}
-	struct light *l = &g_ctx->lights[light - GL_LIGHT0];
+	light = &ctx->fixed.block.lights[id - GL_LIGHT0];
 	switch (pname)
 	{
 		case GL_AMBIENT:
-			l->ambient[0] = params[0];
-			l->ambient[1] = params[1];
-			l->ambient[2] = params[2];
-			l->ambient[3] = params[3];
+			light->ambient[0] = params[0];
+			light->ambient[1] = params[1];
+			light->ambient[2] = params[2];
+			light->ambient[3] = params[3];
 			break;
 		case GL_DIFFUSE:
-			l->diffuse[0] = params[0];
-			l->diffuse[1] = params[1];
-			l->diffuse[2] = params[2];
-			l->diffuse[3] = params[3];
+			light->diffuse[0] = params[0];
+			light->diffuse[1] = params[1];
+			light->diffuse[2] = params[2];
+			light->diffuse[3] = params[3];
 			break;
 		case GL_SPECULAR:
-			l->specular[0] = params[0];
-			l->specular[1] = params[1];
-			l->specular[2] = params[2];
-			l->specular[3] = params[3];
+			light->specular[0] = params[0];
+			light->specular[1] = params[1];
+			light->specular[2] = params[2];
+			light->specular[3] = params[3];
 			break;
 		case GL_POSITION:
 		{
@@ -67,66 +44,73 @@ void glLightfv(GLenum light, GLenum pname, GLfloat *params)
 			tmp[1] = params[1];
 			tmp[2] = params[2];
 			tmp[3] = params[3];
-			mat4_transform_vec4(&g_ctx->modelview_matrix[g_ctx->modelview_stack_depth], tmp);
-			l->position[0] = tmp[0];
-			l->position[1] = tmp[1];
-			l->position[2] = tmp[2];
-			l->position[3] = tmp[3];
+			mat4_transform_vec4(ctx->fixed.modelview_matrix[ctx->fixed.modelview_stack_depth], tmp);
+			light->position[0] = tmp[0];
+			light->position[1] = tmp[1];
+			light->position[2] = tmp[2];
+			light->position[3] = tmp[3];
 			break;
 		}
 		case GL_SPOT_DIRECTION:
-			l->spot_direction[0] = params[0];
-			l->spot_direction[1] = params[1];
-			l->spot_direction[2] = params[2];
+			light->spot_direction[0] = params[0];
+			light->spot_direction[1] = params[1];
+			light->spot_direction[2] = params[2];
 			break;
 		case GL_SPOT_EXPONENT:
-			l->spot_exponent = *params;
+			light->spot_exponent = *params;
 			break;
 		case GL_SPOT_CUTOFF:
-			l->spot_cutoff = *params;
+			light->spot_cutoff = *params;
 			break;
 		case GL_CONSTANT_ATTENUATION:
-			l->attenuations[0] = *params;
+			light->attenuations[0] = *params;
 			break;
 		case GL_LINEAR_ATTENUATION:
-			l->attenuations[1] = *params;
+			light->attenuations[1] = *params;
 			break;
 		case GL_QUADRATIC_ATTENUATION:
-			l->attenuations[2] = *params;
+			light->attenuations[2] = *params;
 			break;
 		default:
-			g_ctx->errno = GL_INVALID_ENUM;
+			GL_SET_ERR(ctx, GL_INVALID_ENUM);
 			return;
 	}
 }
 
-void glLightiv(GLenum light, GLenum pname, GLint *params)
+static void
+lightiv(struct gl_ctx *ctx,
+        GLenum id,
+        GLenum pname,
+        GLint *params)
 {
-	if (light < GL_LIGHT0 || light >= GL_LIGHT0 + g_ctx->max_lights)
+	struct light *light;
+
+	if (id < GL_LIGHT0
+	 || id >= GL_LIGHT0 + ctx->fixed.max_lights)
 	{
-		g_ctx->errno = GL_INVALID_ENUM;
+		GL_SET_ERR(ctx, GL_INVALID_ENUM);
 		return;
 	}
-	struct light *l = &g_ctx->lights[light - GL_LIGHT0];
+	light = &ctx->fixed.block.lights[id - GL_LIGHT0];
 	switch (pname)
 	{
 		case GL_AMBIENT:
-			l->ambient[0] = params[0] / (GLfloat)INT_MAX;
-			l->ambient[1] = params[1] / (GLfloat)INT_MAX;
-			l->ambient[2] = params[2] / (GLfloat)INT_MAX;
-			l->ambient[3] = params[3] / (GLfloat)INT_MAX;
+			light->ambient[0] = params[0] * (1.0 / INT32_MAX);
+			light->ambient[1] = params[1] * (1.0 / INT32_MAX);
+			light->ambient[2] = params[2] * (1.0 / INT32_MAX);
+			light->ambient[3] = params[3] * (1.0 / INT32_MAX);
 			break;
 		case GL_DIFFUSE:
-			l->diffuse[0] = params[0] / (GLfloat)INT_MAX;
-			l->diffuse[1] = params[1] / (GLfloat)INT_MAX;
-			l->diffuse[2] = params[2] / (GLfloat)INT_MAX;
-			l->diffuse[3] = params[3] / (GLfloat)INT_MAX;
+			light->diffuse[0] = params[0] * (1.0 / INT32_MAX);
+			light->diffuse[1] = params[1] * (1.0 / INT32_MAX);
+			light->diffuse[2] = params[2] * (1.0 / INT32_MAX);
+			light->diffuse[3] = params[3] * (1.0 / INT32_MAX);
 			break;
 		case GL_SPECULAR:
-			l->specular[0] = params[0] / (GLfloat)INT_MAX;
-			l->specular[1] = params[1] / (GLfloat)INT_MAX;
-			l->specular[2] = params[2] / (GLfloat)INT_MAX;
-			l->specular[3] = params[3] / (GLfloat)INT_MAX;
+			light->specular[0] = params[0] * (1.0 / INT32_MAX);
+			light->specular[1] = params[1] * (1.0 / INT32_MAX);
+			light->specular[2] = params[2] * (1.0 / INT32_MAX);
+			light->specular[3] = params[3] * (1.0 / INT32_MAX);
 			break;
 		case GL_POSITION:
 		{
@@ -135,155 +119,217 @@ void glLightiv(GLenum light, GLenum pname, GLint *params)
 			tmp[1] = params[1];
 			tmp[2] = params[2];
 			tmp[3] = params[3];
-			mat4_transform_vec4(&g_ctx->modelview_matrix[g_ctx->modelview_stack_depth], tmp);
-			l->position[0] = tmp[0];
-			l->position[1] = tmp[1];
-			l->position[2] = tmp[2];
-			l->position[3] = tmp[3];
+			mat4_transform_vec4(ctx->fixed.modelview_matrix[ctx->fixed.modelview_stack_depth], tmp);
+			light->position[0] = tmp[0];
+			light->position[1] = tmp[1];
+			light->position[2] = tmp[2];
+			light->position[3] = tmp[3];
 			break;
 		}
 		case GL_SPOT_DIRECTION:
-			l->spot_direction[0] = params[0];
-			l->spot_direction[1] = params[1];
-			l->spot_direction[2] = params[2];
+			light->spot_direction[0] = params[0];
+			light->spot_direction[1] = params[1];
+			light->spot_direction[2] = params[2];
 			break;
 		case GL_SPOT_EXPONENT:
-			l->spot_exponent = *params;
+			light->spot_exponent = *params;
 			break;
 		case GL_SPOT_CUTOFF:
-			l->spot_cutoff = *params;
+			light->spot_cutoff = *params;
 			break;
 		case GL_CONSTANT_ATTENUATION:
-			l->attenuations[0] = *params;
+			light->attenuations[0] = *params;
 			break;
 		case GL_LINEAR_ATTENUATION:
-			l->attenuations[1] = *params;
+			light->attenuations[1] = *params;
 			break;
 		case GL_QUADRATIC_ATTENUATION:
-			l->attenuations[2] = *params;
+			light->attenuations[2] = *params;
 			break;
 		default:
-			g_ctx->errno = GL_INVALID_ENUM;
+			GL_SET_ERR(ctx, GL_INVALID_ENUM);
 			return;
 	}
 }
 
-void glGetLightfv(GLenum light, GLenum pname, GLfloat *params)
+void
+glLightf(GLenum light, GLenum pname, GLfloat param)
 {
-	if (light < GL_LIGHT0 || light >= GL_LIGHT0 + g_ctx->max_lights)
-	{
-		g_ctx->errno = GL_INVALID_ENUM;
-		return;
-	}
-	struct light *l = &g_ctx->lights[light - GL_LIGHT0];
+	struct gl_ctx *ctx = g_ctx;
+
 	switch (pname)
 	{
 		case GL_AMBIENT:
-			params[0] = l->ambient[0];
-			params[1] = l->ambient[1];
-			params[2] = l->ambient[2];
-			params[3] = l->ambient[3];
+		case GL_DIFFUSE:
+		case GL_SPECULAR:
+		case GL_POSITION:
+		case GL_SPOT_DIRECTION:
+			GL_SET_ERR(ctx, GL_INVALID_ENUM);
+			return;
+	}
+	lightfv(ctx, light, pname, &param);
+}
+
+void
+glLighti(GLenum light, GLenum pname, GLint param)
+{
+	struct gl_ctx *ctx = g_ctx;
+
+	switch (pname)
+	{
+		case GL_AMBIENT:
+		case GL_DIFFUSE:
+		case GL_SPECULAR:
+		case GL_POSITION:
+		case GL_SPOT_DIRECTION:
+			GL_SET_ERR(ctx, GL_INVALID_ENUM);
+			return;
+	}
+	lightiv(ctx, light, pname, &param);
+}
+
+void
+glLightfv(GLenum id, GLenum pname, GLfloat *params)
+{
+	struct gl_ctx *ctx = g_ctx;
+
+	lightfv(ctx, id, pname, params);
+}
+
+void
+glLightiv(GLenum id, GLenum pname, GLint *params)
+{
+	struct gl_ctx *ctx = g_ctx;
+
+	lightiv(ctx, id, pname, params);
+}
+
+void
+glGetLightfv(GLenum id, GLenum pname, GLfloat *params)
+{
+	struct gl_ctx *ctx = g_ctx;
+	struct light *light;
+
+	if (id < GL_LIGHT0
+	 || id >= GL_LIGHT0 + ctx->fixed.max_lights)
+	{
+		GL_SET_ERR(ctx, GL_INVALID_ENUM);
+		return;
+	}
+	light = &ctx->fixed.block.lights[id - GL_LIGHT0];
+	switch (pname)
+	{
+		case GL_AMBIENT:
+			params[0] = light->ambient[0];
+			params[1] = light->ambient[1];
+			params[2] = light->ambient[2];
+			params[3] = light->ambient[3];
 			break;
 		case GL_DIFFUSE:
-			params[0] = l->diffuse[0];
-			params[1] = l->diffuse[1];
-			params[2] = l->diffuse[2];
-			params[3] = l->diffuse[3];
+			params[0] = light->diffuse[0];
+			params[1] = light->diffuse[1];
+			params[2] = light->diffuse[2];
+			params[3] = light->diffuse[3];
 			break;
 		case GL_SPECULAR:
-			params[0] = l->specular[0];
-			params[1] = l->specular[1];
-			params[2] = l->specular[2];
-			params[3] = l->specular[3];
+			params[0] = light->specular[0];
+			params[1] = light->specular[1];
+			params[2] = light->specular[2];
+			params[3] = light->specular[3];
 			break;
 		case GL_POSITION:
-			params[0] = l->position[0];
-			params[1] = l->position[1];
-			params[2] = l->position[2];
-			params[3] = l->position[3];
+			params[0] = light->position[0];
+			params[1] = light->position[1];
+			params[2] = light->position[2];
+			params[3] = light->position[3];
 			break;
 		case GL_SPOT_DIRECTION:
-			params[0] = l->spot_direction[0];
-			params[1] = l->spot_direction[1];
-			params[2] = l->spot_direction[2];
+			params[0] = light->spot_direction[0];
+			params[1] = light->spot_direction[1];
+			params[2] = light->spot_direction[2];
 			break;
 		case GL_SPOT_EXPONENT:
-			params[0] = l->spot_exponent;
+			params[0] = light->spot_exponent;
 			break;
 		case GL_SPOT_CUTOFF:
-			params[0] = l->spot_cutoff;
+			params[0] = light->spot_cutoff;
 			break;
 		case GL_CONSTANT_ATTENUATION:
-			params[0] = l->attenuations[0];
+			params[0] = light->attenuations[0];
 			break;
 		case GL_LINEAR_ATTENUATION:
-			params[0] = l->attenuations[1];
+			params[0] = light->attenuations[1];
 			break;
 		case GL_QUADRATIC_ATTENUATION:
-			params[0] = l->attenuations[2];
+			params[0] = light->attenuations[2];
 			break;
 		default:
-			g_ctx->errno = GL_INVALID_ENUM;
+			GL_SET_ERR(ctx, GL_INVALID_ENUM);
 			return;
 	}
 }
 
-void glGetLightiv(GLenum light, GLenum pname, GLint *params)
+void
+glGetLightiv(GLenum id, GLenum pname, GLint *params)
 {
-	if (light < GL_LIGHT0 || light >= GL_LIGHT0 + g_ctx->max_lights)
+	struct gl_ctx *ctx = g_ctx;
+	struct light *light;
+
+	if (id < GL_LIGHT0
+	 || id >= GL_LIGHT0 + ctx->fixed.max_lights)
 	{
-		g_ctx->errno = GL_INVALID_ENUM;
+		GL_SET_ERR(ctx, GL_INVALID_ENUM);
 		return;
 	}
-	struct light *l = &g_ctx->lights[light - GL_LIGHT0];
+	light = &ctx->fixed.block.lights[id - GL_LIGHT0];
 	switch (pname)
 	{
 		case GL_AMBIENT:
-			params[0] = l->ambient[0] * INT_MAX;
-			params[1] = l->ambient[1] * INT_MAX;
-			params[2] = l->ambient[2] * INT_MAX;
-			params[3] = l->ambient[3] * INT_MAX;
+			params[0] = light->ambient[0] * INT32_MAX;
+			params[1] = light->ambient[1] * INT32_MAX;
+			params[2] = light->ambient[2] * INT32_MAX;
+			params[3] = light->ambient[3] * INT32_MAX;
 			break;
 		case GL_DIFFUSE:
-			params[0] = l->diffuse[0] * INT_MAX;
-			params[1] = l->diffuse[1] * INT_MAX;
-			params[2] = l->diffuse[2] * INT_MAX;
-			params[3] = l->diffuse[3] * INT_MAX;
+			params[0] = light->diffuse[0] * INT32_MAX;
+			params[1] = light->diffuse[1] * INT32_MAX;
+			params[2] = light->diffuse[2] * INT32_MAX;
+			params[3] = light->diffuse[3] * INT32_MAX;
 			break;
 		case GL_SPECULAR:
-			params[0] = l->specular[0] * INT_MAX;
-			params[1] = l->specular[1] * INT_MAX;
-			params[2] = l->specular[2] * INT_MAX;
-			params[3] = l->specular[3] * INT_MAX;
+			params[0] = light->specular[0] * INT32_MAX;
+			params[1] = light->specular[1] * INT32_MAX;
+			params[2] = light->specular[2] * INT32_MAX;
+			params[3] = light->specular[3] * INT32_MAX;
 			break;
 		case GL_POSITION:
-			params[0] = l->position[0];
-			params[1] = l->position[1];
-			params[2] = l->position[2];
-			params[3] = l->position[3];
+			params[0] = light->position[0];
+			params[1] = light->position[1];
+			params[2] = light->position[2];
+			params[3] = light->position[3];
 			break;
 		case GL_SPOT_DIRECTION:
-			params[0] = l->spot_direction[0];
-			params[1] = l->spot_direction[1];
-			params[2] = l->spot_direction[2];
+			params[0] = light->spot_direction[0];
+			params[1] = light->spot_direction[1];
+			params[2] = light->spot_direction[2];
 			break;
 		case GL_SPOT_EXPONENT:
-			params[0] = l->spot_exponent;
+			params[0] = light->spot_exponent;
 			break;
 		case GL_SPOT_CUTOFF:
-			params[0] = l->spot_cutoff;
+			params[0] = light->spot_cutoff;
 			break;
 		case GL_CONSTANT_ATTENUATION:
-			params[0] = l->attenuations[0];
+			params[0] = light->attenuations[0];
 			break;
 		case GL_LINEAR_ATTENUATION:
-			params[0] = l->attenuations[1];
+			params[0] = light->attenuations[1];
 			break;
 		case GL_QUADRATIC_ATTENUATION:
-			params[0] = l->attenuations[2];
+			params[0] = light->attenuations[2];
 			break;
 		default:
-			g_ctx->errno = GL_INVALID_ENUM;
+			GL_SET_ERR(ctx, GL_INVALID_ENUM);
 			return;
 	}
 }

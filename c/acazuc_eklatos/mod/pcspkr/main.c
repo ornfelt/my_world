@@ -9,7 +9,8 @@
 
 struct cdev *dev_pcspkr;
 
-void set_freq(uint32_t freq)
+void
+set_freq(uint32_t freq)
 {
 	if (!freq)
 	{
@@ -25,7 +26,8 @@ void set_freq(uint32_t freq)
 		outb(0x61, tmp | 3);
 }
 
-ssize_t pcspkr_write(struct file *file, struct uio *uio)
+ssize_t
+pcspkr_write(struct file *file, struct uio *uio)
 {
 	(void)file;
 	uint16_t freq;
@@ -38,12 +40,14 @@ ssize_t pcspkr_write(struct file *file, struct uio *uio)
 	return ret;
 }
 
-const struct file_op fop =
+const struct file_op
+fop =
 {
 	.write = pcspkr_write,
 };
 
-int init(void)
+int
+init(void)
 {
 	int ret = cdev_alloc("pcspkr", 0, 0, 0600, makedev(10, 0), &fop, &dev_pcspkr);
 	if (ret)
@@ -51,11 +55,13 @@ int init(void)
 	return ret;
 }
 
-void fini(void)
+void
+fini(void)
 {
 }
 
-struct kmod_info kmod =
+struct kmod_info
+kmod =
 {
 	.magic = KMOD_MAGIC,
 	.version = 1,

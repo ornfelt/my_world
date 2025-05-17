@@ -1,0 +1,13 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: xcb-glx
+Description: xcb glx library
+URL: https://git.sr.ht/~acazuc/jkx
+Version: @VERSION@
+
+Cflags: -I${includedir}
+Libs: -L${libdir} -lxcb-glx
+Requires: xcb

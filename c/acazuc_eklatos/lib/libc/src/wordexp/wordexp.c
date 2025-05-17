@@ -23,7 +23,8 @@ struct we_ctx
 	int quote;
 };
 
-static int we_putc(struct we_ctx *ctx, char c)
+static int
+we_putc(struct we_ctx *ctx, char c)
 {
 	if (ctx->buf_pos + 1 >= sizeof(ctx->buf))
 		return WRDE_NOSPACE;
@@ -32,7 +33,8 @@ static int we_putc(struct we_ctx *ctx, char c)
 	return 0;
 }
 
-static int we_puts(struct we_ctx *ctx, const char *str, size_t len)
+static int
+we_puts(struct we_ctx *ctx, const char *str, size_t len)
 {
 	if (ctx->buf_pos + len >= sizeof(ctx->buf))
 		return WRDE_NOSPACE;
@@ -42,7 +44,8 @@ static int we_puts(struct we_ctx *ctx, const char *str, size_t len)
 	return 0;
 }
 
-static int we_putw(struct we_ctx *ctx, const char *str, size_t len)
+static int
+we_putw(struct we_ctx *ctx, const char *str, size_t len)
 {
 	size_t off = ctx->we->we_offs + ctx->we->we_wordc;
 	char **wordv = realloc(ctx->we->we_wordv,
@@ -59,7 +62,8 @@ static int we_putw(struct we_ctx *ctx, const char *str, size_t len)
 	return 0;
 }
 
-static int we_endw(struct we_ctx *ctx)
+static int
+we_endw(struct we_ctx *ctx)
 {
 	ctx->buf[ctx->buf_pos] = '\0';
 	if (ctx->word_glob)
@@ -104,8 +108,8 @@ static int we_endw(struct we_ctx *ctx)
 	return 0;
 }
 
-static int we_putexp_quote(struct we_ctx *ctx, const char *str, size_t len,
-                           int quote)
+static int
+we_putexp_quote(struct we_ctx *ctx, const char *str, size_t len, int quote)
 {
 	switch (quote)
 	{
@@ -145,12 +149,14 @@ static int we_putexp_quote(struct we_ctx *ctx, const char *str, size_t len,
 	}
 }
 
-static int we_putexp(struct we_ctx *ctx, const char *str, size_t len)
+static int
+we_putexp(struct we_ctx *ctx, const char *str, size_t len)
 {
 	return we_putexp_quote(ctx, str, len, ctx->quote);
 }
 
-static int we_np_get_var(struct we_ctx *ctx, const char *name, size_t len)
+static int
+we_np_get_var(struct we_ctx *ctx, const char *name, size_t len)
 {
 	char **values;
 	int ret;
@@ -198,7 +204,8 @@ end:
 	return ret;
 }
 
-static int we_var(struct we_ctx *ctx)
+static int
+we_var(struct we_ctx *ctx)
 {
 	if (isdigit(ctx->it[1]))
 	{
@@ -233,7 +240,8 @@ static int we_var(struct we_ctx *ctx)
 	return we_putexp(ctx, value, strlen(value));
 }
 
-static int we_home(struct we_ctx *ctx)
+static int
+we_home(struct we_ctx *ctx)
 {
 	char user[4096];
 	size_t user_len = 0;
@@ -280,7 +288,8 @@ static int we_home(struct we_ctx *ctx)
 	return we_puts(ctx, pwd->pw_dir, strlen(pwd->pw_dir));
 }
 
-static int we_np_cmd_exp(struct we_ctx *ctx)
+static int
+we_np_cmd_exp(struct we_ctx *ctx)
 {
 	const char *cmd = ++ctx->it;
 	while (*ctx->it != '`')
@@ -306,7 +315,8 @@ static int we_np_cmd_exp(struct we_ctx *ctx)
 	return ret;
 }
 
-static int we_noquote(struct we_ctx *ctx)
+static int
+we_noquote(struct we_ctx *ctx)
 {
 	if (!(ctx->flags & WRDE_NP_NOBK) && strchr(ctx->ifs, *ctx->it))
 	{
@@ -360,7 +370,8 @@ static int we_noquote(struct we_ctx *ctx)
 	}
 }
 
-static int we_dquote(struct we_ctx *ctx)
+static int
+we_dquote(struct we_ctx *ctx)
 {
 	switch (*ctx->it)
 	{
@@ -404,7 +415,8 @@ static int we_dquote(struct we_ctx *ctx)
 	}
 }
 
-static int we_squote(struct we_ctx *ctx)
+static int
+we_squote(struct we_ctx *ctx)
 {
 	switch (*ctx->it)
 	{
@@ -425,7 +437,8 @@ static int we_squote(struct we_ctx *ctx)
 	}
 }
 
-int wordexp(const char *word, wordexp_t *we, int flags)
+int
+wordexp(const char *word, wordexp_t *we, int flags)
 {
 	if (!(flags & WRDE_APPEND))
 	{

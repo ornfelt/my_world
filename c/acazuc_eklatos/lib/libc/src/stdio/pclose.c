@@ -1,6 +1,7 @@
 #include <stdio.h>
 
-int pclose(FILE *fp)
+int
+pclose(FILE *fp)
 {
 	return fclose(fp);
 }

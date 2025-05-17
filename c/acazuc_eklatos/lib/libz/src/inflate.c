@@ -95,7 +95,8 @@ struct ctx
 	} gzip;
 };
 
-static void write_byte(struct ctx *ctx, uint8_t c)
+static void
+write_byte(struct ctx *ctx, uint8_t c)
 {
 	ringbuf_write_byte(&ctx->output, c);
 	ctx->gz_len++;
@@ -103,7 +104,8 @@ static void write_byte(struct ctx *ctx, uint8_t c)
 	ctx->zlib_adler = adler32(ctx->zlib_adler, &c, 1);
 }
 
-static void generate_static_huffman(struct ctx *ctx)
+static void
+generate_static_huffman(struct ctx *ctx)
 {
 	/* XXX hardcode it in static memory */
 	uint32_t hlit = 288;
@@ -123,8 +125,8 @@ static void generate_static_huffman(struct ctx *ctx)
 	huffman_generate(&ctx->huff_dist, &lit_lengths_distances[hlit], hdist);
 }
 
-static int decode_code(struct bitstream *bs, uint8_t *dst,
-                       size_t *i, int v)
+static int
+decode_code(struct bitstream *bs, uint8_t *dst, size_t *i, int v)
 {
 	if (v == 16)
 	{
@@ -168,7 +170,8 @@ static int decode_code(struct bitstream *bs, uint8_t *dst,
 	return Z_OK;
 }
 
-static int handle_zlhead(struct ctx *ctx)
+static int
+handle_zlhead(struct ctx *ctx)
 {
 	uint32_t magic;
 	if (!bitstream_has_read(&ctx->bs, 16))
@@ -197,7 +200,8 @@ static int handle_zlhead(struct ctx *ctx)
 	return Z_OK;
 }
 
-static int handle_zldict(struct ctx *ctx)
+static int
+handle_zldict(struct ctx *ctx)
 {
 	if (!bitstream_has_read(&ctx->bs, 32))
 		return Z_NEED_MORE;
@@ -206,7 +210,8 @@ static int handle_zldict(struct ctx *ctx)
 	return Z_OK;
 }
 
-static int handle_gzhead(struct ctx *ctx)
+static int
+handle_gzhead(struct ctx *ctx)
 {
 	if (!ctx->gzip.id1)
 	{
@@ -250,7 +255,8 @@ static int handle_gzhead(struct ctx *ctx)
 	return Z_OK;
 }
 
-static int handle_gzxtra(struct ctx *ctx)
+static int
+handle_gzxtra(struct ctx *ctx)
 {
 	if (!ctx->gzip.xlen)
 	{
@@ -292,7 +298,8 @@ end:
 	return Z_OK;
 }
 
-static int handle_gzname(struct ctx *ctx)
+static int
+handle_gzname(struct ctx *ctx)
 {
 	size_t avail = bitstream_avail_read(&ctx->bs) / 8;
 	if (!avail)
@@ -322,7 +329,8 @@ end:
 	return Z_OK;
 }
 
-static int handle_gzcomm(struct ctx *ctx)
+static int
+handle_gzcomm(struct ctx *ctx)
 {
 	size_t avail = bitstream_avail_read(&ctx->bs) / 8;
 	if (!avail)
@@ -350,7 +358,8 @@ end:
 	return Z_OK;
 }
 
-static int handle_gzhcrc(struct ctx *ctx)
+static int
+handle_gzhcrc(struct ctx *ctx)
 {
 	if (!bitstream_has_read(&ctx->bs, 16))
 		return Z_NEED_MORE;
@@ -361,7 +370,8 @@ static int handle_gzhcrc(struct ctx *ctx)
 	return Z_OK;
 }
 
-static int handle_blkhdr(struct ctx *ctx)
+static int
+handle_blkhdr(struct ctx *ctx)
 {
 	if (ctx->last)
 	{
@@ -391,7 +401,8 @@ static int handle_blkhdr(struct ctx *ctx)
 	}
 }
 
-static int handle_rawhdr(struct ctx *ctx)
+static int
+handle_rawhdr(struct ctx *ctx)
 {
 	if (ctx->bs.pos % 8)
 		bitstream_skip(&ctx->bs, 8 - (ctx->bs.pos % 8));
@@ -405,7 +416,8 @@ static int handle_rawhdr(struct ctx *ctx)
 	return Z_OK;
 }
 
-static int handle_rawblk(struct ctx *ctx)
+static int
+handle_rawblk(struct ctx *ctx)
 {
 	int first = 1;
 	while (ctx->raw_len)
@@ -438,7 +450,8 @@ static int handle_rawblk(struct ctx *ctx)
 	return Z_OK;
 }
 
-static int handle_dynhdr(struct ctx *ctx)
+static int
+handle_dynhdr(struct ctx *ctx)
 {
 	if (!bitstream_has_read(&ctx->bs, 14))
 		return Z_NEED_MORE;
@@ -452,7 +465,8 @@ static int handle_dynhdr(struct ctx *ctx)
 	return Z_OK;
 }
 
-static int handle_dynlen(struct ctx *ctx)
+static int
+handle_dynlen(struct ctx *ctx)
 {
 	if (!bitstream_has_read(&ctx->bs, ctx->dyn_hclen * 3))
 		return Z_NEED_MORE;
@@ -480,7 +494,8 @@ static int handle_dynlen(struct ctx *ctx)
 	return Z_OK;
 }
 
-static int handle_dynlit(struct ctx *ctx)
+static int
+handle_dynlit(struct ctx *ctx)
 {
 	while (ctx->dyn_hlit_pos < ctx->dyn_hlit + ctx->dyn_hdist)
 	{
@@ -508,7 +523,8 @@ static int handle_dynlit(struct ctx *ctx)
 	return Z_OK;
 }
 
-static int handle_hufcod(struct ctx *ctx)
+static int
+handle_hufcod(struct ctx *ctx)
 {
 	if (ctx->hufcode_char >= 0)
 	{
@@ -568,7 +584,8 @@ static int handle_hufcod(struct ctx *ctx)
 	return Z_OK;
 }
 
-static int handle_extlen(struct ctx *ctx)
+static int
+handle_extlen(struct ctx *ctx)
 {
 	uint32_t add;
 	if (!bitstream_has_read(&ctx->bs, ctx->extra_length_bits))
@@ -579,7 +596,8 @@ static int handle_extlen(struct ctx *ctx)
 	return Z_OK;
 }
 
-static int handle_hufdst(struct ctx *ctx)
+static int
+handle_hufdst(struct ctx *ctx)
 {
 	ctx->hufcode_dist = huffman_decode(&ctx->bs, &ctx->huff_dist);
 	if (ctx->hufcode_dist < 0)
@@ -615,7 +633,8 @@ static int handle_hufdst(struct ctx *ctx)
 	return Z_OK;
 }
 
-static int handle_extdst(struct ctx *ctx)
+static int
+handle_extdst(struct ctx *ctx)
 {
 	uint32_t add;
 	if (!bitstream_has_read(&ctx->bs, ctx->extra_dist_bits))
@@ -626,7 +645,8 @@ static int handle_extdst(struct ctx *ctx)
 	return Z_OK;
 }
 
-static int handle_refcpy(struct ctx *ctx)
+static int
+handle_refcpy(struct ctx *ctx)
 {
 	/* XXX check back_dist isn't going further begining of ringbuf */
 	while (ctx->back_size)
@@ -643,7 +663,8 @@ static int handle_refcpy(struct ctx *ctx)
 	return Z_OK;
 }
 
-static int handle_zadler(struct ctx *ctx)
+static int
+handle_zadler(struct ctx *ctx)
 {
 	if (ctx->bs.pos % 8)
 		bitstream_skip(&ctx->bs, 8 - (ctx->bs.pos % 8));
@@ -662,7 +683,8 @@ static int handle_zadler(struct ctx *ctx)
 	return Z_OK;
 }
 
-static int handle_gzecrc(struct ctx *ctx)
+static int
+handle_gzecrc(struct ctx *ctx)
 {
 	if (!bitstream_has_read(&ctx->bs, 32))
 		return Z_NEED_MORE;
@@ -674,7 +696,8 @@ static int handle_gzecrc(struct ctx *ctx)
 	return Z_OK;
 }
 
-static int handle_gzelen(struct ctx *ctx)
+static int
+handle_gzelen(struct ctx *ctx)
 {
 	if (!bitstream_has_read(&ctx->bs, 32))
 		return Z_NEED_MORE;
@@ -686,13 +709,15 @@ static int handle_gzelen(struct ctx *ctx)
 	return Z_OK;
 }
 
-static int handle_strend(struct ctx *ctx)
+static int
+handle_strend(struct ctx *ctx)
 {
 	(void)ctx;
 	return Z_STREAM_END;
 }
 
-int inflateInit(z_stream *stream)
+int
+inflateInit(z_stream *stream)
 {
 	stream->msg = NULL;
 	struct ctx *ctx = calloc(1, sizeof(struct ctx));
@@ -707,7 +732,8 @@ int inflateInit(z_stream *stream)
 	return Z_OK;
 }
 
-static size_t copy_in(z_stream *stream)
+static size_t
+copy_in(z_stream *stream)
 {
 	struct ctx *ctx = stream->internal_state;
 	size_t cpy_len = ringbuf_write_size(&ctx->input);
@@ -723,7 +749,8 @@ static size_t copy_in(z_stream *stream)
 	return cpy_len;
 }
 
-static size_t copy_out(z_stream *stream)
+static size_t
+copy_out(z_stream *stream)
 {
 	struct ctx *ctx = stream->internal_state;
 	size_t cpy_len = ringbuf_read_size(&ctx->output);
@@ -739,7 +766,8 @@ static size_t copy_out(z_stream *stream)
 	return cpy_len;
 }
 
-int inflate(z_stream *stream, int flush)
+int
+inflate(z_stream *stream, int flush)
 {
 	(void)flush; /* XXX */
 	struct ctx *ctx = stream->internal_state;
@@ -844,7 +872,8 @@ int inflate(z_stream *stream, int flush)
 	return ret;
 }
 
-int inflateEnd(z_stream *stream)
+int
+inflateEnd(z_stream *stream)
 {
 	if (!stream || !stream->internal_state)
 		return Z_STREAM_ERROR;
@@ -859,7 +888,8 @@ int inflateEnd(z_stream *stream)
 	return Z_OK;
 }
 
-int inflateGetHeader(z_stream *stream, gz_header *header)
+int
+inflateGetHeader(z_stream *stream, gz_header *header)
 {
 	(void)stream;
 	(void)header;

@@ -42,8 +42,10 @@ struct elf32 *elf32_open(const char *path);
 struct elf32 *elf32_open_fd(int fd);
 void elf32_free(struct elf32 *elf);
 
-int elf32_read_section(struct elf32 *elf, const Elf32_Shdr *shdr,
-                       void **data, Elf32_Word *size);
+int elf32_read_section(struct elf32 *elf,
+                       const Elf32_Shdr *shdr,
+                       void **data,
+                       Elf32_Word *size);
 
 Elf32_Ehdr *elf32_get_ehdr(struct elf32 *elf);
 Elf32_Half elf32_get_shnum(struct elf32 *elf);
@@ -70,8 +72,10 @@ struct elf64 *elf64_open(const char *path);
 struct elf64 *elf64_open_fd(int fd);
 void elf64_free(struct elf64 *elf);
 
-int elf64_read_section(struct elf64 *elf, const Elf64_Shdr *shdr,
-                       void **data, Elf64_Word *size);
+int elf64_read_section(struct elf64 *elf,
+                       const Elf64_Shdr *shdr,
+                       void **data,
+                       Elf64_Word *size);
 
 Elf64_Ehdr *elf64_get_ehdr(struct elf64 *elf);
 Elf64_Half elf64_get_shnum(struct elf64 *elf);

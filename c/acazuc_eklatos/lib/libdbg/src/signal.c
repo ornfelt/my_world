@@ -3,7 +3,8 @@
 #include <stdlib.h>
 #include <signal.h>
 
-static const struct dbg_signal signals[] =
+static const struct dbg_signal
+signals[] =
 {
 #define SIGNAL_DEF(sig) [sig] = {#sig}
 	SIGNAL_DEF(SIGHUP),
@@ -37,7 +38,8 @@ static const struct dbg_signal signals[] =
 #undef SIGNAL_DEF
 };
 
-const struct dbg_signal *dbg_signal_get(int signum)
+const struct dbg_signal *
+dbg_signal_get(int signum)
 {
 	if (signum < 0
 	 || (unsigned)signum >= sizeof(signals) / sizeof(*signals)
@@ -46,7 +48,8 @@ const struct dbg_signal *dbg_signal_get(int signum)
 	return &signals[signum];
 }
 
-int dbg_signal_from_name(const char *name)
+int
+dbg_signal_from_name(const char *name)
 {
 	for (size_t i = 0; i < sizeof(signals) / sizeof(*signals); ++i)
 	{

@@ -2,7 +2,8 @@
 
 #include <dirent.h>
 
-int dirfd(DIR *dirp)
+int
+dirfd(DIR *dirp)
 {
 	return dirp->fd;
 }

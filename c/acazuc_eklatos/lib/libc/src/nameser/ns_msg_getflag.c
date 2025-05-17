@@ -1,6 +1,7 @@
 #include <arpa/nameser.h>
 
-int ns_msg_getflag(ns_msg msg, enum ns_flag flag)
+int
+ns_msg_getflag(ns_msg msg, enum ns_flag flag)
 {
 	switch (flag)
 	{

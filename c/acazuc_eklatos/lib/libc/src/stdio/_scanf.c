@@ -36,7 +36,8 @@ static int scan_c(struct buf *buf, struct arg *arg);
 static int scan_p(struct buf *buf, struct arg *arg);
 static int scan_n(struct buf *buf, struct arg *arg);
 
-static int get_char(struct buf *buf)
+static int
+get_char(struct buf *buf)
 {
 	switch (buf->type)
 	{
@@ -52,7 +53,8 @@ static int get_char(struct buf *buf)
 	return EOF;
 }
 
-static void unget_char(struct buf *buf, char c)
+static void
+unget_char(struct buf *buf, char c)
 {
 	switch (buf->type)
 	{
@@ -67,7 +69,8 @@ static void unget_char(struct buf *buf, char c)
 	}
 }
 
-static void arg_ctr(struct arg *arg, va_list *va_arg)
+static void
+arg_ctr(struct arg *arg, va_list *va_arg)
 {
 	arg->va_arg = va_arg;
 	arg->flags = 0;
@@ -75,9 +78,11 @@ static void arg_ctr(struct arg *arg, va_list *va_arg)
 	arg->type = '\0';
 }
 
-static void skip_spaces(struct buf *buf)
+static void
+skip_spaces(struct buf *buf)
 {
 	int c;
+
 	do
 	{
 		c = get_char(buf);
@@ -86,7 +91,8 @@ static void skip_spaces(struct buf *buf)
 		unget_char(buf, c);
 }
 
-int scanf_buf(struct buf *buf, const char *fmt, va_list va_arg)
+int
+scanf_buf(struct buf *buf, const char *fmt, va_list va_arg)
 {
 	int ret;
 	va_list va_cpy;
@@ -178,7 +184,8 @@ end:
 	return ret;
 }
 
-static int parse_flags(struct arg *arg, char c)
+static int
+parse_flags(struct arg *arg, char c)
 {
 	switch (c)
 	{
@@ -197,7 +204,8 @@ static int parse_flags(struct arg *arg, char c)
 	return 1;
 }
 
-static void parse_length(struct arg *arg, const char *fmt, size_t *i)
+static void
+parse_length(struct arg *arg, const char *fmt, size_t *i)
 {
 	if (fmt[*i] == 'h')
 	{
@@ -242,7 +250,8 @@ static void parse_length(struct arg *arg, const char *fmt, size_t *i)
 	}
 }
 
-static int parse_width(struct arg *arg, const char *fmt, size_t *i)
+static int
+parse_width(struct arg *arg, const char *fmt, size_t *i)
 {
 	char *endptr;
 
@@ -254,7 +263,8 @@ static int parse_width(struct arg *arg, const char *fmt, size_t *i)
 	return 1;
 }
 
-static int parse_arg(struct arg *arg, const char *fmt, size_t *i)
+static int
+parse_arg(struct arg *arg, const char *fmt, size_t *i)
 {
 	while (parse_flags(arg, fmt[*i]))
 		(*i)++;
@@ -265,7 +275,8 @@ static int parse_arg(struct arg *arg, const char *fmt, size_t *i)
 	return 1;
 }
 
-static void set_val(struct arg *arg, unsigned long long val)
+static void
+set_val(struct arg *arg, unsigned long long val)
 {
 	if (arg->flags & FLAG_LL)
 	{
@@ -300,7 +311,8 @@ static void set_val(struct arg *arg, unsigned long long val)
 	*va_arg(*arg->va_arg, int*) = val;
 }
 
-static int scan_mod(struct buf *buf, struct arg *arg)
+static int
+scan_mod(struct buf *buf, struct arg *arg)
 {
 	int c;
 
@@ -312,7 +324,8 @@ static int scan_mod(struct buf *buf, struct arg *arg)
 	return 0;
 }
 
-static unsigned long long get_decimal(struct buf *buf, struct arg *arg)
+static unsigned long long
+get_decimal(struct buf *buf, struct arg *arg)
 {
 	unsigned long long val = 0;
 	int c;
@@ -331,7 +344,8 @@ static unsigned long long get_decimal(struct buf *buf, struct arg *arg)
 	return val;
 }
 
-static unsigned long long get_octal(struct buf *buf)
+static unsigned long long
+get_octal(struct buf *buf)
 {
 	unsigned long long val = 0;
 	int c;
@@ -348,7 +362,8 @@ static unsigned long long get_octal(struct buf *buf)
 	return val;
 }
 
-static unsigned long long get_hexadecimal(struct buf *buf)
+static unsigned long long
+get_hexadecimal(struct buf *buf)
 {
 	unsigned long long val = 0;
 	int c;
@@ -376,7 +391,8 @@ static unsigned long long get_hexadecimal(struct buf *buf)
 	return val;
 }
 
-static unsigned long long get_number(struct buf *buf, struct arg *arg)
+static unsigned long long
+get_number(struct buf *buf, struct arg *arg)
 {
 	int c = get_char(buf);
 	if (c == EOF)
@@ -400,7 +416,8 @@ static unsigned long long get_number(struct buf *buf, struct arg *arg)
 	return get_decimal(buf, arg);
 }
 
-static int scan_d(struct buf *buf, struct arg *arg)
+static int
+scan_d(struct buf *buf, struct arg *arg)
 {
 	unsigned long long val;
 	int c;
@@ -429,7 +446,8 @@ static int scan_d(struct buf *buf, struct arg *arg)
 	return 0;
 }
 
-static int scan_i(struct buf *buf, struct arg *arg)
+static int
+scan_i(struct buf *buf, struct arg *arg)
 {
 	unsigned long long val;
 	int c;
@@ -458,7 +476,8 @@ static int scan_i(struct buf *buf, struct arg *arg)
 	return 0;
 }
 
-static int scan_o(struct buf *buf, struct arg *arg)
+static int
+scan_o(struct buf *buf, struct arg *arg)
 {
 	unsigned long long val;
 	int prev_ninput;
@@ -476,7 +495,8 @@ static int scan_o(struct buf *buf, struct arg *arg)
 	return 0;
 }
 
-static int scan_u(struct buf *buf, struct arg *arg)
+static int
+scan_u(struct buf *buf, struct arg *arg)
 {
 	unsigned long long val;
 	int prev_ninput;
@@ -494,7 +514,8 @@ static int scan_u(struct buf *buf, struct arg *arg)
 	return 0;
 }
 
-static int scan_x(struct buf *buf, struct arg *arg)
+static int
+scan_x(struct buf *buf, struct arg *arg)
 {
 	unsigned long long val;
 	int prev_ninput;
@@ -524,7 +545,8 @@ static int scan_x(struct buf *buf, struct arg *arg)
 	return 0;
 }
 
-static int scan_f(struct buf *buf, struct arg *arg)
+static int
+scan_f(struct buf *buf, struct arg *arg)
 {
 	skip_spaces(buf);
 	(void)buf;
@@ -533,7 +555,8 @@ static int scan_f(struct buf *buf, struct arg *arg)
 	return 0;
 }
 
-static int scan_ms(struct buf *buf, struct arg *arg)
+static int
+scan_ms(struct buf *buf, struct arg *arg)
 {
 	skip_spaces(buf);
 	(void)buf;
@@ -542,7 +565,8 @@ static int scan_ms(struct buf *buf, struct arg *arg)
 	return 0;
 }
 
-static int scan_s(struct buf *buf, struct arg *arg)
+static int
+scan_s(struct buf *buf, struct arg *arg)
 {
 	char *base = NULL;
 	int c;
@@ -572,7 +596,8 @@ static int scan_s(struct buf *buf, struct arg *arg)
 	return 0;
 }
 
-static int scan_c(struct buf *buf, struct arg *arg)
+static int
+scan_c(struct buf *buf, struct arg *arg)
 {
 	char *base = NULL;
 	int nchars;
@@ -596,7 +621,8 @@ static int scan_c(struct buf *buf, struct arg *arg)
 	return 0;
 }
 
-static int scan_p(struct buf *buf, struct arg *arg)
+static int
+scan_p(struct buf *buf, struct arg *arg)
 {
 	unsigned long long val;
 	int prev_ninput;
@@ -637,7 +663,8 @@ static int scan_p(struct buf *buf, struct arg *arg)
 	return 0;
 }
 
-static int scan_n(struct buf *buf, struct arg *arg)
+static int
+scan_n(struct buf *buf, struct arg *arg)
 {
 	if (!(arg->flags & FLAG_ASTERISK))
 		*va_arg(*arg->va_arg, int*) = buf->ninput;

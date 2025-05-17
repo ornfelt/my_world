@@ -1,7 +1,8 @@
 #include <string.h>
 #include <errno.h>
 
-static const char *err_str[] =
+static const char *
+err_str[] =
 {
 	[E2BIG          ] = "Argument list too long",
 	[EACCES         ] = "Permission denied",
@@ -84,12 +85,15 @@ static const char *err_str[] =
 	[EXDEV          ] = "Cross-device link",
 };
 
-char *strerror(int errnum)
+char *
+strerror(int errnum)
 {
+	char *ret;
+
 	if (errnum <= 0
 	 || (unsigned)errnum >= sizeof(err_str) / sizeof(*err_str))
 		return "Unknown error";
-	char *ret = (char*)err_str[errnum];
+	ret = (char*)err_str[errnum];
 	if (ret)
 		return ret;
 	return "Unknown error";

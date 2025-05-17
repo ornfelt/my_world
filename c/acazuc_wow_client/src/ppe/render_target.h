@@ -21,7 +21,6 @@ struct render_target
 	uint32_t height;
 	uint32_t width;
 	uint8_t samples;
-	bool dirty_size;
 	bool enabled;
 };
 

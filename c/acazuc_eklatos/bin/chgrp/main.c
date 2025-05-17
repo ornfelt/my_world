@@ -22,14 +22,23 @@ struct env
 	gid_t gid;
 };
 
-static int change_group(struct env *env, const char *file, int depth);
+static int
+change_group(struct env *env, const char *file, int depth);
 
-static int recur(struct env *env, const char *file, int depth)
+static int
+recur(struct env *env, const char *file, int depth)
 {
+	char path[MAXPATHLEN];
+	struct dirent *dirent;
 	struct stat st;
+	DIR *dir;
+
 	if (lstat(file, &st) == -1)
 	{
-		fprintf(stderr, "%s: lstat: %s\n", env->progname, strerror(errno));
+		fprintf(stderr, "%s: lstat(%s): %s\n",
+		        env->progname,
+		        file,
+		        strerror(errno));
 		return 1;
 	}
 	if (S_ISLNK(st.st_mode))
@@ -43,21 +52,23 @@ static int recur(struct env *env, const char *file, int depth)
 	{
 		return 1;
 	}
-	DIR *dir = opendir(file);
+	dir = opendir(file);
 	if (!dir)
 	{
-		fprintf(stderr, "%s: opendir: %s\n", env->progname, strerror(errno));
+		fprintf(stderr, "%s: opendir(%s): %s\n",
+		        env->progname,
+		        file,
+		        strerror(errno));
 		return 1;
 	}
-	struct dirent *dirent;
 	while ((dirent = readdir(dir)))
 	{
 		if (!strcmp(dirent->d_name, ".") || !strcmp(dirent->d_name, ".."))
 			continue;
-		char path[MAXPATHLEN];
 		if (snprintf(path, sizeof(path), "%s/%s", file, dirent->d_name) >= (int)sizeof(path))
 		{
-			fprintf(stderr, "%s: path too long\n", env->progname);
+			fprintf(stderr, "%s: path too long\n",
+			        env->progname);
 			closedir(dir);
 			return 1;
 		}
@@ -71,7 +82,8 @@ static int recur(struct env *env, const char *file, int depth)
 	return 0;
 }
 
-static int change_group(struct env *env, const char *file, int depth)
+static int
+change_group(struct env *env, const char *file, int depth)
 {
 	if (env->opt & OPT_R)
 	{
@@ -82,7 +94,10 @@ static int change_group(struct env *env, const char *file, int depth)
 	{
 		if (lchown(file, -1, env->gid) == -1)
 		{
-			fprintf(stderr, "%s: lchown: %s\n", env->progname, strerror(errno));
+			fprintf(stderr, "%s: lchown(%s): %s\n",
+			        env->progname,
+			        file,
+			        strerror(errno));
 			return 1;
 		}
 	}
@@ -90,16 +105,22 @@ static int change_group(struct env *env, const char *file, int depth)
 	{
 		if (chown(file, -1, env->gid) == -1)
 		{
-			fprintf(stderr, "%s: chown: %s\n", env->progname, strerror(errno));
+			fprintf(stderr, "%s: chown(%s): %s\n",
+			        env->progname,
+			        file,
+			        strerror(errno));
 			return 1;
 		}
 	}
 	return 0;
 }
 
-static int parse_group(const char *progname, const char *str, gid_t *gid)
+static int
+parse_group(const char *progname, const char *str, gid_t *gid)
 {
-	struct group *gr = getgrnam(str);
+	struct group *gr;
+
+	gr = getgrnam(str);
 	if (!gr)
 	{
 		fprintf(stderr, "%s: invalid group: '%s'\n", progname, str);
@@ -109,7 +130,8 @@ static int parse_group(const char *progname, const char *str, gid_t *gid)
 	return 0;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-h] [-R] [-H] [-L] [-P] group FILES\n", progname);
 	printf("-h: don't dereference symbolic links\n");
@@ -119,7 +141,8 @@ static void usage(const char *progname)
 	printf("-P: don't traverse any symbolic link to directory\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

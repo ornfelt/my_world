@@ -4,9 +4,11 @@ use crate::{
 use crate::header::{
     DbcHeader, HEADER_SIZE, parse_header,
 };
+use crate::util::StringCache;
 use std::io::Write;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct CreatureSpellData {
     pub rows: Vec<CreatureSpellDataRow>,
 }
@@ -15,6 +17,8 @@ impl DbcTable for CreatureSpellData {
     type Row = CreatureSpellDataRow;
 
     const FILENAME: &'static str = "CreatureSpellData.dbc";
+    const FIELD_COUNT: usize = 9;
+    const ROW_SIZE: usize = 36;
 
     fn rows(&self) -> &[Self::Row] { &self.rows }
     fn rows_mut(&mut self) -> &mut [Self::Row] { &mut self.rows }
@@ -24,19 +28,19 @@ impl DbcTable for CreatureSpellData {
         b.read_exact(&mut header)?;
         let header = parse_header(&header)?;
 
-        if header.record_size != 36 {
+        if header.record_size != Self::ROW_SIZE as u32 {
             return Err(crate::DbcError::InvalidHeader(
                 crate::InvalidHeaderError::RecordSize {
-                    expected: 36,
+                    expected: Self::ROW_SIZE as u32,
                     actual: header.record_size,
                 },
             ));
         }
 
-        if header.field_count != 9 {
+        if header.field_count != Self::FIELD_COUNT as u32 {
             return Err(crate::DbcError::InvalidHeader(
                 crate::InvalidHeaderError::FieldCount {
-                    expected: 9,
+                    expected: Self::FIELD_COUNT as u32,
                     actual: header.field_count,
                 },
             ));
@@ -70,15 +74,10 @@ impl DbcTable for CreatureSpellData {
         Ok(CreatureSpellData { rows, })
     }
 
-    fn write(&self, b: &mut impl Write) -> Result<(), std::io::Error> {
-        let header = DbcHeader {
-            record_count: self.rows.len() as u32,
-            field_count: 9,
-            record_size: 36,
-            string_block_size: 1,
-        };
+    fn write(&self, w: &mut impl Write) -> Result<(), std::io::Error> {
+        let mut b = Vec::with_capacity(self.rows.len() * Self::ROW_SIZE);
 
-        b.write_all(&header.write_header())?;
+        let  string_cache = StringCache::new();
 
         for row in &self.rows {
             // id: primary_key (CreatureSpellData) int32
@@ -98,8 +97,17 @@ impl DbcTable for CreatureSpellData {
 
         }
 
-        b.write_all(&[0_u8])?;
+        assert_eq!(b.len(), self.rows.len() * Self::ROW_SIZE);
+        let header = DbcHeader {
+            record_count: self.rows.len() as u32,
+            field_count: Self::FIELD_COUNT as u32,
+            record_size: Self::ROW_SIZE as u32,
+            string_block_size: string_cache.size(),
+        };
 
+        w.write_all(&header.write_header())?;
+        w.write_all(&b)?;
+        w.write_all(string_cache.buffer())?;
         Ok(())
     }
 
@@ -119,6 +127,7 @@ impl Indexable for CreatureSpellData {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Hash, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct CreatureSpellDataKey {
     pub id: i32
 }
@@ -196,9 +205,29 @@ impl TryFrom<isize> for CreatureSpellDataKey {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct CreatureSpellDataRow {
     pub id: CreatureSpellDataKey,
     pub spells: [i32; 4],
     pub availability: [i32; 4],
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::fs::File;
+    use std::io::Read;
+
+    #[test]
+    #[ignore = "requires DBC files"]
+    fn creature_spell_data() {
+        let mut file = File::open("../wrath-dbc/CreatureSpellData.dbc").expect("Failed to open DBC file");
+        let mut contents = Vec::new();
+        file.read_to_end(&mut contents).expect("Failed to read DBC file");
+        let actual = CreatureSpellData::read(&mut contents.as_slice()).unwrap();
+        let mut v = Vec::with_capacity(contents.len());
+        actual.write(&mut v).unwrap();
+        let new = CreatureSpellData::read(&mut v.as_slice()).unwrap();
+        assert_eq!(actual, new);
+    }
+}

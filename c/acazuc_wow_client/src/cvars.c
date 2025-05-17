@@ -29,7 +29,9 @@ static uint32_t cvar_hash(jks_hmap_key_t k)
 
 struct cvars *cvars_new(void)
 {
-	struct cvars *cvars = mem_zalloc(MEM_GENERIC, sizeof(*cvars));
+	struct cvars *cvars;
+
+	cvars = mem_zalloc(MEM_GENERIC, sizeof(*cvars));
 	if (!cvars)
 		return NULL;
 	jks_hmap_init(&cvars->vars, sizeof(char*), cvar_dtr, cvar_hash, cvar_cmp, &jks_hmap_memory_fn_GENERIC);
@@ -292,6 +294,36 @@ struct cvars *cvars_new(void)
 
 	ADD(dbCompress, -1);
 	ADD(locale, g_wow->lang);
+
+	ADD(lod, 0);
+	ADD(mapShadows, 1);
+	ADD(SmallCull, 0.04);
+	ADD(DistCull, 500);
+	ADD(MaxLights, 4);
+	ADD(shadowLevel, 1);
+	ADD(texLodBias, 0.0);
+	ADD(farclip, 350);
+	ADD(nearclip, 0.1);
+	ADD(specular, 0);
+	ADD(mapObjOverbright, 1);
+	ADD(mapObjLightLOD, 0);
+	ADD(particleDensity, 1.0);
+	ADD(waterLOD, 0);
+	ADD(baseMip, 0);
+	ADD(horizonfarclip, 2112);
+	ADD(showfootprints, 1);
+	ADD(bspcache, 1);
+	ADD(footstepBias, 0.125);
+	ADD(occlusion, 1);
+	ADD(spellEffectLevel, 9);
+	ADD(worldPoolUsage, Dynamic);
+	ADD(terrainAlphaBitDepth, 8);
+	ADD(horizonfarclip, 2112);
+	ADD(groundEffectDensity, 16);
+	ADD(groundEffectDist, 70.0);
+	ADD(vertexShaders, 1);
+	ADD(objectFade, 1);
+	ADD(objectFadeFill, 0);
 
 	return cvars;
 

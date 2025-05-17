@@ -1,6 +1,7 @@
 #include <wchar.h>
 
-int mbsinit(mbstate_t *ps)
+int
+mbsinit(mbstate_t *ps)
 {
 	if (!ps)
 		return 1;

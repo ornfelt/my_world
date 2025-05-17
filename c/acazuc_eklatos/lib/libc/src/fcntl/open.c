@@ -3,10 +3,12 @@
 #include <stdarg.h>
 #include <fcntl.h>
 
-int open(const char *pathname, int flags, ...)
+int
+open(const char *pathname, int flags, ...)
 {
 	mode_t mode;
 	va_list va_arg;
+
 	va_start(va_arg, flags);
 	if (flags & O_CREAT)
 		mode = va_arg(va_arg, mode_t);

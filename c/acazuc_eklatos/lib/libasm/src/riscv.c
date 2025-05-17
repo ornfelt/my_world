@@ -271,7 +271,8 @@ static const struct asm_riscv_opcode opcode_slli_uw    = {"slli.uw",    ASM_RISC
 static const struct asm_riscv_opcode opcode_xnor       = {"xnor",       ASM_RISCV_ENCODING_R,      ASM_RISCV_EXT_ZBB};
 static const struct asm_riscv_opcode opcode_zext_h     = {"zext.h",     ASM_RISCV_ENCODING_BC,     ASM_RISCV_EXT_ZBB};
 
-static const char *get_register_name(uint8_t id)
+static const char *
+get_register_name(uint8_t id)
 {
 	static const char names[][5] =
 	{
@@ -287,7 +288,8 @@ static const char *get_register_name(uint8_t id)
 	return names[id];
 }
 
-static const char *get_fregister_name(uint8_t id)
+static const char *
+get_fregister_name(uint8_t id)
 {
 	static const char names[][5] =
 	{
@@ -303,42 +305,48 @@ static const char *get_fregister_name(uint8_t id)
 	return names[id];
 }
 
-static int32_t get_imm5(uint32_t v)
+static int32_t
+get_imm5(uint32_t v)
 {
 	if (!(v & 0x10))
 		return v;
 	return -1 - (~v & 0xF);
 }
 
-static int32_t get_imm6(uint32_t v)
+static int32_t
+get_imm6(uint32_t v)
 {
 	if (!(v & 0x20))
 		return v;
 	return -1 - (~v & 0x1F);
 }
 
-static int32_t get_imm9(uint32_t v)
+static int32_t
+get_imm9(uint32_t v)
 {
 	if (!(v & 0x100))
 		return v;
 	return -1 - (~v & 0xFF);
 }
 
-static int32_t get_imm12(uint32_t v)
+static int32_t
+get_imm12(uint32_t v)
 {
 	if (!(v & 0x800))
 		return v;
 	return -1 - (~v & 0x7FF);
 }
 
-static int32_t get_imm20(uint32_t v)
+static int32_t
+get_imm20(uint32_t v)
 {
 	if (!(v & 0x100000))
 		return v;
 	return -1 - (~v & 0xFFFFF);
 }
 
-static void print_r(char *buf, size_t size, uint32_t opcode, const char *name)
+static void
+print_r(char *buf, size_t size, uint32_t opcode, const char *name)
 {
 	const char *rd  = get_register_name(RD (opcode));
 	const char *rs1 = get_register_name(RS1(opcode));
@@ -346,7 +354,8 @@ static void print_r(char *buf, size_t size, uint32_t opcode, const char *name)
 	snprintf(buf, size, "%s %s,%s,%s", name, rd, rs1, rs2);
 }
 
-static void print_i(char *buf, size_t size, uint32_t opcode, const char *name)
+static void
+print_i(char *buf, size_t size, uint32_t opcode, const char *name)
 {
 	const char *rd  = get_register_name(RD (opcode));
 	const char *rs1 = get_register_name(RS1(opcode));
@@ -354,7 +363,8 @@ static void print_i(char *buf, size_t size, uint32_t opcode, const char *name)
 	snprintf(buf, size, "%s %s,%s,%" PRId32, name, rd, rs1, imm);
 }
 
-static void print_s(char *buf, size_t size, uint32_t opcode, const char *name)
+static void
+print_s(char *buf, size_t size, uint32_t opcode, const char *name)
 {
 	const char *rs1 = get_register_name(RS1(opcode));
 	const char *rs2 = get_register_name(RS2(opcode));
@@ -363,7 +373,8 @@ static void print_s(char *buf, size_t size, uint32_t opcode, const char *name)
 	snprintf(buf, size, "%s %s,%" PRId32 "(%s)", name, rs2, imm, rs1);
 }
 
-static void print_b(char *buf, size_t size, uint32_t opcode, const char *name)
+static void
+print_b(char *buf, size_t size, uint32_t opcode, const char *name)
 {
 	const char *rs1 = get_register_name(RS1(opcode));
 	const char *rs2 = get_register_name(RS2(opcode));
@@ -374,14 +385,16 @@ static void print_b(char *buf, size_t size, uint32_t opcode, const char *name)
 	snprintf(buf, size, "%s %s,%s,%" PRId32, name, rs1, rs2, imm);
 }
 
-static void print_u(char *buf, size_t size, uint32_t opcode, const char *name)
+static void
+print_u(char *buf, size_t size, uint32_t opcode, const char *name)
 {
 	const char *rd = get_register_name(RD(opcode));
 	int32_t imm = (int32_t)(opcode & 0xFFFFF000);
 	snprintf(buf, size, "%s %s,%" PRId32, name, rd, imm);
 }
 
-static void print_j(char *buf, size_t size, uint32_t opcode, const char *name)
+static void
+print_j(char *buf, size_t size, uint32_t opcode, const char *name)
 {
 	const char *rd = get_register_name(RD(opcode));
 	int32_t imm = get_imm20(((opcode >> 20) & 0x0007FE)
@@ -391,7 +404,8 @@ static void print_j(char *buf, size_t size, uint32_t opcode, const char *name)
 	snprintf(buf, size, "%s %s,%" PRId32, name, rd, imm);
 }
 
-static void print_l(char *buf, size_t size, uint32_t opcode, const char *name)
+static void
+print_l(char *buf, size_t size, uint32_t opcode, const char *name)
 {
 	const char *rd = get_register_name(RD(opcode));
 	const char *rs1 = get_register_name(RS1(opcode));
@@ -400,8 +414,8 @@ static void print_l(char *buf, size_t size, uint32_t opcode, const char *name)
 	snprintf(buf, size, "%s %s,%" PRId32 "(%s)", name, rd, imm, rs1);
 }
 
-static void print_slli(char *buf, size_t size, uint32_t opcode,
-                       const char *name)
+static void
+print_slli(char *buf, size_t size, uint32_t opcode, const char *name)
 {
 	const char *rd  = get_register_name(RD (opcode));
 	const char *rs1 = get_register_name(RS1(opcode));
@@ -409,8 +423,8 @@ static void print_slli(char *buf, size_t size, uint32_t opcode,
 	snprintf(buf, size, "%s %s,%s,%" PRId32, name, rd, rs1, imm);
 }
 
-static void print_srxi(char *buf, size_t size, uint32_t opcode,
-                       const char *name)
+static void
+print_srxi(char *buf, size_t size, uint32_t opcode, const char *name)
 {
 	const char *rd  = get_register_name(RD (opcode));
 	const char *rs1 = get_register_name(RS1(opcode));
@@ -418,23 +432,23 @@ static void print_srxi(char *buf, size_t size, uint32_t opcode,
 	snprintf(buf, size, "%s %s,%s,%" PRId32, name, rd, rs1, imm);
 }
 
-static void print_none(char *buf, size_t size, uint32_t opcode,
-                       const char *name)
+static void
+print_none(char *buf, size_t size, uint32_t opcode, const char *name)
 {
 	(void)opcode;
 	snprintf(buf, size, "%s", name);
 }
 
-static void print_fence(char *buf, size_t size, uint32_t opcode,
-                        const char *name)
+static void
+print_fence(char *buf, size_t size, uint32_t opcode, const char *name)
 {
 	(void)opcode;
 	/* XXX decode pred / succ */
 	snprintf(buf, size, "%s", name);
 }
 
-static void print_csrrxi(char *buf, size_t size, uint32_t opcode,
-                         const char *name)
+static void
+print_csrrxi(char *buf, size_t size, uint32_t opcode, const char *name)
 {
 	const char *rd  = get_register_name(RD(opcode));
 	uint32_t uimm = (opcode >> 15) & 0x1F;
@@ -442,7 +456,8 @@ static void print_csrrxi(char *buf, size_t size, uint32_t opcode,
 	snprintf(buf, size, "%s %s,%" PRIu32 ",%" PRId32, name, rd, uimm, imm);
 }
 
-static void print_amo(char *buf, size_t size, uint32_t opcode, const char *name)
+static void
+print_amo(char *buf, size_t size, uint32_t opcode, const char *name)
 {
 	const char *rd  = get_register_name(RD (opcode));
 	const char *rs1 = get_register_name(RS1(opcode));
@@ -451,8 +466,8 @@ static void print_amo(char *buf, size_t size, uint32_t opcode, const char *name)
 	snprintf(buf, size, "%s %s,%s,%s", name, rd, rs1, rs2);
 }
 
-static void print_amo_lr(char *buf, size_t size, uint32_t opcode,
-                         const char *name)
+static void
+print_amo_lr(char *buf, size_t size, uint32_t opcode, const char *name)
 {
 	const char *rd  = get_register_name(RD (opcode));
 	const char *rs1 = get_register_name(RS1(opcode));
@@ -460,8 +475,8 @@ static void print_amo_lr(char *buf, size_t size, uint32_t opcode,
 	snprintf(buf, size, "%s %s,%s", name, rd, rs1);
 }
 
-static void print_fr3(char *buf, size_t size, uint32_t opcode,
-                      const char *name)
+static void
+print_fr3(char *buf, size_t size, uint32_t opcode, const char *name)
 {
 	const char *rd  = get_fregister_name(RD (opcode));
 	const char *rs1 = get_fregister_name(RS1(opcode));
@@ -471,8 +486,8 @@ static void print_fr3(char *buf, size_t size, uint32_t opcode,
 	snprintf(buf, size, "%s %s,%s,%s,%s", name, rd, rs1, rs2, rs3);
 }
 
-static void print_fr2(char *buf, size_t size, uint32_t opcode,
-                      const char *name)
+static void
+print_fr2(char *buf, size_t size, uint32_t opcode, const char *name)
 {
 	const char *rd  = get_fregister_name(RD (opcode));
 	const char *rs1 = get_fregister_name(RS1(opcode));
@@ -481,8 +496,8 @@ static void print_fr2(char *buf, size_t size, uint32_t opcode,
 	snprintf(buf, size, "%s %s,%s,%s", name, rd, rs1, rs2);
 }
 
-static void print_fr1(char *buf, size_t size, uint32_t opcode,
-                      const char *name)
+static void
+print_fr1(char *buf, size_t size, uint32_t opcode, const char *name)
 {
 	const char *rd  = get_fregister_name(RD (opcode));
 	const char *rs1 = get_fregister_name(RS1(opcode));
@@ -490,8 +505,8 @@ static void print_fr1(char *buf, size_t size, uint32_t opcode,
 	snprintf(buf, size, "%s %s,%s", name, rd, rs1);
 }
 
-static void print_frf(char *buf, size_t size, uint32_t opcode,
-                      const char *name)
+static void
+print_frf(char *buf, size_t size, uint32_t opcode, const char *name)
 {
 	const char *rd  = get_register_name(RD(opcode));
 	const char *rs1 = get_fregister_name(RS1(opcode));
@@ -499,8 +514,8 @@ static void print_frf(char *buf, size_t size, uint32_t opcode,
 	snprintf(buf, size, "%s %s,%s", name, rd, rs1);
 }
 
-static void print_ffr(char *buf, size_t size, uint32_t opcode,
-                      const char *name)
+static void
+print_ffr(char *buf, size_t size, uint32_t opcode, const char *name)
 {
 	const char *rd  = get_fregister_name(RD(opcode));
 	const char *rs1 = get_register_name(RS1(opcode));
@@ -508,8 +523,8 @@ static void print_ffr(char *buf, size_t size, uint32_t opcode,
 	snprintf(buf, size, "%s %s,%s", name, rd, rs1);
 }
 
-static void print_fld(char *buf, size_t size, uint32_t opcode,
-                      const char *name)
+static void
+print_fld(char *buf, size_t size, uint32_t opcode, const char *name)
 {
 	const char *rd  = get_fregister_name(RD(opcode));
 	const char *rs1 = get_register_name(RS1(opcode));
@@ -518,8 +533,8 @@ static void print_fld(char *buf, size_t size, uint32_t opcode,
 	snprintf(buf, size, "%s %s,%" PRId32 "(%s)", name, rd, imm, rs1);
 }
 
-static void print_fst(char *buf, size_t size, uint32_t opcode,
-                      const char *name)
+static void
+print_fst(char *buf, size_t size, uint32_t opcode, const char *name)
 {
 	const char *rs1 = get_register_name(RS1(opcode));
 	const char *rs2 = get_fregister_name(RS2(opcode));
@@ -529,16 +544,16 @@ static void print_fst(char *buf, size_t size, uint32_t opcode,
 	snprintf(buf, size, "%s %s,%" PRId32 "(%s)", name, rs1, imm, rs2);
 }
 
-static void print_cr(char *buf, size_t size, uint16_t opcode,
-                     const char *name)
+static void
+print_cr(char *buf, size_t size, uint16_t opcode, const char *name)
 {
 	const char *rd  = get_register_name(CRD (opcode));
 	const char *rs2 = get_register_name(CRS2(opcode));
 	snprintf(buf, size, "%s %s,%s", name, rd, rs2);
 }
 
-static void print_ci(char *buf, size_t size, uint16_t opcode,
-                     const char *name)
+static void
+print_ci(char *buf, size_t size, uint16_t opcode, const char *name)
 {
 	const char *rd = get_register_name(CRD(opcode));
 	int32_t imm = get_imm6(((opcode >> 2) & 0x1F)
@@ -546,8 +561,8 @@ static void print_ci(char *buf, size_t size, uint16_t opcode,
 	snprintf(buf, size, "%s %s,%" PRId32, name, rd, imm);
 }
 
-static void print_css(char *buf, size_t size, uint16_t opcode,
-                      const char *name)
+static void
+print_css(char *buf, size_t size, uint16_t opcode, const char *name)
 {
 	const char *rs2 = get_register_name(CRS2(opcode));
 	uint32_t imm = ((opcode >> 7) & 0x3C)
@@ -555,8 +570,8 @@ static void print_css(char *buf, size_t size, uint16_t opcode,
 	snprintf(buf, size, "%s %s,%" PRIu32, name, rs2, imm);
 }
 
-static void print_ciw(char *buf, size_t size, uint16_t opcode,
-                      const char *name)
+static void
+print_ciw(char *buf, size_t size, uint16_t opcode, const char *name)
 {
 	const char *rd = get_register_name(CRDP(opcode));
 	uint32_t imm = ((opcode >> 4) & 0x004)
@@ -566,8 +581,8 @@ static void print_ciw(char *buf, size_t size, uint16_t opcode,
 	snprintf(buf, size, "%s %s,%" PRIu32, name, rd, imm);
 }
 
-static void print_cl(char *buf, size_t size, uint16_t opcode,
-                     const char *name)
+static void
+print_cl(char *buf, size_t size, uint16_t opcode, const char *name)
 {
 	const char *rd  = get_register_name(CRDP (opcode));
 	const char *rs1 = get_register_name(CRS1P(opcode));
@@ -577,8 +592,8 @@ static void print_cl(char *buf, size_t size, uint16_t opcode,
 	snprintf(buf, size, "%s %s,%" PRIu32 "(%s)", name, rd, imm, rs1);
 }
 
-static void print_cs(char *buf, size_t size, uint16_t opcode,
-                     const char *name)
+static void
+print_cs(char *buf, size_t size, uint16_t opcode, const char *name)
 {
 	const char *rs1 = get_register_name(CRS1P(opcode));
 	const char *rs2 = get_register_name(CRDP (opcode));
@@ -588,16 +603,16 @@ static void print_cs(char *buf, size_t size, uint16_t opcode,
 	snprintf(buf, size, "%s %s,%" PRIu32 "(%s)", name, rs2, imm, rs1);
 }
 
-static void print_ca(char *buf, size_t size, uint16_t opcode,
-                     const char *name)
+static void
+print_ca(char *buf, size_t size, uint16_t opcode, const char *name)
 {
 	const char *rd  = get_register_name(CRS1P(opcode));
 	const char *rs2 = get_register_name(CRDP (opcode));
 	snprintf(buf, size, "%s %s,%s", name, rd, rs2);
 }
 
-static void print_cb(char *buf, size_t size, uint16_t opcode,
-                     const char *name)
+static void
+print_cb(char *buf, size_t size, uint16_t opcode, const char *name)
 {
 	const char *rs1 = get_register_name(CRS1P(opcode));
 	int32_t imm = get_imm9(((opcode >> 2) & 0x006)
@@ -608,8 +623,8 @@ static void print_cb(char *buf, size_t size, uint16_t opcode,
 	snprintf(buf, size, "%s %s,%" PRId32, name, rs1, imm);
 }
 
-static void print_cj(char *buf, size_t size, uint16_t opcode,
-                     const char *name)
+static void
+print_cj(char *buf, size_t size, uint16_t opcode, const char *name)
 {
 	int32_t imm = get_imm12(((opcode >> 2) & 0x00E)
 	                      | ((opcode >> 7) & 0x010)
@@ -622,15 +637,15 @@ static void print_cj(char *buf, size_t size, uint16_t opcode,
 	snprintf(buf, size, "%s %" PRId32, name, imm);
 }
 
-static void print_cjr(char *buf, size_t size, uint16_t opcode,
-                     const char *name)
+static void
+print_cjr(char *buf, size_t size, uint16_t opcode, const char *name)
 {
 	const char *rs1 = get_register_name(CRD(opcode));
 	snprintf(buf, size, "%s %s", name, rs1);
 }
 
-static void print_cslli(char *buf, size_t size, uint16_t opcode,
-                        const char *name)
+static void
+print_cslli(char *buf, size_t size, uint16_t opcode, const char *name)
 {
 	const char *rd = get_register_name(CRD(opcode));
 	uint32_t shamt = ((opcode >> 2) & 0x1F)
@@ -638,8 +653,8 @@ static void print_cslli(char *buf, size_t size, uint16_t opcode,
 	snprintf(buf, size, "%s %s,%" PRIu32, name, rd, shamt);
 }
 
-static void print_csrxi(char *buf, size_t size, uint16_t opcode,
-                        const char *name)
+static void
+print_csrxi(char *buf, size_t size, uint16_t opcode, const char *name)
 {
 	const char *rd = get_register_name(CRS1P(opcode));
 	uint32_t shamt = ((opcode >> 2) & 0x1F)
@@ -647,15 +662,16 @@ static void print_csrxi(char *buf, size_t size, uint16_t opcode,
 	snprintf(buf, size, "%s %s,%" PRIu32, name, rd, shamt);
 }
 
-static void print_bc(char *buf, size_t size, uint32_t opcode,
-                     const char *name)
+static void
+print_bc(char *buf, size_t size, uint32_t opcode, const char *name)
 {
 	const char *rd = get_register_name(RD (opcode));
 	const char *rs = get_register_name(RS1(opcode));
 	snprintf(buf, size, "%s %s,%s", name, rd, rs);
 }
 
-static const struct asm_riscv_opcode *decode_load(uint32_t opcode)
+static const struct asm_riscv_opcode *
+decode_load(uint32_t opcode)
 {
 	uint32_t funct3 = FUNCT3(opcode);
 	switch (funct3)
@@ -678,7 +694,8 @@ static const struct asm_riscv_opcode *decode_load(uint32_t opcode)
 	return NULL;
 }
 
-static const struct asm_riscv_opcode *decode_load_fp(uint32_t opcode)
+static const struct asm_riscv_opcode *
+decode_load_fp(uint32_t opcode)
 {
 	uint32_t funct3 = FUNCT3(opcode);
 	switch (funct3)
@@ -691,14 +708,16 @@ static const struct asm_riscv_opcode *decode_load_fp(uint32_t opcode)
 	return NULL;
 }
 
-static const struct asm_riscv_opcode *decode_custom_0(uint32_t opcode)
+static const struct asm_riscv_opcode *
+decode_custom_0(uint32_t opcode)
 {
 	(void)opcode;
 	/* XXX */
 	return NULL;
 }
 
-static const struct asm_riscv_opcode *decode_misc_mem(uint32_t opcode)
+static const struct asm_riscv_opcode *
+decode_misc_mem(uint32_t opcode)
 {
 	uint32_t funct3 = FUNCT3(opcode);
 	switch (funct3)
@@ -711,7 +730,8 @@ static const struct asm_riscv_opcode *decode_misc_mem(uint32_t opcode)
 	return NULL;
 }
 
-static const struct asm_riscv_opcode *decode_op_imm(uint32_t opcode)
+static const struct asm_riscv_opcode *
+decode_op_imm(uint32_t opcode)
 {
 	uint32_t funct3 = FUNCT3(opcode);
 	switch (funct3)
@@ -810,7 +830,8 @@ static const struct asm_riscv_opcode *decode_op_imm(uint32_t opcode)
 	return NULL;
 }
 
-static const struct asm_riscv_opcode *decode_op_imm_32(uint32_t opcode)
+static const struct asm_riscv_opcode *
+decode_op_imm_32(uint32_t opcode)
 {
 	uint32_t funct3 = FUNCT3(opcode);
 	switch (funct3)
@@ -854,7 +875,8 @@ static const struct asm_riscv_opcode *decode_op_imm_32(uint32_t opcode)
 	return NULL;
 }
 
-static const struct asm_riscv_opcode *decode_store(uint32_t opcode)
+static const struct asm_riscv_opcode *
+decode_store(uint32_t opcode)
 {
 	uint32_t funct3 = FUNCT3(opcode);
 	switch (funct3)
@@ -871,7 +893,8 @@ static const struct asm_riscv_opcode *decode_store(uint32_t opcode)
 	return NULL;
 }
 
-static const struct asm_riscv_opcode *decode_store_fp(uint32_t opcode)
+static const struct asm_riscv_opcode *
+decode_store_fp(uint32_t opcode)
 {
 	uint32_t funct3 = FUNCT3(opcode);
 	switch (funct3)
@@ -884,14 +907,16 @@ static const struct asm_riscv_opcode *decode_store_fp(uint32_t opcode)
 	return NULL;
 }
 
-static const struct asm_riscv_opcode *decode_custom_1(uint32_t opcode)
+static const struct asm_riscv_opcode *
+decode_custom_1(uint32_t opcode)
 {
 	(void)opcode;
 	/* XXX */
 	return NULL;
 }
 
-static const struct asm_riscv_opcode *decode_amo(uint32_t opcode)
+static const struct asm_riscv_opcode *
+decode_amo(uint32_t opcode)
 {
 	uint32_t funct3 = FUNCT3(opcode);
 	uint32_t funct5 = FUNCT5(opcode);
@@ -959,7 +984,8 @@ static const struct asm_riscv_opcode *decode_amo(uint32_t opcode)
 	return NULL;
 }
 
-static const struct asm_riscv_opcode *decode_op(uint32_t opcode)
+static const struct asm_riscv_opcode *
+decode_op(uint32_t opcode)
 {
 	uint32_t funct3 = FUNCT3(opcode);
 	uint32_t funct7 = FUNCT7(opcode);
@@ -1090,7 +1116,8 @@ static const struct asm_riscv_opcode *decode_op(uint32_t opcode)
 	return NULL;
 }
 
-static const struct asm_riscv_opcode *decode_op_32(uint32_t opcode)
+static const struct asm_riscv_opcode *
+decode_op_32(uint32_t opcode)
 {
 	uint32_t funct3 = FUNCT3(opcode);
 	uint32_t funct7 = FUNCT7(opcode);
@@ -1174,7 +1201,8 @@ static const struct asm_riscv_opcode *decode_op_32(uint32_t opcode)
 	return NULL;
 }
 
-static const struct asm_riscv_opcode *decode_madd(uint32_t opcode)
+static const struct asm_riscv_opcode *
+decode_madd(uint32_t opcode)
 {
 	uint32_t fmt = FMT(opcode);
 	switch (fmt)
@@ -1187,7 +1215,8 @@ static const struct asm_riscv_opcode *decode_madd(uint32_t opcode)
 	return NULL;
 }
 
-static const struct asm_riscv_opcode *decode_msub(uint32_t opcode)
+static const struct asm_riscv_opcode *
+decode_msub(uint32_t opcode)
 {
 	uint32_t fmt = FMT(opcode);
 	switch (fmt)
@@ -1200,7 +1229,8 @@ static const struct asm_riscv_opcode *decode_msub(uint32_t opcode)
 	return NULL;
 }
 
-static const struct asm_riscv_opcode *decode_nmsub(uint32_t opcode)
+static const struct asm_riscv_opcode *
+decode_nmsub(uint32_t opcode)
 {
 	uint32_t fmt = FMT(opcode);
 	switch (fmt)
@@ -1213,7 +1243,8 @@ static const struct asm_riscv_opcode *decode_nmsub(uint32_t opcode)
 	return NULL;
 }
 
-static const struct asm_riscv_opcode *decode_nmadd(uint32_t opcode)
+static const struct asm_riscv_opcode *
+decode_nmadd(uint32_t opcode)
 {
 	uint32_t fmt = FMT(opcode);
 	switch (fmt)
@@ -1226,7 +1257,8 @@ static const struct asm_riscv_opcode *decode_nmadd(uint32_t opcode)
 	return NULL;
 }
 
-static const struct asm_riscv_opcode *decode_op_fp(uint32_t opcode)
+static const struct asm_riscv_opcode *
+decode_op_fp(uint32_t opcode)
 {
 	uint32_t funct5 = FUNCT5(opcode);
 	switch (funct5)
@@ -1494,14 +1526,16 @@ static const struct asm_riscv_opcode *decode_op_fp(uint32_t opcode)
 	return NULL;
 }
 
-static const struct asm_riscv_opcode *decode_custom2(uint32_t opcode)
+static const struct asm_riscv_opcode *
+decode_custom2(uint32_t opcode)
 {
 	(void)opcode;
 	/* XXX */
 	return NULL;
 }
 
-static const struct asm_riscv_opcode *decode_branch(uint32_t opcode)
+static const struct asm_riscv_opcode *
+decode_branch(uint32_t opcode)
 {
 	uint32_t funct3 = FUNCT3(opcode);
 	switch (funct3)
@@ -1522,7 +1556,8 @@ static const struct asm_riscv_opcode *decode_branch(uint32_t opcode)
 	return NULL;
 }
 
-static const struct asm_riscv_opcode *decode_jalr(uint32_t opcode)
+static const struct asm_riscv_opcode *
+decode_jalr(uint32_t opcode)
 {
 	uint32_t funct3 = FUNCT3(opcode);
 	switch (funct3)
@@ -1533,7 +1568,8 @@ static const struct asm_riscv_opcode *decode_jalr(uint32_t opcode)
 	return NULL;
 }
 
-static const struct asm_riscv_opcode *decode_system(uint32_t opcode)
+static const struct asm_riscv_opcode *
+decode_system(uint32_t opcode)
 {
 	uint32_t funct3 = FUNCT3(opcode);
 	switch (funct3)
@@ -1592,14 +1628,16 @@ static const struct asm_riscv_opcode *decode_system(uint32_t opcode)
 	return NULL;
 }
 
-static const struct asm_riscv_opcode *decode_custom3(uint32_t opcode)
+static const struct asm_riscv_opcode *
+decode_custom3(uint32_t opcode)
 {
 	(void)opcode;
 	/* XXX */
 	return NULL;
 }
 
-static const struct asm_riscv_opcode *decode_32(uint32_t opcode)
+static const struct asm_riscv_opcode *
+decode_32(uint32_t opcode)
 {
 	switch ((opcode >> 2) & 0x1F)
 	{
@@ -1671,7 +1709,8 @@ static const struct asm_riscv_opcode *decode_32(uint32_t opcode)
 	return NULL;
 }
 
-static const struct asm_riscv_opcode *decode_16(uint16_t opcode)
+static const struct asm_riscv_opcode *
+decode_16(uint16_t opcode)
 {
 	switch (opcode & 0x3)
 	{
@@ -1792,7 +1831,8 @@ static const struct asm_riscv_opcode *decode_16(uint16_t opcode)
 	return NULL;
 }
 
-int asm_riscv_disas(char *buf, size_t size, const uint8_t *data, size_t pos)
+int
+asm_riscv_disas(char *buf, size_t size, const uint8_t *data, size_t pos)
 {
 	const struct asm_riscv_opcode *opcode;
 	size_t length;

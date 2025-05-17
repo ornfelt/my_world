@@ -12,7 +12,8 @@ struct env
 	int print_lines;
 };
 
-static int tail_fp_lines(struct env *env, FILE *fp)
+static int
+tail_fp_lines(struct env *env, FILE *fp)
 {
 	if (env->count > 0)
 	{
@@ -24,7 +25,9 @@ static int tail_fp_lines(struct env *env, FILE *fp)
 			{
 				if (feof(fp))
 					return 0;
-				fprintf(stderr, "%s: read: %s\n", env->progname, strerror(errno));
+				fprintf(stderr, "%s: read: %s\n",
+				        env->progname,
+				        strerror(errno));
 				return 1;
 			}
 		}
@@ -32,7 +35,9 @@ static int tail_fp_lines(struct env *env, FILE *fp)
 			fputs(line, stdout);
 		if (ferror(fp))
 		{
-			fprintf(stderr, "%s: read: %s\n", env->progname, strerror(errno));
+			fprintf(stderr, "%s: read: %s\n",
+			        env->progname,
+			        strerror(errno));
 			return 1;
 		}
 		return 0;
@@ -41,7 +46,8 @@ static int tail_fp_lines(struct env *env, FILE *fp)
 	return 0;
 }
 
-static int tail_fp_bytes(struct env *env, FILE *fp)
+static int
+tail_fp_bytes(struct env *env, FILE *fp)
 {
 	if (env->count < 0)
 	{
@@ -53,7 +59,9 @@ static int tail_fp_bytes(struct env *env, FILE *fp)
 				fwrite(buf, 1, rd, stdout);
 			if (ferror(fp))
 			{
-				fprintf(stderr, "%s: read:: %s\n", env->progname, strerror(errno));
+				fprintf(stderr, "%s: read: %s\n",
+				        env->progname,
+				        strerror(errno));
 				return 1;
 			}
 			return 0;
@@ -65,11 +73,14 @@ static int tail_fp_bytes(struct env *env, FILE *fp)
 	{
 		char buf[4096];
 		size_t rd;
+
 		while ((rd = fread(buf, 1, sizeof(buf), fp)) > 0)
 			fwrite(buf, 1, rd, stdout);
 		if (ferror(fp))
 		{
-			fprintf(stderr, "%s: read:: %s\n", env->progname, strerror(errno));
+			fprintf(stderr, "%s: read: %s\n",
+			        env->progname,
+			        strerror(errno));
 			return 1;
 		}
 		return 0;
@@ -78,30 +89,40 @@ static int tail_fp_bytes(struct env *env, FILE *fp)
 	return 0;
 }
 
-static int tail_fp(struct env *env, FILE *fp)
+static int
+tail_fp(struct env *env, FILE *fp)
 {
 	if (env->print_lines)
 		return tail_fp_lines(env, fp);
 	return tail_fp_bytes(env, fp);
 }
 
-static int tail_file(struct env *env, const char *file)
+static int
+tail_file(struct env *env, const char *file)
 {
-	FILE *fp = fopen(file, "r");
+	FILE *fp;
+	int ret;
+
+	fp = fopen(file, "r");
 	if (!fp)
 	{
-		fprintf(stderr, "%s: open: %s\n", env->progname, strerror(errno));
+		fprintf(stderr, "%s: open(%s): %s\n",
+		        env->progname,
+		        file,
+		        strerror(errno));
 		return 1;
 	}
-	int ret = tail_fp(env, fp);
+	ret = tail_fp(env, fp);
 	fclose(fp);
 	return ret;
 }
 
-static int parse_count(const char *progname, const char *str, long *count)
+static int
+parse_count(const char *progname, const char *str, long *count)
 {
-	errno = 0;
 	char *endptr;
+
+	errno = 0;
 	*count = strtol(str, &endptr, 10);
 	if (errno)
 	{
@@ -120,16 +141,19 @@ static int parse_count(const char *progname, const char *str, long *count)
 	return 0;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-c num] [-n num] FILES\n", progname);
 	printf("-c num: print the last num bytes\n");
 	printf("-n num: print the last num lines\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
+	int multi;
 	int c;
 
 	memset(&env, 0, sizeof(env));
@@ -161,7 +185,7 @@ int main(int argc, char **argv)
 			return EXIT_FAILURE;
 		return EXIT_SUCCESS;
 	}
-	int multi = optind + 1 < argc;
+	multi = optind + 1 < argc;
 	for (int i = optind; i < argc; ++i)
 	{
 		if (multi)

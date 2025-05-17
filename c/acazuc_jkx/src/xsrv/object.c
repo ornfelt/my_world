@@ -6,13 +6,18 @@
 #include <errno.h>
 #include <stdio.h>
 
-static const char *object_name(struct xsrv *xsrv, struct object *object)
+static const char *
+object_name(struct xsrv *xsrv, struct object *object)
 {
 	return xsrv->objects_defs[object->type]->name;
 }
 
-void object_init(struct xsrv *xsrv, struct client *client,
-                 struct object *object, uint8_t type, uint32_t id)
+void
+object_init(struct xsrv *xsrv,
+            struct client *client,
+            struct object *object,
+            uint8_t type,
+            uint32_t id)
 {
 	(void)xsrv;
 	object->client = client;
@@ -22,27 +27,33 @@ void object_init(struct xsrv *xsrv, struct client *client,
 	xsrv->objects_stats[type].count++;
 }
 
-static uint32_t object_hash(uint32_t id)
+static uint32_t
+object_hash(uint32_t id)
 {
 	id = ((id >> 16) ^ id) * 0x45D9F3B;
 	id = ((id >> 16) ^ id) * 0x45D9F3B;
 	return id;
 }
 
-static struct object_head *object_head(struct xsrv *xsrv, uint32_t id)
+static struct object_head *
+object_head(struct xsrv *xsrv, uint32_t id)
 {
 	return &xsrv->objects_map[object_hash(id) % xsrv->objects_map_size];
 }
 
-static void grow_objects_map(struct xsrv *xsrv)
+static void
+grow_objects_map(struct xsrv *xsrv)
 {
-	size_t new_size = xsrv->objects_map_size * 2;
-	struct object_head *objects = realloc(xsrv->objects_map,
-	                                      sizeof(*objects) * new_size);
+	size_t new_size;
+	struct object_head *objects;
+
+	new_size = xsrv->objects_map_size * 2;
+	objects = realloc(xsrv->objects_map, sizeof(*objects) * new_size);
 	if (!objects)
 	{
 		fprintf(stderr, "%s: realloc: %s\n",
-		        xsrv->progname, strerror(errno));
+		        xsrv->progname,
+		        strerror(errno));
 		abort(); /* XXX */
 	}
 	for (size_t i = 0; i < new_size; ++i)
@@ -61,7 +72,8 @@ static void grow_objects_map(struct xsrv *xsrv)
 	xsrv->objects_map_size = new_size;
 }
 
-void object_add(struct xsrv *xsrv, struct object *object)
+void
+object_add(struct xsrv *xsrv, struct object *object)
 {
 	if (xsrv->objects_map_count + 1 >= xsrv->objects_map_size / 2)
 		grow_objects_map(xsrv);
@@ -70,16 +82,19 @@ void object_add(struct xsrv *xsrv, struct object *object)
 	TAILQ_INSERT_TAIL(object_head(xsrv, object->id), object, map_chain);
 }
 
-void object_remove(struct xsrv *xsrv, struct object *object)
+void
+object_remove(struct xsrv *xsrv, struct object *object)
 {
 	xsrv->objects_map_count--;
 	TAILQ_REMOVE(object_head(xsrv, object->id), object, map_chain);
 	object_free(xsrv, object);
 }
 
-struct object *object_get(struct xsrv *xsrv, uint32_t id)
+struct object *
+object_get(struct xsrv *xsrv, uint32_t id)
 {
 	struct object *object;
+
 	TAILQ_FOREACH(object, object_head(xsrv, id), map_chain)
 	{
 		if (object->id == id)
@@ -91,14 +106,17 @@ struct object *object_get(struct xsrv *xsrv, uint32_t id)
 	return NULL;
 }
 
-void object_free(struct xsrv *xsrv, struct object *object)
+void
+object_free(struct xsrv *xsrv, struct object *object)
 {
 	if (!object)
 		return;
 	if (!object->refs)
 	{
 		fprintf(stderr, "%s: %s double free: %" PRIx32 "\n",
-		        xsrv->progname, object_name(xsrv, object), object->id);
+		        xsrv->progname,
+		        object_name(xsrv, object),
+		        object->id);
 		abort();
 	}
 	if (--object->refs)
@@ -106,7 +124,9 @@ void object_free(struct xsrv *xsrv, struct object *object)
 	if (object->id)
 	{
 		fprintf(stderr, "%s: freeing non-destroyed %s: %" PRIx32 "\n",
-		        xsrv->progname, object_name(xsrv, object), object->id);
+		        xsrv->progname,
+		        object_name(xsrv, object),
+		        object->id);
 		abort();
 	}
 	xsrv->objects_stats[object->type].destroyed_count--;
@@ -116,12 +136,14 @@ void object_free(struct xsrv *xsrv, struct object *object)
 	free(object);
 }
 
-void object_destroy(struct xsrv *xsrv, struct object *object)
+void
+object_destroy(struct xsrv *xsrv, struct object *object)
 {
 	if (!object->id)
 	{
 		fprintf(stderr, "%s: %s double destroy\n",
-		        xsrv->progname, object_name(xsrv, object));
+		        xsrv->progname,
+		        object_name(xsrv, object));
 		abort();
 	}
 	if (object->client)

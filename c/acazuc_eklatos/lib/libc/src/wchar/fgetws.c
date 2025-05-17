@@ -1,10 +1,13 @@
 #include <wchar.h>
 #include <stdio.h>
 
-wchar_t *fgetws(wchar_t *ws, int size, FILE *fp)
+wchar_t *
+fgetws(wchar_t *ws, int size, FILE *fp)
 {
+	wchar_t *ret;
+
 	flockfile(fp);
-	wchar_t *ret = fgetws_unlocked(ws, size, fp);
+	ret = fgetws_unlocked(ws, size, fp);
 	funlockfile(fp);
 	return ret;
 }

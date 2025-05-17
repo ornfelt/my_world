@@ -1,6 +1,7 @@
 #include <time.h>
 
-void tzset(void)
+void
+tzset(void)
 {
 	/* XXX */
 }

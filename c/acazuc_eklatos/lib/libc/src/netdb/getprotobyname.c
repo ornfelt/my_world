@@ -3,14 +3,16 @@
 #include <string.h>
 #include <netdb.h>
 
-struct protoent *getprotobyname(const char *name)
+struct protoent *
+getprotobyname(const char *name)
 {
+	struct protoent *protoent;
+
 	if (!name)
 		return NULL;
 	setprotoent(0);
 	if (!protoent_fp)
 		return NULL;
-	struct protoent *protoent;
 	while (1)
 	{
 		protoent = next_protoent();

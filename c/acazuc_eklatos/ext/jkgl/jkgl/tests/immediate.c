@@ -7,16 +7,19 @@
 int main(int argc, char **argv)
 {
 	struct window window;
+
 	(void)argc;
 	if (setup_window(argv[0], &window))
 		return EXIT_FAILURE;
 	while (1)
 	{
 		handle_events(&window);
+
+		GL_CALL(glViewport, 0, 0, window.width, window.height);
+
 		GL_CALL(glDisable, GL_DEPTH_TEST);
 		GL_CALL(glDisable, GL_LIGHTING);
 		GL_CALL(glClearDepth, 1);
-		GL_CALL(glClearStencil, 0);
 		GL_CALL(glClearColor, 0, 0, 0, 1);
 		GL_CALL(glClear, GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 		GL_CALL(glMatrixMode, GL_PROJECTION);

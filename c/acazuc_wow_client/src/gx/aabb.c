@@ -1,9 +1,9 @@
 #include "gx/frame.h"
 #include "gx/aabb.h"
+#include "gx/gx.h"
 
 #include "map/map.h"
 
-#include "graphics.h"
 #include "memory.h"
 #include "wow.h"
 #include "log.h"
@@ -99,15 +99,15 @@ void gx_aabb_batch_render(struct gx_aabb_batch *batch)
 		gfx_create_buffer(g_wow->device, &batch->buffer, GFX_BUFFER_VERTEXES, NULL, sizeof(struct shader_aabb_input) * batch->buffer_size, GFX_BUFFER_STREAM);
 		const struct gfx_attribute_bind binds[] =
 		{
-			{&g_wow->map->aabb_vertexes_buffer},
+			{&g_wow->gx->aabb_vertexes_buffer},
 			{&batch->buffer},
 		};
-		gfx_create_attributes_state(g_wow->device, &batch->attributes_state, binds, sizeof(binds) / sizeof(*binds), &g_wow->map->aabb_indices_buffer, GFX_INDEX_UINT16);
+		gfx_create_attributes_state(g_wow->device, &batch->attributes_state, binds, sizeof(binds) / sizeof(*binds), &g_wow->gx->aabb_indices_buffer, GFX_INDEX_UINT16);
 	}
 	if (!batch->data.size)
 		return;
 	gfx_set_buffer_data(&batch->buffer, batch->data.data, sizeof(struct shader_aabb_input) * batch->data.size, 0);
-	gfx_bind_attributes_state(g_wow->device, &batch->attributes_state, &g_wow->graphics->aabb_input_layout);
+	gfx_bind_attributes_state(g_wow->device, &batch->attributes_state, &g_wow->gx->aabb_input_layout);
 	gfx_set_line_width(g_wow->device, batch->line_width);
 	gfx_draw_indexed_instanced(g_wow->device, 24, 0, batch->data.size);
 }

@@ -1,6 +1,7 @@
 #include <wchar.h>
 
-wchar_t *wmemmove(wchar_t *d, const wchar_t *s, size_t n)
+wchar_t *
+wmemmove(wchar_t *d, const wchar_t *s, size_t n)
 {
 	if (!n)
 		return d;

@@ -1692,36 +1692,6 @@ int main(int argc, char **argv)
 			return EXIT_FAILURE;
 	}
 	{
-		const struct shader_output vs_outputs[] =
-		{
-			{
-				sizeof(float) * 4,
-				  VIRGL_OBJ_SHADER_SO_OUTPUT_REGISTER_INDEX(0)
-				| VIRGL_OBJ_SHADER_SO_OUTPUT_START_COMPONENT(0)
-				| VIRGL_OBJ_SHADER_SO_OUTPUT_NUM_COMPONENTS(4)
-				| VIRGL_OBJ_SHADER_SO_OUTPUT_BUFFER(0)
-				| VIRGL_OBJ_SHADER_SO_OUTPUT_DST_OFFSET(0),
-				1,
-			},
-			{
-				sizeof(float) * 4,
-				  VIRGL_OBJ_SHADER_SO_OUTPUT_REGISTER_INDEX(1)
-				| VIRGL_OBJ_SHADER_SO_OUTPUT_START_COMPONENT(0)
-				| VIRGL_OBJ_SHADER_SO_OUTPUT_NUM_COMPONENTS(4)
-				| VIRGL_OBJ_SHADER_SO_OUTPUT_BUFFER(0)
-				| VIRGL_OBJ_SHADER_SO_OUTPUT_DST_OFFSET(0),
-				1,
-			},
-			{
-				sizeof(float) * 2,
-				  VIRGL_OBJ_SHADER_SO_OUTPUT_REGISTER_INDEX(2)
-				| VIRGL_OBJ_SHADER_SO_OUTPUT_START_COMPONENT(0)
-				| VIRGL_OBJ_SHADER_SO_OUTPUT_NUM_COMPONENTS(2)
-				| VIRGL_OBJ_SHADER_SO_OUTPUT_BUFFER(0)
-				| VIRGL_OBJ_SHADER_SO_OUTPUT_DST_OFFSET(0),
-				1,
-			},
-		};
 		static const char *vs_code =
 			"VERT\n"
 			"DCL IN[0]\n"
@@ -1742,25 +1712,13 @@ int main(int argc, char **argv)
 		create_info.type = PIPE_SHADER_VERTEX;
 		create_info.code = vs_code;
 		create_info.code_size = strlen(vs_code) + 1;
-		create_info.outputs = vs_outputs;
-		create_info.noutputs = sizeof(vs_outputs) / sizeof(*vs_outputs);
+		create_info.outputs = NULL;
+		create_info.noutputs = 0;
 		ret = shader_alloc(env.ctx, &create_info, &vs);
 		if (ret)
 			return EXIT_FAILURE;
 	}
 	{
-		const struct shader_output fs_outputs[] =
-		{
-			{
-				sizeof(float) * 4,
-				  VIRGL_OBJ_SHADER_SO_OUTPUT_REGISTER_INDEX(0)
-				| VIRGL_OBJ_SHADER_SO_OUTPUT_START_COMPONENT(0)
-				| VIRGL_OBJ_SHADER_SO_OUTPUT_NUM_COMPONENTS(4)
-				| VIRGL_OBJ_SHADER_SO_OUTPUT_BUFFER(0)
-				| VIRGL_OBJ_SHADER_SO_OUTPUT_DST_OFFSET(0),
-				1,
-			},
-		};
 		static const char *fs_code =
 			"FRAG\n"
 			"DCL IN[0], COLOR, PERSPECTIVE\n"
@@ -1776,8 +1734,8 @@ int main(int argc, char **argv)
 		create_info.type = PIPE_SHADER_FRAGMENT;
 		create_info.code = fs_code;
 		create_info.code_size = strlen(fs_code) + 1;
-		create_info.outputs = fs_outputs;
-		create_info.noutputs = sizeof(fs_outputs) / sizeof(*fs_outputs);
+		create_info.outputs = NULL;
+		create_info.noutputs = 0;
 		ret = shader_alloc(env.ctx, &create_info, &fs);
 		if (ret)
 			return EXIT_FAILURE;

@@ -6,10 +6,11 @@
 #include <string.h>
 #include <limits.h>
 
-png_structp png_create_write_struct(png_const_charp version,
-                                    png_voidp err_ptr,
-                                    png_error_ptr err_fn,
-                                    png_error_ptr warn_fn)
+png_structp
+png_create_write_struct(png_const_charp version,
+                        png_voidp err_ptr,
+                        png_error_ptr err_fn,
+                        png_error_ptr warn_fn)
 {
 	png_structp png = calloc(1, sizeof(*png)); /* XXX malloc_fn */
 	if (!png)
@@ -28,7 +29,8 @@ png_structp png_create_write_struct(png_const_charp version,
 	return png;
 }
 
-void png_destroy_write_struct(png_structpp png, png_infopp info)
+void
+png_destroy_write_struct(png_structpp png, png_infopp info)
 {
 	if (!png || !*png)
 		return;
@@ -41,10 +43,16 @@ void png_destroy_write_struct(png_structpp png, png_infopp info)
 	*png = NULL;
 }
 
-void png_set_IHDR(png_const_structp png, png_infop info,
-                  png_uint_32 width, png_uint_32 height,
-                  int depth, int color_type, int interlace,
-                  int compression, int filter)
+void
+png_set_IHDR(png_const_structp png,
+             png_infop info,
+             png_uint_32 width,
+             png_uint_32 height,
+             int depth,
+             int color_type,
+             int interlace,
+             int compression,
+             int filter)
 {
 	(void)info;
 	if (depth != 8
@@ -105,8 +113,11 @@ void png_set_IHDR(png_const_structp png, png_infop info,
 	}
 }
 
-static int write_chunk_part(png_structp png, png_const_voidp data,
-                            png_size_t size, png_uint_32 *crc)
+static int
+write_chunk_part(png_structp png,
+                 png_const_voidp data,
+                 png_size_t size,
+                 png_uint_32 *crc)
 {
 	if (fwrite(data, 1, size, png->fp) != size)
 		return 1;
@@ -114,8 +125,11 @@ static int write_chunk_part(png_structp png, png_const_voidp data,
 	return 0;
 }
 
-static int write_chunk(png_structp png, png_const_charp magic,
-                       png_const_voidp data, png_size_t size)
+static int
+write_chunk(png_structp png,
+            png_const_charp magic,
+            png_const_voidp data,
+            png_size_t size)
 {
 	png_uint_32 length = ntohl(size);
 	if (fwrite(&length, 1, 4, png->fp) != 4)
@@ -143,7 +157,8 @@ static int write_chunk(png_structp png, png_const_charp magic,
 	return 0;
 }
 
-static int write_ihdr(png_structp png)
+static int
+write_ihdr(png_structp png)
 {
 	png_byte data[13];
 	*(png_uint_32*)&data[0] = ntohl(png->ihdr.width);
@@ -156,7 +171,8 @@ static int write_ihdr(png_structp png)
 	return write_chunk(png, "IHDR", data, 13);
 }
 
-void png_write_info(png_structp png, png_const_infop info)
+void
+png_write_info(png_structp png, png_const_infop info)
 {
 	(void)info;
 	if (fwrite(PNG_MAGIC, 1, 8, png->fp) != 8)
@@ -171,8 +187,12 @@ void png_write_info(png_structp png, png_const_infop info)
 	}
 }
 
-static int write_data(png_structp png, int flush, png_bytepp buf,
-                      png_size_t *buf_pos, png_size_t *buf_len)
+static int
+write_data(png_structp png,
+           int flush,
+           png_bytepp buf,
+           png_size_t *buf_pos,
+           png_size_t *buf_len)
 {
 	int ret;
 	do
@@ -204,13 +224,14 @@ static int write_data(png_structp png, int flush, png_bytepp buf,
 	return 0;
 }
 
-static int write_row(png_structp png,
-                     png_byte filter,
-                     png_const_bytep row,
-                     png_size_t pitch,
-                     png_bytepp buf,
-                     png_size_t *buf_pos,
-                     png_size_t *buf_len)
+static int
+write_row(png_structp png,
+          png_byte filter,
+          png_const_bytep row,
+          png_size_t pitch,
+          png_bytepp buf,
+          png_size_t *buf_pos,
+          png_size_t *buf_len)
 {
 	png->zstream.next_in = &filter;
 	png->zstream.avail_in = 1;
@@ -223,7 +244,8 @@ static int write_row(png_structp png,
 	return 0;
 }
 
-static png_byte paeth(png_byte a, png_byte b, png_byte c)
+static png_byte
+paeth(png_byte a, png_byte b, png_byte c)
 {
 	png_int_16 p = (png_int_16)a + (png_int_16)b - (png_int_16)c;
 	png_int_16 pa = p >= a ? p - a : a - p;
@@ -236,10 +258,11 @@ static png_byte paeth(png_byte a, png_byte b, png_byte c)
 	return c;
 }
 
-static void filter_left(png_bytep dst,
-                        png_const_bytep src,
-                        png_size_t bpp,
-                        png_size_t pitch)
+static void
+filter_left(png_bytep dst,
+            png_const_bytep src,
+            png_size_t bpp,
+            png_size_t pitch)
 {
 	png_size_t n = 0;
 	while (n < bpp)
@@ -255,10 +278,11 @@ static void filter_left(png_bytep dst,
 	}
 }
 
-static void filter_up(png_bytep dst,
-                      png_const_bytep src,
-                      png_const_bytep prv,
-                      png_size_t pitch)
+static void
+filter_up(png_bytep dst,
+          png_const_bytep src,
+          png_const_bytep prv,
+          png_size_t pitch)
 {
 	png_size_t n = 0;
 	while (n < pitch)
@@ -268,11 +292,12 @@ static void filter_up(png_bytep dst,
 	}
 }
 
-static void filter_average(png_bytep dst,
-                           png_const_bytep src,
-                           png_const_bytep prv,
-                           png_size_t bpp,
-                           png_size_t pitch)
+static void
+filter_average(png_bytep dst,
+               png_const_bytep src,
+               png_const_bytep prv,
+               png_size_t bpp,
+               png_size_t pitch)
 {
 	png_size_t n = 0;
 	png_const_bytep left = src - bpp;
@@ -288,11 +313,12 @@ static void filter_average(png_bytep dst,
 	}
 }
 
-static void filter_paeth(png_bytep dst,
-                         png_const_bytep src,
-                         png_const_bytep prv,
-                         png_size_t bpp,
-                         png_size_t pitch)
+static void
+filter_paeth(png_bytep dst,
+             png_const_bytep src,
+             png_const_bytep prv,
+             png_size_t bpp,
+             png_size_t pitch)
 {
 	png_size_t n = 0;
 	png_const_bytep left = src - bpp;
@@ -309,8 +335,8 @@ static void filter_paeth(png_bytep dst,
 	}
 }
 
-static png_int_32 row_sum(png_const_bytep row,
-                          png_size_t pitch)
+static png_int_32
+row_sum(png_const_bytep row, png_size_t pitch)
 {
 	png_int_32 sum = 0;
 	for (png_size_t i = 0; i < pitch; ++i)
@@ -324,12 +350,13 @@ static png_int_32 row_sum(png_const_bytep row,
 	return sum;
 }
 
-static int filter_row(png_structp png,
-                      png_const_bytep src,
-                      png_size_t y,
-                      png_size_t bpp,
-                      png_size_t pitch,
-                      png_const_bytepp row)
+static int
+filter_row(png_structp png,
+           png_const_bytep src,
+           png_size_t y,
+           png_size_t bpp,
+           png_size_t pitch,
+           png_const_bytepp row)
 {
 	png_bytep wrk = png->wrk_rows[png->row_ff];
 	png_bytep prv = png->wrk_rows[!png->row_ff];
@@ -379,12 +406,14 @@ static int filter_row(png_structp png,
 	return best;
 }
 
-void png_write_row(png_structp png, png_const_bytep row)
+void
+png_write_row(png_structp png, png_const_bytep row)
 {
 	png_write_rows(png, (png_bytepp)&row, 1);
 }
 
-void png_write_rows(png_structp png, png_bytepp rows, png_uint_32 count)
+void
+png_write_rows(png_structp png, png_bytepp rows, png_uint_32 count)
 {
 	png_bytep buf = NULL;
 	png_size_t buf_pos = 0;
@@ -467,14 +496,16 @@ end:
 	png->free_fn(png, buf);
 }
 
-void png_write_image(png_structp png, png_bytepp rows)
+void
+png_write_image(png_structp png, png_bytepp rows)
 {
 	png_size_t passes = png_set_interlace_handling(png);
 	for (png_size_t i = 0; i < passes; ++i)
 		png_write_rows(png, rows, png->ihdr.height);
 }
 
-void png_write_end(png_structp png, png_infop info)
+void
+png_write_end(png_structp png, png_infop info)
 {
 	(void)info;
 	if (write_chunk(png, "IEND", NULL, 0))

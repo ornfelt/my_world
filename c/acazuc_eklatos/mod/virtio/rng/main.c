@@ -18,7 +18,8 @@ struct virtio_rng
 	uint32_t collect_len;
 };
 
-static void on_msg(struct virtq *queue, uint16_t id, uint32_t len)
+static void
+on_msg(struct virtq *queue, uint16_t id, uint32_t len)
 {
 	struct virtio_rng *rng = (struct virtio_rng*)queue->dev;
 
@@ -29,7 +30,8 @@ static void on_msg(struct virtq *queue, uint16_t id, uint32_t len)
 	spinlock_unlock(&rng->waitq_lock);
 }
 
-static ssize_t random_collect(void *buf, size_t size, void *userdata)
+static ssize_t
+random_collect(void *buf, size_t size, void *userdata)
 {
 	struct virtio_rng *rng = userdata;
 	struct sg_head sg;
@@ -41,7 +43,7 @@ static ssize_t random_collect(void *buf, size_t size, void *userdata)
 	ret = sg_add_dma_buf(&sg, rng->buf, size, 0);
 	if (ret)
 		goto end;
-	ret = virtq_send(&rng->dev.queues[0], &sg, 0, 1);
+	ret = virtq_send(&rng->dev.queues[0], NULL, &sg);
 	if (ret < 0)
 		goto end;
 	virtq_notify(&rng->dev.queues[0]);
@@ -59,7 +61,8 @@ end:
 	return ret;
 }
 
-static void virtio_rng_delete(struct virtio_rng *rng)
+static void
+virtio_rng_delete(struct virtio_rng *rng)
 {
 	if (!rng)
 		return;
@@ -70,7 +73,8 @@ static void virtio_rng_delete(struct virtio_rng *rng)
 	free(rng);
 }
 
-int init_pci(struct pci_device *device, void *userdata)
+int
+init_pci(struct pci_device *device, void *userdata)
 {
 	struct virtio_rng *rng;
 	uint8_t features[1];
@@ -120,17 +124,20 @@ err:
 	return ret;
 }
 
-static int init(void)
+static int
+init(void)
 {
 	pci_probe(0x1AF4, 0x1005, init_pci, NULL);
 	return 0;
 }
 
-static void fini(void)
+static void
+fini(void)
 {
 }
 
-struct kmod_info kmod =
+struct kmod_info
+kmod =
 {
 	.magic = KMOD_MAGIC,
 	.version = 1,

@@ -4,9 +4,11 @@ use crate::{
 use crate::header::{
     DbcHeader, HEADER_SIZE, parse_header,
 };
+use crate::util::StringCache;
 use std::io::Write;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct VideoHardware {
     pub rows: Vec<VideoHardwareRow>,
 }
@@ -15,6 +17,8 @@ impl DbcTable for VideoHardware {
     type Row = VideoHardwareRow;
 
     const FILENAME: &'static str = "VideoHardware.dbc";
+    const FIELD_COUNT: usize = 22;
+    const ROW_SIZE: usize = 88;
 
     fn rows(&self) -> &[Self::Row] { &self.rows }
     fn rows_mut(&mut self) -> &mut [Self::Row] { &mut self.rows }
@@ -24,19 +28,19 @@ impl DbcTable for VideoHardware {
         b.read_exact(&mut header)?;
         let header = parse_header(&header)?;
 
-        if header.record_size != 88 {
+        if header.record_size != Self::ROW_SIZE as u32 {
             return Err(crate::DbcError::InvalidHeader(
                 crate::InvalidHeaderError::RecordSize {
-                    expected: 88,
+                    expected: Self::ROW_SIZE as u32,
                     actual: header.record_size,
                 },
             ));
         }
 
-        if header.field_count != 22 {
+        if header.field_count != Self::FIELD_COUNT as u32 {
             return Err(crate::DbcError::InvalidHeader(
                 crate::InvalidHeaderError::FieldCount {
-                    expected: 22,
+                    expected: Self::FIELD_COUNT as u32,
                     actual: header.field_count,
                 },
             ));
@@ -44,6 +48,8 @@ impl DbcTable for VideoHardware {
 
         let mut r = vec![0_u8; (header.record_count * header.record_size) as usize];
         b.read_exact(&mut r)?;
+        let mut string_block = vec![0_u8; header.string_block_size as usize];
+        b.read_exact(&mut string_block)?;
 
         let mut rows = Vec::with_capacity(header.record_count as usize);
 
@@ -53,43 +59,190 @@ impl DbcTable for VideoHardware {
             // id: primary_key (VideoHardware) uint32
             let id = VideoHardwareKey::new(crate::util::read_u32_le(chunk)?);
 
-            // unknown: uint32[21]
-            let unknown = crate::util::read_array_u32::<21>(chunk)?;
+            // vendor_id: uint32
+            let vendor_id = crate::util::read_u32_le(chunk)?;
+
+            // device_id: uint32
+            let device_id = crate::util::read_u32_le(chunk)?;
+
+            // farclip_idx: uint32
+            let farclip_idx = crate::util::read_u32_le(chunk)?;
+
+            // terrain_l_o_d_dist_idx: uint32
+            let terrain_l_o_d_dist_idx = crate::util::read_u32_le(chunk)?;
+
+            // terrain_shadow_l_o_d: uint32
+            let terrain_shadow_l_o_d = crate::util::read_u32_le(chunk)?;
+
+            // detail_doodad_density_idx: uint32
+            let detail_doodad_density_idx = crate::util::read_u32_le(chunk)?;
+
+            // detail_doodad_alpha: uint32
+            let detail_doodad_alpha = crate::util::read_u32_le(chunk)?;
+
+            // animating_doodad_idx: uint32
+            let animating_doodad_idx = crate::util::read_u32_le(chunk)?;
+
+            // trilinear: uint32
+            let trilinear = crate::util::read_u32_le(chunk)?;
+
+            // num_lights: uint32
+            let num_lights = crate::util::read_u32_le(chunk)?;
+
+            // specularity: uint32
+            let specularity = crate::util::read_u32_le(chunk)?;
+
+            // water_l_o_d_idx: uint32
+            let water_l_o_d_idx = crate::util::read_u32_le(chunk)?;
+
+            // particle_density_idx: uint32
+            let particle_density_idx = crate::util::read_u32_le(chunk)?;
+
+            // unit_draw_dist_idx: uint32
+            let unit_draw_dist_idx = crate::util::read_u32_le(chunk)?;
+
+            // small_cull_dist_idx: uint32
+            let small_cull_dist_idx = crate::util::read_u32_le(chunk)?;
+
+            // resolution_idx: uint32
+            let resolution_idx = crate::util::read_u32_le(chunk)?;
+
+            // base_mip_level: uint32
+            let base_mip_level = crate::util::read_u32_le(chunk)?;
+
+            // ogl_overrides: string_ref
+            let ogl_overrides = {
+                let s = crate::util::get_string_as_vec(chunk, &string_block)?;
+                String::from_utf8(s)?
+            };
+
+            // d3d_overrides: string_ref
+            let d3d_overrides = {
+                let s = crate::util::get_string_as_vec(chunk, &string_block)?;
+                String::from_utf8(s)?
+            };
+
+            // fix_lag: uint32
+            let fix_lag = crate::util::read_u32_le(chunk)?;
+
+            // multisample: uint32
+            let multisample = crate::util::read_u32_le(chunk)?;
 
 
             rows.push(VideoHardwareRow {
                 id,
-                unknown,
+                vendor_id,
+                device_id,
+                farclip_idx,
+                terrain_l_o_d_dist_idx,
+                terrain_shadow_l_o_d,
+                detail_doodad_density_idx,
+                detail_doodad_alpha,
+                animating_doodad_idx,
+                trilinear,
+                num_lights,
+                specularity,
+                water_l_o_d_idx,
+                particle_density_idx,
+                unit_draw_dist_idx,
+                small_cull_dist_idx,
+                resolution_idx,
+                base_mip_level,
+                ogl_overrides,
+                d3d_overrides,
+                fix_lag,
+                multisample,
             });
         }
 
         Ok(VideoHardware { rows, })
     }
 
-    fn write(&self, b: &mut impl Write) -> Result<(), std::io::Error> {
-        let header = DbcHeader {
-            record_count: self.rows.len() as u32,
-            field_count: 22,
-            record_size: 88,
-            string_block_size: 1,
-        };
+    fn write(&self, w: &mut impl Write) -> Result<(), std::io::Error> {
+        let mut b = Vec::with_capacity(self.rows.len() * Self::ROW_SIZE);
 
-        b.write_all(&header.write_header())?;
+        let mut string_cache = StringCache::new();
 
         for row in &self.rows {
             // id: primary_key (VideoHardware) uint32
             b.write_all(&row.id.id.to_le_bytes())?;
 
-            // unknown: uint32[21]
-            for i in row.unknown {
-                b.write_all(&i.to_le_bytes())?;
-            }
+            // vendor_id: uint32
+            b.write_all(&row.vendor_id.to_le_bytes())?;
 
+            // device_id: uint32
+            b.write_all(&row.device_id.to_le_bytes())?;
+
+            // farclip_idx: uint32
+            b.write_all(&row.farclip_idx.to_le_bytes())?;
+
+            // terrain_l_o_d_dist_idx: uint32
+            b.write_all(&row.terrain_l_o_d_dist_idx.to_le_bytes())?;
+
+            // terrain_shadow_l_o_d: uint32
+            b.write_all(&row.terrain_shadow_l_o_d.to_le_bytes())?;
+
+            // detail_doodad_density_idx: uint32
+            b.write_all(&row.detail_doodad_density_idx.to_le_bytes())?;
+
+            // detail_doodad_alpha: uint32
+            b.write_all(&row.detail_doodad_alpha.to_le_bytes())?;
+
+            // animating_doodad_idx: uint32
+            b.write_all(&row.animating_doodad_idx.to_le_bytes())?;
+
+            // trilinear: uint32
+            b.write_all(&row.trilinear.to_le_bytes())?;
+
+            // num_lights: uint32
+            b.write_all(&row.num_lights.to_le_bytes())?;
+
+            // specularity: uint32
+            b.write_all(&row.specularity.to_le_bytes())?;
+
+            // water_l_o_d_idx: uint32
+            b.write_all(&row.water_l_o_d_idx.to_le_bytes())?;
+
+            // particle_density_idx: uint32
+            b.write_all(&row.particle_density_idx.to_le_bytes())?;
+
+            // unit_draw_dist_idx: uint32
+            b.write_all(&row.unit_draw_dist_idx.to_le_bytes())?;
+
+            // small_cull_dist_idx: uint32
+            b.write_all(&row.small_cull_dist_idx.to_le_bytes())?;
+
+            // resolution_idx: uint32
+            b.write_all(&row.resolution_idx.to_le_bytes())?;
+
+            // base_mip_level: uint32
+            b.write_all(&row.base_mip_level.to_le_bytes())?;
+
+            // ogl_overrides: string_ref
+            b.write_all(&string_cache.add_string(&row.ogl_overrides).to_le_bytes())?;
+
+            // d3d_overrides: string_ref
+            b.write_all(&string_cache.add_string(&row.d3d_overrides).to_le_bytes())?;
+
+            // fix_lag: uint32
+            b.write_all(&row.fix_lag.to_le_bytes())?;
+
+            // multisample: uint32
+            b.write_all(&row.multisample.to_le_bytes())?;
 
         }
 
-        b.write_all(&[0_u8])?;
+        assert_eq!(b.len(), self.rows.len() * Self::ROW_SIZE);
+        let header = DbcHeader {
+            record_count: self.rows.len() as u32,
+            field_count: Self::FIELD_COUNT as u32,
+            record_size: Self::ROW_SIZE as u32,
+            string_block_size: string_cache.size(),
+        };
 
+        w.write_all(&header.write_header())?;
+        w.write_all(&b)?;
+        w.write_all(string_cache.buffer())?;
         Ok(())
     }
 
@@ -109,6 +262,7 @@ impl Indexable for VideoHardware {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Hash, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct VideoHardwareKey {
     pub id: u32
 }
@@ -187,9 +341,49 @@ impl TryFrom<isize> for VideoHardwareKey {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct VideoHardwareRow {
     pub id: VideoHardwareKey,
-    pub unknown: [u32; 21],
+    pub vendor_id: u32,
+    pub device_id: u32,
+    pub farclip_idx: u32,
+    pub terrain_l_o_d_dist_idx: u32,
+    pub terrain_shadow_l_o_d: u32,
+    pub detail_doodad_density_idx: u32,
+    pub detail_doodad_alpha: u32,
+    pub animating_doodad_idx: u32,
+    pub trilinear: u32,
+    pub num_lights: u32,
+    pub specularity: u32,
+    pub water_l_o_d_idx: u32,
+    pub particle_density_idx: u32,
+    pub unit_draw_dist_idx: u32,
+    pub small_cull_dist_idx: u32,
+    pub resolution_idx: u32,
+    pub base_mip_level: u32,
+    pub ogl_overrides: String,
+    pub d3d_overrides: String,
+    pub fix_lag: u32,
+    pub multisample: u32,
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::fs::File;
+    use std::io::Read;
+
+    #[test]
+    #[ignore = "requires DBC files"]
+    fn video_hardware() {
+        let mut file = File::open("../vanilla-dbc/VideoHardware.dbc").expect("Failed to open DBC file");
+        let mut contents = Vec::new();
+        file.read_to_end(&mut contents).expect("Failed to read DBC file");
+        let actual = VideoHardware::read(&mut contents.as_slice()).unwrap();
+        let mut v = Vec::with_capacity(contents.len());
+        actual.write(&mut v).unwrap();
+        let new = VideoHardware::read(&mut v.as_slice()).unwrap();
+        assert_eq!(actual, new);
+    }
+}

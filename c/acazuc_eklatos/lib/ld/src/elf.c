@@ -23,7 +23,8 @@ static int test_sym(struct elf *elf, const Elf_Sym *sym, const char *name,
 static int handle_rel(struct elf *elf, const Elf_Rel *rel);
 static int handle_rela(struct elf *elf, const Elf_Rela *rela);
 
-static struct elf *elf_alloc(void)
+static struct elf *
+elf_alloc(void)
 {
 	struct elf *elf = calloc(1, sizeof(*elf));
 	if (!elf)
@@ -38,7 +39,8 @@ static struct elf *elf_alloc(void)
 	return elf;
 }
 
-static struct elf *find_elf(const char *path)
+static struct elf *
+find_elf(const char *path)
 {
 	struct elf *elf;
 	TAILQ_FOREACH(elf, &elf_list, chain)
@@ -52,7 +54,8 @@ static struct elf *find_elf(const char *path)
 	return NULL;
 }
 
-void elf_free(struct elf *elf)
+void
+elf_free(struct elf *elf)
 {
 	if (--elf->refcount)
 		return;
@@ -82,8 +85,12 @@ void elf_free(struct elf *elf)
 	free(elf);
 }
 
-static int test_sym(struct elf *elf, const Elf_Sym *sym, const char *name,
-                    uint8_t type, uintptr_t *addr)
+static int
+test_sym(struct elf *elf,
+         const Elf_Sym *sym,
+         const char *name,
+         uint8_t type,
+         uintptr_t *addr)
 {
 	if (sym->st_shndx == SHN_UNDEF)
 		return 1;
@@ -100,8 +107,11 @@ static int test_sym(struct elf *elf, const Elf_Sym *sym, const char *name,
 	return 0;
 }
 
-static int get_rel_sym(struct elf *elf, size_t symidx,
-                       struct elf **symelf, uintptr_t *addr)
+static int
+get_rel_sym(struct elf *elf,
+            size_t symidx,
+            struct elf **symelf,
+            uintptr_t *addr)
 {
 	const Elf_Sym *sym = (const Elf_Sym*)(elf->vaddr
 	                                    + elf->dt_symtab->d_un.d_ptr
@@ -129,7 +139,8 @@ static int get_rel_sym(struct elf *elf, size_t symidx,
 	return 1;
 }
 
-static uint32_t elf_hash(const char *name)
+static uint32_t
+elf_hash(const char *name)
 {
 	uint32_t h = 0;
 	uint32_t g;
@@ -144,7 +155,8 @@ static uint32_t elf_hash(const char *name)
 	return h;
 }
 
-static uint32_t gnu_hash(const char *name)
+static uint32_t
+gnu_hash(const char *name)
 {
 	uint32_t h = 5381;
 	while (*name)
@@ -152,8 +164,12 @@ static uint32_t gnu_hash(const char *name)
 	return h;
 }
 
-static int find_dep_sym(struct elf *elf, const char *name, uint8_t type,
-                        struct elf **symelf, uintptr_t *addr)
+static int
+find_dep_sym(struct elf *elf,
+             const char *name,
+             uint8_t type,
+             struct elf **symelf,
+             uintptr_t *addr)
 {
 	struct elf_link *link;
 	TAILQ_FOREACH(link, &elf->neededs, elf_chain)
@@ -164,8 +180,11 @@ static int find_dep_sym(struct elf *elf, const char *name, uint8_t type,
 	return 1;
 }
 
-static int find_elf_sym_hash(struct elf *elf, const char *name, uint8_t type,
-                             uintptr_t *addr)
+static int
+find_elf_sym_hash(struct elf *elf,
+                  const char *name,
+                  uint8_t type,
+                  uintptr_t *addr)
 {
 	uint32_t *hashptr = (uint32_t*)(elf->vaddr
 	                              + elf->dt_hash->d_un.d_ptr);
@@ -187,8 +206,11 @@ static int find_elf_sym_hash(struct elf *elf, const char *name, uint8_t type,
 	return 1;
 }
 
-static int find_elf_sym_gnuh(struct elf *elf, const char *name, uint8_t type,
-                             uintptr_t *addr)
+static int
+find_elf_sym_gnuh(struct elf *elf,
+                  const char *name,
+                  uint8_t type,
+                  uintptr_t *addr)
 {
 	uint32_t *hashptr = (uint32_t*)(elf->vaddr
 	                              + elf->dt_gnu_hash->d_un.d_ptr);
@@ -225,8 +247,12 @@ static int find_elf_sym_gnuh(struct elf *elf, const char *name, uint8_t type,
 	return 1;
 }
 
-int find_elf_sym(struct elf *elf, const char *name, uint8_t type,
-                 struct elf **symelf, uintptr_t *addr)
+int
+find_elf_sym(struct elf *elf,
+             const char *name,
+             uint8_t type,
+             struct elf **symelf,
+             uintptr_t *addr)
 {
 	if (elf->dt_gnu_hash)
 	{
@@ -249,7 +275,8 @@ int find_elf_sym(struct elf *elf, const char *name, uint8_t type,
 	return find_dep_sym(elf, name, type, symelf, addr);
 }
 
-static int find_native_sym(const char *name, uintptr_t *addr)
+static int
+find_native_sym(const char *name, uintptr_t *addr)
 {
 #define TEST_SYMBOL(sym) \
 do \
@@ -274,7 +301,8 @@ do \
 #undef TEST_SYMBOL
 }
 
-static struct elf *load_needed(struct elf *elf, const Elf_Dyn *dyn)
+static struct elf *
+load_needed(struct elf *elf, const Elf_Dyn *dyn)
 {
 	const char *name = (const char*)(elf->vaddr + elf->dt_strtab->d_un.d_ptr
 	                               + dyn->d_un.d_val);
@@ -285,40 +313,11 @@ static struct elf *load_needed(struct elf *elf, const Elf_Dyn *dyn)
 		LD_ERR("invalid DT_NEEDED file");
 		return NULL;
 	}
-	char *library_path = getenv("LD_LIBRARY_PATH");
-	if (!library_path)
-		library_path = "/lib";
-	char *it = library_path;
-	char *sp;
-	while ((sp = strchrnul(it, ':')))
-	{
-		if (sp != it + 1)
-		{
-			char path[MAXPATHLEN];
-			if (snprintf(path, sizeof(path), "%.*s/%s", (int)(sp - it), it, name) >= (int)sizeof(path))
-			{
-				LD_ERR("filepath too long");
-				return NULL;
-			}
-			struct elf *dep = find_elf(path);
-			if (dep)
-				return dep;
-			int fd = open(path, O_RDONLY);
-			if (fd != -1)
-			{
-				dep = elf_from_fd(path, fd);
-				close(fd);
-				return dep;
-			}
-		}
-		if (!*sp)
-			break;
-		it = sp + 1;
-	}
-	return NULL;
+	return elf_from_path(name);
 }
 
-static void get_phdr_vmap(const Elf_Phdr *phdr, size_t *addr, size_t *size)
+static void
+get_phdr_vmap(const Elf_Phdr *phdr, size_t *addr, size_t *size)
 {
 	*addr = phdr->p_vaddr;
 	*addr -= *addr % g_page_size;
@@ -328,7 +327,8 @@ static void get_phdr_vmap(const Elf_Phdr *phdr, size_t *addr, size_t *size)
 	*size -= *size % g_page_size;
 }
 
-static int handle_pt_load(struct elf *elf, const Elf_Phdr *phdr, int fd)
+static int
+handle_pt_load(struct elf *elf, const Elf_Phdr *phdr, int fd)
 {
 	if (phdr->p_filesz > phdr->p_memsz)
 	{
@@ -383,7 +383,8 @@ static int handle_pt_load(struct elf *elf, const Elf_Phdr *phdr, int fd)
 	return 0;
 }
 
-static int elf_read(struct elf *elf, int fd)
+static int
+elf_read(struct elf *elf, int fd)
 {
 	Elf_Ehdr ehdr;
 	if (read(fd, &ehdr, sizeof(ehdr)) != sizeof(ehdr))
@@ -453,7 +454,8 @@ static int elf_read(struct elf *elf, int fd)
 	return 0;
 }
 
-static int elf_parse(struct elf *elf)
+static int
+elf_parse(struct elf *elf)
 {
 	/* XXX max the number of PT_LOAD */
 	for (size_t i = 0; i < elf->phnum; ++i)
@@ -572,7 +574,8 @@ static int elf_parse(struct elf *elf)
 	return 0;
 }
 
-static int elf_map(struct elf *elf, int fd)
+static int
+elf_map(struct elf *elf, int fd)
 {
 	elf->vaddr = (size_t)mmap(NULL, elf->vsize,
 	                          PROT_READ, MAP_PRIVATE,
@@ -593,8 +596,13 @@ static int elf_map(struct elf *elf, int fd)
 	return 0;
 }
 
-static int handle_relocation(struct elf *elf, void *addr, size_t type,
-                             size_t symidx, size_t offset, size_t addend)
+static int
+handle_relocation(struct elf *elf,
+                  void *addr,
+                  size_t type,
+                  size_t symidx,
+                  size_t offset,
+                  size_t addend)
 {
 	(void)offset;
 	switch (type)
@@ -803,7 +811,8 @@ static int handle_relocation(struct elf *elf, void *addr, size_t type,
 	return 0;
 }
 
-static int handle_rel(struct elf *elf, const Elf_Rel *rel)
+static int
+handle_rel(struct elf *elf, const Elf_Rel *rel)
 {
 	void *addr = (void*)(elf->vaddr + rel->r_offset);
 	return handle_relocation(elf, addr, ELF_R_TYPE(rel->r_info),
@@ -811,7 +820,8 @@ static int handle_rel(struct elf *elf, const Elf_Rel *rel)
 	                         *(size_t*)addr);
 }
 
-static int handle_rela(struct elf *elf, const Elf_Rela *rela)
+static int
+handle_rela(struct elf *elf, const Elf_Rela *rela)
 {
 	void *addr = (void*)(elf->vaddr + rela->r_offset);
 	return handle_relocation(elf, addr, ELF_R_TYPE(rela->r_info),
@@ -819,7 +829,8 @@ static int handle_rela(struct elf *elf, const Elf_Rela *rela)
 	                         rela->r_addend);
 }
 
-static int handle_dt_rela(struct elf *elf, const Elf_Dyn *rela,
+static int
+handle_dt_rela(struct elf *elf, const Elf_Dyn *rela,
                           const Elf_Dyn *relasz, size_t size)
 {
 	for (size_t i = 0; i < relasz->d_un.d_val; i += size)
@@ -833,8 +844,11 @@ static int handle_dt_rela(struct elf *elf, const Elf_Dyn *rela,
 	return 0;
 }
 
-static int handle_dt_rel(struct elf *elf, const Elf_Dyn *rel,
-                         const Elf_Dyn *relsz, size_t size)
+static int
+handle_dt_rel(struct elf *elf,
+              const Elf_Dyn *rel,
+              const Elf_Dyn *relsz,
+              size_t size)
 {
 	for (size_t i = 0; i < relsz->d_un.d_val; i += size)
 	{
@@ -847,7 +861,8 @@ static int handle_dt_rel(struct elf *elf, const Elf_Dyn *rel,
 	return 0;
 }
 
-static int elf_resolve(struct elf *elf)
+static int
+elf_resolve(struct elf *elf)
 {
 	if (elf->dt_rel)
 	{
@@ -884,7 +899,8 @@ static int elf_resolve(struct elf *elf)
 	return 0;
 }
 
-static int elf_protect(struct elf *elf)
+static int
+elf_protect(struct elf *elf)
 {
 	size_t addr;
 	size_t size;
@@ -898,7 +914,8 @@ static int elf_protect(struct elf *elf)
 	return 0;
 }
 
-static void elf_init(struct elf *elf)
+static void
+elf_init(struct elf *elf)
 {
 	if (elf->dt_init)
 	{
@@ -918,7 +935,8 @@ static void elf_init(struct elf *elf)
 	}
 }
 
-static void elf_fini(struct elf *elf)
+static void
+elf_fini(struct elf *elf)
 {
 	if (elf->dt_fini_array && elf->dt_fini_arraysz)
 	{
@@ -938,7 +956,8 @@ static void elf_fini(struct elf *elf)
 	}
 }
 
-static int elf_dynamic(struct elf *elf)
+static int
+elf_dynamic(struct elf *elf)
 {
 	for (size_t i = 0; i < elf->pt_dynamic->p_filesz; i += sizeof(Elf_Dyn))
 	{
@@ -1293,7 +1312,8 @@ enditer:
 	return 0;
 }
 
-int elf_finalize(struct elf *elf)
+int
+elf_finalize(struct elf *elf)
 {
 	if (elf->loaded)
 		return 0;
@@ -1311,7 +1331,8 @@ int elf_finalize(struct elf *elf)
 	return 0;
 }
 
-struct elf *elf_from_fd(const char *path, int fd)
+struct elf *
+elf_from_fd(const char *path, int fd)
 {
 	struct elf *elf = elf_alloc();
 	if (!elf)
@@ -1336,23 +1357,57 @@ err:
 	return NULL;
 }
 
-struct elf *elf_from_path(const char *path)
+struct elf *
+elf_from_path(const char *name)
 {
-	struct elf *elf = find_elf(path);
-	if (elf)
-		return elf;
-	int fd = open(path, O_RDONLY);
-	if (fd < 0)
+	if (name[0] == '/')
 	{
-		LD_ERR("open(%s): %s", path, strerror(errno));
-		return NULL;
+		struct elf *elf = find_elf(name);
+		if (elf)
+			return elf;
+		int fd = open(name, O_RDONLY);
+		if (fd != -1)
+		{
+			elf = elf_from_fd(name, fd);
+			close(fd);
+			return elf;
+		}
 	}
-	elf = elf_from_fd(path, fd);
-	close(fd);
-	return elf;
+	char *library_path = getenv("LD_LIBRARY_PATH");
+	if (!library_path)
+		library_path = "/lib";
+	char *it = library_path;
+	char *sp;
+	while ((sp = strchrnul(it, ':')))
+	{
+		if (sp != it + 1)
+		{
+			char path[MAXPATHLEN];
+			if (snprintf(path, sizeof(path), "%.*s/%s", (int)(sp - it), it, name) >= (int)sizeof(path))
+			{
+				LD_ERR("filepath too long");
+				return NULL;
+			}
+			struct elf *elf = find_elf(path);
+			if (elf)
+				return elf;
+			int fd = open(path, O_RDONLY);
+			if (fd != -1)
+			{
+				elf = elf_from_fd(path, fd);
+				close(fd);
+				return elf;
+			}
+		}
+		if (!*sp)
+			break;
+		it = sp + 1;
+	}
+	return NULL;
 }
 
-struct elf *elf_from_auxv(const char *path)
+struct elf *
+elf_from_auxv(const char *path)
 {
 	struct elf *elf = elf_alloc();
 	if (!elf)

@@ -3,14 +3,16 @@
 #include <stdio.h>
 #include <pwd.h>
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
+	struct passwd *pwd;
 	uid_t euid;
 
 	(void)argc;
 	(void)argv;
 	euid = geteuid();
-	struct passwd *pwd = getpwuid(euid);
+	pwd = getpwuid(euid);
 	if (pwd)
 		printf("%s\n", pwd->pw_name);
 	else

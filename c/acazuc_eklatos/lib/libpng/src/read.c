@@ -13,8 +13,10 @@
  && (t)[2] == (c) \
  && (t)[3] == (d))
 
-static int parse_ihdr(png_structp png, png_const_bytep payload,
-                      png_uint_32 length)
+static int
+parse_ihdr(png_structp png,
+           png_const_bytep payload,
+           png_uint_32 length)
 {
 	if (length != 13)
 	{
@@ -106,8 +108,10 @@ static int parse_ihdr(png_structp png, png_const_bytep payload,
 	return 0;
 }
 
-static int parse_idat(struct png_struct *png, png_const_voidp payload,
-                      png_size_t length)
+static int
+parse_idat(struct png_struct *png,
+           png_const_voidp payload,
+           png_size_t length)
 {
 	png->zstream.next_in = (png_voidp)payload;
 	png->zstream.avail_in = length;
@@ -129,7 +133,8 @@ static int parse_idat(struct png_struct *png, png_const_voidp payload,
 	return 0;
 }
 
-static int parse_chunk(png_structp png)
+static int
+parse_chunk(png_structp png)
 {
 	png_uint_32 length;
 	png_bytep payload = NULL;
@@ -211,7 +216,8 @@ end:
 	return ret;
 }
 
-static png_byte paeth(png_byte a, png_byte b, png_byte c)
+static png_byte
+paeth(png_byte a, png_byte b, png_byte c)
 {
 	png_int_16 p = (png_int_16)a + (png_int_16)b - (png_int_16)c;
 	png_int_16 pa = p >= a ? p - a : a - p;
@@ -224,10 +230,11 @@ static png_byte paeth(png_byte a, png_byte b, png_byte c)
 	return c;
 }
 
-static void defilter_left(png_bytep dst,
-                          png_const_bytep src,
-                          png_size_t bpp,
-                          png_size_t pitch)
+static void
+defilter_left(png_bytep dst,
+              png_const_bytep src,
+              png_size_t bpp,
+              png_size_t pitch)
 {
 	png_size_t n = 0;
 	while (n < bpp)
@@ -243,11 +250,12 @@ static void defilter_left(png_bytep dst,
 	}
 }
 
-static void defilter_up(png_bytep dst,
-                        png_const_bytep src,
-                        png_const_bytep prv,
-                        png_size_t y,
-                        png_size_t pitch)
+static void
+defilter_up(png_bytep dst,
+            png_const_bytep src,
+            png_const_bytep prv,
+            png_size_t y,
+            png_size_t pitch)
 {
 	if (!y)
 	{
@@ -262,12 +270,13 @@ static void defilter_up(png_bytep dst,
 	}
 }
 
-static void defilter_average(png_bytep dst,
-                             png_const_bytep src,
-                             png_const_bytep prv,
-                             png_size_t y,
-                             png_size_t bpp,
-                             png_size_t pitch)
+static void
+defilter_average(png_bytep dst,
+                 png_const_bytep src,
+                 png_const_bytep prv,
+                 png_size_t y,
+                 png_size_t bpp,
+                 png_size_t pitch)
 {
 	png_size_t n = 0;
 	png_const_bytep left = dst - bpp;
@@ -297,12 +306,13 @@ static void defilter_average(png_bytep dst,
 	}
 }
 
-static void defilter_paeth(png_bytep dst,
-                           png_const_bytep src,
-                           png_const_bytep prv,
-                           png_size_t y,
-                           png_size_t bpp,
-                           png_size_t pitch)
+static void
+defilter_paeth(png_bytep dst,
+               png_const_bytep src,
+               png_const_bytep prv,
+               png_size_t y,
+               png_size_t bpp,
+               png_size_t pitch)
 {
 	png_size_t n = 0;
 	png_const_bytep left = dst - bpp;
@@ -333,10 +343,11 @@ static void defilter_paeth(png_bytep dst,
 	}
 }
 
-png_structp png_create_read_struct(png_const_charp version,
-                                   png_voidp err_ptr,
-                                   png_error_ptr err_fn,
-                                   png_error_ptr warn_fn)
+png_structp
+png_create_read_struct(png_const_charp version,
+                       png_voidp err_ptr,
+                       png_error_ptr err_fn,
+                       png_error_ptr warn_fn)
 {
 	png_structp png = calloc(1, sizeof(*png)); /* XXX malloc_fn */
 	if (!png)
@@ -355,8 +366,10 @@ png_structp png_create_read_struct(png_const_charp version,
 	return png;
 }
 
-void png_destroy_read_struct(png_structpp png, png_infopp info,
-                             png_infopp end)
+void
+png_destroy_read_struct(png_structpp png,
+                        png_infopp info,
+                        png_infopp end)
 {
 	if (!png || !*png)
 		return;
@@ -374,7 +387,8 @@ void png_destroy_read_struct(png_structpp png, png_infopp info,
 	*png = NULL;
 }
 
-void png_set_sig_bytes(png_structp png, int bytes)
+void
+png_set_sig_bytes(png_structp png, int bytes)
 {
 	if (bytes < 0)
 		bytes = 0;
@@ -383,7 +397,8 @@ void png_set_sig_bytes(png_structp png, int bytes)
 	png->sig_bytes = bytes;
 }
 
-void png_read_info(png_structp png, png_infop info)
+void
+png_read_info(png_structp png, png_infop info)
 {
 	(void)info;
 	if (png->sig_bytes < 8)
@@ -421,10 +436,16 @@ void png_read_info(png_structp png, png_infop info)
 	}
 }
 
-png_uint_32 png_get_IHDR(png_structp png, png_infop info,
-                         png_uint_32p width, png_uint_32p height,
-                         int *depth, int *color_type,
-                         int *interlace, int *compression, int *filter)
+png_uint_32
+png_get_IHDR(png_structp png,
+             png_infop info,
+             png_uint_32p width,
+             png_uint_32p height,
+             int *depth,
+             int *color_type,
+             int *interlace,
+             int *compression,
+             int *filter)
 {
 	(void)info;
 	if (!png->parsed_ihdr)
@@ -446,14 +467,19 @@ png_uint_32 png_get_IHDR(png_structp png, png_infop info,
 	return 1;
 }
 
-void png_read_row(png_structp png, png_bytep row, png_bytep display_row)
+void
+png_read_row(png_structp png, png_bytep row, png_bytep display_row)
 {
 	png_read_rows(png, &row, &display_row, 1);
 }
 
-static void adam7_sparkle(png_structp png, png_bytep row, png_bytep src,
-                          png_size_t bpp, png_size_t adam_x_offset,
-                          png_size_t adam_x_mask)
+static void
+adam7_sparkle(png_structp png,
+              png_bytep row,
+              png_bytep src,
+              png_size_t bpp,
+              png_size_t adam_x_offset,
+              png_size_t adam_x_mask)
 {
 	png_size_t x = adam_x_offset;
 	png_size_t spacing = adam_x_mask;
@@ -471,9 +497,13 @@ static void adam7_sparkle(png_structp png, png_bytep row, png_bytep src,
 	}
 }
 
-static void adam7_rectangle(png_structp png, png_bytep row, png_bytep src,
-                            png_size_t bpp, png_size_t adam_x_offset,
-                            png_size_t adam_x_mask)
+static void
+adam7_rectangle(png_structp png,
+                png_bytep row,
+                png_bytep src,
+                png_size_t bpp,
+                png_size_t adam_x_offset,
+                png_size_t adam_x_mask)
 {
 	png_size_t x = adam_x_offset;
 	png_size_t spacing = adam_x_mask;
@@ -500,8 +530,11 @@ static void adam7_rectangle(png_structp png, png_bytep row, png_bytep src,
 	}
 }
 
-void png_read_rows(png_structp png, png_bytepp rows, png_bytepp display_rows,
-                   png_uint_32 count)
+void
+png_read_rows(png_structp png,
+              png_bytepp rows,
+              png_bytepp display_rows,
+              png_uint_32 count)
 {
 	(void)display_rows;
 	png_size_t bpp = png_get_bpp(png);
@@ -600,14 +633,16 @@ void png_read_rows(png_structp png, png_bytepp rows, png_bytepp display_rows,
 	png->data_it = src;
 }
 
-void png_read_image(png_structp png, png_bytepp rows)
+void
+png_read_image(png_structp png, png_bytepp rows)
 {
 	png_size_t passes = png_set_interlace_handling(png);
 	for (png_size_t i = 0; i < passes; ++i)
 		png_read_rows(png, rows, NULL, png->ihdr.height);
 }
 
-void png_read_update_info(png_structp png, png_infop info)
+void
+png_read_update_info(png_structp png, png_infop info)
 {
 	(void)png;
 	(void)info;

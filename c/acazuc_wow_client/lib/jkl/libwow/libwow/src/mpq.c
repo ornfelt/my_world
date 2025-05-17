@@ -9,7 +9,8 @@
 
 extern uint32_t wow_crypt_table[0x500];
 
-static bool file_seek(FILE *file, uint32_t off)
+static bool
+file_seek(FILE *file, uint32_t off)
 {
 #ifdef _WIN32
 	return _fseeki64(file, off, SEEK_SET);
@@ -18,7 +19,8 @@ static bool file_seek(FILE *file, uint32_t off)
 #endif
 }
 
-static void decrypt_table(void *data, size_t len, uint32_t key)
+static void
+decrypt_table(void *data, size_t len, uint32_t key)
 {
 	uint32_t seed = 0xEEEEEEEE;
 	uint32_t *wdata = (uint32_t*)data;
@@ -33,7 +35,8 @@ static void decrypt_table(void *data, size_t len, uint32_t key)
 	}
 }
 
-uint32_t wow_mpq_hash_string(const char *str, uint32_t hash_type)
+uint32_t
+wow_mpq_hash_string(const char *str, uint32_t hash_type)
 {
 	uint32_t seed1 = 0x7FED7FED;
 	uint32_t seed2 = 0xEEEEEEEE;
@@ -46,10 +49,13 @@ uint32_t wow_mpq_hash_string(const char *str, uint32_t hash_type)
 	return seed1;
 }
 
-struct wow_mpq_archive *wow_mpq_archive_new(const char *filename)
+struct wow_mpq_archive *
+wow_mpq_archive_new(const char *filename)
 {
-	struct wow_mpq_archive *archive = WOW_MALLOC(sizeof(*archive));
+	struct wow_mpq_archive *archive;
 	FILE *file = NULL;
+
+	archive = WOW_MALLOC(sizeof(*archive));
 	if (!archive)
 		return NULL;
 	archive->block_table = NULL;
@@ -96,7 +102,8 @@ err:
 	return NULL;
 }
 
-void wow_mpq_archive_delete(struct wow_mpq_archive *archive)
+void
+wow_mpq_archive_delete(struct wow_mpq_archive *archive)
 {
 	if (archive == NULL)
 		return;
@@ -106,9 +113,12 @@ void wow_mpq_archive_delete(struct wow_mpq_archive *archive)
 	WOW_FREE(archive);
 }
 
-struct wow_mpq_compound *wow_mpq_compound_new(void)
+struct wow_mpq_compound *
+wow_mpq_compound_new(void)
 {
-	struct wow_mpq_compound *compound = WOW_MALLOC(sizeof(*compound));
+	struct wow_mpq_compound *compound;
+
+	compound = WOW_MALLOC(sizeof(*compound));
 	if (!compound)
 		return NULL;
 	compound->archives = NULL;
@@ -116,7 +126,8 @@ struct wow_mpq_compound *wow_mpq_compound_new(void)
 	return compound;
 }
 
-void wow_mpq_compound_delete(struct wow_mpq_compound *compound)
+void
+wow_mpq_compound_delete(struct wow_mpq_compound *compound)
 {
 	if (!compound)
 		return;
@@ -129,9 +140,14 @@ void wow_mpq_compound_delete(struct wow_mpq_compound *compound)
 	WOW_FREE(compound);
 }
 
-bool wow_mpq_compound_add_archive(struct wow_mpq_compound *compound, const struct wow_mpq_archive *archive)
+bool
+wow_mpq_compound_add_archive(struct wow_mpq_compound *compound,
+                             const struct wow_mpq_archive *archive)
 {
-	struct wow_mpq_archive_view *archives = WOW_REALLOC(compound->archives, sizeof(*compound->archives) * (compound->archives_nb + 1));
+	struct wow_mpq_archive_view *archives;
+
+	archives = WOW_REALLOC(compound->archives,
+	                       sizeof(*compound->archives) * (compound->archives_nb + 1));
 	if (!archives)
 		return false;
 	compound->archives = archives;
@@ -149,7 +165,15 @@ bool wow_mpq_compound_add_archive(struct wow_mpq_compound *compound, const struc
 	return true;
 }
 
-static bool read_sector(const struct wow_mpq_block *block, uint32_t offset, uint32_t in_size, uint32_t out_size, FILE *file, uint8_t *data, size_t *data_size, uint8_t *buffer)
+static bool
+read_sector(const struct wow_mpq_block *block,
+            uint32_t offset,
+            uint32_t in_size,
+            uint32_t out_size,
+            FILE *file,
+            uint8_t *data,
+            size_t *data_size,
+            uint8_t *buffer)
 {
 	/* XXX: check for CRC */
 	if (file_seek(file, offset))
@@ -196,9 +220,14 @@ static bool read_sector(const struct wow_mpq_block *block, uint32_t offset, uint
 	return true;
 }
 
-static uint8_t *read_block(const struct wow_mpq_archive_view *archive_view, const struct wow_mpq_block *block, size_t *data_size)
+static uint8_t *
+read_block(const struct wow_mpq_archive_view *archive_view,
+           const struct wow_mpq_block *block,
+           size_t *data_size)
 {
-	uint8_t *data = WOW_MALLOC(block->file_size);
+	uint8_t *data;
+
+	data = WOW_MALLOC(block->file_size);
 	if (!data)
 		return NULL;
 	uint32_t max_sector_size = 512 << archive_view->archive->header.block_size;
@@ -274,7 +303,11 @@ err:
 	return NULL;
 }
 
-static const struct wow_mpq_block *get_block(const struct wow_mpq_archive *archive, uint32_t bucket, uint32_t name_a, uint32_t name_b)
+static const struct wow_mpq_block *
+get_block(const struct wow_mpq_archive *archive,
+          uint32_t bucket,
+          uint32_t name_a,
+          uint32_t name_b)
 {
 	if (!archive->hash_table || !archive->block_table)
 		return NULL;
@@ -298,7 +331,11 @@ static const struct wow_mpq_block *get_block(const struct wow_mpq_archive *archi
 	return NULL;
 }
 
-struct wow_mpq_file *get_file(const struct wow_mpq_archive_view *archive_view, uint32_t bucket, uint32_t name_a, uint32_t name_b)
+struct wow_mpq_file *
+get_file(const struct wow_mpq_archive_view *archive_view,
+         uint32_t bucket,
+         uint32_t name_a,
+         uint32_t name_b)
 {
 	const struct wow_mpq_block *block = get_block(archive_view->archive, bucket, name_a, name_b);
 	if (!block)
@@ -319,7 +356,9 @@ struct wow_mpq_file *get_file(const struct wow_mpq_archive_view *archive_view, u
 	return file;
 }
 
-const struct wow_mpq_block *wow_mpq_get_archive_block(const struct wow_mpq_archive_view *archive_view, const char *filename)
+const struct wow_mpq_block *
+wow_mpq_get_archive_block(const struct wow_mpq_archive_view *archive_view,
+                          const char *filename)
 {
 	uint32_t bucket = wow_mpq_hash_string(filename, WOW_MPQ_CRYPT_OFFSET_HASH_BUCKET);
 	uint32_t name_a = wow_mpq_hash_string(filename, WOW_MPQ_CRYPT_OFFSET_HASH_NAME_A);
@@ -327,7 +366,9 @@ const struct wow_mpq_block *wow_mpq_get_archive_block(const struct wow_mpq_archi
 	return get_block(archive_view->archive, bucket, name_a, name_b);
 }
 
-struct wow_mpq_file *wow_mpq_get_archive_file(const struct wow_mpq_archive_view *archive_view, const char *filename)
+struct wow_mpq_file *
+wow_mpq_get_archive_file(const struct wow_mpq_archive_view *archive_view,
+                         const char *filename)
 {
 	uint32_t bucket = wow_mpq_hash_string(filename, WOW_MPQ_CRYPT_OFFSET_HASH_BUCKET);
 	uint32_t name_a = wow_mpq_hash_string(filename, WOW_MPQ_CRYPT_OFFSET_HASH_NAME_A);
@@ -335,7 +376,9 @@ struct wow_mpq_file *wow_mpq_get_archive_file(const struct wow_mpq_archive_view 
 	return get_file(archive_view, bucket, name_a, name_b);
 }
 
-const struct wow_mpq_block *wow_mpq_get_block(const struct wow_mpq_compound *compound, const char *filename)
+const struct wow_mpq_block *
+wow_mpq_get_block(const struct wow_mpq_compound *compound,
+                  const char *filename)
 {
 	uint32_t bucket = wow_mpq_hash_string(filename, WOW_MPQ_CRYPT_OFFSET_HASH_BUCKET);
 	uint32_t name_a = wow_mpq_hash_string(filename, WOW_MPQ_CRYPT_OFFSET_HASH_NAME_A);
@@ -349,7 +392,9 @@ const struct wow_mpq_block *wow_mpq_get_block(const struct wow_mpq_compound *com
 	return NULL;
 }
 
-struct wow_mpq_file *wow_mpq_get_file(const struct wow_mpq_compound *compound, const char *filename)
+struct wow_mpq_file *
+wow_mpq_get_file(const struct wow_mpq_compound *compound,
+                 const char *filename)
 {
 	uint32_t bucket = wow_mpq_hash_string(filename, WOW_MPQ_CRYPT_OFFSET_HASH_BUCKET);
 	uint32_t name_a = wow_mpq_hash_string(filename, WOW_MPQ_CRYPT_OFFSET_HASH_NAME_A);
@@ -363,7 +408,8 @@ struct wow_mpq_file *wow_mpq_get_file(const struct wow_mpq_compound *compound, c
 	return NULL;
 }
 
-void wow_mpq_file_delete(struct wow_mpq_file *file)
+void
+wow_mpq_file_delete(struct wow_mpq_file *file)
 {
 	if (!file)
 		return;
@@ -371,7 +417,8 @@ void wow_mpq_file_delete(struct wow_mpq_file *file)
 	WOW_FREE(file);
 }
 
-uint32_t wow_mpq_read(struct wow_mpq_file *file, void *data, uint32_t size)
+uint32_t
+wow_mpq_read(struct wow_mpq_file *file, void *data, uint32_t size)
 {
 	if (size > file->size - file->pos)
 		size = file->size - file->pos;
@@ -382,7 +429,8 @@ uint32_t wow_mpq_read(struct wow_mpq_file *file, void *data, uint32_t size)
 	return size;
 }
 
-int32_t wow_mpq_seek(struct wow_mpq_file *file, int32_t offset, int32_t whence)
+int32_t
+wow_mpq_seek(struct wow_mpq_file *file, int32_t offset, int32_t whence)
 {
 	uint32_t base;
 	switch (whence)
@@ -407,7 +455,8 @@ int32_t wow_mpq_seek(struct wow_mpq_file *file, int32_t offset, int32_t whence)
 	return file->pos;
 }
 
-void wow_mpq_normalize_mpq_fn(char *fn, size_t size)
+void
+wow_mpq_normalize_mpq_fn(char *fn, size_t size)
 {
 	(void)size;
 	size_t j = 0;
@@ -426,7 +475,8 @@ void wow_mpq_normalize_mpq_fn(char *fn, size_t size)
 	fn[j] = '\0';
 }
 
-void wow_mpq_normalize_blp_fn(char *fn, size_t size)
+void
+wow_mpq_normalize_blp_fn(char *fn, size_t size)
 {
 	if (!fn[0])
 		return;
@@ -440,7 +490,8 @@ void wow_mpq_normalize_blp_fn(char *fn, size_t size)
 		snprintf(fn + len, size - len, ".BLP");
 }
 
-void wow_mpq_normalize_m2_fn(char *fn, size_t size)
+void
+wow_mpq_normalize_m2_fn(char *fn, size_t size)
 {
 	wow_mpq_normalize_mpq_fn(fn, size);
 	size_t len = strlen(fn);
@@ -453,7 +504,8 @@ void wow_mpq_normalize_m2_fn(char *fn, size_t size)
 	}
 }
 
-uint32_t wow_crypt_table[0x500] =
+uint32_t
+wow_crypt_table[0x500] =
 {
 	0x55C636E2, 0x02BE0170, 0x584B71D4, 0x2984F00E,
 	0xB682C809, 0x91CF876B, 0x775A9C24, 0x597D5CA5,

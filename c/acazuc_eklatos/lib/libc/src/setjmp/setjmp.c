@@ -1,6 +1,7 @@
 #include <setjmp.h>
 
-int setjmp(jmp_buf env)
+int
+setjmp(jmp_buf env)
 {
 	if (__builtin_setjmp(&env.data[0]))
 		return env.val;

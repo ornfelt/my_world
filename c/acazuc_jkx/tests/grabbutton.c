@@ -7,24 +7,34 @@
 #include <stdio.h>
 #include <time.h>
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
+	XSetWindowAttributes swa;
+	XVisualInfo *vi;
+	XGCValues gc_values;
+	Display *display;
+	Window window;
+	Window child;
+	Window root;
+	GC gc;
+	unsigned mask;
+	int nitems;
+
 	(void)argc;
-	Display *display = XOpenDisplay(NULL);
+	display = XOpenDisplay(NULL);
 	if (!display)
 	{
 		fprintf(stderr, "%s: failed to open display\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	int nitems;
-	XVisualInfo *vi = XGetVisualInfo(display, 0, NULL, &nitems);
+	vi = XGetVisualInfo(display, 0, NULL, &nitems);
 	if (!vi)
 	{
 		fprintf(stderr, "%s: failed to get vi\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	Window root = XRootWindow(display, 0);
-	XSetWindowAttributes swa;
+	root = XRootWindow(display, 0);
 	swa.event_mask = ButtonPressMask
 	               | ButtonReleaseMask
 	               | PointerMotionMask
@@ -33,10 +43,19 @@ int main(int argc, char **argv)
 	               | EnterWindowMask
 	               | LeaveWindowMask
 	               | ExposureMask;
-	unsigned mask = CWEventMask;
-	Window window = XCreateWindow(display, root, 0, 0, 640, 480, 0,
-	                              vi->depth, InputOutput, vi->visual,
-	                              mask, &swa);
+	mask = CWEventMask;
+	window = XCreateWindow(display,
+	                       root,
+	                       0,
+	                       0,
+	                       640,
+	                       480,
+	                       0,
+	                       vi->depth,
+	                       InputOutput,
+	                       vi->visual,
+	                       mask,
+	                       &swa);
 	if (!window)
 	{
 		fprintf(stderr, "%s: failed to create window\n", argv[0]);
@@ -47,18 +66,26 @@ int main(int argc, char **argv)
 	XMapWindow(display, window);
 	swa.border_pixel = 0xFF00000;
 	mask |= CWBorderPixel;
-	Window child = XCreateWindow(display, window, 0, 0, 100, 100, 10,
-	                             vi->depth, InputOutput, vi->visual,
-	                             mask, &swa);
+	child = XCreateWindow(display,
+	                      window,
+	                      0,
+	                      0,
+	                      100,
+	                      100,
+	                      10,
+	                      vi->depth,
+	                      InputOutput,
+	                      vi->visual,
+	                      mask,
+	                      &swa);
 	if (!child)
 	{
 		fprintf(stderr, "%s: failed to create child\n", argv[0]);
 		return EXIT_FAILURE;
 	}
 	XMapWindow(display, child);
-	XGCValues gc_values;
 	gc_values.foreground = 0;
-	GC gc = XCreateGC(display, window, GCForeground, &gc_values);
+	gc = XCreateGC(display, window, GCForeground, &gc_values);
 	if (!gc)
 	{
 		fprintf(stderr, "%s: failed to create GC\n", argv[0]);
@@ -71,8 +98,15 @@ int main(int argc, char **argv)
 	float child_y = 0;
 	int cursor_x;
 	int cursor_y;
-	if (!XQueryPointer(display, root, NULL, NULL, &cursor_x, &cursor_y,
-	                   NULL, NULL, NULL))
+	if (!XQueryPointer(display,
+	                   root,
+	                   NULL,
+	                   NULL,
+	                   &cursor_x,
+	                   &cursor_y,
+	                   NULL,
+	                   NULL,
+	                   NULL))
 	{
 		fprintf(stderr, "%s: failed to get cursor position\n", argv[0]);
 		return EXIT_FAILURE;
@@ -80,6 +114,7 @@ int main(int argc, char **argv)
 	while (1)
 	{
 		XEvent event;
+
 		if (XNextEvent(display, &event))
 			continue;
 		if (event.type == Expose)

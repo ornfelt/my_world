@@ -218,27 +218,32 @@ struct ehci_isoc_pipe
 	TAILQ_ENTRY(ehci_isoc_pipe) chain;
 };
 
-static inline uint32_t ehci_read(struct ehci *ehci, uint32_t reg)
+static inline uint32_t
+ehci_read(struct ehci *ehci, uint32_t reg)
 {
 	return pci_r32(ehci->pci_map, ehci->reg_offset + reg);
 }
 
-static inline void ehci_write(struct ehci *ehci, uint32_t reg, uint32_t val)
+static inline void
+ehci_write(struct ehci *ehci, uint32_t reg, uint32_t val)
 {
 	pci_w32(ehci->pci_map, ehci->reg_offset + reg, val);
 }
 
-static inline void ehci_lock(struct ehci *ehci)
+static inline void
+ehci_lock(struct ehci *ehci)
 {
 	mutex_lock(&ehci->mutex);
 }
 
-static inline void ehci_unlock(struct ehci *ehci)
+static inline void
+ehci_unlock(struct ehci *ehci)
 {
 	mutex_unlock(&ehci->mutex);
 }
 
-static struct ehci_itd *itd_alloc(struct ehci *ehci)
+static struct ehci_itd *
+itd_alloc(struct ehci *ehci)
 {
 	struct ehci_itd *itd = TAILQ_LAST(&ehci->free_itd, ehci_itd_head);
 	if (!itd)
@@ -247,14 +252,16 @@ static struct ehci_itd *itd_alloc(struct ehci *ehci)
 	return itd;
 }
 
-static void itd_free(struct ehci *ehci, struct ehci_itd *itd)
+static void
+itd_free(struct ehci *ehci, struct ehci_itd *itd)
 {
 	if (!itd)
 		return;
 	TAILQ_INSERT_TAIL(&ehci->free_itd, itd, chain);
 }
 
-static struct ehci_qtd *qtd_alloc(struct ehci *ehci)
+static struct ehci_qtd *
+qtd_alloc(struct ehci *ehci)
 {
 	struct ehci_qtd *qtd = TAILQ_LAST(&ehci->free_qtd, ehci_qtd_head);
 	if (!qtd)
@@ -263,22 +270,28 @@ static struct ehci_qtd *qtd_alloc(struct ehci *ehci)
 	return qtd;
 }
 
-static void qtd_free(struct ehci *ehci, struct ehci_qtd *qtd)
+static void
+qtd_free(struct ehci *ehci, struct ehci_qtd *qtd)
 {
 	if (!qtd)
 		return;
 	TAILQ_INSERT_TAIL(&ehci->free_qtd, qtd, chain);
 }
 
-static void qtd_enqueue(struct ehci_qtd_head *qtd_list, struct ehci_qtd *qtd)
+static void
+qtd_enqueue(struct ehci_qtd_head *qtd_list, struct ehci_qtd *qtd)
 {
 	if (!TAILQ_EMPTY(qtd_list))
 		TAILQ_LAST(qtd_list, ehci_qtd_head)->next = qtd->paddr;
 	TAILQ_INSERT_TAIL(qtd_list, qtd, chain);
 }
 
-static void qtd_setup(struct ehci_qtd *qtd, uint32_t pid, uint32_t datat,
-                      uint32_t maxlen, uint32_t buffer)
+static void
+qtd_setup(struct ehci_qtd *qtd,
+          uint32_t pid,
+          uint32_t datat,
+          uint32_t maxlen,
+          uint32_t buffer)
 {
 	qtd->next = QTD_NEXT_T;
 	qtd->alt = QTD_NEXT_T;
@@ -307,8 +320,8 @@ static void qtd_setup(struct ehci_qtd *qtd, uint32_t pid, uint32_t datat,
 	qtd->buffer[4] = 0;
 }
 
-static size_t qtd_list_count_bytes(struct ehci_qtd_head *qtd_list,
-                                   int skip_first)
+static size_t
+qtd_list_count_bytes(struct ehci_qtd_head *qtd_list, int skip_first)
 {
 	struct ehci_qtd *qtd;
 	size_t ret = 0;
@@ -327,7 +340,8 @@ static size_t qtd_list_count_bytes(struct ehci_qtd_head *qtd_list,
 	return ret;
 }
 
-static void qtd_list_free(struct ehci *ehci, struct ehci_qtd_head *qtd_list)
+static void
+qtd_list_free(struct ehci *ehci, struct ehci_qtd_head *qtd_list)
 {
 	struct ehci_qtd *qtd;
 
@@ -338,7 +352,8 @@ static void qtd_list_free(struct ehci *ehci, struct ehci_qtd_head *qtd_list)
 	}
 }
 
-static struct ehci_qh *qh_alloc(struct ehci *ehci)
+static struct ehci_qh *
+qh_alloc(struct ehci *ehci)
 {
 	struct ehci_qh *qh = TAILQ_LAST(&ehci->free_qh, ehci_qh_head);
 	if (!qh)
@@ -347,15 +362,18 @@ static struct ehci_qh *qh_alloc(struct ehci *ehci)
 	return qh;
 }
 
-static void qh_free(struct ehci *ehci, struct ehci_qh *qh)
+static void
+qh_free(struct ehci *ehci, struct ehci_qh *qh)
 {
 	if (!qh)
 		return;
 	TAILQ_INSERT_TAIL(&ehci->free_qh, qh, chain);
 }
 
-static void qh_setup(struct ehci_qh *qh, const struct usb_device *device,
-                     const struct ehci_qtd_head *qtd_list)
+static void
+qh_setup(struct ehci_qh *qh,
+         const struct usb_device *device,
+         const struct ehci_qtd_head *qtd_list)
 {
 	struct ehci_qtd *first = TAILQ_FIRST(qtd_list);
 
@@ -379,7 +397,8 @@ static void qh_setup(struct ehci_qh *qh, const struct usb_device *device,
 	__atomic_store_n(&qh->status, first->status, __ATOMIC_SEQ_CST); /* keep last as it contains the active bit */
 }
 
-static int qh_poll(struct ehci_qh *qh)
+static int
+qh_poll(struct ehci_qh *qh)
 {
 	uint16_t status = *(volatile uint16_t*)&qh->status;
 	if (status & QTD_STS_ACTIVE)
@@ -390,7 +409,8 @@ static int qh_poll(struct ehci_qh *qh)
 	return 0;
 }
 
-static int qh_wait(struct ehci *ehci, struct ehci_qh *qh)
+static int
+qh_wait(struct ehci *ehci, struct ehci_qh *qh)
 {
 	int ret;
 
@@ -405,7 +425,8 @@ static int qh_wait(struct ehci *ehci, struct ehci_qh *qh)
 	}
 }
 
-static void async_qh_enqueue(struct ehci *ehci, struct ehci_qh *qh)
+static void
+async_qh_enqueue(struct ehci *ehci, struct ehci_qh *qh)
 {
 	if (TAILQ_EMPTY(&ehci->async_qh))
 	{
@@ -423,7 +444,8 @@ static void async_qh_enqueue(struct ehci *ehci, struct ehci_qh *qh)
 	__atomic_store_n(&last->link, QH_LINK_QH | qh->paddr, __ATOMIC_SEQ_CST);
 }
 
-static void async_qh_dequeue(struct ehci *ehci, struct ehci_qh *qh)
+static void
+async_qh_dequeue(struct ehci *ehci, struct ehci_qh *qh)
 {
 	struct ehci_qh *first = TAILQ_FIRST(&ehci->async_qh);
 	struct ehci_qh *last = TAILQ_LAST(&ehci->async_qh, ehci_qh_head);
@@ -447,19 +469,26 @@ static void async_qh_dequeue(struct ehci *ehci, struct ehci_qh *qh)
 	TAILQ_REMOVE(&ehci->async_qh, qh, chain);
 }
 
-static void periodic_qh_enqueue(struct ehci *ehci, struct ehci_qh *qh)
+static void
+periodic_qh_enqueue(struct ehci *ehci, struct ehci_qh *qh)
 {
 	//
 }
 
-static void periodic_qh_dequeue(struct ehci *ehci, struct ehci_qh *qh)
+static void
+periodic_qh_dequeue(struct ehci *ehci, struct ehci_qh *qh)
 {
 	//
 }
 
-static int setup_data_qtd_list(struct ehci *ehci, struct ehci_qtd_head *qtd_list,
-                               uint32_t pid, uint32_t datat, uint32_t data,
-                               uint32_t size, size_t max_packet_size)
+static int
+setup_data_qtd_list(struct ehci *ehci,
+                    struct ehci_qtd_head *qtd_list,
+                    uint32_t pid,
+                    uint32_t datat,
+                    uint32_t data,
+                    uint32_t size,
+                    size_t max_packet_size)
 {
 	struct ehci_qtd *qtd;
 	size_t n;
@@ -482,10 +511,13 @@ static int setup_data_qtd_list(struct ehci *ehci, struct ehci_qtd_head *qtd_list
 	return 0;
 }
 
-static ssize_t ehci_ctrl_transfer(struct usb_hcd *hcd,
-                                  struct usb_device *device,
-                                  int in_out, uint32_t req,
-                                  uint32_t data, size_t size)
+static ssize_t
+ehci_ctrl_transfer(struct usb_hcd *hcd,
+                   struct usb_device *device,
+                   int in_out,
+                   uint32_t req,
+                   uint32_t data,
+                   size_t size)
 {
 	struct ehci_qtd_head qtd_list;
 	struct ehci_qtd *qtd;
@@ -551,7 +583,8 @@ end:
 	return ret;
 }
 
-static void ehci_intr_pipe_free(struct ehci *ehci, struct ehci_intr_pipe *pipe)
+static void
+ehci_intr_pipe_free(struct ehci *ehci, struct ehci_intr_pipe *pipe)
 {
 	if (!pipe)
 		return;
@@ -560,7 +593,8 @@ static void ehci_intr_pipe_free(struct ehci *ehci, struct ehci_intr_pipe *pipe)
 	free(pipe);
 }
 
-static int ehci_intr_transfer(struct usb_intr_pipe *usb_pipe)
+static int
+ehci_intr_transfer(struct usb_intr_pipe *usb_pipe)
 {
 	struct usb_endpoint *endpoint = usb_pipe->endpoint;
 	struct usb_device *device = usb_pipe->device;
@@ -615,14 +649,16 @@ err:
 	return ret;
 }
 
-static int ehci_isoc_transfer(struct usb_isoc_pipe *usb_pipe)
+static int
+ehci_isoc_transfer(struct usb_isoc_pipe *usb_pipe)
 {
 	(void)usb_pipe;
 	/* XXX */
 	return -EINVAL;
 }
 
-static int ehci_get_addr(struct usb_hcd *hcd, uint8_t *addr)
+static int
+ehci_get_addr(struct usb_hcd *hcd, uint8_t *addr)
 {
 	struct ehci *ehci = hcd->userdata;
 
@@ -634,7 +670,8 @@ static int ehci_get_addr(struct usb_hcd *hcd, uint8_t *addr)
 	return 0;
 }
 
-static void setup_port(struct ehci *ehci, uint8_t port)
+static void
+setup_port(struct ehci *ehci, uint8_t port)
 {
 	static const struct timespec rst_delay = {0, 100000000};
 	static const struct timespec pe_delay = {0, 1000000};
@@ -667,7 +704,8 @@ static void setup_port(struct ehci *ehci, uint8_t port)
 	usb_device_probe(ehci->devices[port]);
 }
 
-static int setup_frame_list(struct ehci *ehci)
+static int
+setup_frame_list(struct ehci *ehci)
 {
 	struct ehci_itd *itd;
 	struct ehci_qtd *qtd;
@@ -726,7 +764,8 @@ static int setup_frame_list(struct ehci *ehci)
 	return 0;
 }
 
-static const struct usb_hcd_op op =
+static const struct usb_hcd_op
+op =
 {
 	.get_addr = ehci_get_addr,
 	.ctrl_transfer = ehci_ctrl_transfer,
@@ -734,7 +773,8 @@ static const struct usb_hcd_op op =
 	.isoc_transfer = ehci_isoc_transfer,
 };
 
-static void poll_intr_pipes(struct ehci *ehci)
+static void
+poll_intr_pipes(struct ehci *ehci)
 {
 	struct ehci_intr_pipe_head completed;
 	struct ehci_intr_pipe *pipe;
@@ -767,11 +807,13 @@ static void poll_intr_pipes(struct ehci *ehci)
 	ehci_lock(ehci);
 }
 
-static void poll_isoc_pipes(struct ehci *ehci)
+static void
+poll_isoc_pipes(struct ehci *ehci)
 {
 }
 
-static void int_handler(void *userptr)
+static void
+int_handler(void *userptr)
 {
 	struct ehci *ehci = userptr;
 	uint32_t status = ehci_read(ehci, REG_USBSTS);
@@ -789,7 +831,8 @@ static void int_handler(void *userptr)
 	ehci_unlock(ehci);
 }
 
-void ehci_free(struct ehci *ehci)
+void
+ehci_free(struct ehci *ehci)
 {
 	if (!ehci)
 		return;
@@ -806,7 +849,8 @@ void ehci_free(struct ehci *ehci)
 	free(ehci);
 }
 
-int init_pci(struct pci_device *device, void *userdata)
+int
+init_pci(struct pci_device *device, void *userdata)
 {
 	struct ehci *ehci = NULL;
 	int ret;
@@ -859,7 +903,8 @@ err:
 	return ret;
 }
 
-int init(void)
+int
+init(void)
 {
 	pci_probe_progif(PCI_CLASS_SERIAL_BUS,
 	                 PCI_SUBCLASS_SERIAL_BUS_USB,
@@ -868,11 +913,13 @@ int init(void)
 	return 0;
 }
 
-void fini(void)
+void
+fini(void)
 {
 }
 
-struct kmod_info kmod =
+struct kmod_info
+kmod =
 {
 	.magic = KMOD_MAGIC,
 	.version = 1,

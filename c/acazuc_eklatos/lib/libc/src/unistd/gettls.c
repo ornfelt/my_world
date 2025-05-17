@@ -2,7 +2,8 @@
 
 #include <unistd.h>
 
-void *gettls(void)
+void *
+gettls(void)
 {
 	return (void*)syscall0(SYS_gettls);
 }

@@ -4,7 +4,8 @@
 #include <stdio.h>
 #include <ctype.h>
 
-static int class_match(const char *pattern, size_t *i, char c)
+static int
+class_match(const char *pattern, size_t *i, char c)
 {
 	int neg = 0;
 	if (pattern[*i] == '!')
@@ -85,7 +86,8 @@ end:
 	}
 }
 
-static int match(const char *pattern, const char *str, int flags)
+static int
+match(const char *pattern, const char *str, int flags)
 {
 	size_t n = 0;
 	for (size_t i = 0; pattern[i]; ++i)
@@ -165,7 +167,8 @@ static int match(const char *pattern, const char *str, int flags)
 	return 0;
 }
 
-int fnmatch(const char *pattern, const char *str, int flags)
+int
+fnmatch(const char *pattern, const char *str, int flags)
 {
 	if ((flags & FNM_PERIOD) && str[0] == '.')
 	{

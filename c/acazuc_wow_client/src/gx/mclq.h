@@ -13,7 +13,8 @@
 
 #include <stdbool.h>
 
-#define GX_MCLQ_LIQUIDS_NB 4
+#define GX_MCLQ_LIQUIDS_NB  4
+#define GX_MCLQ_WATER_WIDTH 256
 
 struct gx_mclq_init_data;
 struct wow_adt_file;
@@ -30,9 +31,20 @@ struct gx_mclq_batch_frame
 	bool culled;
 };
 
+struct gx_mclq_water
+{
+	float data[RENDER_FRAMES_COUNT][GX_MCLQ_WATER_WIDTH * GX_MCLQ_WATER_WIDTH];
+	uint8_t tex_data[RENDER_FRAMES_COUNT][GX_MCLQ_WATER_WIDTH * GX_MCLQ_WATER_WIDTH];
+	uint8_t id[RENDER_FRAMES_COUNT];
+	gfx_texture_t textures[RENDER_FRAMES_COUNT];
+	uint64_t last_update;
+	uint8_t revision;
+};
+
 struct gx_mclq_batch
 {
 	struct gx_mclq_batch_frame frames[RENDER_FRAMES_COUNT];
+	struct gx_mclq_water *water;
 #ifdef WITH_DEBUG_RENDERING
 	struct gx_aabb gx_aabb;
 #endif
@@ -63,6 +75,7 @@ struct gx_mclq_frame
 {
 	struct mat4f mvp;
 	struct mat4f mv;
+	struct mat4f m;
 };
 
 struct gx_mclq

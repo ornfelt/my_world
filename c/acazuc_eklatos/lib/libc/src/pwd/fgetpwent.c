@@ -4,21 +4,24 @@
 #include <errno.h>
 #include <pwd.h>
 
-struct passwd *fgetpwent(FILE *fp)
+struct passwd *
+fgetpwent(FILE *fp)
 {
 	char *line = NULL;
 	size_t line_size = 0;
-	ssize_t res = getline(&line, &line_size, fp);
-	if (res < 0 && errno)
+	ssize_t ret;
+
+	ret = getline(&line, &line_size, fp);
+	if (ret < 0 && errno)
 	{
-		errno = res;
+		errno = ret;
 		free(line);
 		return NULL;
 	}
-	res = parse_pwline(&pwd_ent, pwd_buf, sizeof(pwd_buf), line);
-	if (res)
+	ret = parse_pwline(&pwd_ent, pwd_buf, sizeof(pwd_buf), line);
+	if (ret)
 	{
-		errno = res;
+		errno = ret;
 		free(line);
 		return NULL;
 	}

@@ -11,7 +11,8 @@
 #include <pwd.h>
 #include <grp.h>
 
-time_t file_time(const struct env *env, const struct stat *st)
+time_t
+file_time(const struct env *env, const struct stat *st)
 {
 	if (env->opt & OPT_u)
 		return st->st_atime;
@@ -20,7 +21,8 @@ time_t file_time(const struct env *env, const struct stat *st)
 	return st->st_mtime;
 }
 
-void free_file(struct file *file)
+void
+free_file(struct file *file)
 {
 	if (!file)
 		return;
@@ -29,8 +31,8 @@ void free_file(struct file *file)
 	free(file);
 }
 
-static void load_date(struct file *file, struct env *env,
-                      const struct stat *st)
+static void
+load_date(struct file *file, struct env *env, const struct stat *st)
 {
 	char *raw_time;
 	time_t current_time;
@@ -56,7 +58,8 @@ static void load_date(struct file *file, struct env *env,
 		         raw_time + 4, 5, raw_time + raw_len - 6);
 }
 
-static char get_perm_0(mode_t mode)
+static char
+get_perm_0(mode_t mode)
 {
 	if (S_ISLNK(mode))
 		return 'l';
@@ -73,7 +76,8 @@ static char get_perm_0(mode_t mode)
 	return '-';
 }
 
-static char get_perm_3(mode_t mode)
+static char
+get_perm_3(mode_t mode)
 {
 	if (mode & S_ISUID)
 		return mode & S_IXUSR ? 's' : 'S';
@@ -81,7 +85,8 @@ static char get_perm_3(mode_t mode)
 		return mode & S_IXUSR ? 'x' : '-';
 }
 
-static char get_perm_6(mode_t mode)
+static char
+get_perm_6(mode_t mode)
 {
 	if (mode & S_ISGID)
 		return mode & S_IXGRP ? 's' : 'S';
@@ -89,7 +94,8 @@ static char get_perm_6(mode_t mode)
 		return mode & S_IXGRP ? 'x' : '-';
 }
 
-static char get_perm_9(mode_t mode)
+static char
+get_perm_9(mode_t mode)
 {
 	if (mode & S_ISVTX)
 		return mode & S_IXOTH ? 't' : 'T';
@@ -97,7 +103,8 @@ static char get_perm_9(mode_t mode)
 		return mode & S_IXOTH ? 'x' : '-';
 }
 
-static void load_perms(struct file *file, mode_t mode)
+static void
+load_perms(struct file *file, mode_t mode)
 {
 	file->perms[0] = get_perm_0(mode);
 	file->perms[1] = mode & S_IRUSR ? 'r' : '-';
@@ -112,7 +119,8 @@ static void load_perms(struct file *file, mode_t mode)
 	file->perms[10] = '\0';
 }
 
-static void load_size_n(struct file *file, unsigned v, const char *unit)
+static void
+load_size_n(struct file *file, unsigned v, const char *unit)
 {
 	if (v < 100)
 		snprintf(file->size, sizeof(file->size), "%u.%u%s",
@@ -121,8 +129,8 @@ static void load_size_n(struct file *file, unsigned v, const char *unit)
 		snprintf(file->size, sizeof(file->size), "%u%s", v / 10, unit);
 }
 
-static void load_size(struct env *env, struct file *file,
-                      const struct stat *st)
+static void
+load_size(struct env *env, struct file *file, const struct stat *st)
 {
 	if (!(env->opt & OPT_h))
 	{
@@ -147,7 +155,8 @@ static void load_size(struct env *env, struct file *file,
 		snprintf(file->size, sizeof(file->size), "%ld", (long)st->st_size);
 }
 
-static void setinfos(struct env *env, struct file *file, const struct stat *st)
+static void
+setinfos(struct env *env, struct file *file, const struct stat *st)
 {
 	if (env->opt & OPT_n)
 	{
@@ -180,9 +189,13 @@ static void setinfos(struct env *env, struct file *file, const struct stat *st)
 	load_date(file, env, st);
 }
 
-static void load_symb(struct env *env, struct file *file, const char *name,
-                      const char *rpath, const struct stat *st,
-                      struct dir *dir)
+static void
+load_symb(struct env *env,
+          struct file *file,
+          const char *name,
+          const char *rpath,
+          const struct stat *st,
+          struct dir *dir)
 {
 	struct stat lst;
 	size_t len;
@@ -196,14 +209,18 @@ static void load_symb(struct env *env, struct file *file, const char *name,
 	linkname = malloc(len);
 	if (!linkname)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", env->progname, strerror(errno));
+		fprintf(stderr, "%s: malloc: %s\n",
+		        env->progname,
+		        strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 	r = readlink(rpath, linkname, len);
 	if (r == -1)
 	{
 		fprintf(stderr, "%s: readlink(%s): %s\n",
-		        env->progname, rpath, strerror(errno));
+		        env->progname,
+		        rpath,
+		        strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 	if ((size_t)r >= len)
@@ -218,8 +235,11 @@ static void load_symb(struct env *env, struct file *file, const char *name,
 		file->lnk_mode = lst.st_mode;
 }
 
-int load_file(struct env *env, struct file *file, const char *name,
-              struct dir *dir)
+int
+load_file(struct env *env,
+          struct file *file,
+          const char *name,
+          struct dir *dir)
 {
 	struct stat st;
 	char path[MAXPATHLEN];

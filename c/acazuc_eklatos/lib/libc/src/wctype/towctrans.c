@@ -8,7 +8,8 @@ static wint_t (*trans_fn[])(wint_t) =
 	[WCTRANS_TOUPPER] = towupper,
 };
 
-wint_t towctrans(wint_t wc, wctrans_t trans)
+wint_t
+towctrans(wint_t wc, wctrans_t trans)
 {
 	if (trans >= sizeof(trans_fn) / sizeof(*trans_fn))
 		return 0;

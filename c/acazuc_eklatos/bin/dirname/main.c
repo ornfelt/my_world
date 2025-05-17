@@ -5,11 +5,13 @@
 #include <string.h>
 #include <stdio.h>
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
+	char buf[MAXPATHLEN];
+
 	for (int i = 1; i < argc; ++i)
 	{
-		char buf[MAXPATHLEN];
 		if (strlcpy(buf, argv[i], sizeof(buf)) >= sizeof(buf))
 		{
 			fprintf(stderr, "%s: argument too long\n", argv[0]);

@@ -1,6 +1,7 @@
 #include <mntent.h>
 
-int endmntent(FILE *fp)
+int
+endmntent(FILE *fp)
 {
 	if (fp)
 		fclose(fp);

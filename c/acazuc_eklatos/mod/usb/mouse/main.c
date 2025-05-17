@@ -8,7 +8,8 @@
 #include <tty.h>
 #include <mem.h>
 
-static const struct usb_itf_probe probes[] =
+static const struct usb_itf_probe
+probes[] =
 {
 	{USB_CLASS_HID, 1, 2},
 };
@@ -22,7 +23,8 @@ struct usb_mouse
 	struct evdev *evdev;
 };
 
-static void intr_pipe_fn(struct usb_intr_pipe *pipe, ssize_t ret)
+static void
+intr_pipe_fn(struct usb_intr_pipe *pipe, ssize_t ret)
 {
 	struct usb_mouse *mouse = pipe->userdata;
 	uint8_t *data = pipe->buf->data;
@@ -48,7 +50,8 @@ static void intr_pipe_fn(struct usb_intr_pipe *pipe, ssize_t ret)
 		ev_send_scroll_event(mouse->evdev, 0, (int8_t)data[3]);
 }
 
-static void usb_mouse_free(struct usb_mouse *mouse)
+static void
+usb_mouse_free(struct usb_mouse *mouse)
 {
 	if (!mouse)
 		return;
@@ -57,8 +60,10 @@ static void usb_mouse_free(struct usb_mouse *mouse)
 	free(mouse);
 }
 
-static int usb_init(struct usb_device *device, struct usb_interface *interface,
-                    void *userdata)
+static int
+usb_init(struct usb_device *device,
+         struct usb_interface *interface,
+         void *userdata)
 {
 	struct usb_mouse *mouse = NULL;
 	ssize_t ret;
@@ -117,7 +122,8 @@ err:
 	return ret;
 }
 
-int init(void)
+int
+init(void)
 {
 	int ret;
 
@@ -132,11 +138,13 @@ int init(void)
 	return 0;
 }
 
-void fini(void)
+void
+fini(void)
 {
 }
 
-struct kmod_info kmod =
+struct kmod_info
+kmod =
 {
 	.magic = KMOD_MAGIC,
 	.version = 1,

@@ -3,10 +3,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
+	Display *display;
+
 	(void)argc;
-	Display *display = XOpenDisplay(NULL);
+	display = XOpenDisplay(NULL);
 	if (!display)
 	{
 		fprintf(stderr, "%s: failed to open display\n", argv[0]);
@@ -17,7 +20,14 @@ int main(int argc, char **argv)
 		fprintf(stderr, "%s x y\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	XWarpPointer(display, None, DefaultRootWindow(display), 0, 0, 0, 0,
-	             strtol(argv[1], NULL, 0), strtol(argv[2], NULL, 0));
+	XWarpPointer(display,
+	             None,
+	             DefaultRootWindow(display),
+	             0,
+	             0,
+	             0,
+	             0,
+	             strtol(argv[1], NULL, 0),
+	             strtol(argv[2], NULL, 0));
 	return EXIT_SUCCESS;
 }

@@ -5,7 +5,8 @@
 
 #include <stdlib.h>
 
-Status XdbeQueryExtension(Display *display, int *major, int *minor)
+Status
+XdbeQueryExtension(Display *display, int *major, int *minor)
 {
 	REPLY_REQ(display, dbe_query_version,
 	          XCB_DBE_MAJOR_VERSION,

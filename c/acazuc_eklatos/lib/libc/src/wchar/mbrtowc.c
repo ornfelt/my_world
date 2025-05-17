@@ -1,7 +1,8 @@
 #include <wchar.h>
 #include <errno.h>
 
-static int utf8_codepoint_length(const char *s)
+static int
+utf8_codepoint_length(const char *s)
 {
 	if ((*s & 0x80) == 0x00)
 		return 1;
@@ -14,26 +15,30 @@ static int utf8_codepoint_length(const char *s)
 	return -1;
 }
 
-static int utf8_check1(const char *s)
+static int
+utf8_check1(const char *s)
 {
 	(void)s;
 	return 0;
 }
 
-static int utf8_check2(const char *s)
+static int
+utf8_check2(const char *s)
 {
 	return !(s[0] & 0x1E)
 	    || (s[1] & 0xC0) != 0x80;
 }
 
-static int utf8_check3(const char *s)
+static int
+utf8_check3(const char *s)
 {
 	return !(s[0] & 0xF)
 	    || (s[1] & 0xC0) != 0x80
 	    || (s[2] & 0xC0) != 0x80;
 }
 
-static int utf8_check4(const char *s)
+static int
+utf8_check4(const char *s)
 {
 	return (!(s[0] & 0x7) && !(s[1] & 0x30))
 	    || (s[1] & 0xC0) != 0x80
@@ -41,7 +46,8 @@ static int utf8_check4(const char *s)
 	    || (s[3] & 0xC0) != 0x80;
 }
 
-size_t mbrtowc(wchar_t *wc, const char *s, size_t n, mbstate_t *ps)
+size_t
+mbrtowc(wchar_t *wc, const char *s, size_t n, mbstate_t *ps)
 {
 	if (!n)
 		return (size_t)-2;

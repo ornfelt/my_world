@@ -34,7 +34,8 @@ do \
 	} \
 } while (0)
 
-static void sig_handler(struct env *env, int signum)
+static void
+sig_handler(struct env *env, int signum)
 {
 	const struct dbg_signal *signal_def;
 	siginfo_t siginfo;
@@ -53,7 +54,8 @@ static void sig_handler(struct env *env, int signum)
 	       siginfo.si_value.sival_int, siginfo.si_addr);
 }
 
-static void setemptyset(void)
+static void
+setemptyset(void)
 {
 	sigset_t empty;
 
@@ -61,7 +63,8 @@ static void setemptyset(void)
 	sigprocmask(SIG_SETMASK, &empty, NULL);
 }
 
-static int syscall_wait(struct env *env, int *exit_status, int *exit_return)
+static int
+syscall_wait(struct env *env, int *exit_status, int *exit_return)
 {
 	sigset_t blocker;
 	int wstatus;
@@ -95,19 +98,22 @@ static int syscall_wait(struct env *env, int *exit_status, int *exit_return)
 	}
 }
 
-static void sigint_handler(int signum)
+static void
+sigint_handler(int signum)
 {
-	(void)signum;
-	if (g_env->colored)
-		printf("\033[0m");
-	printf("Process %" PRId32 " detached\n", g_env->child);
-	fflush(stdout);
 	struct env *env = g_env;
-	PTRACE_ASSERT(PTRACE_DETACH, g_env->child, 0, SIGINT);
+
+	(void)signum;
+	if (env->colored)
+		printf("\033[0m");
+	printf("Process %" PRId32 " detached\n", env->child);
+	fflush(stdout);
+	PTRACE_ASSERT(PTRACE_DETACH, env->child, 0, SIGINT);
 	exit(EXIT_SUCCESS);
 }
 
-static int peekdata(void *data, size_t size, uintptr_t addr, void *userptr)
+static int
+peekdata(void *data, size_t size, uintptr_t addr, void *userptr)
 {
 	struct env *env = userptr;
 	ssize_t i;
@@ -134,14 +140,23 @@ static int peekdata(void *data, size_t size, uintptr_t addr, void *userptr)
 	return 0;
 }
 
-static void print_arg(struct env *env, const struct dbg_syscall *syscall,
-                      const uintptr_t *values, size_t param)
+static void
+print_arg(struct env *env,
+          const struct dbg_syscall *syscall,
+          const uintptr_t *values,
+          size_t param)
 {
+	char buf[4096];
+
 	if (env->colored)
 		printf("\033[1;34m");
-	char buf[4096];
-	if (dbg_syscall_arg_print(buf, sizeof(buf), syscall, values, param,
-	                          peekdata, env))
+	if (dbg_syscall_arg_print(buf,
+	                          sizeof(buf),
+	                          syscall,
+	                          values,
+	                          param,
+	                          peekdata,
+	                          env))
 		printf("/* INVALID DATA */");
 	else
 		printf("%s", buf);
@@ -149,10 +164,13 @@ static void print_arg(struct env *env, const struct dbg_syscall *syscall,
 		printf("\033[0m");
 }
 
-static void print_args(struct env *env, const struct user_regs_struct *regs,
-                       const struct dbg_syscall *syscall)
+static void
+print_args(struct env *env,
+           const struct user_regs_struct *regs,
+           const struct dbg_syscall *syscall)
 {
 	uintptr_t args[6];
+
 #if defined(__i386__)
 	args[0] = regs->ebx;
 	args[1] = regs->ecx;
@@ -212,9 +230,10 @@ static void print_args(struct env *env, const struct user_regs_struct *regs,
 	}
 }
 
-static void print_syscall_call(struct env *env,
-                               const struct dbg_syscall *syscall_def,
-                               const struct user_regs_struct *regs)
+static void
+print_syscall_call(struct env *env,
+                   const struct dbg_syscall *syscall_def,
+                   const struct user_regs_struct *regs)
 {
 	size_t args_nb;
 
@@ -232,14 +251,16 @@ static void print_syscall_call(struct env *env,
 	fflush(stdout);
 }
 
-static void print_syscall_ret(struct env *env,
-                              const struct dbg_syscall *syscall_def,
-                              const struct user_regs_struct *regs)
+static void
+print_syscall_ret(struct env *env,
+                  const struct dbg_syscall *syscall_def,
+                  const struct user_regs_struct *regs)
 {
+	uintptr_t ret;
+
 	if (env->colored)
 		printf("\033[1;37m");
 	printf(") = ");
-	uintptr_t ret;
 #if defined(__i386__)
 	ret = regs->eax;
 #elif defined(__x86_64__)
@@ -287,7 +308,8 @@ static void print_syscall_ret(struct env *env,
 	fflush(stdout);
 }
 
-static void parent_launch(struct env *env)
+static void
+parent_launch(struct env *env)
 {
 	struct user_regs_struct regs;
 	int calling;
@@ -374,7 +396,8 @@ static void parent_launch(struct env *env)
 	fflush(stdout);
 }
 
-static int child_launch(struct env *env, char **argv)
+static int
+child_launch(struct env *env, char **argv)
 {
 	env->child = fork();
 	if (env->child == -1)
@@ -395,13 +418,15 @@ static int child_launch(struct env *env, char **argv)
 	return 0;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-h] PROGRAM ARGS\n", progname);
 	printf("-h: show this help\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

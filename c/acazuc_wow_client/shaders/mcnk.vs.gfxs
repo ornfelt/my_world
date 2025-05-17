@@ -12,6 +12,7 @@ out 5 vec2 uv2
 out 6 vec2 uv3
 out 7 vec2 uv4
 out 8 int id
+out 9 vec4 shadow_position
 
 struct mesh_block_st
 {
@@ -32,6 +33,7 @@ constant 1 model_block
 	mat4 v
 	mat4 mv
 	mat4 mvp
+	mat4 shadow_mvp
 	float offset_time
 }
 
@@ -43,6 +45,7 @@ constant 2 scene_block
 	vec4 specular_color
 	vec4 fog_color
 	vec2 fog_range
+	ivec4 settings
 }
 
 vs_output gfx_main(vs_input gfx_input)
@@ -61,5 +64,6 @@ vs_output gfx_main(vs_input gfx_input)
 	gfx_output.uv3 = -(gfx_input.uv + mesh_blocks[offset].uv_offset2 * offset_time).yx * 8.0;
 	gfx_output.uv4 = -(gfx_input.uv + mesh_blocks[offset].uv_offset3 * offset_time).yx * 8.0;
 	gfx_output.id = offset;
+	gfx_output.shadow_position = mul(position_fixed, shadow_mvp);
 	return gfx_output;
 }

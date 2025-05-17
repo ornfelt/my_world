@@ -2,9 +2,11 @@
 #include <errno.h>
 #include <wchar.h>
 
-int fputws_unlocked(const wchar_t *ws, FILE *fp)
+int
+fputws_unlocked(const wchar_t *ws, FILE *fp)
 {
 	int total = 0;
+
 	while (*ws)
 	{
 		char buf[4096];

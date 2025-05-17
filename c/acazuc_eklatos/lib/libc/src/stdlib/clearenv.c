@@ -2,12 +2,16 @@
 
 #include <stdlib.h>
 
-int clearenv(void)
+int
+clearenv(void)
 {
-	char **newenv = calloc(1, sizeof(*newenv));
+	char **newenv;
+	char **oldenv;
+
+	newenv = calloc(1, sizeof(*newenv));
 	if (!newenv)
 		return 1;
-	char **oldenv = environ;
+	oldenv = environ;
 	environ = newenv;
 	if (!oldenv)
 		return 0;

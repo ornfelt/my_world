@@ -35,7 +35,8 @@
 #include <time.h>
 #include <poll.h>
 
-static void pushstr(char **buf, size_t *size, const char *s)
+static void
+pushstr(char **buf, size_t *size, const char *s)
 {
 	if (!*buf || !*size)
 		return;
@@ -57,9 +58,12 @@ struct bitmask_value
 #define BITMASK_VALUE(v) {v, #v}
 #define BITMASK_END {0, ""}
 
-static int print_bitmask(char *buf, size_t size,
-                         const struct bitmask_value *values,
-                         uintptr_t value, int first)
+static int
+print_bitmask(char *buf,
+              size_t size,
+              const struct bitmask_value *values,
+              uintptr_t value,
+              int first)
 {
 	for (size_t i = 0;;  ++i)
 	{
@@ -102,9 +106,11 @@ struct enum_value
 #define ENUM_VALUE(v) {v, #v}
 #define ENUM_END {0, ""}
 
-static void print_enum(char *buf, size_t size,
-                       const struct enum_value *values,
-                       uintptr_t value)
+static void
+print_enum(char *buf,
+           size_t size,
+           const struct enum_value *values,
+           uintptr_t value)
 {
 	for (size_t i = 0;; ++i)
 	{
@@ -119,8 +125,12 @@ static void print_enum(char *buf, size_t size,
 	snprintf(buf, size, "0x%zx", value);
 }
 
-static int read_str(char **buf, size_t *size, uintptr_t value,
-                    dbg_peekdata_fn_t peekdata, void *userptr)
+static int
+read_str(char **buf,
+         size_t *size,
+         uintptr_t value,
+         dbg_peekdata_fn_t peekdata,
+         void *userptr)
 {
 	ssize_t i;
 	uintptr_t tmp;
@@ -156,7 +166,10 @@ static int read_str(char **buf, size_t *size, uintptr_t value,
 			}
 			else
 			{
-				snprintf(tmpbuf, sizeof(tmpbuf), "\\x%02x", (uint8_t)ptr[j]);
+				snprintf(tmpbuf,
+				         sizeof(tmpbuf),
+				         "\\x%02x",
+				         (uint8_t)ptr[j]);
 			}
 			pushstr(buf, size, tmpbuf);
 		}
@@ -168,8 +181,12 @@ end:
 	return 0;
 }
 
-static int read_stra(char *buf, size_t size, uintptr_t value,
-                     dbg_peekdata_fn_t peekdata, void *userptr)
+static int
+read_stra(char *buf,
+          size_t size,
+          uintptr_t value,
+          dbg_peekdata_fn_t peekdata,
+          void *userptr)
 {
 	size_t i;
 	uintptr_t tmp;
@@ -195,34 +212,50 @@ static int read_stra(char *buf, size_t size, uintptr_t value,
 	return 0;
 }
 
-static void print_rdev(char *buf, size_t size, dev_t rdev)
+static void
+print_rdev(char *buf, size_t size, dev_t rdev)
 {
-	snprintf(buf, size, "{%" PRIu32 ", %" PRIu32 "}", (rdev >> 16) & 0xFFFF, rdev & 0xFFFF);
+	snprintf(buf,
+	         size,
+	         "{%" PRIu32 ", %" PRIu32 "}",
+	         (rdev >> 16) & 0xFFFF,
+	         rdev & 0xFFFF);
 }
 
-static void print_timespec(char *buf, size_t size, struct timespec *ts)
+static void
+print_timespec(char *buf, size_t size, struct timespec *ts)
 {
-	snprintf(buf, size, "{tv_sec=%" PRId64 ", tv_nsec=%" PRId64 "}",
-	         ts->tv_sec, ts->tv_nsec);
+	snprintf(buf,
+	         size,
+	         "{tv_sec=%" PRId64 ", tv_nsec=%" PRId64 "}",
+	         ts->tv_sec,
+	         ts->tv_nsec);
 }
 
-static void print_uid(char *buf, size_t size, uid_t uid)
+static void
+print_uid(char *buf, size_t size, uid_t uid)
 {
 	snprintf(buf, size, "%" PRId32, uid);
 }
 
-static void print_gid(char *buf, size_t size, gid_t gid)
+static void
+print_gid(char *buf, size_t size, gid_t gid)
 {
 	snprintf(buf, size, "%" PRId32, gid);
 }
 
-static void print_timeval(char *buf, size_t size, struct timeval *tv)
+static void
+print_timeval(char *buf, size_t size, struct timeval *tv)
 {
-	snprintf(buf, size, "{tv_sec=%" PRId64 ", tv_usec=%" PRId64 "}",
-	         tv->tv_sec, tv->tv_usec);
+	snprintf(buf,
+	         size,
+	         "{tv_sec=%" PRId64 ", tv_usec=%" PRId64 "}",
+	         tv->tv_sec,
+	         tv->tv_usec);
 }
 
-static void print_sigset(char *buf, size_t size, const sigset_t *sigset)
+static void
+print_sigset(char *buf, size_t size, const sigset_t *sigset)
 {
 	if (buf && size)
 		*buf = '\0';
@@ -245,7 +278,8 @@ static void print_sigset(char *buf, size_t size, const sigset_t *sigset)
 	pushstr(&buf, &size, "]");
 }
 
-static const struct enum_value ptrace_request_values[] =
+static const struct enum_value
+ptrace_request_values[] =
 {
 	ENUM_VALUE(PTRACE_TRACEME),
 	ENUM_VALUE(PTRACE_PEEKTEXT),
@@ -270,7 +304,8 @@ static const struct enum_value ptrace_request_values[] =
 	ENUM_END
 };
 
-static const struct enum_value sighow_values[] =
+static const struct enum_value
+sighow_values[] =
 {
 	ENUM_VALUE(SIG_BLOCK),
 	ENUM_VALUE(SIG_UNBLOCK),
@@ -278,7 +313,8 @@ static const struct enum_value sighow_values[] =
 	ENUM_END
 };
 
-static const struct enum_value prio_which_values[] =
+static const struct enum_value
+prio_which_values[] =
 {
 	ENUM_VALUE(PRIO_PROCESS),
 	ENUM_VALUE(PRIO_PGRP),
@@ -286,7 +322,8 @@ static const struct enum_value prio_which_values[] =
 	ENUM_END
 };
 
-static const struct enum_value rlimit_res_values[] =
+static const struct enum_value
+rlimit_res_values[] =
 {
 	ENUM_VALUE(RLIMIT_AS),
 	ENUM_VALUE(RLIMIT_CORE),
@@ -301,7 +338,8 @@ static const struct enum_value rlimit_res_values[] =
 	ENUM_END
 };
 
-static const struct enum_value rusage_who_values[] =
+static const struct enum_value
+rusage_who_values[] =
 {
 	ENUM_VALUE(RUSAGE_SELF),
 	ENUM_VALUE(RUSAGE_CHILDREN),
@@ -309,7 +347,8 @@ static const struct enum_value rusage_who_values[] =
 	ENUM_END
 };
 
-static const struct bitmask_value mode_values[] =
+static const struct bitmask_value
+mode_values[] =
 {
 	BITMASK_VALUE(S_ISUID),
 	BITMASK_VALUE(S_ISGID),
@@ -326,7 +365,8 @@ static const struct bitmask_value mode_values[] =
 	BITMASK_END
 };
 
-static const struct bitmask_value at_flags_values[] =
+static const struct bitmask_value
+at_flags_values[] =
 {
 	BITMASK_VALUE(AT_SYMLINK_NOFOLLOW),
 	BITMASK_VALUE(AT_REMOVEDIR),
@@ -336,7 +376,8 @@ static const struct bitmask_value at_flags_values[] =
 	BITMASK_END
 };
 
-static const struct bitmask_value open_flags_values[] =
+static const struct bitmask_value
+open_flags_values[] =
 {
 	BITMASK_VALUE(O_APPEND),
 	BITMASK_VALUE(O_ASYNC),
@@ -351,7 +392,8 @@ static const struct bitmask_value open_flags_values[] =
 	BITMASK_END
 };
 
-static const struct enum_value whence_values[] =
+static const struct enum_value
+whence_values[] =
 {
 	ENUM_VALUE(SEEK_SET),
 	ENUM_VALUE(SEEK_CUR),
@@ -359,7 +401,8 @@ static const struct enum_value whence_values[] =
 	ENUM_END
 };
 
-static const struct enum_value ioctl_req_values[] =
+static const struct enum_value
+ioctl_req_values[] =
 {
 	ENUM_VALUE(TCGETS),
 	ENUM_VALUE(TCSETS),
@@ -393,7 +436,8 @@ static const struct enum_value ioctl_req_values[] =
 	ENUM_END
 };
 
-static const struct enum_value fcntl_cmd_values[] =
+static const struct enum_value
+fcntl_cmd_values[] =
 {
 	ENUM_VALUE(F_DUPFD),
 	ENUM_VALUE(F_GETFD),
@@ -406,7 +450,8 @@ static const struct enum_value fcntl_cmd_values[] =
 	ENUM_END
 };
 
-static const struct enum_value sock_family_values[] =
+static const struct enum_value
+sock_family_values[] =
 {
 	ENUM_VALUE(AF_UNSPEC),
 	ENUM_VALUE(AF_UNIX),
@@ -417,7 +462,8 @@ static const struct enum_value sock_family_values[] =
 	ENUM_END
 };
 
-static const struct enum_value sock_type_values[] =
+static const struct enum_value
+sock_type_values[] =
 {
 	ENUM_VALUE(SOCK_STREAM),
 	ENUM_VALUE(SOCK_DGRAM),
@@ -425,19 +471,22 @@ static const struct enum_value sock_type_values[] =
 	ENUM_END
 };
 
-static const struct enum_value msg_flags_values[] =
+static const struct enum_value
+msg_flags_values[] =
 {
 	ENUM_VALUE(MSG_DONTWAIT),
 	ENUM_END
 };
 
-static const struct enum_value sock_level_values[] =
+static const struct enum_value
+sock_level_values[] =
 {
 	ENUM_VALUE(SOL_SOCKET),
 	ENUM_END
 };
 
-static const struct bitmask_value prot_values[] =
+static const struct bitmask_value
+prot_values[] =
 {
 	BITMASK_VALUE(PROT_EXEC),
 	BITMASK_VALUE(PROT_READ),
@@ -445,7 +494,8 @@ static const struct bitmask_value prot_values[] =
 	BITMASK_END
 };
 
-static const struct bitmask_value mmap_flags_values[] =
+static const struct bitmask_value
+mmap_flags_values[] =
 {
 	BITMASK_VALUE(MAP_ANONYMOUS),
 	BITMASK_VALUE(MAP_SHARED),
@@ -456,7 +506,8 @@ static const struct bitmask_value mmap_flags_values[] =
 	BITMASK_END
 };
 
-static const struct enum_value shutdown_how_values[] =
+static const struct enum_value
+shutdown_how_values[] =
 {
 	ENUM_VALUE(SHUT_RD),
 	ENUM_VALUE(SHUT_WR),
@@ -464,7 +515,8 @@ static const struct enum_value shutdown_how_values[] =
 	ENUM_END
 };
 
-static const struct bitmask_value msync_values[] =
+static const struct bitmask_value
+msync_values[] =
 {
 	BITMASK_VALUE(MS_ASYNC),
 	BITMASK_VALUE(MS_SYNC),
@@ -472,7 +524,8 @@ static const struct bitmask_value msync_values[] =
 	BITMASK_END
 };
 
-static const struct bitmask_value ipc_flags_values[] =
+static const struct bitmask_value
+ipc_flags_values[] =
 {
 	BITMASK_VALUE(IPC_CREAT),
 	BITMASK_VALUE(IPC_EXCL),
@@ -480,28 +533,32 @@ static const struct bitmask_value ipc_flags_values[] =
 	BITMASK_END
 };
 
-static const struct bitmask_value shm_flags_values[] =
+static const struct bitmask_value
+shm_flags_values[] =
 {
 	BITMASK_VALUE(SHM_RND),
 	BITMASK_VALUE(SHM_RDONLY),
 	BITMASK_END
 };
 
-static const struct enum_value clockid_values[] =
+static const struct enum_value
+clockid_values[] =
 {
 	ENUM_VALUE(CLOCK_REALTIME),
 	ENUM_VALUE(CLOCK_MONOTONIC),
 	ENUM_END
 };
 
-static const struct enum_value futex_op_values[] =
+static const struct enum_value
+futex_op_values[] =
 {
 	ENUM_VALUE(FUTEX_WAIT),
 	ENUM_VALUE(FUTEX_WAKE),
 	ENUM_END
 };
 
-static const struct bitmask_value wait_options_values[] =
+static const struct bitmask_value
+wait_options_values[] =
 {
 	BITMASK_VALUE(WNOHANG),
 	BITMASK_VALUE(WUNTRACED),
@@ -509,7 +566,8 @@ static const struct bitmask_value wait_options_values[] =
 	BITMASK_END
 };
 
-static const struct bitmask_value statvfs_flag_values[] =
+static const struct bitmask_value
+statvfs_flag_values[] =
 {
 	BITMASK_VALUE(ST_RDONLY),
 	BITMASK_VALUE(ST_NOSUID),
@@ -517,7 +575,8 @@ static const struct bitmask_value statvfs_flag_values[] =
 	BITMASK_END
 };
 
-static const struct enum_value statvfs_magic_values[] =
+static const struct enum_value
+statvfs_magic_values[] =
 {
 	ENUM_VALUE(DEVFS_MAGIC),
 	ENUM_VALUE(RAMFS_MAGIC),
@@ -529,7 +588,8 @@ static const struct enum_value statvfs_magic_values[] =
 	ENUM_END
 };
 
-static const struct enum_value shm_cmd_values[] =
+static const struct enum_value
+shm_cmd_values[] =
 {
 	ENUM_VALUE(IPC_STAT),
 	ENUM_VALUE(IPC_SET),
@@ -537,7 +597,8 @@ static const struct enum_value shm_cmd_values[] =
 	ENUM_END
 };
 
-static const struct enum_value sem_cmd_values[] =
+static const struct enum_value
+sem_cmd_values[] =
 {
 	ENUM_VALUE(IPC_STAT),
 	ENUM_VALUE(IPC_SET),
@@ -552,7 +613,8 @@ static const struct enum_value sem_cmd_values[] =
 	ENUM_END
 };
 
-static const struct enum_value msg_cmd_values[] =
+static const struct enum_value
+msg_cmd_values[] =
 {
 	ENUM_VALUE(IPC_STAT),
 	ENUM_VALUE(IPC_SET),
@@ -560,7 +622,8 @@ static const struct enum_value msg_cmd_values[] =
 	ENUM_END
 };
 
-static const struct bitmask_value sigaction_flags_values[] =
+static const struct bitmask_value
+sigaction_flags_values[] =
 {
 	BITMASK_VALUE(SA_NOCLDSTOP),
 	BITMASK_VALUE(SA_NODEFER),
@@ -571,14 +634,16 @@ static const struct bitmask_value sigaction_flags_values[] =
 	BITMASK_END
 };
 
-static const struct bitmask_value advise_values[] =
+static const struct bitmask_value
+advise_values[] =
 {
 	BITMASK_VALUE(MADV_NORMAL),
 	BITMASK_VALUE(MADV_DONTNEED),
 	BITMASK_END
 };
 
-static const struct enum_value reboot_cmd_values[] =
+static const struct enum_value
+reboot_cmd_values[] =
 {
 	ENUM_VALUE(REBOOT_SHUTDOWN),
 	ENUM_VALUE(REBOOT_REBOOT),
@@ -587,10 +652,14 @@ static const struct enum_value reboot_cmd_values[] =
 	ENUM_END
 };
 
-int dbg_syscall_arg_print(char *buf, size_t size,
-                          const struct dbg_syscall *syscall,
-                          const uintptr_t *values, size_t param,
-                          dbg_peekdata_fn_t peekdata, void *userptr)
+int
+dbg_syscall_arg_print(char *buf,
+                      size_t size,
+                      const struct dbg_syscall *syscall,
+                      const uintptr_t *values,
+                      size_t param,
+                      dbg_peekdata_fn_t peekdata,
+                      void *userptr)
 {
 	if (param >= syscall->params_nb)
 		return -1;
@@ -1360,9 +1429,11 @@ int dbg_syscall_arg_print(char *buf, size_t size,
 	return 0;
 }
 
-void dbg_syscall_ret_print(char *buf, size_t size,
-                           const struct dbg_syscall *syscall,
-                           uintptr_t value)
+void
+dbg_syscall_ret_print(char *buf,
+                      size_t size,
+                      const struct dbg_syscall *syscall,
+                      uintptr_t value)
 {
 	switch (syscall->return_type)
 	{
@@ -1386,7 +1457,8 @@ void dbg_syscall_ret_print(char *buf, size_t size,
 	}
 }
 
-static const struct dbg_syscall syscalls[] =
+static const struct dbg_syscall
+syscalls[] =
 {
 	[SYS_exit]          = {"exit",          DBG_SYSCALL_RET_INT, 1,
 	                     {{"code",          DBG_SYSCALL_ARG_INT,
@@ -2154,7 +2226,8 @@ static const struct dbg_syscall syscalls[] =
 	                                        DBG_SYSCALL_ARG_IN}}},
 };
 
-const struct dbg_syscall *dbg_syscall_get(int syscall)
+const struct dbg_syscall *
+dbg_syscall_get(int syscall)
 {
 	if (syscall < 0
 	 || (unsigned)syscall >= sizeof(syscalls) / sizeof(*syscalls)
@@ -2163,7 +2236,8 @@ const struct dbg_syscall *dbg_syscall_get(int syscall)
 	return &syscalls[syscall];
 }
 
-int dbg_syscall_from_name(const char *name)
+int
+dbg_syscall_from_name(const char *name)
 {
 	for (size_t i = 0; i < sizeof(syscalls) / sizeof(*syscalls); ++i)
 	{

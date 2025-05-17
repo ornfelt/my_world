@@ -2,7 +2,8 @@
 
 #include <string.h>
 
-void *memrchr(const void *s, int c, size_t n)
+void *
+memrchr(const void *s, int c, size_t n)
 {
 	if (n >= sizeof(size_t))
 	{

@@ -33,7 +33,8 @@ struct http_state
 	int eof;
 };
 
-static int setup_socket(struct url *url, int *fd)
+static int
+setup_socket(struct url *url, int *fd)
 {
 	struct addrinfo *addrs;
 	struct sockaddr_in sin;
@@ -68,7 +69,8 @@ end:
 	return ret;
 }
 
-static int handle_header(struct http_state *state, const char *header)
+static int
+handle_header(struct http_state *state, const char *header)
 {
 	if (!strncmp(header, "Content-Encoding: ", 18))
 	{
@@ -93,7 +95,8 @@ static int handle_header(struct http_state *state, const char *header)
 	return 0;
 }
 
-static int parse_headers(struct http_state *state)
+static int
+parse_headers(struct http_state *state)
 {
 	int rd = read(state->fd, &state->buf[state->buf_size],
 	              sizeof(state->buf) - state->buf_size);
@@ -140,7 +143,8 @@ static int parse_headers(struct http_state *state)
 	}
 }
 
-static int zlib_read(struct http_state *state, char *buf, int size)
+static int
+zlib_read(struct http_state *state, char *buf, int size)
 {
 	int ret;
 again:
@@ -190,7 +194,8 @@ again:
 	return size - state->z_stream.avail_out;
 }
 
-static int http_read(void *cookie, char *buf, int size)
+static int
+http_read(void *cookie, char *buf, int size)
 {
 	struct http_state *state = cookie;
 	while (!state->headers_ended)
@@ -230,7 +235,8 @@ static int http_read(void *cookie, char *buf, int size)
 	}
 }
 
-static int http_close(void *cookie)
+static int
+http_close(void *cookie)
 {
 	struct http_state *state = cookie;
 	int fd = state->fd;
@@ -250,7 +256,8 @@ static int http_close(void *cookie)
 	return close(fd);
 }
 
-FILE *fetchGetHTTP(struct url *url, const char *flags)
+FILE *
+fetchGetHTTP(struct url *url, const char *flags)
 {
 	struct http_state *state;
 	char buf[4096];
@@ -290,7 +297,8 @@ err:
 	return NULL;
 }
 
-FILE *fetchPutHTTP(struct url *url, const char *flags)
+FILE *
+fetchPutHTTP(struct url *url, const char *flags)
 {
 	(void)url;
 	(void)flags;
@@ -298,7 +306,8 @@ FILE *fetchPutHTTP(struct url *url, const char *flags)
 	return NULL;
 }
 
-int fetchStatHTTP(struct url *url, struct url_stat *stat, const char *flags)
+int
+fetchStatHTTP(struct url *url, struct url_stat *stat, const char *flags)
 {
 	(void)url;
 	(void)stat;
@@ -307,7 +316,8 @@ int fetchStatHTTP(struct url *url, struct url_stat *stat, const char *flags)
 	return -1;
 }
 
-struct url_ent *fetchListHTTP(struct url *url, const char *flags)
+struct url_ent *
+fetchListHTTP(struct url *url, const char *flags)
 {
 	(void)url;
 	(void)flags;

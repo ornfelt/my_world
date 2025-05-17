@@ -89,19 +89,25 @@ struct virtio_dev
 	struct irq_handle irq_handle;
 };
 
-int virtio_dev_init(struct virtio_dev *dev, struct pci_device *device,
-                    const uint8_t *features, size_t features_count);
+int virtio_dev_init(struct virtio_dev *dev,
+                    struct pci_device *device,
+                    const uint8_t *features,
+                    size_t features_count);
 void virtio_dev_init_end(struct virtio_dev *dev);
 void virtio_dev_destroy(struct virtio_dev *dev);
 int virtio_dev_has_feature(struct virtio_dev *dev, uint32_t feature);
 
-int virtio_get_cfg(struct pci_device *device, uint8_t cfg_type,
-                   struct pci_map **cfg, size_t len, uint8_t *ptr);
+int virtio_get_cfg(struct pci_device *device,
+                   uint8_t cfg_type,
+                   struct pci_map **cfg,
+                   size_t len,
+                   uint8_t *ptr);
 
 int virtq_init(struct virtq *queue, struct virtio_dev *dev, uint16_t id);
 void virtq_destroy(struct virtq *queue);
-int virtq_send(struct virtq *queue, const struct sg_head *sg,
-               size_t nread, size_t nwrite);
+int virtq_send(struct virtq *queue,
+               const struct sg_head *sg_read,
+               const struct sg_head *sg_write);
 void virtq_notify(struct virtq *queue);
 int virtq_setup_irq(struct virtq *queue);
 void virtq_on_irq(struct virtq *queue);

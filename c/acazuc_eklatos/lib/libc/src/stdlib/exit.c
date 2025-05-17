@@ -4,7 +4,8 @@
 #include <unistd.h>
 #include <stdio.h>
 
-void exit(int status)
+void
+exit(int status)
 {
 	/* XXX rm tmpfile */
 	for (size_t i = 0; i < g_atexit_fn_nb; ++i)

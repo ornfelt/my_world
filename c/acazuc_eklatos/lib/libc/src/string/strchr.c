@@ -2,7 +2,8 @@
 
 #include <string.h>
 
-char *strchr(const char *s, int c)
+char *
+strchr(const char *s, int c)
 {
 	size_t i = 0;
 	while (((size_t)s + i) % sizeof(size_t))

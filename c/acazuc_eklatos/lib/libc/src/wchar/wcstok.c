@@ -1,8 +1,10 @@
 #include <wchar.h>
 
-wchar_t *wcstok(wchar_t *s, const wchar_t *delim, wchar_t **saveptr)
+wchar_t *
+wcstok(wchar_t *s, const wchar_t *delim, wchar_t **saveptr)
 {
 	wchar_t *src;
+
 	if (s)
 	{
 		src = s;

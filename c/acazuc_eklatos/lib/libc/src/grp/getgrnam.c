@@ -3,11 +3,14 @@
 #include <errno.h>
 #include <grp.h>
 
-struct group *getgrnam(const char *name)
+struct group *
+getgrnam(const char *name)
 {
 	struct group *result;
-	int res = getgrnam_r(name, &grp_ent, grp_buf, sizeof(grp_buf), &result);
+	int ret;
+
+	ret = getgrnam_r(name, &grp_ent, grp_buf, sizeof(grp_buf), &result);
 	if (!result)
-		errno = res;
+		errno = ret;
 	return result;
 }

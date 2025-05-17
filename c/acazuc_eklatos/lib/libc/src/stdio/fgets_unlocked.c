@@ -1,7 +1,10 @@
 #include <stdio.h>
 
-char *fgets_unlocked(char *s, int size, FILE *fp)
+char *
+fgets_unlocked(char *s, int size, FILE *fp)
 {
+	char *d;
+
 	if (size <= 0)
 		return NULL;
 	if (size == 1)
@@ -10,7 +13,7 @@ char *fgets_unlocked(char *s, int size, FILE *fp)
 		return s;
 	}
 	size--;
-	char *d = s;
+	d = s;
 	while (size && fread_unlocked(d, 1, 1, fp))
 	{
 		if (*d == '\n')

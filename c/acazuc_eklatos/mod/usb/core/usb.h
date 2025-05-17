@@ -220,7 +220,9 @@ struct usb_intr_pipe
 struct usb_isoc_pipe;
 
 typedef void (*usb_isoc_pipe_fn_t)(struct usb_isoc_pipe *pipe,
-                                   void *data, size_t *sizes, size_t nbufs);
+                                   void *data,
+                                   size_t *sizes,
+                                   size_t nbufs);
 
 struct usb_isoc_pipe
 {
@@ -236,8 +238,10 @@ struct usb_hcd_op
 	int (*get_addr)(struct usb_hcd *hcd, uint8_t *addr);
 	ssize_t (*ctrl_transfer)(struct usb_hcd *hcd,
 	                         struct usb_device *device,
-	                         int in_out, uint32_t req,
-	                         uint32_t data, size_t size);
+	                         int in_out,
+	                         uint32_t req,
+	                         uint32_t data,
+	                         size_t size);
 	int (*intr_transfer)(struct usb_intr_pipe *pipe);
 	int (*isoc_transfer)(struct usb_isoc_pipe *pipe);
 };
@@ -268,23 +272,31 @@ struct usb_itf_probe_list
 	TAILQ_ENTRY(usb_itf_probe_list) chain;
 };
 
-int usb_device_alloc(struct usb_hcd *hcd, enum usb_speed speed,
+int usb_device_alloc(struct usb_hcd *hcd,
+                     enum usb_speed speed,
                      struct usb_device **device);
 void usb_device_probe(struct usb_device *device);
-int usb_register_itf_probes(const struct usb_itf_probe *probes, size_t count,
-                            usb_itf_probe_t probe, void *userdata);
+int usb_register_itf_probes(const struct usb_itf_probe *probes,
+                            size_t count,
+                            usb_itf_probe_t probe,
+                            void *userdata);
 ssize_t usb_use_interface(struct usb_device *device,
                           struct usb_interface *interface);
 
-ssize_t usb_ctrl_transfer(struct usb_device *device, uint8_t type,
-                          uint8_t request, uint16_t value, uint16_t index,
-                          void *data, size_t size);
+ssize_t usb_ctrl_transfer(struct usb_device *device,
+                          uint8_t type,
+                          uint8_t request,
+                          uint16_t value,
+                          uint16_t index,
+                          void *data,
+                          size_t size);
 int usb_intr_transfer(struct usb_intr_pipe *pipe);
 int usb_isoc_transfer(struct usb_isoc_pipe *pipe);
 
 int usb_intr_pipe_alloc(struct usb_device *device,
                         struct usb_endpoint *endpoint,
-                        size_t size, usb_intr_pipe_fn_t fn,
+                        size_t size,
+                        usb_intr_pipe_fn_t fn,
                         void *userdata,
                         struct usb_intr_pipe **pipep);
 void usb_intr_pipe_free(struct usb_intr_pipe *pipe);

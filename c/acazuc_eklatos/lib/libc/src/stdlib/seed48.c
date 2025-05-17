@@ -2,9 +2,11 @@
 
 #include <stdlib.h>
 
-uint16_t *seed48(uint16_t v[3])
+uint16_t *
+seed48(uint16_t v[3])
 {
 	static uint16_t old_v[3];
+
 	rand48_a = 0x5DEECE66D;
 	rand48_c = 0xB;
 	old_v[0] = rand48_x[0];

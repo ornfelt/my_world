@@ -1,8 +1,8 @@
 #include "gx/wmo_mliq.h"
 #include "gx/frame.h"
 #include "gx/wmo.h"
+#include "gx/gx.h"
 
-#include "graphics.h"
 #include "shaders.h"
 #include "camera.h"
 #include "memory.h"
@@ -249,7 +249,7 @@ void gx_wmo_mliq_render(struct gx_wmo_mliq *mliq, struct gx_frame *frame, uint8_
 	if (!mliq->attributes_state.handle.ptr)
 		return;
 	struct gx_wmo_mliq_frame *mliq_frame = &mliq->frames[frame->id];
-	gfx_bind_attributes_state(g_wow->device, &mliq->attributes_state, &g_wow->graphics->wmo_mliq_input_layout);
+	gfx_bind_attributes_state(g_wow->device, &mliq->attributes_state, &g_wow->gx->wmo_mliq_input_layout);
 	for (size_t i = 0; i < mliq_frame->to_render[type].size; ++i)
 	{
 		struct gx_wmo_instance *instance = *JKS_ARRAY_GET(&mliq_frame->to_render[type], i, struct gx_wmo_instance*);

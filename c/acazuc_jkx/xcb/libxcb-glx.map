@@ -1,0 +1,31 @@
+XCB_1.0 {
+	global:
+		xcb_glx_copy_context;
+		xcb_glx_copy_context_checked;
+		xcb_glx_create_context;
+		xcb_glx_create_context_checked;
+		xcb_glx_destroy_context;
+		xcb_glx_destroy_context_checked;
+		xcb_glx_id;
+		xcb_glx_is_direct;
+		xcb_glx_is_direct_reply;
+		xcb_glx_get_fb_configs;
+		xcb_glx_get_fb_configs_reply;
+		xcb_glx_make_context_current;
+		xcb_glx_make_context_current_reply;
+		xcb_glx_make_current;
+		xcb_glx_make_current_reply;
+		xcb_glx_query_extensions_string;
+		xcb_glx_query_extensions_string_reply;
+		xcb_glx_query_server_string;
+		xcb_glx_query_server_string_reply;
+		xcb_glx_query_version;
+		xcb_glx_query_version_reply;
+		xcb_glx_swap_buffers;
+		xcb_glx_swap_buffers_checked;
+		xcb_glx_wait_gl;
+		xcb_glx_wait_gl_checked;
+		xcb_glx_wait_x;
+		xcb_glx_wait_x_checked;
+	local: *;
+};

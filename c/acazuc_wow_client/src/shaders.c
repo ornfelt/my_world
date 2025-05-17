@@ -329,6 +329,7 @@ struct shaders *shaders_new(void)
 	BUILD_SHADER(basic);
 	BUILD_SHADER(sobel);
 	BUILD_SHADER(bloom);
+	BUILD_SHADER(death);
 	BUILD_SHADER(glow);
 	BUILD_SHADER(mliq);
 	BUILD_SHADER(ssao);
@@ -385,6 +386,7 @@ void shaders_delete(struct shaders *shaders)
 	CLEAN_SHADER(basic);
 	CLEAN_SHADER(sobel);
 	CLEAN_SHADER(bloom);
+	CLEAN_SHADER(death);
 	CLEAN_SHADER(glow);
 	CLEAN_SHADER(mliq);
 	CLEAN_SHADER(ssao);

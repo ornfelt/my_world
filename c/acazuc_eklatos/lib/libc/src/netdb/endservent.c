@@ -2,7 +2,8 @@
 
 #include <netdb.h>
 
-void endservent(void)
+void
+endservent(void)
 {
 	if (!servent_fp)
 		return;

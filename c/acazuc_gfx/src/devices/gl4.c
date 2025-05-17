@@ -576,7 +576,7 @@ static void gl4_bind_attributes_state(struct gfx_device *device, const gfx_attri
 		GL4_CALL(EnableVertexArrayAttrib, state->handle.u32[0], i);
 	}
 	if (state->index_buffer)
-		GL4_CALL(BindBuffer, GL_ELEMENT_ARRAY_BUFFER, state->index_buffer->handle.u32[0]);
+		GL4_CALL(VertexArrayElementBuffer, state->handle.u32[0], state->index_buffer->handle.u32[0]);
 }
 
 static void gl4_delete_attributes_state(struct gfx_device *device, gfx_attributes_state_t *state)

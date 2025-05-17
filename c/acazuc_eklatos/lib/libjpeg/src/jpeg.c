@@ -3,7 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-static const uint8_t luma_dqt_table[64] =
+static const uint8_t
+luma_dqt_table[64] =
 {
 	16, 11, 10, 16,  24,  40,  51,  61,
 	12, 12, 14, 19,  26,  58,  60,  55,
@@ -15,7 +16,8 @@ static const uint8_t luma_dqt_table[64] =
 	72, 92, 95, 98, 112, 100, 103,  99,
 };
 
-static const uint8_t chroma_dqt_table[64] =
+static const uint8_t
+chroma_dqt_table[64] =
 {
 	17, 18, 24, 47, 99, 99, 99, 99,
 	18, 21, 26, 66, 99, 99, 99, 99,
@@ -27,23 +29,27 @@ static const uint8_t chroma_dqt_table[64] =
 	99, 99, 99, 99, 99, 99, 99, 99,
 };
 
-static const uint8_t huffman_luma_dc_counts[16] =
+static const uint8_t
+huffman_luma_dc_counts[16] =
 {
 	0, 1, 5, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
 };
 
-static const uint8_t huffman_luma_dc_values[] =
+static const uint8_t
+huffman_luma_dc_values[] =
 {
 	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
 	0x08, 0x09, 0x0A, 0x0B,
 };
 
-static const uint8_t huffman_luma_ac_counts[16] =
+static const uint8_t
+huffman_luma_ac_counts[16] =
 {
 	0, 2, 1, 3, 3, 2, 4, 3, 5, 5, 4, 4, 0, 0, 1, 125,
 };
 
-static const uint8_t huffman_luma_ac_values[] =
+static const uint8_t
+huffman_luma_ac_values[] =
 {
 	0x01, 0x02, 0x03, 0x00, 0x04, 0x11, 0x05, 0x12,
 	0x21, 0x31, 0x41, 0x06, 0x13, 0x51, 0x61, 0x07,
@@ -68,23 +74,27 @@ static const uint8_t huffman_luma_ac_values[] =
 	0xF9, 0xFA,
 };
 
-static const uint8_t huffman_chroma_dc_counts[16] =
+static const uint8_t
+huffman_chroma_dc_counts[16] =
 {
 	0, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,
 };
 
-static const uint8_t huffman_chroma_dc_values[] =
+static const uint8_t
+huffman_chroma_dc_values[] =
 {
 	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
 	0x08, 0x09, 0x0A, 0x0B,
 };
 
-static const uint8_t huffman_chroma_ac_counts[16] =
+static const uint8_t
+huffman_chroma_ac_counts[16] =
 {
 	0, 2, 1, 2, 4, 4, 3, 4, 7, 5, 4, 4, 0, 1, 2, 119,
 };
 
-static const uint8_t huffman_chroma_ac_values[] =
+static const uint8_t
+huffman_chroma_ac_values[] =
 {
 	0x00, 0x01, 0x02, 0x03, 0x11, 0x04, 0x05, 0x21,
 	0x31, 0x06, 0x12, 0x41, 0x51, 0x07, 0x61, 0x71,
@@ -109,8 +119,10 @@ static const uint8_t huffman_chroma_ac_values[] =
 	0xF9, 0xFA,
 };
 
-static void generate_qdt(int32_t *restrict dqt, size_t q,
-                         const uint8_t *restrict tb)
+static void
+generate_qdt(int32_t * restrict dqt,
+             size_t q,
+             const uint8_t * restrict tb)
 {
 	if (q < 1)
 		q = 1;
@@ -133,7 +145,8 @@ static void generate_qdt(int32_t *restrict dqt, size_t q,
 	}
 }
 
-int jpeg_getc(struct jpeg *jpeg)
+int
+jpeg_getc(struct jpeg *jpeg)
 {
 	int c = getc(jpeg->fp);
 	if (c != EOF)
@@ -145,7 +158,8 @@ int jpeg_getc(struct jpeg *jpeg)
 	return EOF;
 }
 
-int jpeg_putc(struct jpeg *jpeg, uint8_t v)
+int
+jpeg_putc(struct jpeg *jpeg, uint8_t v)
 {
 	if (putc(v, jpeg->fp) == EOF)
 	{
@@ -155,7 +169,8 @@ int jpeg_putc(struct jpeg *jpeg, uint8_t v)
 	return 0;
 }
 
-static int jpeg_getc_unlocked(struct jpeg *jpeg)
+static int
+jpeg_getc_unlocked(struct jpeg *jpeg)
 {
 	int c = getc_unlocked(jpeg->fp);
 	if (c != EOF)
@@ -167,7 +182,8 @@ static int jpeg_getc_unlocked(struct jpeg *jpeg)
 	return EOF;
 }
 
-static int bs_getc(struct jpeg *jpeg)
+static int
+bs_getc(struct jpeg *jpeg)
 {
 	int c = jpeg_getc_unlocked(jpeg);
 	if (c == EOF)
@@ -198,7 +214,8 @@ static int bs_getc(struct jpeg *jpeg)
 	}
 }
 
-static int bs_get(struct bitstream *bs)
+static int
+bs_get(struct bitstream *bs)
 {
 	struct jpeg *jpeg = bs->userdata;
 	int ret = 1;
@@ -220,7 +237,8 @@ end:
 	return ret;
 }
 
-static int bs_put(struct bitstream *bs)
+static int
+bs_put(struct bitstream *bs)
 {
 	struct jpeg *jpeg = bs->userdata;
 	uint8_t buf[sizeof(bs->buf) * 2];
@@ -243,7 +261,8 @@ static int bs_put(struct bitstream *bs)
 	return 0;
 }
 
-struct jpeg *jpeg_new(void)
+struct jpeg *
+jpeg_new(void)
 {
 	struct jpeg *jpeg = calloc(1, sizeof(*jpeg));
 	if (!jpeg)
@@ -256,7 +275,8 @@ struct jpeg *jpeg_new(void)
 	return jpeg;
 }
 
-void jpeg_free(struct jpeg *jpeg)
+void
+jpeg_free(struct jpeg *jpeg)
 {
 	if (!jpeg)
 		return;
@@ -266,7 +286,8 @@ void jpeg_free(struct jpeg *jpeg)
 	free(jpeg);
 }
 
-void jpeg_init_io(struct jpeg *jpeg, FILE *fp)
+void
+jpeg_init_io(struct jpeg *jpeg, FILE *fp)
 {
 	jpeg->fp = fp;
 	jpeg->eof = 0;
@@ -278,8 +299,8 @@ void jpeg_init_io(struct jpeg *jpeg, FILE *fp)
 		jpeg->components[i].prev_dc = 0;
 }
 
-const uint8_t *jpeg_get_thumbnail(struct jpeg *jpeg, uint8_t *width,
-                                  uint8_t *height)
+const uint8_t *
+jpeg_get_thumbnail(struct jpeg *jpeg, uint8_t *width, uint8_t *height)
 {
 	if (width)
 		*width = jpeg->thumbnail_width;
@@ -288,8 +309,11 @@ const uint8_t *jpeg_get_thumbnail(struct jpeg *jpeg, uint8_t *width,
 	return jpeg->thumbnail;
 }
 
-int jpeg_set_thumbnail(struct jpeg *jpeg, const uint8_t *data,
-                       uint8_t width, uint8_t height)
+int
+jpeg_set_thumbnail(struct jpeg *jpeg,
+                   const uint8_t *data,
+                   uint8_t width,
+                   uint8_t height)
 {
 	if (!width || !height)
 	{
@@ -313,7 +337,8 @@ int jpeg_set_thumbnail(struct jpeg *jpeg, const uint8_t *data,
 	return 0;
 }
 
-void jpeg_set_quality(struct jpeg *jpeg, int quality)
+void
+jpeg_set_quality(struct jpeg *jpeg, int quality)
 {
 	if (quality < 1)
 		quality = 1;
@@ -323,12 +348,14 @@ void jpeg_set_quality(struct jpeg *jpeg, int quality)
 	generate_qdt(&jpeg->dqt[1][0], quality, chroma_dqt_table);
 }
 
-void jpeg_set_restart_interval(struct jpeg *jpeg, uint16_t restart_interval)
+void
+jpeg_set_restart_interval(struct jpeg *jpeg, uint16_t restart_interval)
 {
 	jpeg->restart_interval = restart_interval;
 }
 
-int jpeg_set_subsampling(struct jpeg *jpeg, int subsampling)
+int
+jpeg_set_subsampling(struct jpeg *jpeg, int subsampling)
 {
 	switch (subsampling)
 	{
@@ -386,8 +413,11 @@ int jpeg_set_subsampling(struct jpeg *jpeg, int subsampling)
 	}
 }
 
-void jpeg_get_info(struct jpeg *jpeg, uint32_t *width, uint32_t *height,
-                   uint8_t *components)
+void
+jpeg_get_info(struct jpeg *jpeg,
+              uint32_t *width,
+              uint32_t *height,
+              uint8_t *components)
 {
 	if (width)
 		*width = jpeg->width;
@@ -397,8 +427,11 @@ void jpeg_get_info(struct jpeg *jpeg, uint32_t *width, uint32_t *height,
 		*components = jpeg->components_count;
 }
 
-int jpeg_set_info(struct jpeg *jpeg, uint32_t width, uint32_t height,
-                  uint8_t components)
+int
+jpeg_set_info(struct jpeg *jpeg,
+              uint32_t width,
+              uint32_t height,
+              uint8_t components)
 {
 	if (!width
 	 || width > UINT16_MAX
@@ -466,8 +499,10 @@ int jpeg_set_info(struct jpeg *jpeg, uint32_t width, uint32_t height,
 	return 0;
 }
 
-void huffman_generate(struct huffman *huff, const uint8_t *counts,
-                      const uint8_t *values)
+void
+huffman_generate(struct huffman *huff,
+                 const uint8_t *counts,
+                 const uint8_t *values)
 {
 	size_t count = 0;
 	uint32_t code = 0;
@@ -490,7 +525,8 @@ void huffman_generate(struct huffman *huff, const uint8_t *counts,
 	memcpy(huff->values, values, count);
 }
 
-const char *jpeg_get_err(struct jpeg *jpeg)
+const char *
+jpeg_get_err(struct jpeg *jpeg)
 {
 	return jpeg->errbuf;
 }

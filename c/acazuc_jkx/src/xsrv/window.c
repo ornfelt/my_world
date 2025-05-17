@@ -9,34 +9,51 @@
 static void window_destroy(struct xsrv *xsrv, struct object *object);
 static void window_free(struct xsrv *xsrv, struct object *object);
 
-static const struct object_def window_def =
+static const struct object_def
+window_def =
 {
 	.name = "window",
 	.destroy = window_destroy,
 	.free = window_free,
 };
 
-void window_register(struct xsrv *xsrv)
+void
+window_register(struct xsrv *xsrv)
 {
 	xsrv->obj_window = register_object_type(xsrv, &window_def);
 }
 
-struct window *window_new(struct xsrv *xsrv, struct client *client, uint32_t id,
-                          struct window *parent, int16_t x, int16_t y,
-                          uint16_t width, uint16_t height,
-                          const struct format *format, uint16_t border_width,
-                          struct visual *visual, uint16_t class,
-                          struct window_attributes *attributes)
+struct window *
+window_new(struct xsrv *xsrv,
+           struct client *client,
+           uint32_t id,
+           struct window *parent,
+           int16_t x,
+           int16_t y,
+           uint16_t width,
+           uint16_t height,
+           const struct format *format,
+           uint16_t border_width,
+           struct visual *visual,
+           uint16_t class,
+           struct window_attributes *attributes)
 {
-	struct window *window = malloc(sizeof(*window));
+	struct window *window;
+
+	window = malloc(sizeof(*window));
 	if (!window)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", xsrv->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        xsrv->progname,
 		        strerror(errno));
 		return NULL;
 	}
-	if (drawable_init(xsrv, &window->drawable, width, height, format,
-	                   parent ? parent->drawable.root : NULL))
+	if (drawable_init(xsrv,
+	                  &window->drawable,
+	                  width,
+	                  height,
+	                  format,
+	                  parent ? parent->drawable.root : NULL))
 	{
 		free(window);
 		return NULL;
@@ -61,9 +78,11 @@ struct window *window_new(struct xsrv *xsrv, struct client *client, uint32_t id,
 	return window;
 }
 
-static void window_free(struct xsrv *xsrv, struct object *object)
+static void
+window_free(struct xsrv *xsrv, struct object *object)
 {
 	struct window *window = (struct window*)object;
+
 	object_free(xsrv, OBJECT(window->attributes.background_pixmap));
 	object_free(xsrv, OBJECT(window->attributes.border_pixmap));
 	object_free(xsrv, OBJECT(window->attributes.colormap));
@@ -71,12 +90,18 @@ static void window_free(struct xsrv *xsrv, struct object *object)
 	free(window->drawable.data);
 }
 
-static void window_destroy(struct xsrv *xsrv, struct object *object)
+static void
+window_destroy(struct xsrv *xsrv, struct object *object)
 {
+	struct button_grab *button_grab;
+	struct window_event *event;
+	struct property *property;
 	struct window *window = (struct window*)object;
+	struct window *child;
+
 	if (window->parent)
 		TAILQ_REMOVE(&window->parent->children, window, chain);
-	struct window_event *event = TAILQ_FIRST(&window->events);
+	event = TAILQ_FIRST(&window->events);
 	while (event)
 	{
 		TAILQ_REMOVE(&event->window->events, event, window_chain);
@@ -84,7 +109,7 @@ static void window_destroy(struct xsrv *xsrv, struct object *object)
 		free(event);
 		event = TAILQ_FIRST(&window->events);
 	}
-	struct window *child = TAILQ_FIRST(&window->children);
+	child = TAILQ_FIRST(&window->children);
 	while (child)
 	{
 		object_destroy(xsrv, OBJECT(child));
@@ -92,7 +117,7 @@ static void window_destroy(struct xsrv *xsrv, struct object *object)
 	}
 	window_unmap(xsrv, window);
 	window_destroy_notify(xsrv, window);
-	struct property *property = TAILQ_FIRST(&window->properties);
+	property = TAILQ_FIRST(&window->properties);
 	while (property)
 	{
 		TAILQ_REMOVE(&window->properties, property, chain);
@@ -100,7 +125,7 @@ static void window_destroy(struct xsrv *xsrv, struct object *object)
 		free(property);
 		property = TAILQ_FIRST(&window->properties);
 	}
-	struct button_grab *button_grab = TAILQ_FIRST(&window->button_grabs);
+	button_grab = TAILQ_FIRST(&window->button_grabs);
 	while (button_grab)
 	{
 		delete_button_grab(xsrv, button_grab);
@@ -108,15 +133,18 @@ static void window_destroy(struct xsrv *xsrv, struct object *object)
 	}
 }
 
-struct window *window_get(struct xsrv *xsrv, uint32_t id)
+struct window *
+window_get(struct xsrv *xsrv, uint32_t id)
 {
 	return (struct window*)object_get_typed(xsrv, id, xsrv->obj_window);
 }
 
-struct window *get_window_at(struct xsrv *xsrv, uint32_t *x, uint32_t *y)
+struct window *
+get_window_at(struct xsrv *xsrv, uint32_t *x, uint32_t *y)
 {
 	struct window *window = xsrv->screens[0]->root;
 	struct window *child;
+
 	do
 	{
 		TAILQ_FOREACH(child, &window->children, chain)
@@ -145,7 +173,8 @@ struct window *get_window_at(struct xsrv *xsrv, uint32_t *x, uint32_t *y)
 	return window;
 }
 
-int window_visible(struct window *window)
+int
+window_visible(struct window *window)
 {
 	if (!(window->flags & WINDOW_MAPPED))
 		return 0;
@@ -154,7 +183,8 @@ int window_visible(struct window *window)
 	return window_visible(window->parent);
 }
 
-void window_map(struct xsrv *xsrv, struct client *client, struct window *window)
+void
+window_map(struct xsrv *xsrv, struct client *client, struct window *window)
 {
 	if (window->flags & WINDOW_MAPPED)
 		return;
@@ -171,7 +201,8 @@ void window_map(struct xsrv *xsrv, struct client *client, struct window *window)
 	window_expose(xsrv, window);
 }
 
-void window_unmap(struct xsrv *xsrv, struct window *window)
+void
+window_unmap(struct xsrv *xsrv, struct window *window)
 {
 	if (!(window->flags & WINDOW_MAPPED))
 		return;
@@ -209,19 +240,26 @@ void window_unmap(struct xsrv *xsrv, struct window *window)
 	/* XXX pointer grab confine_to */
 }
 
-struct cursor *window_get_cursor(struct xsrv *xsrv, struct window *window)
+struct cursor *
+window_get_cursor(struct xsrv *xsrv, struct window *window)
 {
 	if (window->attributes.cursor)
 		return window->attributes.cursor;
 	return window_get_cursor(xsrv, window->parent);
 }
 
-static void copy_data(struct window *window, void *data, uint32_t dst_pitch,
-                      uint32_t width, uint32_t height,
-                      int32_t dst_x, int32_t dst_y)
+static void
+copy_data(struct window *window,
+          void *data,
+          uint32_t dst_pitch,
+          uint32_t width,
+          uint32_t height,
+          int32_t dst_x,
+          int32_t dst_y)
 {
 	int32_t src_x;
 	int32_t src_y;
+
 	if (width > window->drawable.width)
 		width = window->drawable.width;
 	if (height > window->drawable.height)
@@ -271,10 +309,14 @@ static void copy_data(struct window *window, void *data, uint32_t dst_pitch,
 	}
 }
 
-int window_resize(struct xsrv *xsrv, struct window *window,
-                  uint16_t width, uint16_t height)
+int
+window_resize(struct xsrv *xsrv,
+              struct window *window,
+              uint16_t width,
+              uint16_t height)
 {
 	struct drawable *drawable = &window->drawable;
+
 	if (width == drawable->width && height == drawable->height)
 		return 0;
 	uint32_t alloc_width = npot32(width);
@@ -310,7 +352,8 @@ int window_resize(struct xsrv *xsrv, struct window *window,
 			                     alloc_height * alloc_pitch + 1);
 			if (!data)
 			{
-				fprintf(stderr, "%s: malloc: %s\n", xsrv->progname,
+				fprintf(stderr, "%s: malloc: %s\n",
+				        xsrv->progname,
 				        strerror(errno));
 				return 1;
 			}
@@ -350,7 +393,8 @@ int window_resize(struct xsrv *xsrv, struct window *window,
 		data = malloc(alloc_height * alloc_pitch + 1);
 		if (!data)
 		{
-			fprintf(stderr, "%s: malloc: %s\n", xsrv->progname,
+			fprintf(stderr, "%s: malloc: %s\n",
+			        xsrv->progname,
 			        strerror(errno));
 			return 1;
 		}
@@ -363,48 +407,84 @@ int window_resize(struct xsrv *xsrv, struct window *window,
 		case ForgetGravity:
 			break;
 		case NorthWestGravity:
-			copy_data(window, data, pitch, width, height,
+			copy_data(window,
+			          data,
+			          pitch,
+			          width,
+			          height,
 			          0,
 			          0);
 			break;
 		case NorthGravity:
-			copy_data(window, data, pitch, width, height,
+			copy_data(window,
+			          data,
+			          pitch,
+			          width,
+			          height,
 			          (width - window->drawable.width) / 2,
 			          0);
 			break;
 		case NorthEastGravity:
-			copy_data(window, data, pitch, width, height,
+			copy_data(window,
+			          data,
+			          pitch,
+			          width,
+			          height,
 			          width - window->drawable.width,
 			          0);
 			break;
 		case WestGravity:
-			copy_data(window, data, pitch, width, height,
+			copy_data(window,
+			          data,
+			          pitch,
+			          width,
+			          height,
 			          0,
 			          (height - window->drawable.height) / 2);
 			break;
 		case StaticGravity: /* XXX keep same data relative to root */
 		case CenterGravity:
-			copy_data(window, data, pitch, width, height,
+			copy_data(window,
+			          data,
+			          pitch,
+			          width,
+			          height,
 			          (width - window->drawable.width) / 2,
 			          (height - window->drawable.height) / 2);
 			break;
 		case EastGravity:
-			copy_data(window, data, pitch, width, height,
+			copy_data(window,
+			          data,
+			          pitch,
+			          width,
+			          height,
 			          width - window->drawable.width,
 			          (height - window->drawable.height) / 2);
 			break;
 		case SouthWestGravity:
-			copy_data(window, data, pitch, width, height,
+			copy_data(window,
+			          data,
+			          pitch,
+			          width,
+			          height,
 			          0,
 			          height - window->drawable.height);
 			break;
 		case SouthGravity:
-			copy_data(window, data, pitch, width, height,
+			copy_data(window,
+			          data,
+			          pitch,
+			          width,
+			          height,
 			          (width - window->drawable.width) / 2,
 			          height - window->drawable.height);
 			break;
 		case SouthEastGravity:
-			copy_data(window, data, pitch, width, height,
+			copy_data(window,
+			          data,
+			          pitch,
+			          width,
+			          height,
 			          width - window->drawable.width,
 			          height - window->drawable.height);
 			break;
@@ -423,9 +503,13 @@ int window_resize(struct xsrv *xsrv, struct window *window,
 	return 0;
 }
 
-void window_get_fb_rect(struct xsrv *xsrv, struct window *window,
-                        uint32_t *x, uint32_t *y,
-                        uint32_t *width, uint32_t *height)
+void
+window_get_fb_rect(struct xsrv *xsrv,
+                   struct window *window,
+                   uint32_t *x,
+                   uint32_t *y,
+                   uint32_t *width,
+                   uint32_t *height)
 {
 begin:
 	(void)xsrv;
@@ -491,9 +575,13 @@ begin:
 	goto begin;
 }
 
-void window_get_full_rect(struct xsrv *xsrv, struct window *window,
-                          uint32_t *x, uint32_t *y,
-                          uint32_t *width, uint32_t *height)
+void
+window_get_full_rect(struct xsrv *xsrv,
+                     struct window *window,
+                     uint32_t *x,
+                     uint32_t *y,
+                     uint32_t *width,
+                     uint32_t *height)
 {
 	if (window->x < 0)
 	{
@@ -536,26 +624,42 @@ void window_get_full_rect(struct xsrv *xsrv, struct window *window,
 	window_get_fb_rect(xsrv, window->parent, x, y, width, height);
 }
 
-void update_tree_depth(struct window *window)
+void
+update_tree_depth(struct window *window)
 {
-	window->tree_depth = window->parent->tree_depth + 1;
 	struct window *child;
+
+	window->tree_depth = window->parent->tree_depth + 1;
 	TAILQ_FOREACH(child, &window->children, chain)
 		update_tree_depth(child);
 }
 
-void window_reparent(struct xsrv *xsrv, struct client *client,
-                     struct window *window, struct window *parent,
-                     int16_t x, int16_t y)
+void
+window_reparent(struct xsrv *xsrv,
+                struct client *client,
+                struct window *window,
+                struct window *parent,
+                int16_t x,
+                int16_t y)
 {
 	struct window *oldparent = window->parent;
 	uint32_t old_x;
 	uint32_t old_y;
 	uint32_t old_width;
 	uint32_t old_height;
-	window_get_full_rect(xsrv, window, &old_x, &old_y, &old_width,
+	uint32_t new_x;
+	uint32_t new_y;
+	uint32_t new_width;
+	uint32_t new_height;
+	int mapped;
+
+	window_get_full_rect(xsrv,
+	                     window,
+	                     &old_x,
+	                     &old_y,
+	                     &old_width,
 	                     &old_height);
-	int mapped = window->flags & WINDOW_MAPPED;
+	mapped = window->flags & WINDOW_MAPPED;
 	window_unmap(xsrv, window);
 	TAILQ_REMOVE(&window->parent->children, window, chain);
 	TAILQ_INSERT_TAIL(&parent->children, window, chain);
@@ -563,11 +667,11 @@ void window_reparent(struct xsrv *xsrv, struct client *client,
 	update_tree_depth(window);
 	window->x = x;
 	window->y = y;
-	uint32_t new_x;
-	uint32_t new_y;
-	uint32_t new_width;
-	uint32_t new_height;
-	window_get_full_rect(xsrv, window, &new_x, &new_y, &new_width,
+	window_get_full_rect(xsrv,
+	                     window,
+	                     &new_x,
+	                     &new_y,
+	                     &new_width,
 	                     &new_height);
 	framebuffer_redraw(xsrv, old_x, old_y, old_width, old_height);
 	framebuffer_redraw(xsrv, new_x, new_y, new_width, new_height);
@@ -576,9 +680,11 @@ void window_reparent(struct xsrv *xsrv, struct client *client,
 		window_map(xsrv, client, window);
 }
 
-struct property *window_get_property(struct window *window, struct atom *prop)
+struct property *
+window_get_property(struct window *window, struct atom *prop)
 {
 	struct property *property;
+
 	TAILQ_FOREACH(property, &window->properties, chain)
 	{
 		if (property->property == prop)
@@ -587,10 +693,13 @@ struct property *window_get_property(struct window *window, struct atom *prop)
 	return NULL;
 }
 
-void window_delete_property(struct xsrv *xsrv, struct window *window,
-                            struct atom *prop)
+void
+window_delete_property(struct xsrv *xsrv,
+                       struct window *window,
+                       struct atom *prop)
 {
 	struct property *property;
+
 	TAILQ_FOREACH(property, &window->properties, chain)
 	{
 		if (property->property == prop)
@@ -598,20 +707,24 @@ void window_delete_property(struct xsrv *xsrv, struct window *window,
 			TAILQ_REMOVE(&window->properties, property, chain);
 			free(property->data);
 			free(property);
-			window_property_notify(xsrv, window, prop,
+			window_property_notify(xsrv,
+			                       window,
+			                       prop,
 			                       PropertyDelete);
 			return;
 		}
 	}
 }
 
-struct button_grab *window_get_button_grab(struct xsrv *xsrv,
-                                           struct window *window,
-                                           uint8_t button,
-                                           uint16_t modifiers)
+struct button_grab *
+window_get_button_grab(struct xsrv *xsrv,
+                       struct window *window,
+                       uint8_t button,
+                       uint16_t modifiers)
 {
-	(void)xsrv;
 	struct button_grab *grab;
+
+	(void)xsrv;
 	TAILQ_FOREACH(grab, &window->button_grabs, window_chain)
 	{
 		if (button != AnyButton && grab->button != button)
@@ -623,12 +736,16 @@ struct button_grab *window_get_button_grab(struct xsrv *xsrv,
 	return NULL;
 }
 
-void window_remove_button_grab(struct xsrv *xsrv, struct window *window,
-                               uint8_t button, uint16_t modifiers)
+void
+window_remove_button_grab(struct xsrv *xsrv,
+                          struct window *window,
+                          uint8_t button,
+                          uint16_t modifiers)
 {
-	(void)xsrv;
 	struct button_grab *grab;
 	struct button_grab *next;
+
+	(void)xsrv;
 	for (grab = TAILQ_FIRST(&window->button_grabs);
 	     grab && (next = TAILQ_NEXT(grab, window_chain), 1);
 	     grab = next)
@@ -641,18 +758,22 @@ void window_remove_button_grab(struct xsrv *xsrv, struct window *window,
 	}
 }
 
-void window_redraw(struct xsrv *xsrv, struct window *window)
+void
+window_redraw(struct xsrv *xsrv, struct window *window)
 {
 	uint32_t x;
 	uint32_t y;
 	uint32_t width;
 	uint32_t height;
+
 	window_get_full_rect(xsrv, window, &x, &y, &width, &height);
 	framebuffer_redraw(xsrv, x, y, width, height);
 }
 
-void window_set_cursor(struct xsrv *xsrv, struct window *window,
-                       struct cursor *cursor)
+void
+window_set_cursor(struct xsrv *xsrv,
+                  struct window *window,
+                  struct cursor *cursor)
 {
 	object_free(xsrv, OBJECT(window->attributes.cursor));
 	window->attributes.cursor = cursor;
@@ -666,14 +787,22 @@ void window_set_cursor(struct xsrv *xsrv, struct window *window,
 		while (tmp->tree_depth > window->tree_depth)
 			tmp = tmp->parent;
 		if (tmp == window)
-			xsrv_cursor_motion(xsrv, xsrv->pointer.x,
+			xsrv_cursor_motion(xsrv,
+			                   xsrv->pointer.x,
 			                   xsrv->pointer.y);
 	}
 }
 
-void window_clear(struct xsrv *xsrv, struct window *window,
-                  int16_t x, int16_t y, uint16_t width, uint16_t height)
+void
+window_clear(struct xsrv *xsrv,
+             struct window *window,
+             int16_t x,
+             int16_t y,
+             uint16_t width,
+             uint16_t height)
 {
+	(void)xsrv;
+
 	if (x < 0)
 	{
 		if ((uint16_t)-x >= width)
@@ -712,130 +841,209 @@ void window_clear(struct xsrv *xsrv, struct window *window,
 	}
 }
 
-void window_button_press(struct xsrv *xsrv, struct window *window,
-                         uint8_t button, uint32_t wx, uint32_t wy)
+void
+window_button_press(struct xsrv *xsrv,
+                    struct window *window,
+                    uint8_t button,
+                    uint32_t wx,
+                    uint32_t wy)
 {
 	struct window_event *event;
+
 	TAILQ_FOREACH(event, &window->events, window_chain)
 	{
 		if (!(event->mask & ButtonPressMask))
 			continue;
 		/* XXX child */
-		ev_button_press(xsrv, event->client, button, millitime(),
-		                window->drawable.root, window, NULL,
-		                xsrv->pointer.x, xsrv->pointer.y, wx, wy,
-		                xsrv->keybutmask, 1);
+		ev_button_press(xsrv,
+		                event->client,
+		                button,
+		                millitime(),
+		                window->drawable.root,
+		                window,
+		                NULL,
+		                xsrv->pointer.x,
+		                xsrv->pointer.y,
+		                wx,
+		                wy,
+		                xsrv->keybutmask,
+		                1);
 	}
 }
 
-void window_button_release(struct xsrv *xsrv, struct window *window,
-                           uint8_t button, uint32_t wx, uint32_t wy)
+void
+window_button_release(struct xsrv *xsrv,
+                      struct window *window,
+                      uint8_t button,
+                      uint32_t wx,
+                      uint32_t wy)
 {
 	struct window_event *event;
+
 	TAILQ_FOREACH(event, &window->events, window_chain)
 	{
 		if (!(event->mask & ButtonReleaseMask))
 			continue;
 		/* XXX child */
-		ev_button_release(xsrv, event->client, button, millitime(),
-		                  window->drawable.root, window, NULL,
-		                  xsrv->pointer.x, xsrv->pointer.y, wx, wy,
-		                  xsrv->keybutmask, 1);
+		ev_button_release(xsrv,
+		                  event->client,
+		                  button,
+		                  millitime(),
+		                  window->drawable.root,
+		                  window,
+		                  NULL,
+		                  xsrv->pointer.x,
+		                  xsrv->pointer.y,
+		                  wx,
+		                  wy,
+		                  xsrv->keybutmask,
+		                  1);
 	}
 }
 
-void window_motion_notify(struct xsrv *xsrv, struct window *window,
-                          uint8_t detail, uint32_t wx, uint32_t wy)
+void
+window_motion_notify(struct xsrv *xsrv,
+                     struct window *window,
+                     uint8_t detail,
+                     uint32_t wx,
+                     uint32_t wy)
 {
 	struct window_event *event;
+
 	TAILQ_FOREACH(event, &window->events, window_chain)
 	{
 		if (!(event->mask & PointerMotionMask))
 			continue;
 		/* XXX child */
-		ev_motion_notify(xsrv, event->client, detail, millitime(),
-		                 window->drawable.root, window, NULL,
-		                 xsrv->pointer.x, xsrv->pointer.y, wx, wy,
-		                 xsrv->keybutmask, 1);
+		ev_motion_notify(xsrv,
+		                 event->client,
+		                 detail,
+		                 millitime(),
+		                 window->drawable.root,
+		                 window,
+		                 NULL,
+		                 xsrv->pointer.x,
+		                 xsrv->pointer.y,
+		                 wx,
+		                 wy,
+		                 xsrv->keybutmask,
+		                 1);
 	}
 }
 
-void window_key_press(struct xsrv *xsrv, struct window *window, uint8_t key)
+void
+window_key_press(struct xsrv *xsrv, struct window *window, uint8_t key)
 {
 	struct window_event *event;
+
 	TAILQ_FOREACH(event, &window->events, window_chain)
 	{
 		if (!(event->mask & KeyPressMask))
 			continue;
 		/* XXX child */
-		ev_key_press(xsrv, event->client, key, millitime(),
-		             window->drawable.root, window, NULL,
-		             xsrv->pointer.x, xsrv->pointer.y,
+		ev_key_press(xsrv,
+		             event->client,
+		             key,
+		             millitime(),
+		             window->drawable.root,
+		             window,
+		             NULL,
+		             xsrv->pointer.x,
+		             xsrv->pointer.y,
 		             xsrv->pointer.x - window->x,
 		             xsrv->pointer.y - window->y,
-		             xsrv->keybutmask, 1);
+		             xsrv->keybutmask,
+		             1);
 	}
 }
 
-void window_key_release(struct xsrv *xsrv, struct window *window, uint8_t key)
+void
+window_key_release(struct xsrv *xsrv, struct window *window, uint8_t key)
 {
 	struct window_event *event;
+
 	TAILQ_FOREACH(event, &window->events, window_chain)
 	{
 		if (!(event->mask & KeyReleaseMask))
 			continue;
 		/* XXX child */
-		ev_key_release(xsrv, event->client, key, millitime(),
-		               window->drawable.root, window, NULL,
-		               xsrv->pointer.x, xsrv->pointer.y,
+		ev_key_release(xsrv,
+		               event->client,
+		               key,
+		               millitime(),
+		               window->drawable.root,
+		               window,
+		               NULL,
+		               xsrv->pointer.x,
+		               xsrv->pointer.y,
 		               xsrv->pointer.x - window->x,
 		               xsrv->pointer.y - window->y,
-		               xsrv->keybutmask, 1);
+		               xsrv->keybutmask,
+		               1);
 	}
 }
 
-void window_enter_notify(struct xsrv *xsrv, struct window *window,
-                         uint8_t detail)
+void
+window_enter_notify(struct xsrv *xsrv, struct window *window, uint8_t detail)
 {
 	struct window_event *event;
+
 	TAILQ_FOREACH(event, &window->events, window_chain)
 	{
 		if (!(event->mask & EnterWindowMask))
 			continue;
 		/* XXX child */
-		ev_enter_notify(xsrv, event->client, detail, millitime(),
-		                window->drawable.root, window, NULL,
-		                xsrv->pointer.x, xsrv->pointer.y,
+		ev_enter_notify(xsrv,
+		                event->client,
+		                detail,
+		                millitime(),
+		                window->drawable.root,
+		                window,
+		                NULL,
+		                xsrv->pointer.x,
+		                xsrv->pointer.y,
 		                xsrv->pointer.x - window->x,
 		                xsrv->pointer.y - window->y,
-		                xsrv->keybutmask, 1);
+		                xsrv->keybutmask,
+		                1);
 	}
 }
 
-void window_leave_notify(struct xsrv *xsrv, struct window *window,
-                         uint8_t detail)
+void
+window_leave_notify(struct xsrv *xsrv, struct window *window, uint8_t detail)
 {
 	struct window_event *event;
+
 	TAILQ_FOREACH(event, &window->events, window_chain)
 	{
 		if (!(event->mask & LeaveWindowMask))
 			continue;
 		/* XXX child */
-		ev_leave_notify(xsrv, event->client, detail, millitime(),
-		                window->drawable.root, window, NULL,
-		                xsrv->pointer.x, xsrv->pointer.y,
+		ev_leave_notify(xsrv,
+		                event->client,
+		                detail,
+		                millitime(),
+		                window->drawable.root,
+		                window,
+		                NULL,
+		                xsrv->pointer.x,
+		                xsrv->pointer.y,
 		                xsrv->pointer.x - window->x,
 		                xsrv->pointer.y - window->y,
-		                xsrv->keybutmask, 1);
+		                xsrv->keybutmask,
+		                1);
 	}
 }
 
-int window_map_request(struct xsrv *xsrv, struct client *client,
-                       struct window *window)
+int
+window_map_request(struct xsrv *xsrv,
+                   struct client *client,
+                   struct window *window)
 {
+	struct window_event *event;
+
 	if (!window->parent)
 		return 0;
-	struct window_event *event;
 	TAILQ_FOREACH(event, &window->parent->events, window_chain)
 	{
 		if (!(event->mask & SubstructureRedirectMask))
@@ -848,59 +1056,73 @@ int window_map_request(struct xsrv *xsrv, struct client *client,
 	return 0;
 }
 
-void window_map_notify(struct xsrv *xsrv, struct window *window)
+void
+window_map_notify(struct xsrv *xsrv, struct window *window)
 {
+	struct window_event *event;
+
 	if (window->parent)
 	{
-		struct window_event *event;
 		TAILQ_FOREACH(event, &window->parent->events, window_chain)
 		{
 			if (!(event->mask & SubstructureNotifyMask))
 				continue;
-			ev_map_notify(xsrv, event->client, window->parent,
+			ev_map_notify(xsrv,
+			              event->client,
+			              window->parent,
 			              window,
 			              window->attributes.override_redirect);
 			break;
 		}
 	}
-	struct window_event *event;
 	TAILQ_FOREACH(event, &window->events, window_chain)
 	{
 		if (!(event->mask & StructureNotifyMask))
 			continue;
-		ev_map_notify(xsrv, event->client, window, window,
+		ev_map_notify(xsrv,
+		              event->client,
+		              window,
+		              window,
 		              window->attributes.override_redirect);
 	}
 }
 
-void window_unmap_notify(struct xsrv *xsrv, struct window *window)
+void
+window_unmap_notify(struct xsrv *xsrv, struct window *window)
 {
+	struct window_event *event;
+
 	if (window->parent)
 	{
-		struct window_event *event;
 		TAILQ_FOREACH(event, &window->parent->events, window_chain)
 		{
 			if (!(event->mask & SubstructureNotifyMask))
 				continue;
-			ev_unmap_notify(xsrv, event->client, window->parent,
-			              window,
-			              window->attributes.override_redirect);
+			ev_unmap_notify(xsrv,
+			                event->client,
+			                window->parent,
+			                window,
+			                window->attributes.override_redirect);
 			break;
 		}
 	}
-	struct window_event *event;
 	TAILQ_FOREACH(event, &window->events, window_chain)
 	{
 		if (!(event->mask & StructureNotifyMask))
 			continue;
-		ev_unmap_notify(xsrv, event->client, window, window,
+		ev_unmap_notify(xsrv,
+		                event->client,
+		                window,
+		                window,
 		                window->attributes.override_redirect);
 	}
 }
 
-void window_focus_in(struct xsrv *xsrv, struct window *window, uint8_t detail)
+void
+window_focus_in(struct xsrv *xsrv, struct window *window, uint8_t detail)
 {
 	struct window_event *event;
+
 	TAILQ_FOREACH(event, &window->events, window_chain)
 	{
 		if (!(event->mask & FocusChangeMask))
@@ -910,9 +1132,11 @@ void window_focus_in(struct xsrv *xsrv, struct window *window, uint8_t detail)
 	}
 }
 
-void window_focus_out(struct xsrv *xsrv, struct window *window, uint8_t detail)
+void
+window_focus_out(struct xsrv *xsrv, struct window *window, uint8_t detail)
 {
 	struct window_event *event;
+
 	TAILQ_FOREACH(event, &window->events, window_chain)
 	{
 		if (!(event->mask & FocusChangeMask))
@@ -922,9 +1146,11 @@ void window_focus_out(struct xsrv *xsrv, struct window *window, uint8_t detail)
 	}
 }
 
-void window_keymap_notify(struct xsrv *xsrv, struct window *window)
+void
+window_keymap_notify(struct xsrv *xsrv, struct window *window)
 {
 	struct window_event *event;
+
 	TAILQ_FOREACH(event, &window->events, window_chain)
 	{
 		if (!(event->mask & KeymapStateMask))
@@ -933,54 +1159,71 @@ void window_keymap_notify(struct xsrv *xsrv, struct window *window)
 	}
 }
 
-void window_reparent_notify(struct xsrv *xsrv, struct window *window,
-                            struct window *oldparent)
+void
+window_reparent_notify(struct xsrv *xsrv,
+                       struct window *window,
+                       struct window *oldparent)
 {
+	struct window_event *event;
+
 	if (window->parent)
 	{
-		struct window_event *event;
 		TAILQ_FOREACH(event, &window->parent->events, window_chain)
 		{
 			if (!(event->mask & SubstructureNotifyMask))
 				continue;
-			ev_reparent_notify(xsrv, event->client, window->parent,
-			                   window, window->parent,
-			                   window->x, window->y,
+			ev_reparent_notify(xsrv,
+			                   event->client,
+			                   window->parent,
+			                   window,
+			                   window->parent,
+			                   window->x,
+			                   window->y,
 			                   window->attributes.override_redirect);
 			break;
 		}
 	}
 	if (oldparent)
 	{
-		struct window_event *event;
 		TAILQ_FOREACH(event, &oldparent->events, window_chain)
 		{
 			if (!(event->mask & SubstructureNotifyMask))
 				continue;
-			ev_reparent_notify(xsrv, event->client, oldparent,
-			                   window, window->parent,
-			                   window->x, window->y,
+			ev_reparent_notify(xsrv,
+			                   event->client,
+			                   oldparent,
+			                   window,
+			                   window->parent,
+			                   window->x,
+			                   window->y,
 			                   window->attributes.override_redirect);
 			break;
 		}
 	}
-	struct window_event *event;
 	TAILQ_FOREACH(event, &window->events, window_chain)
 	{
 		if (!(event->mask & StructureNotifyMask))
 			continue;
-		ev_reparent_notify(xsrv, event->client, window,
-		                   window, window->parent,
-		                   window->x, window->y,
+		ev_reparent_notify(xsrv,
+		                   event->client,
+		                   window,
+		                   window,
+		                   window->parent,
+		                   window->x,
+		                   window->y,
 		                   window->attributes.override_redirect);
 	}
 }
 
-int window_resize_request(struct xsrv *xsrv, struct client *client,
-                          struct window *window, uint16_t width,
-                          uint16_t height)
+int
+window_resize_request(struct xsrv *xsrv,
+                      struct client *client,
+                      struct window *window,
+                      uint16_t width,
+                      uint16_t height)
 {
 	struct window_event *event;
+
 	TAILQ_FOREACH(event, &window->events, window_chain)
 	{
 		if (event->client == client)
@@ -993,30 +1236,44 @@ int window_resize_request(struct xsrv *xsrv, struct client *client,
 	return 0;
 }
 
-void window_expose(struct xsrv *xsrv, struct window *window)
+void
+window_expose(struct xsrv *xsrv, struct window *window)
 {
 	struct window_event *event;
+
 	TAILQ_FOREACH(event, &window->events, window_chain)
 	{
 		if (!(event->mask & ExposureMask))
 			continue;
 		/* XXX count, x, y, width, height */
-		ev_expose(xsrv, event->client, window, 0, 0,
-		          window->drawable.width, window->drawable.height, 0);
+		ev_expose(xsrv,
+		          event->client,
+		          window,
+		          0,
+		          0,
+		          window->drawable.width,
+		          window->drawable.height,
+		          0);
 	}
 }
 
-void window_create_notify(struct xsrv *xsrv, struct window *window)
+void
+window_create_notify(struct xsrv *xsrv, struct window *window)
 {
+	struct window_event *event;
+
 	if (!window->parent)
 		return;
-	struct window_event *event;
 	TAILQ_FOREACH(event, &window->parent->events, window_chain)
 	{
 		if (!(event->mask & SubstructureNotifyMask))
 			continue;
-		ev_create_notify(xsrv, event->client, window->parent,
-		                 window, window->x, window->y,
+		ev_create_notify(xsrv,
+		                 event->client,
+		                 window->parent,
+		                 window,
+		                 window->x,
+		                 window->y,
 		                 window->drawable.width,
 		                 window->drawable.height,
 		                 window->border_width,
@@ -1025,21 +1282,24 @@ void window_create_notify(struct xsrv *xsrv, struct window *window)
 	}
 }
 
-void window_destroy_notify(struct xsrv *xsrv, struct window *window)
+void
+window_destroy_notify(struct xsrv *xsrv, struct window *window)
 {
+	struct window_event *event;
+
 	if (window->parent)
 	{
-		struct window_event *event;
 		TAILQ_FOREACH(event, &window->parent->events, window_chain)
 		{
 			if (!(event->mask & SubstructureNotifyMask))
 				continue;
-			ev_destroy_notify(xsrv, event->client, window->parent,
+			ev_destroy_notify(xsrv,
+			                  event->client,
+			                  window->parent,
 			                  window);
 			break;
 		}
 	}
-	struct window_event *event;
 	TAILQ_FOREACH(event, &window->events, window_chain)
 	{
 		if (!(event->mask & StructureNotifyMask))
@@ -1048,41 +1308,64 @@ void window_destroy_notify(struct xsrv *xsrv, struct window *window)
 	}
 }
 
-int window_configure_request(struct xsrv *xsrv, struct client *client,
-                             struct window *window,  uint32_t value_mask,
-                             int16_t x, int16_t y,
-                             uint16_t width, uint16_t height,
-                             uint16_t border_width, struct window *sibling,
-                             uint8_t stack_mode)
+int
+window_configure_request(struct xsrv *xsrv,
+                         struct client *client,
+                         struct window *window,
+                         uint32_t value_mask,
+                         int16_t x,
+                         int16_t y,
+                         uint16_t width,
+                         uint16_t height,
+                         uint16_t border_width,
+                         struct window *sibling,
+                         uint8_t stack_mode)
 {
+	struct window_event *event;
+
 	if (!window->parent)
 		return 0;
-	struct window_event *event;
 	TAILQ_FOREACH(event, &window->parent->events, window_chain)
 	{
 		if (event->client == client)
 			continue;
 		if (!(event->mask & SubstructureNotifyMask))
 			continue;
-		ev_configure_request(xsrv, event->client, stack_mode,
-		                     window->parent, window, sibling, x, y,
-		                     width, height, border_width, value_mask);
+		ev_configure_request(xsrv,
+		                     event->client,
+		                     stack_mode,
+		                     window->parent,
+		                     window,
+		                     sibling,
+		                     x,
+		                     y,
+		                     width,
+		                     height,
+		                     border_width,
+		                     value_mask);
 		return 1;
 	}
 	return 0;
 }
 
-void window_configure_notify(struct xsrv *xsrv, struct window *window)
+void
+window_configure_notify(struct xsrv *xsrv, struct window *window)
 {
+	struct window_event *event;
+
 	if (window->parent)
 	{
-		struct window_event *event;
 		TAILQ_FOREACH(event, &window->parent->events, window_chain)
 		{
 			if (!(event->mask & SubstructureNotifyMask))
 				continue;
-			ev_configure_notify(xsrv, event->client, window->parent,
-			                    window, NULL, window->x, window->y,
+			ev_configure_notify(xsrv,
+			                    event->client,
+			                    window->parent,
+			                    window,
+			                    NULL,
+			                    window->x,
+			                    window->y,
 			                    window->drawable.width,
 			                    window->drawable.height,
 			                    window->border_width,
@@ -1090,13 +1373,17 @@ void window_configure_notify(struct xsrv *xsrv, struct window *window)
 			break;
 		}
 	}
-	struct window_event *event;
 	TAILQ_FOREACH(event, &window->events, window_chain)
 	{
 		if (!(event->mask & StructureNotifyMask))
 			continue;
-		ev_configure_notify(xsrv, event->client, window,
-		                    window, NULL, window->x, window->y,
+		ev_configure_notify(xsrv,
+		                    event->client,
+		                    window,
+		                    window,
+		                    NULL,
+		                    window->x,
+		                    window->y,
 		                    window->drawable.width,
 		                    window->drawable.height,
 		                    window->border_width,
@@ -1104,15 +1391,23 @@ void window_configure_notify(struct xsrv *xsrv, struct window *window)
 	}
 }
 
-void window_property_notify(struct xsrv *xsrv, struct window *window,
-                            struct atom *property, uint8_t state)
+void
+window_property_notify(struct xsrv *xsrv,
+                       struct window *window,
+                       struct atom *property,
+                       uint8_t state)
 {
 	struct window_event *event;
+
 	TAILQ_FOREACH(event, &window->events, window_chain)
 	{
 		if (!(event->mask & PropertyChangeMask))
 			continue;
-		ev_property_notify(xsrv, event->client, window, property,
-		                   millitime(), state);
+		ev_property_notify(xsrv,
+		                   event->client,
+		                   window,
+		                   property,
+		                   millitime(),
+		                   state);
 	}
 }

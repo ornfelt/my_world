@@ -2,7 +2,8 @@
 
 #include <string.h>
 
-void *memccpy(void *d, const void *s, int c, size_t n)
+void *
+memccpy(void *d, const void *s, int c, size_t n)
 {
 	size_t i = 0;
 	if (n >= sizeof(size_t))

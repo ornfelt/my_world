@@ -4,8 +4,12 @@
 #include <string.h>
 #include <errno.h>
 
-char *getenv(const char *name)
+char *
+getenv(const char *name)
 {
+	size_t key_len;
+	char *eq;
+
 	if (!environ)
 		return NULL;
 	if (!name || !*name)
@@ -13,16 +17,18 @@ char *getenv(const char *name)
 		errno = EINVAL;
 		return NULL;
 	}
-	char *eq = strchr(name, '=');
+	eq = strchr(name, '=');
 	if (eq)
 	{
 		errno = EINVAL;
 		return NULL;
 	}
-	size_t key_len = strlen(name);
+	key_len = strlen(name);
 	for (size_t i = 0; environ[i]; ++i)
 	{
-		const char *val = envcmp(environ[i], name, key_len);
+		const char *val;
+
+		val = envcmp(environ[i], name, key_len);
 		if (!val)
 			continue;
 		return (char*)val;

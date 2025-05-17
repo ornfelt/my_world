@@ -37,18 +37,25 @@ struct env
 	struct window window;
 };
 
-static uint64_t nanotime(void)
+static uint64_t
+nanotime(void)
 {
 	struct timespec ts;
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 	return ts.tv_sec * 1000000000 + ts.tv_nsec;
 }
 
-static int create_shmimg(struct window *window)
+static int
+create_shmimg(struct window *window)
 {
-	window->image = XShmCreateImage(window->display, window->vi.visual, 24,
-	                                ZPixmap, NULL, &window->shminfo,
-	                                window->width, window->height);
+	window->image = XShmCreateImage(window->display,
+	                                window->vi.visual,
+	                                24,
+	                                ZPixmap,
+	                                NULL,
+	                                &window->shminfo,
+	                                window->width,
+	                                window->height);
 	if (!window->image)
 	{
 		fprintf(stderr, "%s: failed to create image\n",
@@ -61,14 +68,16 @@ static int create_shmimg(struct window *window)
 	                               IPC_CREAT | 0777);
 	if (window->shminfo.shmid == -1)
 	{
-		fprintf(stderr, "%s: shmget: %s\n", window->progname,
+		fprintf(stderr, "%s: shmget: %s\n",
+		        window->progname,
 		        strerror(errno));
 		return 1;
 	}
 	window->image->data = shmat(window->shminfo.shmid, 0, 0);
 	if (!window->image->data)
 	{
-		fprintf(stderr, "%s: shmat: %s\n", window->progname,
+		fprintf(stderr, "%s: shmat: %s\n",
+		        window->progname,
 		        strerror(errno));
 		return 1;
 	}
@@ -78,20 +87,27 @@ static int create_shmimg(struct window *window)
 	XSync(window->display, False);
 	if (shmctl(window->shminfo.shmid, IPC_RMID, NULL) == -1)
 	{
-		fprintf(stderr, "%s: shmctl: %s\n", window->progname,
+		fprintf(stderr, "%s: shmctl: %s\n",
+		        window->progname,
 		        strerror(errno));
 		return 1;
 	}
 	return 0;
 }
 
-static void handle_configure(struct window *window, XConfigureEvent *event)
+static void
+handle_configure(struct window *window, XConfigureEvent *event)
 {
 	if ((uint32_t)event->width == window->width
 	 && (uint32_t)event->height == window->height)
 		return;
-	XFillRectangle(window->display, window->window, window->gc, 0, 0,
-	               event->width, event->height);
+	XFillRectangle(window->display,
+	               window->window,
+	               window->gc,
+	               0,
+	               0,
+	               event->width,
+	               event->height);
 	window->width = event->width;
 	window->height = event->height;
 	XShmDetach(window->display, &window->shminfo);
@@ -102,7 +118,8 @@ static void handle_configure(struct window *window, XConfigureEvent *event)
 		exit(EXIT_FAILURE);
 }
 
-static void handle_events(struct window *window)
+static void
+handle_events(struct window *window)
 {
 	while (XPending(window->display))
 	{
@@ -117,7 +134,8 @@ static void handle_events(struct window *window)
 	}
 }
 
-static int setup_window(const char *progname, struct window *window)
+static int
+setup_window(const char *progname, struct window *window)
 {
 	memset(window, 0, sizeof(*window));
 	window->progname = progname;
@@ -131,7 +149,10 @@ static int setup_window(const char *progname, struct window *window)
 	}
 	window->root = XRootWindow(window->display, 0);
 	window->screen = DefaultScreen(window->display);
-	if (!XMatchVisualInfo(window->display, window->screen, 24, TrueColor,
+	if (!XMatchVisualInfo(window->display,
+	                      window->screen,
+	                      24,
+	                      TrueColor,
 	                      &window->vi))
 	{
 		fprintf(stderr, "%s: failed to find visual\n", progname);
@@ -140,17 +161,32 @@ static int setup_window(const char *progname, struct window *window)
 	XSetWindowAttributes swa;
 	swa.event_mask = KeyPressMask | KeyReleaseMask | StructureNotifyMask;
 	swa.bit_gravity = CenterGravity;
-	window->window = XCreateWindow(window->display, window->root, 0, 0,
-	                               window->width, window->height, 0,
+	window->window = XCreateWindow(window->display,
+	                               window->root,
+	                               0,
+	                               0,
+	                               window->width,
+	                               window->height,
+	                               0,
 	                               window->vi.depth,
-	                               InputOutput, window->vi.visual,
-	                               CWEventMask | CWBitGravity, &swa);
-	XChangeProperty(window->display, window->window, XA_WM_NAME, XA_STRING,
-	                8, PropModeReplace, (uint8_t*)"h261", 4);
+	                               InputOutput,
+	                               window->vi.visual,
+	                               CWEventMask | CWBitGravity,
+	                               &swa);
+	XChangeProperty(window->display,
+	                window->window,
+	                XA_WM_NAME,
+	                XA_STRING,
+	                8,
+	                PropModeReplace,
+	                (uint8_t*)"h261",
+	                4);
 	XGCValues gc_values;
 	gc_values.foreground = 0;
-	window->gc = XCreateGC(window->display, window->window,
-	                       GCForeground, &gc_values);
+	window->gc = XCreateGC(window->display,
+	                       window->window,
+	                       GCForeground,
+	                       &gc_values);
 	if (!window->gc)
 	{
 		fprintf(stderr, "%s: failed to create GC\n", progname);
@@ -164,40 +200,59 @@ static int setup_window(const char *progname, struct window *window)
 	return 0;
 }
 
-static void swap_buffers(struct window *window)
+static void
+swap_buffers(struct window *window)
 {
-	XShmPutImage(window->display, window->window, window->gc,
-	             window->image, 0, 0, 0, 0,
-	             window->width, window->height, False);
+	XShmPutImage(window->display,
+	             window->window,
+	             window->gc,
+	             window->image,
+	             0,
+	             0,
+	             0,
+	             0,
+	             window->width,
+	             window->height,
+	             False);
 	XSync(window->display, False);
 }
 
-static void draw(struct window *window, const uint8_t *data,
-                 uint32_t width, uint32_t height)
+static void
+draw(struct window *window,
+     const uint8_t *data,
+     uint32_t width,
+     uint32_t height)
 {
-	uint32_t maxy = height > window->height ? window->height : height;
-	uint32_t maxx = width > window->width ? window->width : width;
+	uint32_t maxy;
+	uint32_t maxx;
 	const uint8_t *src = data;
 	uint8_t *dst = (uint8_t*)window->image->data;
 	uint32_t src_pitch = width * 3;
 	uint32_t dst_pitch = window->width * 4;
+
+	maxy = height > window->height ? window->height : height;
+	maxx = width > window->width ? window->width : width;
 	for (uint32_t y = 0; y < maxy; ++y)
 	{
 		const uint8_t *row_src = src;
 		uint8_t *row_dst = dst;
+
 		for (uint32_t x = 0; x < maxx; ++x)
 		{
-			row_dst[x * 4 + 0] = row_src[x * 3 + 2];
-			row_dst[x * 4 + 1] = row_src[x * 3 + 1];
-			row_dst[x * 4 + 2] = row_src[x * 3 + 0];
-			row_dst[x * 4 + 3] = 0xFF;
+			row_dst[0] = row_src[2];
+			row_dst[1] = row_src[1];
+			row_dst[2] = row_src[0];
+			row_dst[3] = 0xFF;
+			row_dst += 4;
+			row_src += 3;
 		}
 		src += src_pitch;
 		dst += dst_pitch;
 	}
 }
 
-static int read_h261(struct env *env, const char *filename)
+static int
+read_h261(struct env *env, const char *filename)
 {
 	FILE *fp = NULL;
 	struct h261 *h261 = NULL;
@@ -206,8 +261,10 @@ static int read_h261(struct env *env, const char *filename)
 	fp = fopen(filename, "rb");
 	if (!fp)
 	{
-		fprintf(stderr, "%s: fopen(%s): %s\n", env->progname,
-		        filename, strerror(errno));
+		fprintf(stderr, "%s: fopen(%s): %s\n",
+		        env->progname,
+		        filename,
+		        strerror(errno));
 		goto end;
 	}
 	h261 = h261_new();
@@ -260,13 +317,15 @@ end:
 	return ret;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-h] FILE\n", progname);
 	printf("-h: show this help\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

@@ -2,9 +2,12 @@
 
 #include <stdio.h>
 
-int fseek(FILE *fp, long offset, int whence)
+int
+fseek(FILE *fp, long offset, int whence)
 {
+	long current;
 	int ret;
+
 	flockfile(fp);
 	if (!fp->io_funcs.seek)
 	{
@@ -21,7 +24,7 @@ int fseek(FILE *fp, long offset, int whence)
 		goto end;
 	}
 	/* XXX some optimizations could be done if dst is inside current buffer */
-	long current = ftell(fp);
+	current = ftell(fp);
 	if (current == -1
 	 || fflush(fp)
 	 || fp->io_funcs.seek(fp->cookie, current + offset, SEEK_SET) == -1)

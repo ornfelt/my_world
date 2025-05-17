@@ -1,9 +1,9 @@
 BIN = ls
 
-SRC = main.c \
-      sources.c \
-      dir.c \
-      print.c \
+SRC = dir.c \
       file.c \
+      main.c \
+      print.c \
+      sources.c \
 
 include $(MAKEDIR)/bin.mk

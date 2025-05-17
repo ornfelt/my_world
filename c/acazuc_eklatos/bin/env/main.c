@@ -8,7 +8,8 @@
 
 extern char **environ;
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	if (argc == 1)
 	{
@@ -20,7 +21,10 @@ int main(int argc, char **argv)
 	{
 		if (!strchr(argv[i], '='))
 		{
-			int pid = fork();
+			int wstatus;
+			int pid;
+
+			pid = fork();
 			if (pid == -1)
 				return EXIT_FAILURE;
 			if (pid == 0)
@@ -28,7 +32,6 @@ int main(int argc, char **argv)
 				execvp(argv[i], &argv[i]);
 				return EXIT_FAILURE;
 			}
-			int wstatus;
 			while (waitpid(pid, &wstatus, 0) == -1)
 			{
 				if (errno != EAGAIN)

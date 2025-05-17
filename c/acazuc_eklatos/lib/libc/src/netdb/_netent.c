@@ -10,12 +10,14 @@
 FILE *netent_fp;
 int netent_stayopen;
 
-struct netent *next_netent(void)
+struct netent *
+next_netent(void)
 {
 	static char netent_name[256];
 	static struct netent netent;
 	size_t n = 0;
 	char *line = NULL;
+
 	while (getline(&line, &n, netent_fp) > 0)
 	{
 		char *tmp = strchr(line, '#');

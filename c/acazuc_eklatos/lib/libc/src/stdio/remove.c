@@ -2,10 +2,10 @@
 #include <stdio.h>
 #include <errno.h>
 
-int remove(const char *pathname)
+int
+remove(const char *pathname)
 {
-	int res = unlink(pathname);
-	if (!res)
+	if (!unlink(pathname))
 		return 0;
 	if (errno != EISDIR)
 		return -1;

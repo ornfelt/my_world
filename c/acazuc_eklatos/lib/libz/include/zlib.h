@@ -35,8 +35,6 @@ extern "C" {
 
 #define Z_NULL 0
 
-struct zlib_ctx;
-
 typedef struct z_stream_s
 {
 	const uint8_t *next_in;
@@ -74,6 +72,11 @@ int inflate(z_stream *stream, int flush);
 int inflateEnd(z_stream *stream);
 
 int inflateGetHeader(z_stream *stream, gz_header *header);
+
+int compress(uint8_t *dst, unsigned *dst_len, const uint8_t *src, unsigned src_len);
+int compress2(uint8_t *dst, unsigned *dst_len, const uint8_t *src, unsigned src_len, int level);
+int uncompress(uint8_t *dst, unsigned *dst_len, const uint8_t *src, unsigned src_len);
+int uncompress2(uint8_t *dst, unsigned *dst_len, const uint8_t *src, unsigned *src_len);
 
 struct gzFile_s;
 

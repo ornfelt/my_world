@@ -11,32 +11,40 @@
 #include <fcntl.h>
 #include <time.h>
 
-size_t epoch_micro(struct env *env)
+size_t
+epoch_micro(struct env *env)
 {
 	struct timespec ts;
 
 	if (clock_gettime(CLOCK_REALTIME, &ts) == -1)
 	{
-		fprintf(stderr, "%s: clock_gettime: %s\n", env->progname,
+		fprintf(stderr, "%s: clock_gettime: %s\n",
+		        env->progname,
 		        strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 	return ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
 }
 
-static int add_ip(struct env *env, const char *ip)
+static int
+add_ip(struct env *env, const char *ip)
 {
-	char *dup = strdup(ip);
+	char **ips;
+	char *dup;
+
+	dup = strdup(ip);
 	if (!dup)
 	{
-		fprintf(stderr, "%s: strdup: %s\n", env->progname,
+		fprintf(stderr, "%s: strdup: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
-	char **ips = realloc(env->ips, sizeof(*env->ips) * (env->ips_count + 1));
+	ips = realloc(env->ips, sizeof(*env->ips) * (env->ips_count + 1));
 	if (!ips)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", env->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        env->progname,
 		        strerror(errno));
 		free(dup);
 		return 1;
@@ -46,17 +54,22 @@ static int add_ip(struct env *env, const char *ip)
 	return 0;
 }
 
-static int parse_file(struct env *env, const char *file)
+static int
+parse_file(struct env *env, const char *file)
 {
-	FILE *fp = fopen(file, "rb");
+	char *line = NULL;
+	size_t n = 0;
+	FILE *fp;
+
+	fp = fopen(file, "rb");
 	if (!fp)
 	{
-		fprintf(stderr, "%s: open(%s): %s\n", env->progname, file,
+		fprintf(stderr, "%s: open(%s): %s\n",
+		        env->progname,
+		        file,
 		        strerror(errno));
 		return 1;
 	}
-	size_t n = 0;
-	char *line = NULL;
 	while (getline(&line, &n, fp) > 0)
 	{
 		size_t len = strlen(line);
@@ -72,19 +85,27 @@ static int parse_file(struct env *env, const char *file)
 	return 0;
 }
 
-static int parse_host(struct env *env, const char *host)
+static int
+parse_host(struct env *env, const char *host)
 {
 	return add_ip(env, host);
 }
 
-static int parse_port_part(struct env *env, const char *part)
+static int
+parse_port_part(struct env *env, const char *part)
 {
-	char *minus = strchr(part, '-');
+	unsigned long start;
+	unsigned long end;
+	char *endptr;
+	char *minus;
+
+	minus = strchr(part, '-');
 	if (!minus)
 	{
-		char *endptr;
+		unsigned long port;
+
 		errno = 0;
-		unsigned long port = strtoul(part, &endptr, 10);
+		port = strtoul(part, &endptr, 10);
 		if (errno || *endptr || port >= UINT16_MAX)
 		{
 			fprintf(stderr, "%s: invalid port\n", env->progname);
@@ -97,16 +118,15 @@ static int parse_port_part(struct env *env, const char *part)
 		}
 		return 0;
 	}
-	char *endptr;
 	errno = 0;
-	unsigned long start = strtoul(part, &endptr, 10);
+	start = strtoul(part, &endptr, 10);
 	if (errno || endptr != minus || start >= UINT16_MAX)
 	{
 		fprintf(stderr, "%s: invalid range src port\n", env->progname);
 		return 1;
 	}
 	errno = 0;
-	unsigned long end = strtoul(minus + 1, &endptr, 10);
+	end = strtoul(minus + 1, &endptr, 10);
 	if (errno || *endptr || end >= UINT16_MAX)
 	{
 		fprintf(stderr, "%s: invalid range dst port\n", env->progname);
@@ -128,9 +148,11 @@ static int parse_port_part(struct env *env, const char *part)
 	return 0;
 }
 
-static int parse_ports(struct env *env, const char *ports)
+static int
+parse_ports(struct env *env, const char *ports)
 {
 	char *it;
+
 	while ((it = strchrnul(ports, ',')))
 	{
 		if (it == ports + 1)
@@ -153,7 +175,8 @@ static int parse_ports(struct env *env, const char *ports)
 	return 0;
 }
 
-static int add_scan(struct env *env, const char *scan)
+static int
+add_scan(struct env *env, const char *scan)
 {
 #define TEST_SCAN(name) \
 do \
@@ -182,9 +205,11 @@ do \
 	return 1;
 }
 
-static int parse_scan(struct env *env, const char *scans)
+static int
+parse_scan(struct env *env, const char *scans)
 {
 	char *it;
+
 	while ((it = strchrnul(scans, ',')))
 	{
 		if (it == scans + 1)
@@ -207,11 +232,14 @@ static int parse_scan(struct env *env, const char *scans)
 	return 0;
 }
 
-static int parse_trials(struct env *env, const char *str)
+static int
+parse_trials(struct env *env, const char *str)
 {
-	errno = 0;
+	unsigned long trials;
 	char *endptr;
-	unsigned long trials = strtoul(str, &endptr, 10);
+
+	errno = 0;
+	trials = strtoul(str, &endptr, 10);
 	if (errno || *endptr || !trials || trials > 10)
 	{
 		fprintf(stderr, "%s: invalid trials count\n", env->progname);
@@ -221,11 +249,14 @@ static int parse_trials(struct env *env, const char *str)
 	return 0;
 }
 
-static int parse_timeout(struct env *env, const char *str)
+static int
+parse_timeout(struct env *env, const char *str)
 {
-	errno = 0;
+	unsigned long timeout;
 	char *endptr;
-	unsigned long timeout = strtoul(str, &endptr, 10);
+
+	errno = 0;
+	timeout = strtoul(str, &endptr, 10);
 	if (errno || *endptr || !timeout || timeout > 60)
 	{
 		fprintf(stderr, "%s: invalid timeout value\n", env->progname);
@@ -235,7 +266,8 @@ static int parse_timeout(struct env *env, const char *str)
 	return 0;
 }
 
-static int resolve_self_ip(struct env *env)
+static int
+resolve_self_ip(struct env *env)
 {
 	struct ifaddrs *addrs;
 	char ipset = 0;
@@ -276,7 +308,8 @@ static int resolve_self_ip(struct env *env)
 	return 1;
 }
 
-static int build_sockets(struct env *env)
+static int
+build_sockets(struct env *env)
 {
 	static const int val = 1;
 
@@ -304,7 +337,8 @@ static int build_sockets(struct env *env)
 	return 0;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s: [-h] [-p ports] [-s scans] [-f file] [-H host] [-t trials] [-T timeout]\n", progname);
 	printf("-h        : display this help\n");
@@ -316,7 +350,8 @@ static void usage(const char *progname)
 	printf("-t timeout: timeout in seconds of each scan. Max is 60. Default to 5\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

@@ -1,16 +1,20 @@
 #include <libgen.h>
 #include <string.h>
 
-char *basename(char *path)
+char *
+basename(char *path)
 {
+	char *slash;
+	char *base_slash;
+
 	if (!path || !*path)
 		return ".";
 	while (1)
 	{
-		char *slash = strchr(path, '/');
+		slash = strchr(path, '/');
 		if (!slash)
 			return *path ? path : "/";
-		char *base_slash = slash;
+		base_slash = slash;
 		while (*slash == '/')
 			slash++;
 		if (!*slash)

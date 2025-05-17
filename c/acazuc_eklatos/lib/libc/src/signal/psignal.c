@@ -2,7 +2,8 @@
 #include <string.h>
 #include <stdio.h>
 
-void psignal(int signum, const char *str)
+void
+psignal(int signum, const char *str)
 {
 	if (str && *str)
 		fprintf(stderr, "%s: %s\n", str, strsignal(signum));

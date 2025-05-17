@@ -1,16 +1,25 @@
 #include <resolv.h>
 #include <string.h>
 
-int dn_comp(const char *dn, uint8_t *dst, int len, uint8_t **dnptrs,
-            uint8_t **lastdnptr)
+int
+dn_comp(const char *dn,
+        uint8_t *dst,
+        int len,
+        uint8_t **dnptrs,
+        uint8_t **lastdnptr)
 {
+	const uint8_t *org;
+
 	(void)dnptrs; /* XXX use */
 	(void)lastdnptr; /* XXX use */
-	const uint8_t *org = dst;
+	org = dst;
 	while (1)
 	{
-		char *iter = strchrnul(dn, '.');
-		int n = iter - dn;
+		char *iter;
+		int n;
+
+		iter = strchrnul(dn, '.');
+		n = iter - dn;
 		if (n == 0 || n > 63)
 			return -1;
 		if (len < 1 + n)

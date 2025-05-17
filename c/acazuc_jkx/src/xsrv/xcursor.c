@@ -11,7 +11,8 @@ struct xcursor
 	uint8_t data[32];
 };
 
-static const struct xcursor X_cursor_source =
+static const struct xcursor
+X_cursor_source =
 {
 	14, 14, 7, 7,
 	{
@@ -32,7 +33,8 @@ static const struct xcursor X_cursor_source =
 	},
 };
 
-static const struct xcursor X_cursor_mask =
+static const struct xcursor
+X_cursor_mask =
 {
 	16, 16, 8, 8,
 	{
@@ -55,7 +57,8 @@ static const struct xcursor X_cursor_mask =
 	},
 };
 
-static const struct xcursor arrow_source =
+static const struct xcursor
+arrow_source =
 {
 	14, 14, 14, 0,
 	{
@@ -76,7 +79,8 @@ static const struct xcursor arrow_source =
 	},
 };
 
-static const struct xcursor arrow_mask =
+static const struct xcursor
+arrow_mask =
 {
 	16, 16, 15, 1,
 	{
@@ -99,7 +103,8 @@ static const struct xcursor arrow_mask =
 	},
 };
 
-static const struct xcursor based_arrow_down_source =
+static const struct xcursor
+based_arrow_down_source =
 {
 	8, 10, 4, 10,
 	{
@@ -116,7 +121,8 @@ static const struct xcursor based_arrow_down_source =
 	},
 };
 
-static const struct xcursor based_arrow_down_mask =
+static const struct xcursor
+based_arrow_down_mask =
 {
 	10, 12, 5, 11,
 	{
@@ -135,7 +141,8 @@ static const struct xcursor based_arrow_down_mask =
 	},
 };
 
-static const struct xcursor based_arrow_up_source =
+static const struct xcursor
+based_arrow_up_source =
 {
 	8, 10, 4, 0,
 	{
@@ -152,7 +159,8 @@ static const struct xcursor based_arrow_up_source =
 	},
 };
 
-static const struct xcursor based_arrow_up_mask =
+static const struct xcursor
+based_arrow_up_mask =
 {
 	10, 12, 5, 1,
 	{
@@ -171,7 +179,8 @@ static const struct xcursor based_arrow_up_mask =
 	},
 };
 
-static const struct xcursor bottom_left_corner_source =
+static const struct xcursor
+bottom_left_corner_source =
 {
 	14, 14, 5, 8,
 	{
@@ -192,7 +201,8 @@ static const struct xcursor bottom_left_corner_source =
 	},
 };
 
-static const struct xcursor bottom_left_corner_mask =
+static const struct xcursor
+bottom_left_corner_mask =
 {
 	16, 16, 6, 9,
 	{
@@ -215,7 +225,8 @@ static const struct xcursor bottom_left_corner_mask =
 	},
 };
 
-static const struct xcursor bottom_right_corner_source =
+static const struct xcursor
+bottom_right_corner_source =
 {
 	14, 14, 8, 8,
 	{
@@ -236,7 +247,8 @@ static const struct xcursor bottom_right_corner_source =
 	},
 };
 
-static const struct xcursor bottom_right_corner_mask =
+static const struct xcursor
+bottom_right_corner_mask =
 {
 	16, 16, 9, 9,
 	{
@@ -259,7 +271,8 @@ static const struct xcursor bottom_right_corner_mask =
 	},
 };
 
-static const struct xcursor bottom_side_source =
+static const struct xcursor
+bottom_side_source =
 {
 	13, 14, 6, 10,
 	{
@@ -280,7 +293,8 @@ static const struct xcursor bottom_side_source =
 	},
 };
 
-static const struct xcursor bottom_side_mask =
+static const struct xcursor
+bottom_side_mask =
 {
 	15, 16, 7, 11,
 	{
@@ -303,7 +317,8 @@ static const struct xcursor bottom_side_mask =
 	},
 };
 
-static const struct xcursor cross_source =
+static const struct xcursor
+cross_source =
 {
 	15, 15, 7, 7,
 	{
@@ -325,7 +340,8 @@ static const struct xcursor cross_source =
 	},
 };
 
-static const struct xcursor cross_mask =
+static const struct xcursor
+cross_mask =
 {
 	15, 15, 7, 7,
 	{
@@ -347,7 +363,8 @@ static const struct xcursor cross_mask =
 	},
 };
 
-static const struct xcursor cross_reverse_source =
+static const struct xcursor
+cross_reverse_source =
 {
 	15, 15, 7, 7,
 	{
@@ -369,7 +386,8 @@ static const struct xcursor cross_reverse_source =
 	},
 };
 
-static const struct xcursor cross_reverse_mask =
+static const struct xcursor
+cross_reverse_mask =
 {
 	15, 15, 7, 7,
 	{
@@ -391,7 +409,8 @@ static const struct xcursor cross_reverse_mask =
 	},
 };
 
-static const struct xcursor crosshair_source =
+static const struct xcursor
+crosshair_source =
 {
 	15, 15, 7, 7,
 	{
@@ -413,7 +432,8 @@ static const struct xcursor crosshair_source =
 	},
 };
 
-static const struct xcursor crosshair_mask =
+static const struct xcursor
+crosshair_mask =
 {
 	15, 15, 7, 7,
 	{
@@ -435,7 +455,8 @@ static const struct xcursor crosshair_mask =
 	},
 };
 
-static const struct xcursor exchange_source =
+static const struct xcursor
+exchange_source =
 {
 	14, 14, 7, 7,
 	{
@@ -456,7 +477,8 @@ static const struct xcursor exchange_source =
 	},
 };
 
-static const struct xcursor exchange_mask =
+static const struct xcursor
+exchange_mask =
 {
 	16, 16, 8, 8,
 	{
@@ -479,7 +501,8 @@ static const struct xcursor exchange_mask =
 	},
 };
 
-static const struct xcursor fleur_source =
+static const struct xcursor
+fleur_source =
 {
 	14, 14, 7, 7,
 	{
@@ -500,7 +523,8 @@ static const struct xcursor fleur_source =
 	},
 };
 
-static const struct xcursor fleur_mask =
+static const struct xcursor
+fleur_mask =
 {
 	16, 16, 8, 8,
 	{
@@ -523,7 +547,8 @@ static const struct xcursor fleur_mask =
 	},
 };
 
-static const struct xcursor hand1_source =
+static const struct xcursor
+hand1_source =
 {
 	13, 16, 13, 0,
 	{
@@ -546,7 +571,8 @@ static const struct xcursor hand1_source =
 	},
 };
 
-static const struct xcursor hand1_mask =
+static const struct xcursor
+hand1_mask =
 {
 	13, 16, 13, 0,
 	{
@@ -569,7 +595,8 @@ static const struct xcursor hand1_mask =
 	},
 };
 
-static const struct xcursor heart_source =
+static const struct xcursor
+heart_source =
 {
 	15, 14, 7, 7,
 	{
@@ -590,7 +617,8 @@ static const struct xcursor heart_source =
 	},
 };
 
-static const struct xcursor heart_mask =
+static const struct xcursor
+heart_mask =
 {
 	15, 14, 7, 7,
 	{
@@ -611,7 +639,8 @@ static const struct xcursor heart_mask =
 	},
 };
 
-static const struct xcursor left_ptr_source =
+static const struct xcursor
+left_ptr_source =
 {
 	8, 14, 0, 0,
 	{
@@ -632,7 +661,8 @@ static const struct xcursor left_ptr_source =
 	},
 };
 
-static const struct xcursor left_ptr_mask =
+static const struct xcursor
+left_ptr_mask =
 {
 	10, 16, 1, 1,
 	{
@@ -655,7 +685,8 @@ static const struct xcursor left_ptr_mask =
 	},
 };
 
-static const struct xcursor left_side_source =
+static const struct xcursor
+left_side_source =
 {
 	14, 13, 3, 6,
 	{
@@ -675,7 +706,8 @@ static const struct xcursor left_side_source =
 	},
 };
 
-static const struct xcursor left_side_mask =
+static const struct xcursor
+left_side_mask =
 {
 	16, 15, 4, 7,
 	{
@@ -697,7 +729,8 @@ static const struct xcursor left_side_mask =
 	},
 };
 
-static const struct xcursor right_side_source =
+static const struct xcursor
+right_side_source =
 {
 	14, 13, 10, 6,
 	{
@@ -717,7 +750,8 @@ static const struct xcursor right_side_source =
 	},
 };
 
-static const struct xcursor right_side_mask =
+static const struct xcursor
+right_side_mask =
 {
 	16, 15, 11, 7,
 	{
@@ -739,7 +773,8 @@ static const struct xcursor right_side_mask =
 	},
 };
 
-static const struct xcursor top_left_corner_source =
+static const struct xcursor
+top_left_corner_source =
 {
 	14, 14, 5, 5,
 	{
@@ -760,7 +795,8 @@ static const struct xcursor top_left_corner_source =
 	},
 };
 
-static const struct xcursor top_left_corner_mask =
+static const struct xcursor
+top_left_corner_mask =
 {
 	16, 16, 6, 6,
 	{
@@ -783,7 +819,8 @@ static const struct xcursor top_left_corner_mask =
 	},
 };
 
-static const struct xcursor top_right_corner_source =
+static const struct xcursor
+top_right_corner_source =
 {
 	14, 14, 8, 5,
 	{
@@ -804,7 +841,8 @@ static const struct xcursor top_right_corner_source =
 	},
 };
 
-static const struct xcursor top_right_corner_mask =
+static const struct xcursor
+top_right_corner_mask =
 {
 	16, 16, 9, 6,
 	{
@@ -826,7 +864,8 @@ static const struct xcursor top_right_corner_mask =
 	},
 };
 
-static const struct xcursor top_side_source =
+static const struct xcursor
+top_side_source =
 {
 	13, 14, 6, 3,
 	{
@@ -847,7 +886,8 @@ static const struct xcursor top_side_source =
 	},
 };
 
-static const struct xcursor top_side_mask =
+static const struct xcursor
+top_side_mask =
 {
 	15, 16, 7, 4,
 	{
@@ -870,7 +910,8 @@ static const struct xcursor top_side_mask =
 	},
 };
 
-static const struct xcursor watch_source =
+static const struct xcursor
+watch_source =
 {
 	16, 16, 8, 8,
 	{
@@ -893,7 +934,8 @@ static const struct xcursor watch_source =
 	},
 };
 
-static const struct xcursor watch_mask =
+static const struct xcursor
+watch_mask =
 {
 	16, 16, 8, 8,
 	{
@@ -916,7 +958,8 @@ static const struct xcursor watch_mask =
 	},
 };
 
-static const struct xcursor xterm_source =
+static const struct xcursor
+xterm_source =
 {
 	7, 14, 3, 7,
 	{
@@ -937,7 +980,8 @@ static const struct xcursor xterm_source =
 	},
 };
 
-static const struct xcursor xterm_mask =
+static const struct xcursor
+xterm_mask =
 {
 	9, 16, 4, 8,
 	{
@@ -960,7 +1004,8 @@ static const struct xcursor xterm_mask =
 	},
 };
 
-const struct xcursor *xcursors[154] =
+const struct xcursor *
+xcursors[154] =
 {
 #define DEF(n) [XC_##n] = &n##_source, [XC_##n + 1] = &n##_mask
 	DEF(X_cursor),

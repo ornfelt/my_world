@@ -1,7 +1,8 @@
 #include <signal.h>
 #include <errno.h>
 
-int sigaddset(sigset_t *set, int signum)
+int
+sigaddset(sigset_t *set, int signum)
 {
 	if (signum < 0 || signum > SIGPOLL)
 	{

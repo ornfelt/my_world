@@ -62,27 +62,32 @@ FILE *stdin = &g_stdin;
 FILE *stdout = &g_stdout;
 FILE *stderr = &g_stderr;
 
-ssize_t io_read(void *cookie, char *buf, size_t size)
+ssize_t
+io_read(void *cookie, char *buf, size_t size)
 {
 	return read(((FILE*)cookie)->fd, buf, size);
 }
 
-ssize_t io_write(void *cookie, const char *buf, size_t size)
+ssize_t
+io_write(void *cookie, const char *buf, size_t size)
 {
 	return write(((FILE*)cookie)->fd, buf, size);
 }
 
-int io_seek(void *cookie, off_t off, int whence)
+int
+io_seek(void *cookie, off_t off, int whence)
 {
 	return lseek(((FILE*)cookie)->fd, off, whence);
 }
 
-int io_close(void *cookie)
+int
+io_close(void *cookie)
 {
 	return close(((FILE*)cookie)->fd);
 }
 
-void initfp(FILE *fp)
+void
+initfp(FILE *fp)
 {
 	fp->flush = NULL;
 	fp->buf_pos = 0;
@@ -93,9 +98,12 @@ void initfp(FILE *fp)
 	_libc_lock_init(&fp->lock);
 }
 
-FILE *mkfp(void)
+FILE *
+mkfp(void)
 {
-	FILE *fp = malloc(sizeof(*fp));
+	FILE *fp;
+
+	fp = malloc(sizeof(*fp));
 	if (!fp)
 		return NULL;
 	fp->buf = malloc(BUFSIZ);
@@ -113,7 +121,8 @@ FILE *mkfp(void)
 	return fp;
 }
 
-static void handle_flags_ext(const char *mode, size_t *i, int *flags)
+static void
+handle_flags_ext(const char *mode, size_t *i, int *flags)
 {
 	while (1)
 	{
@@ -134,9 +143,11 @@ static void handle_flags_ext(const char *mode, size_t *i, int *flags)
 	}
 }
 
-int parse_flags(const char *mode, int *flags)
+int
+parse_flags(const char *mode, int *flags)
 {
 	size_t i = 0;
+
 	*flags = 0;
 	switch (mode[i])
 	{
@@ -193,16 +204,19 @@ int parse_flags(const char *mode, int *flags)
 	return 1;
 }
 
-size_t write_data(FILE *fp, const void *data, size_t count)
+size_t
+write_data(FILE *fp, const void *data, size_t count)
 {
+	size_t res = 0;
 	if (!fp->io_funcs.write)
 		return 0;
-	size_t res = 0;
 	while (res < count)
 	{
-		ssize_t wr = fp->io_funcs.write(fp->cookie,
-		                                (char*)&((uint8_t*)data)[res],
-		                                count - res);
+		ssize_t wr;
+
+		wr = fp->io_funcs.write(fp->cookie,
+		                        (char*)&((uint8_t*)data)[res],
+		                        count - res);
 		if (wr == -1)
 		{
 			if (errno == EINTR)

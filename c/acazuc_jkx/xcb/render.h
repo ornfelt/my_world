@@ -1,7 +1,11 @@
 #ifndef XCB_RENDER_H
 #define XCB_RENDER_H
 
-#include <xcb/xcb.h>
+#include "xcb.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define XCB_RENDER_MAJOR_VERSION 0
 #define XCB_RENDER_MINOR_VERSION 11
@@ -313,5 +317,9 @@ xcb_void_cookie_t xcb_render_composite_checked(xcb_connection_t *conn,
                                                uint16_t height);
 
 extern xcb_extension_t xcb_render_id;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -7,15 +7,19 @@
 #include <stdio.h>
 #include <fcntl.h>
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-h] files\n", progname);
 	printf("-h: show this help\n");
 }
 
-static int touch_file(const char *progname, const char *file)
+static int
+touch_file(const char *progname, const char *file)
 {
-	int fd = open(file, O_RDONLY | O_CREAT, 0666);
+	int fd;
+
+	fd = open(file, O_RDONLY | O_CREAT, 0666);
 	if (fd == -1)
 	{
 		fprintf(stderr, "%s: open: %s\n", progname, strerror(errno));
@@ -31,7 +35,8 @@ static int touch_file(const char *progname, const char *file)
 	return 0;
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	int c;
 

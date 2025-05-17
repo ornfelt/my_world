@@ -3,11 +3,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int setvbuf(FILE *fp, char *buf, int mode, size_t size)
+int
+setvbuf(FILE *fp, char *buf, int mode, size_t size)
 {
+	int owned;
+
 	if (mode != _IOFBF && mode != _IONBF && mode != _IOLBF)
 		return EOF;
-	int owned;
 	if (!buf && size)
 	{
 		buf = malloc(size);

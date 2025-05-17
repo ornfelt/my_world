@@ -1,16 +1,21 @@
 #include <resolv.h>
 #include <string.h>
 
-int dn_expand(const uint8_t *msg, const uint8_t *eom, const uint8_t *dn,
-              char *str, int str_len)
+int
+dn_expand(const uint8_t *msg,
+          const uint8_t *eom,
+          const uint8_t *dn,
+          char *str,
+          int str_len)
 {
+	size_t n = 0;
+	int ref = 0;
+	int first = 1;
+
 	if (dn >= eom)
 		return -1;
 	if (!str_len)
 		return -1;
-	size_t n = 0;
-	int ref = 0;
-	int first = 1;
 	while (1)
 	{
 		if (dn >= eom)

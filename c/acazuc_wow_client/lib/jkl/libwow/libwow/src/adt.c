@@ -23,9 +23,12 @@ do \
 		goto err; \
 } while (0)
 
-struct wow_adt_file *wow_adt_file_new(struct wow_mpq_file *mpq)
+struct wow_adt_file *
+wow_adt_file_new(struct wow_mpq_file *mpq)
 {
-	struct wow_adt_file *file = WOW_MALLOC(sizeof(*file));
+	struct wow_adt_file *file;
+
+	file = WOW_MALLOC(sizeof(*file));
 	if (!file)
 		return NULL;
 	memset(file, 0, sizeof(*file));
@@ -212,7 +215,8 @@ err:
 	return NULL;
 }
 
-void wow_adt_file_delete(struct wow_adt_file *file)
+void
+wow_adt_file_delete(struct wow_adt_file *file)
 {
 	if (!file)
 		return;

@@ -3,6 +3,14 @@
 
 #include <X11/Xlib.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 Status XdbeQueryExtension(Display *display, int *major, int *minor);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

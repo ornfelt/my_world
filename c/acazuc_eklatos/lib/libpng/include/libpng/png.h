@@ -80,15 +80,28 @@ void png_write_info(png_structp png, png_const_infop info);
 void png_set_sig_bytes(png_structp png, int bytes);
 int png_set_interlace_handling(png_structp png);
 png_size_t png_get_rowbytes(png_structp png, png_infop info);
-png_uint_32 png_get_IHDR(png_structp png, png_infop info, png_uint_32p width,
-                         png_uint_32p height, int *depth, int *color_type,
-                         int *interlace, int *compression, int *filter);
-void png_set_IHDR(png_const_structp png, png_infop info,
-                  png_uint_32 width, png_uint_32 height,
-                  int depth, int color_type, int interlace,
-                  int compression, int filter);
+png_uint_32 png_get_IHDR(png_structp png,
+                         png_infop info,
+                         png_uint_32p width,
+                         png_uint_32p height,
+                         int *depth,
+                         int *color_type,
+                         int *interlace,
+                         int *compression,
+                         int *filter);
+void png_set_IHDR(png_const_structp png,
+                  png_infop info,
+                  png_uint_32 width,
+                  png_uint_32 height,
+                  int depth,
+                  int color_type,
+                  int interlace,
+                  int compression,
+                  int filter);
 void png_read_row(png_structp png, png_bytep row, png_bytep display_row);
-void png_read_rows(png_structp png, png_bytepp rows, png_bytepp display_rows,
+void png_read_rows(png_structp png,
+                   png_bytepp rows,
+                   png_bytepp display_rows,
                    png_uint_32 count);
 void png_read_image(png_structp png, png_bytepp rows);
 void png_write_row(png_structp png, png_const_bytep row);
@@ -99,11 +112,15 @@ void png_read_update_info(png_structp png, png_infop info);
 jmp_buf *png_jmpbufp(png_structp png);
 #define png_jmpbuf(png) (*png_jmpbufp(png))
 png_voidp png_get_error_ptr(png_structp png);
-void png_set_error_fn(png_structp png, png_voidp err_ptr,
-                      png_error_ptr err_fn, png_error_ptr warn_fn);
+void png_set_error_fn(png_structp png,
+                      png_voidp err_ptr,
+                      png_error_ptr err_fn,
+                      png_error_ptr warn_fn);
 png_voidp png_get_mem_ptr(png_structp png);
-void png_set_mem_fn(png_structp png, png_voidp mem_ptr,
-                    png_malloc_ptr malloc_fn, png_free_ptr free_fn);
+void png_set_mem_fn(png_structp png,
+                    png_voidp mem_ptr,
+                    png_malloc_ptr malloc_fn,
+                    png_free_ptr free_fn);
 
 #ifdef __cplusplus
 }

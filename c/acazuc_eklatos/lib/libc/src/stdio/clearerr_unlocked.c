@@ -2,7 +2,8 @@
 
 #include <stdio.h>
 
-void clearerr_unlocked(FILE *fp)
+void
+clearerr_unlocked(FILE *fp)
 {
 	fp->eof = 0;
 	fp->err = 0;

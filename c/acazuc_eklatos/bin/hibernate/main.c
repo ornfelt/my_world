@@ -5,13 +5,15 @@
 #include <stdio.h>
 #include <errno.h>
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	(void)argc;
-	int ret = reboot(REBOOT_HIBERNATE);
-	if (ret)
+	if (reboot(REBOOT_HIBERNATE))
 	{
-		fprintf(stderr, "%s: reboot: %s\n", argv[0], strerror(errno));
+		fprintf(stderr, "%s: reboot: %s\n",
+		        argv[0],
+		        strerror(errno));
 		return EXIT_FAILURE;
 	}
 	return EXIT_SUCCESS;

@@ -2,10 +2,13 @@
 
 #include <stdio.h>
 
-int feof(FILE *fp)
+int
+feof(FILE *fp)
 {
+	int ret;
+
 	flockfile(fp);
-	int ret = fp->eof;
+	ret = fp->eof;
 	funlockfile(fp);
 	return ret;
 }

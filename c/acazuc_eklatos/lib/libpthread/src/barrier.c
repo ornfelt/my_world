@@ -4,23 +4,26 @@
 #include <limits.h>
 #include <errno.h>
 
-int pthread_barrierattr_init(pthread_barrierattr_t *attr)
+int
+pthread_barrierattr_init(pthread_barrierattr_t *attr)
 {
 	if (!attr)
 		return EINVAL;
 	return 0;
 }
 
-int pthread_barrierattr_destroy(pthread_barrierattr_t *attr)
+int
+pthread_barrierattr_destroy(pthread_barrierattr_t *attr)
 {
 	if (!attr)
 		return EINVAL;
 	return 0;
 }
 
-int pthread_barrier_init(pthread_barrier_t *barrier,
-                                const pthread_barrierattr_t *attr,
-                                unsigned count)
+int
+pthread_barrier_init(pthread_barrier_t *barrier,
+                     const pthread_barrierattr_t *attr,
+                     unsigned count)
 {
 	(void)attr;
 	if (!barrier)
@@ -31,14 +34,16 @@ int pthread_barrier_init(pthread_barrier_t *barrier,
 	return 0;
 }
 
-int pthread_barrier_destroy(pthread_barrier_t *barrier)
+int
+pthread_barrier_destroy(pthread_barrier_t *barrier)
 {
 	if (!barrier)
 		return EINVAL;
 	return 0;
 }
 
-int pthread_barrier_wait(pthread_barrier_t *barrier)
+int
+pthread_barrier_wait(pthread_barrier_t *barrier)
 {
 	unsigned revision = __atomic_load_n(&barrier->revision, __ATOMIC_ACQUIRE);
 	if (__atomic_add_fetch(&barrier->value, 1, __ATOMIC_ACQUIRE) == barrier->count)

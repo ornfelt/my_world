@@ -23,8 +23,11 @@ struct env
 
 static int copy_file(struct env *env, const char *path, const char *dst);
 
-static int copy_dir(struct env *env, const char *src, const char *dst)
+static int
+copy_dir(struct env *env, const char *src, const char *dst)
 {
+	char path[MAXPATHLEN];
+	struct dirent *dirent;
 	DIR *dir = NULL;
 	int ret = 1;
 
@@ -38,24 +41,24 @@ static int copy_dir(struct env *env, const char *src, const char *dst)
 	dir = opendir(src);
 	if (!dir)
 	{
-		fprintf(stderr, "%s: opendir(%s): %s\n", env->progname,
-		        src, strerror(errno));
+		fprintf(stderr, "%s: opendir(%s): %s\n",
+		        env->progname,
+		        src,
+		        strerror(errno));
 		goto end;
 	}
-	struct dirent *dirent;
 	while ((dirent = readdir(dir)))
 	{
 		if (!strcmp(dirent->d_name, ".")
 		 || !strcmp(dirent->d_name, ".."))
 			continue;
-		char childpath[MAXPATHLEN];
-		if (snprintf(childpath, sizeof(childpath), "%s/%s", src, dirent->d_name) >= (int)sizeof(childpath))
+		if (snprintf(path, sizeof(path), "%s/%s", src, dirent->d_name) >= (int)sizeof(path))
 		{
 			fprintf(stderr, "%s: path too long\n", env->progname);
 			goto end;
 		}
 		/* XXX dst should be updated if recursive */
-		if (copy_file(env, childpath, dst))
+		if (copy_file(env, path, dst))
 			goto end;
 	}
 	ret = 0;
@@ -66,8 +69,8 @@ end:
 	return ret;
 }
 
-static int copy_reg(struct env *env, const char *src, const char *dst,
-                    struct stat *st)
+static int
+copy_reg(struct env *env, const char *src, const char *dst, struct stat *st)
 {
 	int fdsrc = -1;
 	int fddst = -1;
@@ -78,37 +81,48 @@ static int copy_reg(struct env *env, const char *src, const char *dst,
 	fdsrc = open(src, O_RDONLY);
 	if (fdsrc == -1)
 	{
-		fprintf(stderr, "%s: open(%s): %s\n", env->progname,
-		        src, strerror(errno));
+		fprintf(stderr, "%s: open(%s): %s\n",
+		        env->progname,
+		        src,
+		        strerror(errno));
 		goto end;
 	}
 	fddst = open(dst, O_WRONLY | O_TRUNC | O_CREAT, st->st_mode);
 	if (fddst == -1)
 	{
-		fprintf(stderr, "%s: open(%s): %s\n", env->progname,
-		        dst, strerror(errno));
+		fprintf(stderr, "%s: open(%s): %s\n",
+		        env->progname,
+		        dst,
+		        strerror(errno));
 		goto end;
 	}
 	while (1)
 	{
 		static char buf[1024 * 1024];
-		ssize_t n = read(fdsrc, buf, sizeof(buf));
+		ssize_t wr;
+		ssize_t n;
+
+		n = read(fdsrc, buf, sizeof(buf));
 		if (n == -1)
 		{
-			fprintf(stderr, "%s: read(%s): %s\n", env->progname,
-			        src, strerror(errno));
+			fprintf(stderr, "%s: read(%s): %s\n",
+			        env->progname,
+			        src,
+			        strerror(errno));
 			goto end;
 		}
 		if (!n)
 			break;
-		ssize_t wr = 0;
+		wr = 0;
 		while (wr < n)
 		{
 			ssize_t w = write(fddst, buf, n - wr);
 			if (w == -1)
 			{
-				fprintf(stderr, "%s: write((%s): %s\n",
-				        env->progname, dst, strerror(errno));
+				fprintf(stderr, "%s: write(%s): %s\n",
+				        env->progname,
+				        dst,
+				        strerror(errno));
 				goto end;
 			}
 			wr += w;
@@ -124,7 +138,8 @@ end:
 	return ret;
 }
 
-static int copy_lnk(struct env *env, const char *src, const char *dst)
+static int
+copy_lnk(struct env *env, const char *src, const char *dst)
 {
 	char target[MAXPATHLEN];
 	ssize_t ret;
@@ -134,8 +149,10 @@ static int copy_lnk(struct env *env, const char *src, const char *dst)
 	ret = readlink(src, target, sizeof(target));
 	if (ret == -1)
 	{
-		fprintf(stderr, "%s: readlink(%s): %s\n", env->progname,
-		        src, strerror(errno));
+		fprintf(stderr, "%s: readlink(%s): %s\n",
+		        env->progname,
+		        src,
+		        strerror(errno));
 		return 1;
 	}
 	if (ret >= (ssize_t)sizeof(target))
@@ -147,19 +164,27 @@ static int copy_lnk(struct env *env, const char *src, const char *dst)
 	target[ret] = '\0';
 	if (symlink(target, dst) == -1)
 	{
-		fprintf(stderr, "%s: symlink: %s\n", env->progname,
+		fprintf(stderr, "%s: symlink(%s, %s): %s\n",
+		        env->progname,
+		        target,
+		        dst,
 		        strerror(errno));
 		return 1;
 	}
 	return 0;
 }
 
-static int copy_file(struct env *env, const char *file, const char *dst)
+static int
+copy_file(struct env *env, const char *file, const char *dst)
 {
 	char path[MAXPATHLEN];
 	struct stat st;
-	size_t file_len = strlen(file);
-	const char *end = file + file_len;
+	size_t file_len;
+	const char *begin;
+	const char *end;
+
+	file_len = strlen(file);
+	end = file + file_len;
 	while (end >= file && *end == '/')
 		end--;
 	if (end <= file)
@@ -167,7 +192,7 @@ static int copy_file(struct env *env, const char *file, const char *dst)
 		fprintf(stderr, "%s: invalid operand\n", env->progname);
 		return 1;
 	}
-	const char *begin = end;
+	begin = end;
 	while (begin > file && *begin != '/')
 		begin--;
 	if (*begin == '/')
@@ -180,8 +205,10 @@ static int copy_file(struct env *env, const char *file, const char *dst)
 	{
 		if (lstat(file, &st) == -1)
 		{
-			fprintf(stderr, "%s: lstat(%s): %s\n", env->progname,
-			        file, strerror(errno));
+			fprintf(stderr, "%s: lstat(%s): %s\n",
+			        env->progname,
+			        file,
+			        strerror(errno));
 			return 1;
 		}
 	}
@@ -189,8 +216,10 @@ static int copy_file(struct env *env, const char *file, const char *dst)
 	{
 		if (stat(file, &st) == -1)
 		{
-			fprintf(stderr, "%s: stat(%s): %s\n", env->progname,
-			        file, strerror(errno));
+			fprintf(stderr, "%s: stat(%s): %s\n",
+			        env->progname,
+			        file,
+			        strerror(errno));
 			return 1;
 		}
 	}
@@ -206,8 +235,10 @@ static int copy_file(struct env *env, const char *file, const char *dst)
 			printf("copying '%s' to '%s'\n", file, path);
 		if (mknod(path, st.st_mode, st.st_dev) == -1)
 		{
-			fprintf(stderr, "%s: mknod(%s): %s\n", env->progname,
-			        path, strerror(errno));
+			fprintf(stderr, "%s: mknod(%s): %s\n",
+			        env->progname,
+			        path,
+			        strerror(errno));
 			return 1;
 		}
 	}
@@ -219,7 +250,8 @@ static int copy_file(struct env *env, const char *file, const char *dst)
 	return 0;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-r] [-R] [-P] [-L] [-v] FILES DIRECTORY\n", progname);
 	printf("-r: synonym of -R\n");
@@ -229,8 +261,11 @@ static void usage(const char *progname)
 	printf("-v: verbose operations\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
+	const char *dst;
+	struct stat st;
 	struct env env;
 	int c;
 
@@ -261,9 +296,8 @@ int main(int argc, char **argv)
 				return EXIT_FAILURE;
 		}
 	}
-	const char *dst = argv[argc - 1];
-	struct stat dst_st;
-	if (stat(dst, &dst_st) == -1)
+	dst = argv[argc - 1];
+	if (stat(dst, &st) == -1)
 	{
 		if (errno == ENOENT)
 		{
@@ -271,14 +305,16 @@ int main(int argc, char **argv)
 		}
 		else
 		{
-			fprintf(stderr, "%s: stat: %s\n", argv[0],
+			fprintf(stderr, "%s: stat(%s): %s\n",
+			        argv[0],
+			        dst,
 			        strerror(errno));
 			return EXIT_FAILURE;
 		}
 	}
 	else
 	{
-		env.dst_isdir = S_ISDIR(dst_st.st_mode);
+		env.dst_isdir = S_ISDIR(st.st_mode);
 	}
 	if (argc - optind > 2 && !env.dst_isdir)
 	{

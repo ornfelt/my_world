@@ -103,7 +103,7 @@ struct wow_modf_data
 	uint32_t unique_id;
 	struct wow_vec3f position;
 	struct wow_vec3f rotation;
-	struct wow_vec3f aabb0; 
+	struct wow_vec3f aabb0;
 	struct wow_vec3f aabb1;
 	uint16_t flags;
 	uint16_t doodad_set;

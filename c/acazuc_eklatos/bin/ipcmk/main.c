@@ -20,12 +20,16 @@ struct env
 	int opt;
 };
 
-static int create_shm(struct env *env)
+static int
+create_shm(struct env *env)
 {
-	int shmid = shmget(IPC_PRIVATE, env->arg, env->mode);
+	int shmid;
+
+	shmid = shmget(IPC_PRIVATE, env->arg, env->mode);
 	if (shmid == -1)
 	{
-		fprintf(stderr, "%s: shmget: %s\n", env->progname,
+		fprintf(stderr, "%s: shmget: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
@@ -33,12 +37,16 @@ static int create_shm(struct env *env)
 	return 0;
 }
 
-static int create_msg(struct env *env)
+static int
+create_msg(struct env *env)
 {
-	int msgid = msgget(IPC_PRIVATE, env->mode);
+	int msgid;
+
+	msgid = msgget(IPC_PRIVATE, env->mode);
 	if (msgid == -1)
 	{
-		fprintf(stderr, "%s: msgget: %s\n", env->progname,
+		fprintf(stderr, "%s: msgget: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
@@ -46,12 +54,16 @@ static int create_msg(struct env *env)
 	return 0;
 }
 
-static int create_sem(struct env *env)
+static int
+create_sem(struct env *env)
 {
-	int semid = semget(IPC_PRIVATE, env->arg, env->mode);
+	int semid;
+
+	semid = semget(IPC_PRIVATE, env->arg, env->mode);
 	if (semid == -1)
 	{
-		fprintf(stderr, "%s: semget: %s\n", env->progname,
+		fprintf(stderr, "%s: semget: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
@@ -59,7 +71,8 @@ static int create_sem(struct env *env)
 	return 0;
 }
 
-static int parse_mode(const char *progname, const char *str, mode_t *mode)
+static int
+parse_mode(const char *progname, const char *str, mode_t *mode)
 {
 	*mode = 0;
 	for (size_t i = 0; str[i]; ++i)
@@ -79,7 +92,8 @@ static int parse_mode(const char *progname, const char *str, mode_t *mode)
 	return 0;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-M size] [-Q] [-S number] [-p mode] [-h]\n", progname);
 	printf("-M size  : create a shared memory segment with the given size\n");
@@ -89,7 +103,8 @@ static void usage(const char *progname)
 	printf("-h       : display this help\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

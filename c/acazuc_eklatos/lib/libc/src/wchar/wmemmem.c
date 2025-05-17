@@ -1,7 +1,10 @@
 #include <wchar.h>
 
-wchar_t *wmemmem(const wchar_t *haystack, size_t haystacklen,
-                 const wchar_t *needle, size_t needlelen)
+wchar_t *
+wmemmem(const wchar_t *haystack,
+        size_t haystacklen,
+        const wchar_t *needle,
+        size_t needlelen)
 {
 	if (needlelen > haystacklen)
 		return NULL;

@@ -11,6 +11,7 @@ DIRS = curl \
        libformat \
        libgzip \
        libhttp \
+       libnbt \
        libnet \
        libogg \
        libpng \

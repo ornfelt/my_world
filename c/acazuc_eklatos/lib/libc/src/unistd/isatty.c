@@ -4,9 +4,11 @@
 #include <unistd.h>
 #include <errno.h>
 
-int isatty(int fd)
+int
+isatty(int fd)
 {
 	struct termios termios;
+
 	if (ioctl(fd, TCGETS, &termios) == -1)
 	{
 		if (errno != EBADF)

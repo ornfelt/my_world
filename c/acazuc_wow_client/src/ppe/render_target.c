@@ -6,15 +6,17 @@
 
 #include <gfx/device.h>
 
-struct render_target *render_target_new(uint8_t samples)
+struct render_target *
+render_target_new(uint8_t samples)
 {
-	struct render_target *render_target = mem_malloc(MEM_PPE, sizeof(*render_target));
+	struct render_target *render_target;
+
+	render_target = mem_malloc(MEM_PPE, sizeof(*render_target));
 	if (!render_target)
 		return NULL;
 	render_target->height = 0;
 	render_target->width = 0;
 	render_target->samples = samples;
-	render_target->dirty_size = false;
 	render_target->enabled = false;
 	render_target->render_target = GFX_RENDER_TARGET_INIT();
 	render_target->depth_stencil_texture = GFX_TEXTURE_INIT();
@@ -25,7 +27,8 @@ struct render_target *render_target_new(uint8_t samples)
 	return render_target;
 }
 
-void render_target_delete(struct render_target *render_target)
+void
+render_target_delete(struct render_target *render_target)
 {
 	if (!render_target)
 		return;
@@ -37,8 +40,14 @@ void render_target_delete(struct render_target *render_target)
 	mem_free(MEM_PPE, render_target);
 }
 
-void render_target_resize(struct render_target *render_target, uint32_t width, uint32_t height)
+void
+render_target_resize(struct render_target *render_target,
+                     uint32_t width,
+                     uint32_t height)
 {
+	if (render_target->width == width
+	 && render_target->height == height)
+		return;
 	uint32_t lod = render_target->samples;
 	enum gfx_texture_type type;
 	if (lod != 0)
@@ -92,13 +101,9 @@ void render_target_resize(struct render_target *render_target, uint32_t width, u
 	gfx_set_render_target_texture(&render_target->render_target, GFX_RENDERTARGET_ATTACHMENT_COLOR0, &render_target->color_texture);
 }
 
-void render_target_bind(struct render_target *render_target, uint32_t buffers)
+void
+render_target_bind(struct render_target *render_target, uint32_t buffers)
 {
-	if (render_target->dirty_size)
-	{
-		render_target_resize(render_target, g_wow->render_width * g_wow->fsaa, g_wow->render_height * g_wow->fsaa);
-		render_target->dirty_size = false;
-	}
 	gfx_bind_render_target(g_wow->device, &render_target->render_target);
 	{
 		uint32_t draw_buffers[3];
@@ -107,10 +112,10 @@ void render_target_bind(struct render_target *render_target, uint32_t buffers)
 		draw_buffers[2] = (buffers & RENDER_TARGET_POSITION_BUFFER_BIT) ? GFX_RENDERTARGET_ATTACHMENT_COLOR2 : GFX_RENDERTARGET_ATTACHMENT_NONE;
 		gfx_set_render_target_draw_buffers(&render_target->render_target, draw_buffers, 3);
 	}
-	gfx_set_viewport(g_wow->device, 0, 0, render_target->width, render_target->height);
 }
 
-void render_target_clear(struct render_target *render_target, uint32_t buffers)
+void
+render_target_clear(struct render_target *render_target, uint32_t buffers)
 {
 	if (buffers & RENDER_TARGET_COLOR_BUFFER_BIT)
 		gfx_clear_color(g_wow->device, &render_target->render_target, GFX_RENDERTARGET_ATTACHMENT_COLOR0, (struct vec4f){0, 0, 0, 1});
@@ -121,16 +126,12 @@ void render_target_clear(struct render_target *render_target, uint32_t buffers)
 	gfx_clear_depth_stencil(g_wow->device, &render_target->render_target, 1, 0);
 }
 
-void render_target_resolve(struct render_target *src, struct render_target *dst, uint32_t buffers)
+void
+render_target_resolve(struct render_target *src, struct render_target *dst, uint32_t buffers)
 {
 	if (dst)
 	{
 		bool depth_stencil = false;
-		if (dst->dirty_size)
-		{
-			render_target_resize(dst, g_wow->render_width * g_wow->fsaa, g_wow->render_height * g_wow->fsaa);
-			dst->dirty_size = false;
-		}
 		for (size_t i = 0; i < 3; ++i)
 		{
 			if (!(buffers & (1 << (2 + i)))) /* offset of depth + stencil */
@@ -171,11 +172,10 @@ void render_target_resolve(struct render_target *src, struct render_target *dst,
 	}
 }
 
-void render_target_set_enabled(struct render_target *render_target, bool enabled)
+void
+render_target_set_enabled(struct render_target *render_target, bool enabled)
 {
 	render_target->enabled = enabled;
 	if (!render_target->enabled)
 		render_target_resize(render_target, 1, 1);
-	else
-		render_target->dirty_size = true;
 }

@@ -137,8 +137,10 @@ int pthread_attr_setstack(pthread_attr_t *attr, void *stack, size_t size);
 int pthread_attr_getstack(const pthread_attr_t *attr, void **stack, size_t *size);
 int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate);
 int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate);
-int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
-                   void *(*start)(void*), void *arg);
+int pthread_create(pthread_t *thread,
+                   const pthread_attr_t *attr,
+                   void *(*start)(void*),
+                   void *arg);
 int pthread_detach(pthread_t thread);
 int pthread_join(pthread_t thread, void **ret);
 void pthread_exit(void *ret) __attribute__((noreturn));
@@ -147,7 +149,8 @@ int pthread_cancel(pthread_t thread);
 pthread_t pthread_self(void);
 int pthread_compare(pthread_t t1, pthread_t t2);
 int pthread_equal(pthread_t t1, pthread_t t2);
-int pthread_atfork(void (*prepare)(void), void (*parent)(void),
+int pthread_atfork(void (*prepare)(void),
+                   void (*parent)(void),
                    void (*child)(void));
 int pthread_setschedprio(pthread_t thread, int prio);
 
@@ -168,7 +171,8 @@ int pthread_cond_init(pthread_cond_t *cond,
                       const pthread_condattr_t *attr);
 int pthread_cond_destroy(pthread_cond_t *cond);
 int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex);
-int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
+int pthread_cond_timedwait(pthread_cond_t *cond,
+                           pthread_mutex_t *mutex,
                            const struct timespec *timeout);
 int pthread_cond_signal(pthread_cond_t *cond);
 int pthread_cond_broadcast(pthread_cond_t *cond);

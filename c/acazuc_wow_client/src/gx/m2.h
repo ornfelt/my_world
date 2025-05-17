@@ -91,6 +91,7 @@ struct gx_m2_frame
 {
 	struct jks_array shadow_to_render; /* struct gx_m2_instance* */
 	struct jks_array to_render; /* struct gx_m2_instance* */
+	bool updated;
 	pthread_mutex_t mutex;
 };
 

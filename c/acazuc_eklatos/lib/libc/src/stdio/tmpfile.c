@@ -1,6 +1,7 @@
 #include <stdio.h>
 
-FILE *tmpfile(void)
+FILE *
+tmpfile(void)
 {
 	/* XXX */
 	return NULL;

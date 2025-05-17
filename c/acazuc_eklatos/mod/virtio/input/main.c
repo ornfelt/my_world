@@ -47,7 +47,8 @@
 #define POINTER_Y     0x1
 #define POINTER_WHEEL 0x8
 
-static const uint16_t keycodes[] =
+static const uint16_t
+keycodes[] =
 {
 	/* 0x00 */ KBD_KEY_NONE        , KBD_KEY_ESCAPE,
 	/* 0x02 */ KBD_KEY_1           , KBD_KEY_2,
@@ -132,7 +133,8 @@ struct virtio_input
 	struct evdev *evdev;
 };
 
-static int add_rx_buf(struct virtio_input *input, uint16_t id)
+static int
+add_rx_buf(struct virtio_input *input, uint16_t id)
 {
 	struct sg_head sg;
 	int ret;
@@ -143,15 +145,15 @@ static int add_rx_buf(struct virtio_input *input, uint16_t id)
 	                     sizeof(struct virtio_input_event) * id);
 	if (ret)
 		goto end;
-	ret = virtq_send(&input->dev.queues[0], &sg, 0, 1);
+	ret = virtq_send(&input->dev.queues[0], NULL, &sg);
 
 end:
 	sg_free(&sg);
 	return ret;
 }
 
-static void key_event(struct virtio_input *input,
-                      struct virtio_input_event *event)
+static void
+key_event(struct virtio_input *input, struct virtio_input_event *event)
 {
 	if (event->code >= MOUSE_BUTTON_FIRST
 	 && event->code <= MOUSE_BUTTON_LAST)
@@ -236,8 +238,8 @@ static void key_event(struct virtio_input *input,
 	                  input->kbd_mods, !!event->value);
 }
 
-static void pointer_event(struct virtio_input *input,
-                          struct virtio_input_event *event)
+static void
+pointer_event(struct virtio_input *input, struct virtio_input_event *event)
 {
 	switch (event->code)
 	{
@@ -256,10 +258,12 @@ static void pointer_event(struct virtio_input *input,
 	}
 }
 
-static void on_eventq_msg(struct virtq *queue, uint16_t id, uint32_t len)
+static void
+on_eventq_msg(struct virtq *queue, uint16_t id, uint32_t len)
 {
 	struct virtio_input *input = (struct virtio_input*)queue->dev;
 	struct virtio_input_event *event = &((struct virtio_input_event*)input->events->data)[id];
+
 	if (len >= sizeof(*event))
 	{
 #if 0
@@ -289,7 +293,8 @@ static void on_eventq_msg(struct virtq *queue, uint16_t id, uint32_t len)
 		TRACE("virtio_input: failed to add rx buf");
 }
 
-static void virtio_input_delete(struct virtio_input *input)
+static void
+virtio_input_delete(struct virtio_input *input)
 {
 	if (!input)
 		return;
@@ -299,7 +304,8 @@ static void virtio_input_delete(struct virtio_input *input)
 	free(input);
 }
 
-int init_pci(struct pci_device *device, void *userdata)
+int
+init_pci(struct pci_device *device, void *userdata)
 {
 	struct virtio_input *input;
 	uint8_t features[1];
@@ -356,22 +362,26 @@ int init_pci(struct pci_device *device, void *userdata)
 	virtio_dev_init_end(&input->dev);
 	return 0;
 
+
 err:
 	virtio_input_delete(input);
 	return ret;
 }
 
-static int init(void)
+static int
+init(void)
 {
 	pci_probe(0x1AF4, 0x1052, init_pci, NULL);
 	return 0;
 }
 
-static void fini(void)
+static void
+fini(void)
 {
 }
 
-struct kmod_info kmod =
+struct kmod_info
+kmod =
 {
 	.magic = KMOD_MAGIC,
 	.version = 1,

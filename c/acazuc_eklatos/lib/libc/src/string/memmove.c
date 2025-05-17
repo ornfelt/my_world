@@ -4,7 +4,8 @@
 
 #include <string.h>
 
-void *memmove(void *d, const void *s, size_t n)
+void *
+memmove(void *d, const void *s, size_t n)
 {
 	if (!n)
 		return d;
@@ -28,7 +29,8 @@ void *memmove(void *d, const void *s, size_t n)
 	return d;
 }
 
-void *__memmove_chk(void *d, const void *s, size_t n, size_t ds)
+void *
+__memmove_chk(void *d, const void *s, size_t n, size_t ds)
 {
 	if (n > ds)
 		__chk_fail();

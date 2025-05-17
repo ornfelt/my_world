@@ -22,24 +22,32 @@ struct env
 
 static int load_elf(struct env *env, const char *path);
 
-static int load_dependencies(struct env *env, const char *path, int fd)
+static int
+load_dependencies(struct env *env, const char *path, int fd)
 {
-	struct elfN *elf = elfN_open_fd(fd);
+	struct elfN *elf;
+
+	elf = elfN_open_fd(fd);
 	if (!elf)
 	{
-		fprintf(stderr, "%s: elf_open_fd(%s): %s\n", env->progname,
-		        path, strerror(errno));
+		fprintf(stderr, "%s: elf_open_fd(%s): %s\n",
+		        env->progname,
+		        path,
+		        strerror(errno));
 		return 1;
 	}
 	for (ElfN_Word i = 0; i < elfN_get_dynnum(elf); ++i)
 	{
-		ElfN_Dyn *dyn = elfN_get_dyn(elf, i);
+		char needed_path[MAXPATHLEN];
+		const char *needed;
+		ElfN_Dyn *dyn;
+
+		dyn = elfN_get_dyn(elf, i);
 		if (dyn->d_tag != DT_NEEDED)
 			continue;
-		const char *needed = elfN_get_dynstr_str(elf, dyn->d_un.d_val);
+		needed = elfN_get_dynstr_str(elf, dyn->d_un.d_val);
 		if (!needed || !*needed)
 			continue;
-		char needed_path[MAXPATHLEN];
 		if (env->base)
 		{
 			snprintf(needed_path, sizeof(needed_path), "%s/%s",
@@ -48,8 +56,10 @@ static int load_dependencies(struct env *env, const char *path, int fd)
 		else
 		{
 			char needed_dir[MAXPATHLEN];
+			char *needed_dirname;
+
 			strlcpy(needed_dir, path, sizeof(needed_dir));
-			char *needed_dirname = dirname(needed_dir);
+			needed_dirname = dirname(needed_dir);
 			snprintf(needed_path, sizeof(needed_path), "%s/%s",
 			         needed_dirname, needed);
 		}
@@ -60,13 +70,18 @@ static int load_dependencies(struct env *env, const char *path, int fd)
 	return 0;
 }
 
-static int load_elf(struct env *env, const char *path)
+static int
+load_elf(struct env *env, const char *path)
 {
-	int fd = open(path, O_RDONLY);
+	int fd;
+
+	fd = open(path, O_RDONLY);
 	if (fd == -1)
 	{
-		fprintf(stderr, "%s: open(%s): %s\n", env->progname,
-		        path, strerror(errno));
+		fprintf(stderr, "%s: open(%s): %s\n",
+		        env->progname,
+		        path,
+		        strerror(errno));
 		return 1;
 	}
 	if (load_dependencies(env, path, fd))
@@ -79,7 +94,8 @@ static int load_elf(struct env *env, const char *path)
 		close(fd);
 		if (errno == EEXIST)
 			return 0;
-		fprintf(stderr, "%s: kmload: %s\n", env->progname,
+		fprintf(stderr, "%s: kmload: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
@@ -87,14 +103,16 @@ static int load_elf(struct env *env, const char *path)
 	return 0;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-h] [-b base] FILES\n", progname);
 	printf("-h: show this help\n");
 	printf("-b base: set the base directory of the modules tree\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

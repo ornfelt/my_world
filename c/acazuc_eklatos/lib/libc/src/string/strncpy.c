@@ -4,7 +4,8 @@
 
 #include <string.h>
 
-char *strncpy(char *d, const char *s, size_t n)
+char *
+strncpy(char *d, const char *s, size_t n)
 {
 	size_t i = 0;
 	while (1)
@@ -42,7 +43,8 @@ end:
 	return d;
 }
 
-char *__strncpy_chk(char *d, const char *s, size_t n, size_t ds)
+char *
+__strncpy_chk(char *d, const char *s, size_t n, size_t ds)
 {
 	if (n >= ds)
 		__chk_fail();

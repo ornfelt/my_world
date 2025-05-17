@@ -4,7 +4,8 @@
 
 #include <string.h>
 
-char *strncat(char *d, const char *s, size_t n)
+char *
+strncat(char *d, const char *s, size_t n)
 {
 	size_t i = strlen(d);
 	size_t j = 0;
@@ -44,7 +45,8 @@ end:
 	return d;
 }
 
-char *__strncat_chk(char *d, const char *s, size_t n, size_t ds)
+char *
+__strncat_chk(char *d, const char *s, size_t n, size_t ds)
 {
 	if (n >= ds)
 		__chk_fail();

@@ -2,14 +2,17 @@
 
 #include <stdio.h>
 
-FILE *freopen(const char *pathname, const char *mode, FILE *fp)
+FILE *
+freopen(const char *pathname, const char *mode, FILE *fp)
 {
+	int flags;
+	int fd;
+
 	if (!pathname) /* not supported */
 		return fp;
-	int flags;
 	if (!parse_flags(mode, &flags))
 		return NULL;
-	int fd = open(pathname, flags, 0666);
+	fd = open(pathname, flags, 0666);
 	if (fd == -1)
 		return NULL;
 	fflush(fp);

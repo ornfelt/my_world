@@ -6,7 +6,8 @@
 
 #define MUTEX_WAITING (1U << 31)
 
-int pthread_mutexattr_init(pthread_mutexattr_t *attr)
+int
+pthread_mutexattr_init(pthread_mutexattr_t *attr)
 {
 	if (!attr)
 		return EINVAL;
@@ -14,14 +15,16 @@ int pthread_mutexattr_init(pthread_mutexattr_t *attr)
 	return 0;
 }
 
-int pthread_mutexattr_destroy(pthread_mutexattr_t *attr)
+int
+pthread_mutexattr_destroy(pthread_mutexattr_t *attr)
 {
 	if (!attr)
 		return EINVAL;
 	return 0;
 }
 
-int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
+int
+pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
 {
 	if (!attr)
 		return EINVAL;
@@ -37,7 +40,8 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
 	}
 }
 
-int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type)
+int
+pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type)
 {
 	if (!attr)
 		return EINVAL;
@@ -46,8 +50,9 @@ int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type)
 	return 0;
 }
 
-int pthread_mutex_init(pthread_mutex_t *mutex,
-                       const pthread_mutexattr_t *attr)
+int
+pthread_mutex_init(pthread_mutex_t *mutex,
+                   const pthread_mutexattr_t *attr)
 {
 	if (!mutex)
 		return EINVAL;
@@ -57,7 +62,8 @@ int pthread_mutex_init(pthread_mutex_t *mutex,
 	return 0;
 }
 
-int pthread_mutex_destroy(pthread_mutex_t *mutex)
+int
+pthread_mutex_destroy(pthread_mutex_t *mutex)
 {
 	if (!mutex)
 		return EINVAL;
@@ -66,7 +72,8 @@ int pthread_mutex_destroy(pthread_mutex_t *mutex)
 	return 0;
 }
 
-static int acquire(pthread_mutex_t *mutex, uint32_t *v)
+static int
+acquire(pthread_mutex_t *mutex, uint32_t *v)
 {
 	uint32_t expected = 0;
 	if (__atomic_compare_exchange_n(&mutex->value, &expected, 1, 0,
@@ -78,12 +85,14 @@ static int acquire(pthread_mutex_t *mutex, uint32_t *v)
 	return 0;
 }
 
-int pthread_mutex_lock(pthread_mutex_t *mutex)
+int
+pthread_mutex_lock(pthread_mutex_t *mutex)
 {
 	return pthread_mutex_timedlock(mutex, NULL);
 }
 
-static int recursive_lock(pthread_mutex_t *mutex)
+static int
+recursive_lock(pthread_mutex_t *mutex)
 {
 	if (mutex->type != PTHREAD_MUTEX_RECURSIVE)
 		return EDEADLK;
@@ -93,7 +102,8 @@ static int recursive_lock(pthread_mutex_t *mutex)
 	return 0;
 }
 
-int pthread_mutex_trylock(pthread_mutex_t *mutex)
+int
+pthread_mutex_trylock(pthread_mutex_t *mutex)
 {
 	if (!mutex)
 		return EINVAL;
@@ -105,8 +115,9 @@ int pthread_mutex_trylock(pthread_mutex_t *mutex)
 	return 0;
 }
 
-int pthread_mutex_timedlock(pthread_mutex_t *mutex,
-                            const struct timespec *abstime)
+int
+pthread_mutex_timedlock(pthread_mutex_t *mutex,
+                        const struct timespec *abstime)
 {
 	if (!mutex)
 		return EINVAL;
@@ -136,7 +147,8 @@ int pthread_mutex_timedlock(pthread_mutex_t *mutex,
 	return 0;
 }
 
-int pthread_mutex_unlock(pthread_mutex_t *mutex)
+int
+pthread_mutex_unlock(pthread_mutex_t *mutex)
 {
 	if (!mutex)
 		return EINVAL;

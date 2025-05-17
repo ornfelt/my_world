@@ -1,8 +1,11 @@
 #include <libintl.h>
 
-char *dcngettext(const char *domain, const char *msgid,
-                 const char *msgid_plural, unsigned long n,
-                 int category)
+char *
+dcngettext(const char *domain,
+           const char *msgid,
+           const char *msgid_plural,
+           unsigned long n,
+           int category)
 {
 	(void)domain;
 	(void)category;

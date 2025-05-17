@@ -4,7 +4,8 @@
 #include <limits.h>
 #include <errno.h>
 
-long strtol(const char *nptr, char **endptr, int base)
+long
+strtol(const char *nptr, char **endptr, int base)
 {
 	if (base && (base < 2 || base > 36))
 	{

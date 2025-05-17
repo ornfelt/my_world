@@ -2,7 +2,8 @@
 
 #include <stdio.h>
 
-void __fseterr(FILE *fp)
+void
+__fseterr(FILE *fp)
 {
 	fp->err = 1;
 }

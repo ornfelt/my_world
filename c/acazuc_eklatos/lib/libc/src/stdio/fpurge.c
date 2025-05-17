@@ -2,7 +2,8 @@
 
 #include <stdio.h>
 
-int fpurge(FILE *fp)
+int
+fpurge(FILE *fp)
 {
 	flockfile(fp);
 	fp->buf_pos = 0;

@@ -9,13 +9,16 @@
 #include <fb.h>
 #include <sg.h>
 
-static int synchronous_request(struct virtio_gpu *gpu, struct virtq *queue,
-                               struct sg_head *sg, size_t nrequest, size_t nreply)
+static int
+synchronous_request(struct virtio_gpu *gpu,
+                    struct virtq *queue,
+                    struct sg_head *sg_read,
+                    struct sg_head *sg_write)
 {
 	int ret;
 
 	(void)gpu;
-	ret = virtq_send(queue, sg, nrequest, nreply);
+	ret = virtq_send(queue, sg_read, sg_write);
 	if (ret < 0)
 	{
 		TRACE("virtio_gpu: failed to send request: %s",
@@ -35,27 +38,30 @@ static int synchronous_request(struct virtio_gpu *gpu, struct virtq *queue,
 	return ret;
 }
 
-int cmd_get_display_info(struct virtio_gpu *gpu,
-                         struct virtio_gpu_resp_display_info *display_info)
+int
+cmd_get_display_info(struct virtio_gpu *gpu,
+                     struct virtio_gpu_resp_display_info *display_info)
 {
 	struct virtio_gpu_resp_display_info *reply;
 	struct virtio_gpu_ctrl_hdr *request;
-	struct sg_head sg;
+	struct sg_head sg_write;
+	struct sg_head sg_read;
 	int ret;
 
-	sg_init(&sg);
+	sg_init(&sg_write);
+	sg_init(&sg_read);
 	mutex_lock(&gpu->mutex);
 	request = gpu->buf->data;
 	reply = (struct virtio_gpu_resp_display_info*)&request[1];
 	memset(request, 0, sizeof(*request));
 	request->type = VIRTIO_GPU_CMD_GET_DISPLAY_INFO;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*request), 0);
+	ret = sg_add_dma_buf(&sg_read, gpu->buf, sizeof(*request), 0);
 	if (ret)
 		goto end;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*reply), sizeof(*request));
+	ret = sg_add_dma_buf(&sg_write, gpu->buf, sizeof(*reply), sizeof(*request));
 	if (ret)
 		goto end;
-	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg, 1, 1);
+	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg_read, &sg_write);
 	if (ret < 0)
 		goto end;
 	if (reply->hdr.type != VIRTIO_GPU_RESP_OK_DISPLAY_INFO)
@@ -70,19 +76,26 @@ int cmd_get_display_info(struct virtio_gpu *gpu,
 
 end:
 	mutex_unlock(&gpu->mutex);
-	sg_free(&sg);
+	sg_free(&sg_write);
+	sg_free(&sg_read);
 	return ret;
 }
 
-int cmd_resource_create_2d(struct virtio_gpu *gpu, uint32_t id, uint32_t format,
-                           uint32_t width, uint32_t height)
+int
+cmd_resource_create_2d(struct virtio_gpu *gpu,
+                       uint32_t id,
+                       uint32_t format,
+                       uint32_t width,
+                       uint32_t height)
 {
 	struct virtio_gpu_resource_create_2d *request;
 	struct virtio_gpu_ctrl_hdr *reply;
-	struct sg_head sg;
+	struct sg_head sg_write;
+	struct sg_head sg_read;
 	int ret;
 
-	sg_init(&sg);
+	sg_init(&sg_write);
+	sg_init(&sg_read);
 	mutex_lock(&gpu->mutex);
 	request = gpu->buf->data;
 	reply = (struct virtio_gpu_ctrl_hdr*)&request[1];
@@ -92,13 +105,13 @@ int cmd_resource_create_2d(struct virtio_gpu *gpu, uint32_t id, uint32_t format,
 	request->format = format;
 	request->width = width;
 	request->height = height;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*request), 0);
+	ret = sg_add_dma_buf(&sg_read, gpu->buf, sizeof(*request), 0);
 	if (ret)
 		goto end;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*reply), sizeof(*request));
+	ret = sg_add_dma_buf(&sg_write, gpu->buf, sizeof(*reply), sizeof(*request));
 	if (ret)
 		goto end;
-	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg, 1, 1);
+	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg_read, &sg_write);
 	if (ret < 0)
 		goto end;
 	if (reply->type != VIRTIO_GPU_RESP_OK_NODATA)
@@ -112,22 +125,33 @@ int cmd_resource_create_2d(struct virtio_gpu *gpu, uint32_t id, uint32_t format,
 
 end:
 	mutex_unlock(&gpu->mutex);
-	sg_free(&sg);
+	sg_free(&sg_write);
+	sg_free(&sg_read);
 	return ret;
 }
 
-int cmd_resource_create_3d(struct virtio_gpu *gpu, uint32_t id, uint32_t target,
-                           uint32_t format, uint32_t bind, uint32_t width,
-                           uint32_t height, uint32_t depth, uint32_t array_size,
-                           uint32_t last_level, uint32_t nr_samples,
-                           uint32_t flags)
+int
+cmd_resource_create_3d(struct virtio_gpu *gpu,
+                       uint32_t id,
+                       uint32_t target,
+                       uint32_t format,
+                       uint32_t bind,
+                       uint32_t width,
+                       uint32_t height,
+                       uint32_t depth,
+                       uint32_t array_size,
+                       uint32_t last_level,
+                       uint32_t nr_samples,
+                       uint32_t flags)
 {
 	struct virtio_gpu_resource_create_3d *request;
 	struct virtio_gpu_ctrl_hdr *reply;
-	struct sg_head sg;
+	struct sg_head sg_write;
+	struct sg_head sg_read;
 	int ret;
 
-	sg_init(&sg);
+	sg_init(&sg_write);
+	sg_init(&sg_read);
 	mutex_lock(&gpu->mutex);
 	request = gpu->buf->data;
 	reply = (struct virtio_gpu_ctrl_hdr*)&request[1];
@@ -137,21 +161,21 @@ int cmd_resource_create_3d(struct virtio_gpu *gpu, uint32_t id, uint32_t target,
 	request->target = target;
 	request->format = format;
 	request->bind = bind;
-	request->width = width;
-	request->height = height;
-	request->depth = depth;
-	request->array_size = array_size;
+	request->width = width ? width : 1;
+	request->height = height ? height : 1;
+	request->depth = depth ? depth : 1;
+	request->array_size = array_size ? array_size : 1;
 	request->last_level = last_level;
 	request->nr_samples = nr_samples;
 	request->flags = flags;
 	request->padding = 0;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*request), 0);
+	ret = sg_add_dma_buf(&sg_read, gpu->buf, sizeof(*request), 0);
 	if (ret)
 		goto end;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*reply), sizeof(*request));
+	ret = sg_add_dma_buf(&sg_write, gpu->buf, sizeof(*reply), sizeof(*request));
 	if (ret)
 		goto end;
-	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg, 1, 1);
+	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg_read, &sg_write);
 	if (ret < 0)
 		goto end;
 	if (reply->type != VIRTIO_GPU_RESP_OK_NODATA)
@@ -165,18 +189,22 @@ int cmd_resource_create_3d(struct virtio_gpu *gpu, uint32_t id, uint32_t target,
 
 end:
 	mutex_unlock(&gpu->mutex);
-	sg_free(&sg);
+	sg_free(&sg_write);
+	sg_free(&sg_read);
 	return ret;
 }
 
-int cmd_resource_unref(struct virtio_gpu *gpu, uint32_t id)
+int
+cmd_resource_unref(struct virtio_gpu *gpu, uint32_t id)
 {
 	struct virtio_gpu_resource_unref *request;
 	struct virtio_gpu_ctrl_hdr *reply;
-	struct sg_head sg;
+	struct sg_head sg_write;
+	struct sg_head sg_read;
 	int ret;
 
-	sg_init(&sg);
+	sg_init(&sg_write);
+	sg_init(&sg_read);
 	mutex_lock(&gpu->mutex);
 	request = gpu->buf->data;
 	reply = (struct virtio_gpu_ctrl_hdr*)&request[1];
@@ -184,13 +212,13 @@ int cmd_resource_unref(struct virtio_gpu *gpu, uint32_t id)
 	request->hdr.type = VIRTIO_GPU_CMD_RESOURCE_UNREF;
 	request->resource_id = id;
 	request->padding = 0;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*request), 0);
+	ret = sg_add_dma_buf(&sg_read, gpu->buf, sizeof(*request), 0);
 	if (ret)
 		goto end;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*reply), sizeof(*request));
+	ret = sg_add_dma_buf(&sg_write, gpu->buf, sizeof(*reply), sizeof(*request));
 	if (ret)
 		goto end;
-	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg, 1, 1);
+	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg_read, &sg_write);
 	if (ret < 0)
 		goto end;
 	if (reply->type != VIRTIO_GPU_RESP_OK_NODATA)
@@ -204,16 +232,21 @@ int cmd_resource_unref(struct virtio_gpu *gpu, uint32_t id)
 
 end:
 	mutex_unlock(&gpu->mutex);
-	sg_free(&sg);
+	sg_free(&sg_write);
+	sg_free(&sg_read);
 	return ret;
 }
 
-int cmd_resource_attach_backing(struct virtio_gpu *gpu, uint32_t id,
-                                struct page **pages, size_t pages_count)
+int
+cmd_resource_attach_backing(struct virtio_gpu *gpu,
+                            uint32_t id,
+                            struct page **pages,
+                            size_t pages_count)
 {
 	struct virtio_gpu_resource_attach_backing *request;
 	struct virtio_gpu_ctrl_hdr *reply;
-	struct sg_head sg;
+	struct sg_head sg_write;
+	struct sg_head sg_read;
 	size_t reply_offset = sizeof(*request) + sizeof(struct virtio_gpu_mem_entry) * pages_count;
 	int ret;
 
@@ -222,7 +255,8 @@ int cmd_resource_attach_backing(struct virtio_gpu *gpu, uint32_t id,
 		TRACE("virtio_gpu: request too big");
 		return -ENOMEM;
 	}
-	sg_init(&sg);
+	sg_init(&sg_write);
+	sg_init(&sg_read);
 	mutex_lock(&gpu->mutex);
 	request = gpu->buf->data;
 	reply = (struct virtio_gpu_ctrl_hdr*)&((uint8_t*)gpu->buf->data)[reply_offset];
@@ -237,13 +271,13 @@ int cmd_resource_attach_backing(struct virtio_gpu *gpu, uint32_t id,
 		mem_entry->length = PAGE_SIZE;
 		mem_entry->padding = 0;
 	}
-	ret = sg_add_dma_buf(&sg, gpu->buf, reply_offset, 0);
+	ret = sg_add_dma_buf(&sg_read, gpu->buf, reply_offset, 0);
 	if (ret)
 		goto end;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*reply), reply_offset);
+	ret = sg_add_dma_buf(&sg_write, gpu->buf, sizeof(*reply), reply_offset);
 	if (ret)
 		goto end;
-	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg, 1, 1);
+	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg_read, &sg_write);
 	if (ret < 0)
 		goto end;
 	if (reply->type != VIRTIO_GPU_RESP_OK_NODATA)
@@ -257,21 +291,28 @@ int cmd_resource_attach_backing(struct virtio_gpu *gpu, uint32_t id,
 
 end:
 	mutex_unlock(&gpu->mutex);
-	sg_free(&sg);
+	sg_free(&sg_write);
+	sg_free(&sg_read);
 	return ret;
 }
 
-int cmd_set_scanout(struct virtio_gpu *gpu,
-                    uint32_t scanout, uint32_t id,
-                    uint32_t x, uint32_t y,
-                    uint32_t width, uint32_t height)
+int
+cmd_set_scanout(struct virtio_gpu *gpu,
+                uint32_t scanout,
+                uint32_t id,
+                uint32_t x,
+                uint32_t y,
+                uint32_t width,
+                uint32_t height)
 {
 	struct virtio_gpu_set_scanout *request;
 	struct virtio_gpu_ctrl_hdr *reply;
-	struct sg_head sg;
+	struct sg_head sg_write;
+	struct sg_head sg_read;
 	int ret;
 
-	sg_init(&sg);
+	sg_init(&sg_write);
+	sg_init(&sg_read);
 	mutex_lock(&gpu->mutex);
 	request = gpu->buf->data;
 	reply = (struct virtio_gpu_ctrl_hdr*)&request[1];
@@ -283,13 +324,13 @@ int cmd_set_scanout(struct virtio_gpu *gpu,
 	request->r.height = height;
 	request->scanout_id = scanout;
 	request->resource_id = id;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*request), 0);
+	ret = sg_add_dma_buf(&sg_read, gpu->buf, sizeof(*request), 0);
 	if (ret)
 		goto end;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*reply), sizeof(*request));
+	ret = sg_add_dma_buf(&sg_write, gpu->buf, sizeof(*reply), sizeof(*request));
 	if (ret)
 		goto end;
-	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg, 1, 1);
+	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg_read, &sg_write);
 	if (ret < 0)
 		goto end;
 	if (reply->type != VIRTIO_GPU_RESP_OK_NODATA)
@@ -303,20 +344,28 @@ int cmd_set_scanout(struct virtio_gpu *gpu,
 
 end:
 	mutex_unlock(&gpu->mutex);
-	sg_free(&sg);
+	sg_free(&sg_write);
+	sg_free(&sg_read);
 	return ret;
 }
 
-int cmd_transfer_to_host_2d(struct virtio_gpu *gpu, uint32_t id, uint64_t offset,
-                            uint32_t x, uint32_t y,
-                            uint32_t width, uint32_t height)
+int
+cmd_transfer_to_host_2d(struct virtio_gpu *gpu,
+                        uint32_t id,
+                        uint64_t offset,
+                        uint32_t x,
+                        uint32_t y,
+                        uint32_t width,
+                        uint32_t height)
 {
 	struct virtio_gpu_transfer_2d *request;
 	struct virtio_gpu_ctrl_hdr *reply;
-	struct sg_head sg;
+	struct sg_head sg_write;
+	struct sg_head sg_read;
 	int ret;
 
-	sg_init(&sg);
+	sg_init(&sg_write);
+	sg_init(&sg_read);
 	mutex_lock(&gpu->mutex);
 	request = gpu->buf->data;
 	reply = (struct virtio_gpu_ctrl_hdr*)&request[1];
@@ -329,18 +378,18 @@ int cmd_transfer_to_host_2d(struct virtio_gpu *gpu, uint32_t id, uint64_t offset
 	request->offset = offset;
 	request->resource_id = id;
 	request->padding = 0;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*request), 0);
+	ret = sg_add_dma_buf(&sg_read, gpu->buf, sizeof(*request), 0);
 	if (ret)
 		goto end;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*reply), sizeof(*request));
+	ret = sg_add_dma_buf(&sg_write, gpu->buf, sizeof(*reply), sizeof(*request));
 	if (ret)
 		goto end;
-	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg, 1, 1);
+	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg_read, &sg_write);
 	if (ret < 0)
 		goto end;
 	if (reply->type != VIRTIO_GPU_RESP_OK_NODATA)
 	{
-		TRACE("virtio_gpu: invalid VIRTIO_GPU_CMD_TRANSFER_TO_HOST_2D response: 0x%" PRIx32 ,
+		TRACE("virtio_gpu: invalid VIRTIO_GPU_CMD_TRANSFER_TO_HOST_2D response: 0x%" PRIx32,
 		      reply->type);
 		ret = -EXDEV;
 		goto end;
@@ -349,21 +398,33 @@ int cmd_transfer_to_host_2d(struct virtio_gpu *gpu, uint32_t id, uint64_t offset
 
 end:
 	mutex_unlock(&gpu->mutex);
-	sg_free(&sg);
+	sg_free(&sg_write);
+	sg_free(&sg_read);
 	return ret;
 }
 
-int cmd_transfer_to_host_3d(struct virtio_gpu *gpu, uint32_t id, uint32_t x,
-                            uint32_t y, uint32_t z, uint32_t w, uint32_t h,
-                            uint32_t d, uint64_t offset, uint32_t level,
-                            uint32_t stride, uint32_t layer_stride)
+int
+cmd_transfer_to_host_3d(struct virtio_gpu *gpu,
+                        uint32_t id,
+                        uint32_t x,
+                        uint32_t y,
+                        uint32_t z,
+                        uint32_t width,
+                        uint32_t height,
+                        uint32_t depth,
+                        uint64_t offset,
+                        uint32_t level,
+                        uint32_t stride,
+                        uint32_t layer_stride)
 {
 	struct virtio_gpu_transfer_3d *request;
 	struct virtio_gpu_ctrl_hdr *reply;
-	struct sg_head sg;
+	struct sg_head sg_write;
+	struct sg_head sg_read;
 	int ret;
 
-	sg_init(&sg);
+	sg_init(&sg_write);
+	sg_init(&sg_read);
 	mutex_lock(&gpu->mutex);
 	request = gpu->buf->data;
 	reply = (struct virtio_gpu_ctrl_hdr*)&request[1];
@@ -372,26 +433,26 @@ int cmd_transfer_to_host_3d(struct virtio_gpu *gpu, uint32_t id, uint32_t x,
 	request->b.x = x;
 	request->b.y = y;
 	request->b.z = z;
-	request->b.width = w;
-	request->b.height = h;
-	request->b.depth = d;
+	request->b.width = width;
+	request->b.height = height;
+	request->b.depth = depth;
 	request->offset = offset;
 	request->resource_id = id;
 	request->level = level;
 	request->stride = stride;
 	request->layer_stride = layer_stride;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*request), 0);
+	ret = sg_add_dma_buf(&sg_read, gpu->buf, sizeof(*request), 0);
 	if (ret)
 		goto end;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*reply), sizeof(*request));
+	ret = sg_add_dma_buf(&sg_write, gpu->buf, sizeof(*reply), sizeof(*request));
 	if (ret)
 		goto end;
-	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg, 1, 1);
+	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg_read, &sg_write);
 	if (ret < 0)
 		goto end;
 	if (reply->type != VIRTIO_GPU_RESP_OK_NODATA)
 	{
-		TRACE("virtio_gpu: invalid VIRTIO_GPU_CMD_TRANSFER_TO_HOST_2D response: 0x%" PRIx32 ,
+		TRACE("virtio_gpu: invalid VIRTIO_GPU_CMD_TRANSFER_TO_HOST_3D response: 0x%" PRIx32,
 		      reply->type);
 		ret = -EXDEV;
 		goto end;
@@ -400,21 +461,33 @@ int cmd_transfer_to_host_3d(struct virtio_gpu *gpu, uint32_t id, uint32_t x,
 
 end:
 	mutex_unlock(&gpu->mutex);
-	sg_free(&sg);
+	sg_free(&sg_write);
+	sg_free(&sg_read);
 	return ret;
 }
 
-int cmd_transfer_from_host_3d(struct virtio_gpu *gpu, uint32_t id, uint32_t x,
-                              uint32_t y, uint32_t z, uint32_t w, uint32_t h,
-                              uint32_t d, uint64_t offset, uint32_t level,
-                              uint32_t stride, uint32_t layer_stride)
+int
+cmd_transfer_from_host_3d(struct virtio_gpu *gpu,
+                          uint32_t id,
+                          uint32_t x,
+                          uint32_t y,
+                          uint32_t z,
+                          uint32_t width,
+                          uint32_t height,
+                          uint32_t depth,
+                          uint64_t offset,
+                          uint32_t level,
+                          uint32_t stride,
+                          uint32_t layer_stride)
 {
 	struct virtio_gpu_transfer_3d *request;
 	struct virtio_gpu_ctrl_hdr *reply;
-	struct sg_head sg;
+	struct sg_head sg_write;
+	struct sg_head sg_read;
 	int ret;
 
-	sg_init(&sg);
+	sg_init(&sg_write);
+	sg_init(&sg_read);
 	mutex_lock(&gpu->mutex);
 	request = gpu->buf->data;
 	reply = (struct virtio_gpu_ctrl_hdr*)&request[1];
@@ -423,26 +496,26 @@ int cmd_transfer_from_host_3d(struct virtio_gpu *gpu, uint32_t id, uint32_t x,
 	request->b.x = x;
 	request->b.y = y;
 	request->b.z = z;
-	request->b.width = w;
-	request->b.height = h;
-	request->b.depth = d;
+	request->b.width = width;
+	request->b.height = height;
+	request->b.depth = depth;
 	request->offset = offset;
 	request->resource_id = id;
 	request->level = level;
 	request->stride = stride;
 	request->layer_stride = layer_stride;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*request), 0);
+	ret = sg_add_dma_buf(&sg_read, gpu->buf, sizeof(*request), 0);
 	if (ret)
 		goto end;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*reply), sizeof(*request));
+	ret = sg_add_dma_buf(&sg_write, gpu->buf, sizeof(*reply), sizeof(*request));
 	if (ret)
 		goto end;
-	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg, 1, 1);
+	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg_read, &sg_write);
 	if (ret < 0)
 		goto end;
 	if (reply->type != VIRTIO_GPU_RESP_OK_NODATA)
 	{
-		TRACE("virtio_gpu: invalid VIRTIO_GPU_CMD_TRANSFER_TO_HOST_2D response: 0x%" PRIx32 ,
+		TRACE("virtio_gpu: invalid VIRTIO_GPU_CMD_TRANSFER_FROM_HOST_3D response: 0x%" PRIx32,
 		      reply->type);
 		ret = -EXDEV;
 		goto end;
@@ -451,20 +524,27 @@ int cmd_transfer_from_host_3d(struct virtio_gpu *gpu, uint32_t id, uint32_t x,
 
 end:
 	mutex_unlock(&gpu->mutex);
-	sg_free(&sg);
+	sg_free(&sg_write);
+	sg_free(&sg_read);
 	return ret;
 }
 
-int cmd_resource_flush(struct virtio_gpu *gpu, uint32_t id,
-                       uint32_t x, uint32_t y,
-                       uint32_t width, uint32_t height)
+int
+cmd_resource_flush(struct virtio_gpu *gpu,
+                   uint32_t id,
+                   uint32_t x,
+                   uint32_t y,
+                   uint32_t width,
+                   uint32_t height)
 {
 	struct virtio_gpu_resource_flush *request;
 	struct virtio_gpu_ctrl_hdr *reply;
-	struct sg_head sg;
+	struct sg_head sg_write;
+	struct sg_head sg_read;
 	int ret;
 
-	sg_init(&sg);
+	sg_init(&sg_write);
+	sg_init(&sg_read);
 	mutex_lock(&gpu->mutex);
 	request = gpu->buf->data;
 	reply = (struct virtio_gpu_ctrl_hdr*)&request[1];
@@ -476,13 +556,13 @@ int cmd_resource_flush(struct virtio_gpu *gpu, uint32_t id,
 	request->r.height = height;
 	request->resource_id = id;
 	request->padding = 0;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*request), 0);
+	ret = sg_add_dma_buf(&sg_read, gpu->buf, sizeof(*request), 0);
 	if (ret)
 		goto end;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*reply), sizeof(*request));
+	ret = sg_add_dma_buf(&sg_write, gpu->buf, sizeof(*reply), sizeof(*request));
 	if (ret)
 		goto end;
-	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg, 1, 1);
+	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg_read, &sg_write);
 	if (ret < 0)
 		goto end;
 	if (reply->type != VIRTIO_GPU_RESP_OK_NODATA)
@@ -496,19 +576,24 @@ int cmd_resource_flush(struct virtio_gpu *gpu, uint32_t id,
 
 end:
 	mutex_unlock(&gpu->mutex);
-	sg_free(&sg);
+	sg_free(&sg_write);
+	sg_free(&sg_read);
 	return ret;
 }
 
-int cmd_get_capset_info(struct virtio_gpu *gpu, uint32_t id,
-                        struct virtio_gpu_resp_capset_info *info)
+int
+cmd_get_capset_info(struct virtio_gpu *gpu,
+                    uint32_t id,
+                    struct virtio_gpu_resp_capset_info *info)
 {
 	struct virtio_gpu_get_capset_info *request;
 	struct virtio_gpu_resp_capset_info *reply;
-	struct sg_head sg;
+	struct sg_head sg_write;
+	struct sg_head sg_read;
 	int ret;
 
-	sg_init(&sg);
+	sg_init(&sg_write);
+	sg_init(&sg_read);
 	mutex_lock(&gpu->mutex);
 	request = gpu->buf->data;
 	reply = (struct virtio_gpu_resp_capset_info*)&request[1];
@@ -516,13 +601,13 @@ int cmd_get_capset_info(struct virtio_gpu *gpu, uint32_t id,
 	request->hdr.type = VIRTIO_GPU_CMD_GET_CAPSET_INFO;
 	request->capset_index = id;
 	request->padding = 0;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*request), 0);
+	ret = sg_add_dma_buf(&sg_read, gpu->buf, sizeof(*request), 0);
 	if (ret)
 		goto end;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*reply), sizeof(*request));
+	ret = sg_add_dma_buf(&sg_write, gpu->buf, sizeof(*reply), sizeof(*request));
 	if (ret)
 		goto end;
-	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg, 1, 1);
+	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg_read, &sg_write);
 	if (ret < 0)
 		goto end;
 	if (reply->hdr.type != VIRTIO_GPU_RESP_OK_CAPSET_INFO)
@@ -537,16 +622,22 @@ int cmd_get_capset_info(struct virtio_gpu *gpu, uint32_t id,
 
 end:
 	mutex_unlock(&gpu->mutex);
-	sg_free(&sg);
+	sg_free(&sg_write);
+	sg_free(&sg_read);
 	return ret;
 }
 
-int cmd_get_capset(struct virtio_gpu *gpu, uint32_t id, uint32_t version,
-                   void *data, size_t size)
+int
+cmd_get_capset(struct virtio_gpu *gpu,
+               uint32_t id,
+               uint32_t version,
+               void *data,
+               size_t size)
 {
 	struct virtio_gpu_get_capset *request;
 	struct virtio_gpu_resp_capset *reply;
-	struct sg_head sg;
+	struct sg_head sg_write;
+	struct sg_head sg_read;
 	int ret;
 
 	if (sizeof(*request) + sizeof(*reply) + size > VIRTIO_GPU_BUF_SIZE)
@@ -554,7 +645,8 @@ int cmd_get_capset(struct virtio_gpu *gpu, uint32_t id, uint32_t version,
 		TRACE("virtio_gpu: capset request too long");
 		return -EOVERFLOW;
 	}
-	sg_init(&sg);
+	sg_init(&sg_write);
+	sg_init(&sg_read);
 	mutex_lock(&gpu->mutex);
 	request = gpu->buf->data;
 	reply = (struct virtio_gpu_resp_capset*)&request[1];
@@ -562,13 +654,13 @@ int cmd_get_capset(struct virtio_gpu *gpu, uint32_t id, uint32_t version,
 	request->hdr.type = VIRTIO_GPU_CMD_GET_CAPSET;
 	request->capset_id = id;
 	request->capset_version = version;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*request), 0);
+	ret = sg_add_dma_buf(&sg_read, gpu->buf, sizeof(*request), 0);
 	if (ret)
 		goto end;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*reply) + size, sizeof(*request));
+	ret = sg_add_dma_buf(&sg_write, gpu->buf, sizeof(*reply) + size, sizeof(*request));
 	if (ret)
 		goto end;
-	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg, 1, 1);
+	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg_read, &sg_write);
 	if (ret < 0)
 		goto end;
 	if (reply->hdr.type != VIRTIO_GPU_RESP_OK_CAPSET)
@@ -584,16 +676,21 @@ int cmd_get_capset(struct virtio_gpu *gpu, uint32_t id, uint32_t version,
 
 end:
 	mutex_unlock(&gpu->mutex);
-	sg_free(&sg);
+	sg_free(&sg_write);
+	sg_free(&sg_read);
 	return ret;
 }
 
-int cmd_ctx_create(struct virtio_gpu *gpu, uint32_t id, uint8_t capset_id,
-                   const char *name)
+int
+cmd_ctx_create(struct virtio_gpu *gpu,
+               uint32_t id,
+               uint8_t capset_id,
+               const char *name)
 {
 	struct virtio_gpu_ctx_create *request;
 	struct virtio_gpu_ctrl_hdr *reply;
-	struct sg_head sg;
+	struct sg_head sg_write;
+	struct sg_head sg_read;
 	size_t name_len;
 	int ret;
 
@@ -603,7 +700,8 @@ int cmd_ctx_create(struct virtio_gpu *gpu, uint32_t id, uint8_t capset_id,
 		TRACE("virtio_gpu: invaliod debug name length");
 		return -EINVAL;
 	}
-	sg_init(&sg);
+	sg_init(&sg_write);
+	sg_init(&sg_read);
 	mutex_lock(&gpu->mutex);
 	request = gpu->buf->data;
 	reply = (struct virtio_gpu_ctrl_hdr*)&request[1];
@@ -613,18 +711,18 @@ int cmd_ctx_create(struct virtio_gpu *gpu, uint32_t id, uint8_t capset_id,
 	request->nlen = strlen(name);
 	memcpy(request->debug_name, name, name_len);
 	request->context_init = capset_id;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*request), 0);
+	ret = sg_add_dma_buf(&sg_read, gpu->buf, sizeof(*request), 0);
 	if (ret)
 		goto end;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*reply), sizeof(*request));
+	ret = sg_add_dma_buf(&sg_write, gpu->buf, sizeof(*reply), sizeof(*request));
 	if (ret)
 		goto end;
-	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg, 1, 1);
+	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg_read, &sg_write);
 	if (ret < 0)
 		goto end;
 	if (reply->type != VIRTIO_GPU_RESP_OK_NODATA)
 	{
-		TRACE("virtio_gpu: invalid VIRTIO_GPU_RESP_OK_NODATA response: 0x%" PRIx32,
+		TRACE("virtio_gpu: invalid VIRTIO_GPU_CMD_CTX_CREATE response: 0x%" PRIx32,
 		      reply->type);
 		ret = -EXDEV;
 		goto end;
@@ -633,36 +731,40 @@ int cmd_ctx_create(struct virtio_gpu *gpu, uint32_t id, uint8_t capset_id,
 
 end:
 	mutex_unlock(&gpu->mutex);
-	sg_free(&sg);
+	sg_free(&sg_write);
+	sg_free(&sg_read);
 	return ret;
 }
 
-int cmd_ctx_destroy(struct virtio_gpu *gpu, uint32_t id)
+int
+cmd_ctx_destroy(struct virtio_gpu *gpu, uint32_t id)
 {
 	struct virtio_gpu_ctx_destroy *request;
 	struct virtio_gpu_ctrl_hdr *reply;
-	struct sg_head sg;
+	struct sg_head sg_write;
+	struct sg_head sg_read;
 	int ret;
 
-	sg_init(&sg);
+	sg_init(&sg_write);
+	sg_init(&sg_read);
 	mutex_lock(&gpu->mutex);
 	request = gpu->buf->data;
 	reply = (struct virtio_gpu_ctrl_hdr*)&request[1];
 	memset(&request->hdr, 0, sizeof(request->hdr));
 	request->hdr.type = VIRTIO_GPU_CMD_CTX_DESTROY;
 	request->hdr.ctx_id = id;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*request), 0);
+	ret = sg_add_dma_buf(&sg_read, gpu->buf, sizeof(*request), 0);
 	if (ret)
 		goto end;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*reply), sizeof(*request));
+	ret = sg_add_dma_buf(&sg_write, gpu->buf, sizeof(*reply), sizeof(*request));
 	if (ret)
 		goto end;
-	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg, 1, 1);
+	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg_read, &sg_write);
 	if (ret < 0)
 		goto end;
 	if (reply->type != VIRTIO_GPU_RESP_OK_NODATA)
 	{
-		TRACE("virtio_gpu: invalid VIRTIO_GPU_RESP_OK_NODATA response: 0x%" PRIx32,
+		TRACE("virtio_gpu: invalid VIRTIO_GPU_CMD_CTX_DESTROY response: 0x%" PRIx32,
 		      reply->type);
 		ret = -EXDEV;
 		goto end;
@@ -671,16 +773,21 @@ int cmd_ctx_destroy(struct virtio_gpu *gpu, uint32_t id)
 
 end:
 	mutex_unlock(&gpu->mutex);
-	sg_free(&sg);
+	sg_free(&sg_write);
+	sg_free(&sg_read);
 	return ret;
 }
 
-int cmd_submit_3d(struct virtio_gpu *gpu, uint32_t context, const void *udata,
-                  size_t size)
+int
+cmd_submit_3d(struct virtio_gpu *gpu,
+              uint32_t context,
+              const void *udata,
+              size_t size)
 {
 	struct virtio_gpu_sumbit_3d *request;
 	struct virtio_gpu_ctrl_hdr *reply;
-	struct sg_head sg;
+	struct sg_head sg_write;
+	struct sg_head sg_read;
 	int ret;
 
 	if (sizeof(*request) + sizeof(*reply) + size > VIRTIO_GPU_BUF_SIZE)
@@ -688,7 +795,8 @@ int cmd_submit_3d(struct virtio_gpu *gpu, uint32_t context, const void *udata,
 		TRACE("virtio_gpu: submit 3d buffer overflow");
 		return -EINVAL;
 	}
-	sg_init(&sg);
+	sg_init(&sg_write);
+	sg_init(&sg_read);
 	mutex_lock(&gpu->mutex);
 	request = gpu->buf->data;
 	reply = (struct virtio_gpu_ctrl_hdr*)&request[1];
@@ -696,21 +804,21 @@ int cmd_submit_3d(struct virtio_gpu *gpu, uint32_t context, const void *udata,
 	request->hdr.type = VIRTIO_GPU_CMD_SUBMIT_3D;
 	request->hdr.ctx_id = context;
 	request->size = size;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*request), 0);
+	ret = sg_add_dma_buf(&sg_read, gpu->buf, sizeof(*request), 0);
 	if (ret)
 		goto end;
-	ret = sg_add_ubuf(&sg, udata, size);
+	ret = sg_add_ubuf(&sg_read, udata, size);
 	if (ret)
 		goto end;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*reply), sizeof(*request));
+	ret = sg_add_dma_buf(&sg_write, gpu->buf, sizeof(*reply), sizeof(*request));
 	if (ret)
 		goto end;
-	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg, 2, 1);
+	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg_read, &sg_write);
 	if (ret < 0)
 		goto end;
 	if (reply->type != VIRTIO_GPU_RESP_OK_NODATA)
 	{
-		TRACE("virtio_gpu: invalid VIRTIO_GPU_RESP_OK_NODATA response: 0x%" PRIx32,
+		TRACE("virtio_gpu: invalid VIRTIO_GPU_CMD_SUBMIT_3D response: 0x%" PRIx32,
 		      reply->type);
 		ret = -EXDEV;
 		goto end;
@@ -719,19 +827,24 @@ int cmd_submit_3d(struct virtio_gpu *gpu, uint32_t context, const void *udata,
 
 end:
 	mutex_unlock(&gpu->mutex);
-	sg_free(&sg);
+	sg_free(&sg_write);
+	sg_free(&sg_read);
 	return ret;
 }
 
-int cmd_ctx_attach_resource(struct virtio_gpu *gpu, uint32_t ctx,
-                            uint32_t resource)
+int
+cmd_ctx_attach_resource(struct virtio_gpu *gpu,
+                        uint32_t ctx,
+                        uint32_t resource)
 {
 	struct virtio_gpu_cmd_resource *request;
 	struct virtio_gpu_ctrl_hdr *reply;
-	struct sg_head sg;
+	struct sg_head sg_write;
+	struct sg_head sg_read;
 	int ret;
 
-	sg_init(&sg);
+	sg_init(&sg_write);
+	sg_init(&sg_read);
 	mutex_lock(&gpu->mutex);
 	request = gpu->buf->data;
 	reply = (struct virtio_gpu_ctrl_hdr*)&request[1];
@@ -740,18 +853,18 @@ int cmd_ctx_attach_resource(struct virtio_gpu *gpu, uint32_t ctx,
 	request->hdr.ctx_id = ctx;
 	request->resource_id = resource;
 	request->padding = 0;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*request), 0);
+	ret = sg_add_dma_buf(&sg_read, gpu->buf, sizeof(*request), 0);
 	if (ret)
 		goto end;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*reply), sizeof(*request));
+	ret = sg_add_dma_buf(&sg_write, gpu->buf, sizeof(*reply), sizeof(*request));
 	if (ret)
 		goto end;
-	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg, 1, 1);
+	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg_read, &sg_write);
 	if (ret < 0)
 		goto end;
 	if (reply->type != VIRTIO_GPU_RESP_OK_NODATA)
 	{
-		TRACE("virtio_gpu: invalid VIRTIO_GPU_RESP_OK_NODATA response: 0x%" PRIx32,
+		TRACE("virtio_gpu: invalid VIRTIO_GPU_CMD_CTX_ATTACH_RESOURCE response: 0x%" PRIx32,
 		      reply->type);
 		ret = -EXDEV;
 		goto end;
@@ -760,19 +873,24 @@ int cmd_ctx_attach_resource(struct virtio_gpu *gpu, uint32_t ctx,
 
 end:
 	mutex_unlock(&gpu->mutex);
-	sg_free(&sg);
+	sg_free(&sg_write);
+	sg_free(&sg_read);
 	return ret;
 }
 
-int cmd_ctx_detach_resource(struct virtio_gpu *gpu, uint32_t ctx,
-                            uint32_t resource)
+int
+cmd_ctx_detach_resource(struct virtio_gpu *gpu,
+                        uint32_t ctx,
+                        uint32_t resource)
 {
 	struct virtio_gpu_cmd_resource *request;
 	struct virtio_gpu_ctrl_hdr *reply;
-	struct sg_head sg;
+	struct sg_head sg_write;
+	struct sg_head sg_read;
 	int ret;
 
-	sg_init(&sg);
+	sg_init(&sg_write);
+	sg_init(&sg_read);
 	mutex_lock(&gpu->mutex);
 	request = gpu->buf->data;
 	reply = (struct virtio_gpu_ctrl_hdr*)&request[1];
@@ -781,18 +899,18 @@ int cmd_ctx_detach_resource(struct virtio_gpu *gpu, uint32_t ctx,
 	request->hdr.ctx_id = ctx;
 	request->resource_id = resource;
 	request->padding = 0;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*request), 0);
+	ret = sg_add_dma_buf(&sg_read, gpu->buf, sizeof(*request), 0);
 	if (ret)
 		goto end;
-	ret = sg_add_dma_buf(&sg, gpu->buf, sizeof(*reply), sizeof(*request));
+	ret = sg_add_dma_buf(&sg_write, gpu->buf, sizeof(*reply), sizeof(*request));
 	if (ret)
 		goto end;
-	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg, 1, 1);
+	ret = synchronous_request(gpu, &gpu->dev.queues[0], &sg_read, &sg_write);
 	if (ret < 0)
 		goto end;
 	if (reply->type != VIRTIO_GPU_RESP_OK_NODATA)
 	{
-		TRACE("virtio_gpu: invalid VIRTIO_GPU_RESP_OK_NODATA response: 0x%" PRIx32,
+		TRACE("virtio_gpu: invalid VIRTIO_GPU_CMD_CTX_DETACH_RESOURCE response: 0x%" PRIx32,
 		      reply->type);
 		ret = -EXDEV;
 		goto end;
@@ -801,12 +919,17 @@ int cmd_ctx_detach_resource(struct virtio_gpu *gpu, uint32_t ctx,
 
 end:
 	mutex_unlock(&gpu->mutex);
-	sg_free(&sg);
+	sg_free(&sg_write);
+	sg_free(&sg_read);
 	return ret;
 }
 
-static int gpu_fb_flush(struct fb *fb, uint32_t x, uint32_t y,
-                        uint32_t width, uint32_t height)
+static int
+gpu_fb_flush(struct fb *fb,
+             uint32_t x,
+             uint32_t y,
+             uint32_t width,
+             uint32_t height)
 {
 	struct virtio_gpu *gpu = fb->userdata;
 	uint32_t right;
@@ -838,19 +961,22 @@ static int gpu_fb_flush(struct fb *fb, uint32_t x, uint32_t y,
 	return 0;
 }
 
-const struct fb_op fb_op =
+const struct fb_op
+fb_op =
 {
 	.flush = gpu_fb_flush,
 };
 
-int get_resource_id(struct virtio_gpu *gpu, uint32_t *id)
+int
+get_resource_id(struct virtio_gpu *gpu, uint32_t *id)
 {
 	/* XXX bitmap? */
 	*id = __atomic_add_fetch(&gpu->resource_id, 1, __ATOMIC_SEQ_CST);
 	return 0;
 }
 
-void framebuffer_free(struct virtio_gpu *gpu, struct virtio_gpu_fb *fb)
+void
+framebuffer_free(struct virtio_gpu *gpu, struct virtio_gpu_fb *fb)
 {
 	int ret;
 
@@ -868,8 +994,12 @@ void framebuffer_free(struct virtio_gpu *gpu, struct virtio_gpu_fb *fb)
 	}
 }
 
-int framebuffer_alloc(struct virtio_gpu *gpu, struct virtio_gpu_fb *fb,
-                      uint32_t format, uint32_t width, uint32_t height)
+int
+framebuffer_alloc(struct virtio_gpu *gpu,
+                  struct virtio_gpu_fb *fb,
+                  uint32_t format,
+                  uint32_t width,
+                  uint32_t height)
 {
 	uint32_t id;
 	int ret;
@@ -921,7 +1051,8 @@ int framebuffer_alloc(struct virtio_gpu *gpu, struct virtio_gpu_fb *fb,
 	return 0;
 }
 
-void print_gpu_cfg(struct uio *uio, struct pci_map *gpu_cfg)
+void
+print_gpu_cfg(struct uio *uio, struct pci_map *gpu_cfg)
 {
 	uprintf(uio, "num scanouts: %" PRIu32 "\n",
 	        pci_r32(gpu_cfg, VIRTIO_GPU_C_NUM_SCANOUTS));
@@ -929,8 +1060,9 @@ void print_gpu_cfg(struct uio *uio, struct pci_map *gpu_cfg)
 	        pci_r32(gpu_cfg, VIRTIO_GPU_C_NUM_CAPSETS));
 }
 
-void print_display_info(struct uio *uio,
-                        struct virtio_gpu_resp_display_info *display_info)
+void
+print_display_info(struct uio *uio,
+                   struct virtio_gpu_resp_display_info *display_info)
 {
 	uprintf(uio, "x: %" PRIu32 "\n", display_info->pmodes[0].r.x);
 	uprintf(uio, "y: %" PRIu32 "\n", display_info->pmodes[0].r.y);
@@ -940,19 +1072,22 @@ void print_display_info(struct uio *uio,
 	uprintf(uio, "flags: %" PRIx32 "\n", display_info->pmodes[0].flags);
 }
 
-void virtio_gpu_delete(struct virtio_gpu *gpu)
+void
+virtio_gpu_delete(struct virtio_gpu *gpu)
 {
 	if (!gpu)
 		return;
 	fb_free(gpu->fb);
 	framebuffer_free(gpu, &gpu->framebuffer);
+	free(gpu->capsets);
 	pci_unmap(gpu->dev.device, gpu->gpu_cfg);
 	virtio_dev_destroy(&gpu->dev);
 	mutex_destroy(&gpu->mutex);
 	free(gpu);
 }
 
-int init_pci(struct pci_device *device, void *userdata)
+int
+init_pci(struct pci_device *device, void *userdata)
 {
 	struct virtio_gpu *gpu = NULL;
 	uint8_t features[(VIRTIO_F_RING_RESET + 7) / 8];
@@ -1048,19 +1183,40 @@ int init_pci(struct pci_device *device, void *userdata)
 	}
 	if (virtio_dev_has_feature(&gpu->dev, VIRTIO_GPU_F_VIRGL))
 	{
-		size_t num_capsets = pci_r32(gpu->gpu_cfg, VIRTIO_GPU_C_NUM_CAPSETS);
-		for (size_t i = 0; i < num_capsets; ++i)
+		gpu->ncapset = pci_r32(gpu->gpu_cfg, VIRTIO_GPU_C_NUM_CAPSETS);
+		gpu->capsets = malloc(sizeof(*gpu->capsets) * gpu->ncapset, 0);
+		if (!gpu->capsets)
 		{
-			struct virtio_gpu_resp_capset_info info;
-			ret = cmd_get_capset_info(gpu, i, &info);
+			TRACE("virtio_gpu: capset allocation failed");
+			goto err;
+		}
+		for (size_t i = 0; i < gpu->ncapset; ++i)
+		{
+			ret = cmd_get_capset_info(gpu, i, &gpu->capsets[i]);
 			if (ret)
 			{
 				TRACE("virtio_gpu: failed to get capset info");
 				goto err;
 			}
-			virgl_init(gpu, &info);
-			break;
 		}
+		uint32_t virgl_id = UINT32_MAX;
+		uint32_t virgl2_id = UINT32_MAX;
+		for (size_t i = 0; i < gpu->ncapset; ++i)
+		{
+			switch (gpu->capsets[i].capset_id)
+			{
+				case VIRTIO_GPU_CAPSET_VIRGL:
+					virgl_id = i;
+					break;
+				case VIRTIO_GPU_CAPSET_VIRGL2:
+					virgl2_id = i;
+					break;
+			}
+		}
+		if (virgl2_id != UINT32_MAX)
+			virgl_init(gpu, &gpu->capsets[virgl2_id]);
+		else if (virgl_id != UINT32_MAX)
+			virgl_init(gpu, &gpu->capsets[virgl_id]);
 	}
 	gpu->fb->userdata = gpu;
 	ret = vtty_alloc("tty0", 0, gpu->fb, &gpu->tty);
@@ -1075,17 +1231,20 @@ err:
 	return ret;
 }
 
-int init(void)
+int
+init(void)
 {
 	pci_probe(0x1AF4, 0x1050, init_pci, NULL);
 	return 0;
 }
 
-void fini(void)
+void
+fini(void)
 {
 }
 
-struct kmod_info kmod =
+struct kmod_info
+kmod =
 {
 	.magic = KMOD_MAGIC,
 	.version = 1,

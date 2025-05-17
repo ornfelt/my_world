@@ -1,6 +1,7 @@
 #include <zlib.h>
 
-uint32_t adler32(uint32_t adler, const uint8_t *buf, unsigned len)
+uint32_t
+adler32(uint32_t adler, const uint8_t *buf, unsigned len)
 {
 	/* XXX can certainly be faster... */
 	if (!buf)
@@ -15,7 +16,8 @@ uint32_t adler32(uint32_t adler, const uint8_t *buf, unsigned len)
 	return (s2 << 16) | s1;
 }
 
-uint32_t adler32_z(uint32_t adler, const uint8_t *buf, size_t len)
+uint32_t
+adler32_z(uint32_t adler, const uint8_t *buf, size_t len)
 {
 	/* XXX can certainly be faster... */
 	if (!buf)

@@ -3,6 +3,10 @@
 
 #include <X11/Xlib.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef uint32_t ShmSeg;
 
 typedef struct
@@ -25,5 +29,9 @@ Bool XShmPutImage(Display *display, Drawable drawable, GC gc, XImage *image,
                   unsigned height, Bool send_event);
 Bool XShmGetImage(Display *display, Drawable drawable, XImage *image,
                   int x, int y, unsigned long plane_mask);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

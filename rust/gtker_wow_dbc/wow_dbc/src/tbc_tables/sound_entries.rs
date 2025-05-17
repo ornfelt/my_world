@@ -4,9 +4,11 @@ use crate::{
 use crate::header::{
     DbcHeader, HEADER_SIZE, parse_header,
 };
+use crate::util::StringCache;
 use std::io::Write;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SoundEntries {
     pub rows: Vec<SoundEntriesRow>,
 }
@@ -15,6 +17,8 @@ impl DbcTable for SoundEntries {
     type Row = SoundEntriesRow;
 
     const FILENAME: &'static str = "SoundEntries.dbc";
+    const FIELD_COUNT: usize = 29;
+    const ROW_SIZE: usize = 116;
 
     fn rows(&self) -> &[Self::Row] { &self.rows }
     fn rows_mut(&mut self) -> &mut [Self::Row] { &mut self.rows }
@@ -24,19 +28,19 @@ impl DbcTable for SoundEntries {
         b.read_exact(&mut header)?;
         let header = parse_header(&header)?;
 
-        if header.record_size != 116 {
+        if header.record_size != Self::ROW_SIZE as u32 {
             return Err(crate::DbcError::InvalidHeader(
                 crate::InvalidHeaderError::RecordSize {
-                    expected: 116,
+                    expected: Self::ROW_SIZE as u32,
                     actual: header.record_size,
                 },
             ));
         }
 
-        if header.field_count != 29 {
+        if header.field_count != Self::FIELD_COUNT as u32 {
             return Err(crate::DbcError::InvalidHeader(
                 crate::InvalidHeaderError::FieldCount {
-                    expected: 29,
+                    expected: Self::FIELD_COUNT as u32,
                     actual: header.field_count,
                 },
             ));
@@ -121,17 +125,11 @@ impl DbcTable for SoundEntries {
         Ok(SoundEntries { rows, })
     }
 
-    fn write(&self, b: &mut impl Write) -> Result<(), std::io::Error> {
-        let header = DbcHeader {
-            record_count: self.rows.len() as u32,
-            field_count: 29,
-            record_size: 116,
-            string_block_size: self.string_block_size(),
-        };
+    fn write(&self, w: &mut impl Write) -> Result<(), std::io::Error> {
+        let mut b = Vec::with_capacity(self.rows.len() * Self::ROW_SIZE);
 
-        b.write_all(&header.write_header())?;
+        let mut string_cache = StringCache::new();
 
-        let mut string_index = 1;
         for row in &self.rows {
             // id: primary_key (SoundEntries) int32
             b.write_all(&row.id.id.to_le_bytes())?;
@@ -140,23 +138,11 @@ impl DbcTable for SoundEntries {
             b.write_all(&row.sound_type.to_le_bytes())?;
 
             // name: string_ref
-            if !row.name.is_empty() {
-                b.write_all(&(string_index as u32).to_le_bytes())?;
-                string_index += row.name.len() + 1;
-            }
-            else {
-                b.write_all(&(0_u32).to_le_bytes())?;
-            }
+            b.write_all(&string_cache.add_string(&row.name).to_le_bytes())?;
 
             // file: string_ref[10]
             for i in &row.file {
-                if !i.is_empty() {
-                    b.write_all(&(string_index as u32).to_le_bytes())?;
-                    string_index += i.len() + 1;
-                }
-                else {
-                    b.write_all(&(0_u32).to_le_bytes())?;
-                }
+                b.write_all(&string_cache.add_string(i).to_le_bytes())?;
             }
 
 
@@ -167,13 +153,7 @@ impl DbcTable for SoundEntries {
 
 
             // directory_base: string_ref
-            if !row.directory_base.is_empty() {
-                b.write_all(&(string_index as u32).to_le_bytes())?;
-                string_index += row.directory_base.len() + 1;
-            }
-            else {
-                b.write_all(&(0_u32).to_le_bytes())?;
-            }
+            b.write_all(&string_cache.add_string(&row.directory_base).to_le_bytes())?;
 
             // volume_float: float
             b.write_all(&row.volume_float.to_le_bytes())?;
@@ -192,8 +172,17 @@ impl DbcTable for SoundEntries {
 
         }
 
-        self.write_string_block(b)?;
+        assert_eq!(b.len(), self.rows.len() * Self::ROW_SIZE);
+        let header = DbcHeader {
+            record_count: self.rows.len() as u32,
+            field_count: Self::FIELD_COUNT as u32,
+            record_size: Self::ROW_SIZE as u32,
+            string_block_size: string_cache.size(),
+        };
 
+        w.write_all(&header.write_header())?;
+        w.write_all(&b)?;
+        w.write_all(string_cache.buffer())?;
         Ok(())
     }
 
@@ -212,39 +201,8 @@ impl Indexable for SoundEntries {
     }
 }
 
-impl SoundEntries {
-    fn write_string_block(&self, b: &mut impl Write) -> Result<(), std::io::Error> {
-        b.write_all(&[0])?;
-
-        for row in &self.rows {
-            if !row.name.is_empty() { b.write_all(row.name.as_bytes())?; b.write_all(&[0])?; };
-            for s in &row.file {
-                if !s.is_empty() { b.write_all(s.as_bytes())?; b.write_all(&[0])?; };
-            }
-
-            if !row.directory_base.is_empty() { b.write_all(row.directory_base.as_bytes())?; b.write_all(&[0])?; };
-        }
-
-        Ok(())
-    }
-
-    fn string_block_size(&self) -> u32 {
-        let mut sum = 1;
-        for row in &self.rows {
-            if !row.name.is_empty() { sum += row.name.len() + 1; };
-            for s in &row.file {
-                if !s.is_empty() { sum += s.len() + 1; };
-            }
-
-            if !row.directory_base.is_empty() { sum += row.directory_base.len() + 1; };
-        }
-
-        sum as u32
-    }
-
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Hash, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SoundEntriesKey {
     pub id: i32
 }
@@ -322,6 +280,7 @@ impl TryFrom<isize> for SoundEntriesKey {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SoundEntriesRow {
     pub id: SoundEntriesKey,
     pub sound_type: i32,
@@ -336,3 +295,22 @@ pub struct SoundEntriesRow {
     pub e_a_x_def: i32,
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::fs::File;
+    use std::io::Read;
+
+    #[test]
+    #[ignore = "requires DBC files"]
+    fn sound_entries() {
+        let mut file = File::open("../tbc-dbc/SoundEntries.dbc").expect("Failed to open DBC file");
+        let mut contents = Vec::new();
+        file.read_to_end(&mut contents).expect("Failed to read DBC file");
+        let actual = SoundEntries::read(&mut contents.as_slice()).unwrap();
+        let mut v = Vec::with_capacity(contents.len());
+        actual.write(&mut v).unwrap();
+        let new = SoundEntries::read(&mut v.as_slice()).unwrap();
+        assert_eq!(actual, new);
+    }
+}

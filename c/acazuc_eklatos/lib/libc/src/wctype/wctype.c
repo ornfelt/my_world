@@ -19,7 +19,8 @@ static const char *types_str[] =
 	[WCTYPE_XDIGIT] = "xdigit",
 };
 
-wctype_t wctype(const char *property)
+wctype_t
+wctype(const char *property)
 {
 	if (!property)
 		return WCTYPE_NONE;

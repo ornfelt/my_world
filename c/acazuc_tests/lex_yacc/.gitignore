@@ -1,7 +1,6 @@
-parse
-y.tab.*
+glsl
+lex.glsl.*
+y.glsl.*
 *.o
 *.swp
 *.swo
-lex.yy.*
-y.output

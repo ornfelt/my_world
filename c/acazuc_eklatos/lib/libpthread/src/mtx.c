@@ -1,7 +1,8 @@
 #include <threads.h>
 #include <errno.h>
 
-int mtx_init(mtx_t *mtx, int type)
+int
+mtx_init(mtx_t *mtx, int type)
 {
 	pthread_mutexattr_t attr;
 	int ret = thrd_error;
@@ -30,19 +31,22 @@ end:
 	return ret;
 }
 
-void mtx_destroy(mtx_t *mtx)
+void
+mtx_destroy(mtx_t *mtx)
 {
 	pthread_mutex_destroy(&mtx->mutex);
 }
 
-int mtx_lock(mtx_t *mtx)
+int
+mtx_lock(mtx_t *mtx)
 {
 	if (pthread_mutex_lock(&mtx->mutex))
 		return thrd_error;
 	return thrd_success;
 }
 
-int mtx_timedlock(mtx_t *mtx, const struct timespec *ts)
+int
+mtx_timedlock(mtx_t *mtx, const struct timespec *ts)
 {
 	switch (pthread_mutex_timedlock(&mtx->mutex, ts))
 	{
@@ -55,7 +59,8 @@ int mtx_timedlock(mtx_t *mtx, const struct timespec *ts)
 	}
 }
 
-int mtx_trylock(mtx_t *mtx)
+int
+mtx_trylock(mtx_t *mtx)
 {
 	switch (pthread_mutex_trylock(&mtx->mutex))
 	{
@@ -68,7 +73,8 @@ int mtx_trylock(mtx_t *mtx)
 	}
 }
 
-int mtx_unlock(mtx_t *mtx)
+int
+mtx_unlock(mtx_t *mtx)
 {
 	if (pthread_mutex_unlock(&mtx->mutex))
 		return thrd_error;

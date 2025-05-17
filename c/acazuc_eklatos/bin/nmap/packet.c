@@ -11,18 +11,21 @@
 #include <errno.h>
 #include <stdio.h>
 
-static void recv_packets(struct env *env, struct host *host)
+static void
+recv_packets(struct env *env, struct host *host)
 {
 	while (1)
 	{
 		char buf[1024];
-		ssize_t ret = recv(env->sock_pkt, buf, sizeof(buf),
-		                   MSG_DONTWAIT);
+		ssize_t ret;
+
+		ret = recv(env->sock_pkt, buf, sizeof(buf), MSG_DONTWAIT);
 		if (ret == -1)
 		{
 			if (errno == EAGAIN)
 				return;
-			fprintf(stderr, "%s: recv: %s\n", env->progname,
+			fprintf(stderr, "%s: recv: %s\n",
+			        env->progname,
 			        strerror(errno));
 			exit(EXIT_FAILURE);
 		}
@@ -90,9 +93,12 @@ static void recv_packets(struct env *env, struct host *host)
 	}
 }
 
-void packet_flush_tcp(struct host *host, uint16_t port)
+void
+packet_flush_tcp(struct host *host, uint16_t port)
 {
-	struct tcp_packet *pkt, *nxt;
+	struct tcp_packet *pkt;
+	struct tcp_packet *nxt;
+
 	TAILQ_FOREACH_SAFE(pkt, &host->packets_tcp, chain, nxt)
 	{
 		if (pkt->tcp.th_sport != htons(port))
@@ -102,11 +108,16 @@ void packet_flush_tcp(struct host *host, uint16_t port)
 	}
 }
 
-void packet_flush_icmp(struct host *host, uint16_t port)
+void
+packet_flush_icmp(struct host *host, uint16_t port)
 {
-	struct icmp_packet *pkt, *nxt;
+	struct icmp_packet *pkt;
+	struct icmp_packet *nxt;
+
 	TAILQ_FOREACH_SAFE(pkt, &host->packets_icmp, chain, nxt)
 	{
+		uint16_t tmp;
+
 		if (pkt->icmp.icmp_type != ICMP_DEST_UNREACH
 		 || pkt->icmp.icmp_code != 3)
 		{
@@ -114,7 +125,6 @@ void packet_flush_icmp(struct host *host, uint16_t port)
 			free(pkt);
 			continue;
 		}
-		uint16_t tmp;
 		memcpy(&tmp, pkt->data + sizeof(struct ip) + 2, sizeof(tmp));
 		if (tmp == htons(port))
 		{
@@ -124,7 +134,8 @@ void packet_flush_icmp(struct host *host, uint16_t port)
 	}
 }
 
-static int tcp_finished(struct tcp_packet *pkt, int type)
+static int
+tcp_finished(struct tcp_packet *pkt, int type)
 {
 	switch (type)
 	{
@@ -162,11 +173,16 @@ static int tcp_finished(struct tcp_packet *pkt, int type)
 	return 0;
 }
 
-struct tcp_packet *packet_get_tcp(struct env *env, struct host *host,
-                                  uint16_t port, uint32_t sequence, int type)
+struct tcp_packet *
+packet_get_tcp(struct env *env,
+               struct host *host,
+               uint16_t port,
+               uint32_t sequence,
+               int type)
 {
-	recv_packets(env, host);
 	struct tcp_packet *pkt;
+
+	recv_packets(env, host);
 	TAILQ_FOREACH(pkt, &host->packets_tcp, chain)
 	{
 		if ((pkt->tcp.th_ack == sequence
@@ -181,14 +197,16 @@ struct tcp_packet *packet_get_tcp(struct env *env, struct host *host,
 	return NULL;
 }
 
-struct icmp_packet *packet_get_icmp(struct env *env, struct host *host,
-                                    uint16_t port)
+struct icmp_packet *
+packet_get_icmp(struct env *env, struct host *host, uint16_t port)
 {
-	recv_packets(env, host);
 	struct icmp_packet *pkt;
+
+	recv_packets(env, host);
 	TAILQ_FOREACH(pkt, &host->packets_icmp, chain)
 	{
 		uint16_t tmp;
+
 		memcpy(&tmp, &pkt->data[4 + sizeof(struct ip) + 2], sizeof(tmp));
 		if (tmp == htons(port))
 		{

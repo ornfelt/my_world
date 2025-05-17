@@ -2,9 +2,11 @@
 
 #include <wctype.h>
 
-const wchar_t *wcsto_init(const wchar_t *nptr, int *base, int *is_neg)
+const wchar_t *
+wcsto_init(const wchar_t *nptr, int *base, int *is_neg)
 {
 	const wchar_t *it = nptr;
+
 	while (iswspace(*it))
 		it++;
 	if (*it == L'+')
@@ -38,7 +40,8 @@ const wchar_t *wcsto_init(const wchar_t *nptr, int *base, int *is_neg)
 	return it;
 }
 
-int wcsto_getc(const wchar_t *it, int base, wchar_t *c)
+int
+wcsto_getc(const wchar_t *it, int base, wchar_t *c)
 {
 	*c = towlower(*it);
 	if (*c < L'0')

@@ -2,15 +2,17 @@
 #include <stdio.h>
 #include <errno.h>
 
-ssize_t getdelim(char **lineptr, size_t *n, int delim, FILE *fp)
+ssize_t
+getdelim(char **lineptr, size_t *n, int delim, FILE *fp)
 {
+	size_t rd = 0;
+	int c;
+
 	if (lineptr == NULL || n == NULL)
 	{
 		errno = EINVAL;
 		return -1;
 	}
-	size_t rd = 0;
-	int c;
 	flockfile(fp);
 	do
 	{

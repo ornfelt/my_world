@@ -60,6 +60,8 @@ struct gx_mcnk_frame
 	struct gfx_draw_indexed_indirect_cmd draw_cmds[GX_MCNK_CHUNKS_PER_TILE];
 	uint16_t batches_draw_cmds[GX_MCNK_CHUNKS_PER_TILE];
 	size_t draw_cmd_nb;
+	struct mat4f shadow_mvp;
+	struct mat4f shadow_mv;
 	struct mat4f mvp;
 	struct mat4f mv;
 };

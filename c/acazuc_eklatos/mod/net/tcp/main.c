@@ -87,7 +87,8 @@ static int forge_data(struct sock_tcp *sock_tcp, size_t bytes,
 static int forge_synack(struct sock_tcp *sock_tcp, struct netpkt **pkt);
 static int send_data(struct sock_tcp *sock_tcp);
 
-static inline void print_tcphdr(const struct tcphdr *tcphdr)
+static inline void
+print_tcphdr(const struct tcphdr *tcphdr)
 {
 	char flags[64];
 
@@ -108,13 +109,15 @@ static inline void print_tcphdr(const struct tcphdr *tcphdr)
 	TRACE("urp: 0x%04" PRIx16, htons(tcphdr->th_urp));
 }
 
-static void sock_list_init(struct sock_tcp_list *list)
+static void
+sock_list_init(struct sock_tcp_list *list)
 {
 	spinlock_init(&list->lock);
 	TAILQ_INIT(&list->socks);
 }
 
-static struct sock_tcp_list *get_sock_list(int domain)
+static struct sock_tcp_list *
+get_sock_list(int domain)
 {
 	switch (domain)
 	{
@@ -126,7 +129,8 @@ static struct sock_tcp_list *get_sock_list(int domain)
 	return NULL;
 }
 
-static int init_clt(struct sock_tcp *sock_tcp)
+static int
+init_clt(struct sock_tcp *sock_tcp)
 {
 	struct sock *sock = sock_tcp->sock;
 	int ret;
@@ -149,13 +153,15 @@ static int init_clt(struct sock_tcp *sock_tcp)
 	return 0;
 }
 
-static void destroy_clt(struct sock_tcp *sock_tcp)
+static void
+destroy_clt(struct sock_tcp *sock_tcp)
 {
 	pipebuf_destroy(&sock_tcp->clt.outbuf);
 	pipebuf_destroy(&sock_tcp->clt.inbuf);
 }
 
-ssize_t tcp_send(struct sock *sock, struct msghdr *msg, int flags)
+ssize_t
+tcp_send(struct sock *sock, struct msghdr *msg, int flags)
 {
 	struct sock_tcp *sock_tcp = sock->userdata;
 	struct uio uio;
@@ -197,7 +203,8 @@ end:
 	return ret;
 }
 
-ssize_t tcp_recv(struct sock *sock, struct msghdr *msg, int flags)
+ssize_t
+tcp_recv(struct sock *sock, struct msghdr *msg, int flags)
 {
 	struct sock_tcp *sock_tcp = sock->userdata;
 	struct uio uio;
@@ -225,7 +232,8 @@ end:
 	return ret;
 }
 
-int tcp_poll(struct sock *sock, struct poll_entry *entry)
+int
+tcp_poll(struct sock *sock, struct poll_entry *entry)
 {
 	struct sock_tcp *sock_tcp = sock->userdata;
 	int ret = 0;
@@ -254,7 +262,8 @@ end:
 	return ret;
 }
 
-int tcp_find_local_address(struct sock *sock, const struct sockaddr *addr)
+int
+tcp_find_local_address(struct sock *sock, const struct sockaddr *addr)
 {
 	struct netif_addr *netif_addr;
 	struct netif *netif = NULL;
@@ -289,8 +298,10 @@ int tcp_find_local_address(struct sock *sock, const struct sockaddr *addr)
 	return ret;
 }
 
-int tcp_connect(struct sock *sock, const struct sockaddr *addr,
-                socklen_t addrlen)
+int
+tcp_connect(struct sock *sock,
+            const struct sockaddr *addr,
+            socklen_t addrlen)
 {
 	struct sock_tcp *sock_tcp = sock->userdata;
 	struct netpkt *pkt = NULL;
@@ -382,7 +393,8 @@ end:
 	return ret;
 }
 
-int tcp_bind(struct sock *sock, const struct sockaddr *addr, socklen_t addrlen)
+int
+tcp_bind(struct sock *sock, const struct sockaddr *addr, socklen_t addrlen)
 {
 	struct sock_tcp_list *list;
 	uint16_t port;
@@ -453,7 +465,8 @@ end:
 	return ret;
 }
 
-int tcp_listen(struct sock *sock, int backlog)
+int
+tcp_listen(struct sock *sock, int backlog)
 {
 	struct sock_tcp *sock_tcp = sock->userdata;
 	int ret;
@@ -496,7 +509,8 @@ end:
 	return ret;
 }
 
-int tcp_accept(struct sock *sock, struct sock **child)
+int
+tcp_accept(struct sock *sock, struct sock **child)
 {
 	struct sock_tcp *sock_tcp = sock->userdata;
 	struct sock_tcp *child_tcp;
@@ -524,7 +538,8 @@ end:
 	return ret;
 }
 
-int tcp_release(struct sock *sock)
+int
+tcp_release(struct sock *sock)
 {
 	struct sock_tcp *sock_tcp = sock->userdata;
 	struct sock_tcp_list *list;
@@ -561,8 +576,12 @@ int tcp_release(struct sock *sock)
 	return 0;
 }
 
-int tcp_setopt(struct sock *sock, int level, int opt, const void *uval,
-               socklen_t len)
+int
+tcp_setopt(struct sock *sock,
+           int level,
+           int opt,
+           const void *uval,
+           socklen_t len)
 {
 	int ret;
 
@@ -592,8 +611,12 @@ int tcp_setopt(struct sock *sock, int level, int opt, const void *uval,
 	return ret;
 }
 
-int tcp_getopt(struct sock *sock, int level, int opt, void *uval,
-               socklen_t *ulen)
+int
+tcp_getopt(struct sock *sock,
+           int level,
+           int opt,
+           void *uval,
+           socklen_t *ulen)
 {
 	int ret;
 
@@ -623,12 +646,14 @@ int tcp_getopt(struct sock *sock, int level, int opt, void *uval,
 	return ret;
 }
 
-int tcp_ioctl(struct sock *sock, unsigned long request, uintptr_t data)
+int
+tcp_ioctl(struct sock *sock, unsigned long request, uintptr_t data)
 {
 	return sock_sol_ioctl(sock, request, data);
 }
 
-int tcp_shutdown(struct sock *sock, int how)
+int
+tcp_shutdown(struct sock *sock, int how)
 {
 	(void)sock;
 	(void)how;
@@ -637,10 +662,13 @@ int tcp_shutdown(struct sock *sock, int how)
 }
 
 int tcp_open(int domain, int type, int protocol, struct sock **sock);
-int tcp_input(struct netif *netif, struct netpkt *pkt,
-              struct sockaddr *src, struct sockaddr *dst);
+int tcp_input(struct netif *netif,
+              struct netpkt *pkt,
+              struct sockaddr *src,
+              struct sockaddr *dst);
 
-static const struct sock_op tcp_op =
+static const struct sock_op
+tcp_op =
 {
 	.open = tcp_open,
 	.release = tcp_release,
@@ -658,7 +686,8 @@ static const struct sock_op tcp_op =
 	.input = tcp_input,
 };
 
-int tcp_open(int domain, int type, int protocol, struct sock **sock)
+int
+tcp_open(int domain, int type, int protocol, struct sock **sock)
 {
 	struct sock_tcp_list *list;
 	struct sock_tcp *sock_tcp;
@@ -687,9 +716,10 @@ int tcp_open(int domain, int type, int protocol, struct sock **sock)
 	return 0;
 }
 
-static uint16_t tcp4_checksum(const struct netpkt *pkt,
-                              const struct in_addr src,
-                              const struct in_addr dst)
+static uint16_t
+tcp4_checksum(const struct netpkt *pkt,
+              const struct in_addr src,
+              const struct in_addr dst)
 {
 	struct tcp4_pseudohdr phdr;
 	uint32_t result;
@@ -710,9 +740,10 @@ static uint16_t tcp4_checksum(const struct netpkt *pkt,
 	return ip_checksum(pkt->data, pkt->len, result);
 }
 
-static uint16_t tcp6_checksum(const struct netpkt *pkt,
-                              const struct in6_addr *src,
-                              const struct in6_addr *dst)
+static uint16_t
+tcp6_checksum(const struct netpkt *pkt,
+              const struct in6_addr *src,
+              const struct in6_addr *dst)
 {
 	struct tcp6_pseudohdr phdr;
 	uint32_t result;
@@ -732,9 +763,10 @@ static uint16_t tcp6_checksum(const struct netpkt *pkt,
 	return ip_checksum(pkt->data, pkt->len, result);
 }
 
-static uint16_t tcp_checksum(const struct netpkt *netpkt,
-                             const struct sockaddr *src,
-                             const struct sockaddr *dst)
+static uint16_t
+tcp_checksum(const struct netpkt *netpkt,
+             const struct sockaddr *src,
+             const struct sockaddr *dst)
 {
 	switch (src->sa_family)
 	{
@@ -752,11 +784,12 @@ static uint16_t tcp_checksum(const struct netpkt *netpkt,
 	}
 }
 
-static void tcp4_find_input_sockets(struct sock_tcp **both_match,
-                                    struct sock_tcp **dst_match,
-                                    const struct sockaddr *src,
-                                    const struct sockaddr *dst,
-                                    const struct tcphdr *tcphdr)
+static void
+tcp4_find_input_sockets(struct sock_tcp **both_match,
+                        struct sock_tcp **dst_match,
+                        const struct sockaddr *src,
+                        const struct sockaddr *dst,
+                        const struct tcphdr *tcphdr)
 {
 	struct sock_tcp_list *list;
 	struct sock_tcp *sock;
@@ -791,11 +824,12 @@ static void tcp4_find_input_sockets(struct sock_tcp **both_match,
 	spinlock_unlock(&list->lock);
 }
 
-static void tcp6_find_input_sockets(struct sock_tcp **both_match,
-                                    struct sock_tcp **dst_match,
-                                    const struct sockaddr *src,
-                                    const struct sockaddr *dst,
-                                    const struct tcphdr *tcphdr)
+static void
+tcp6_find_input_sockets(struct sock_tcp **both_match,
+                        struct sock_tcp **dst_match,
+                        const struct sockaddr *src,
+                        const struct sockaddr *dst,
+                        const struct tcphdr *tcphdr)
 {
 	static const struct in6_addr in6_any = IN6ADDR_ANY_INIT;
 	struct sock_tcp_list *list;
@@ -831,10 +865,11 @@ static void tcp6_find_input_sockets(struct sock_tcp **both_match,
 	spinlock_unlock(&list->lock);
 }
 
-static int find_input_socket(const struct sockaddr *src,
-                             const struct sockaddr *dst,
-                             const struct tcphdr *tcphdr,
-                             struct sock_tcp **sock_tcp)
+static int
+find_input_socket(const struct sockaddr *src,
+                  const struct sockaddr *dst,
+                  const struct tcphdr *tcphdr,
+                  struct sock_tcp **sock_tcp)
 {
 	struct sock_tcp *both_match = NULL;
 	struct sock_tcp *dst_match = NULL;
@@ -869,7 +904,8 @@ static int find_input_socket(const struct sockaddr *src,
 	return 0;
 }
 
-static int handle_synack(struct sock *sock, struct netpkt *pkt)
+static int
+handle_synack(struct sock *sock, struct netpkt *pkt)
 {
 	struct sock_tcp *sock_tcp = sock->userdata;
 	struct tcphdr *tcphdr = pkt->data;
@@ -921,7 +957,8 @@ end:
 	return ret;
 }
 
-static int handle_pkt(struct sock *sock, struct netpkt *pkt)
+static int
+handle_pkt(struct sock *sock, struct netpkt *pkt)
 {
 	struct sock_tcp *sock_tcp = sock->userdata;
 	struct tcphdr *tcphdr = pkt->data;
@@ -1002,8 +1039,11 @@ static int handle_pkt(struct sock *sock, struct netpkt *pkt)
 	return 0;
 }
 
-static int handle_syn(struct sock *sock, struct netpkt *pkt,
-                      struct sockaddr *src, struct sockaddr *dst)
+static int
+handle_syn(struct sock *sock,
+           struct netpkt *pkt,
+           struct sockaddr *src,
+           struct sockaddr *dst)
 {
 	struct sock_tcp *child_tcp;
 	struct sock_tcp *sock_tcp = sock->userdata;
@@ -1099,8 +1139,11 @@ static int handle_syn(struct sock *sock, struct netpkt *pkt,
 	return 0;
 }
 
-int tcp_input(struct netif *netif, struct netpkt *pkt,
-              struct sockaddr *src, struct sockaddr *dst)
+int
+tcp_input(struct netif *netif,
+          struct netpkt *pkt,
+          struct sockaddr *src,
+          struct sockaddr *dst)
 {
 	struct sock_tcp *sock_tcp;
 	struct tcphdr *tcphdr;
@@ -1160,8 +1203,9 @@ int tcp_input(struct netif *netif, struct netpkt *pkt,
 	return ret;
 }
 
-static int has_matching_sock_locked(struct sock_tcp_list *list,
-                                    struct sockaddr *sockaddr)
+static int
+has_matching_sock_locked(struct sock_tcp_list *list,
+                         struct sockaddr *sockaddr)
 {
 	struct sock_tcp *sock;
 	switch (sockaddr->sa_family)
@@ -1203,15 +1247,19 @@ static int has_matching_sock_locked(struct sock_tcp_list *list,
 	return 0;
 }
 
-static int has_matching_sock(struct sock_tcp_list *list, struct sockaddr *addr)
+static int
+has_matching_sock(struct sock_tcp_list *list, struct sockaddr *addr)
 {
+	int ret;
+
 	spinlock_lock(&list->lock);
-	int ret = has_matching_sock_locked(list, addr);
+	ret = has_matching_sock_locked(list, addr);
 	spinlock_unlock(&list->lock);
 	return ret;
 }
 
-static int find_ephemeral_port(struct sock *sock)
+static int
+find_ephemeral_port(struct sock *sock)
 {
 	struct sock_tcp_list *list;
 	uint16_t ephemeral_count = ephemeral_end - ephemeral_start;
@@ -1259,7 +1307,8 @@ static int find_ephemeral_port(struct sock *sock)
 	return -EADDRINUSE;
 }
 
-static int send_pkt(struct sock_tcp *sock_tcp, struct netpkt *pkt)
+static int
+send_pkt(struct sock_tcp *sock_tcp, struct netpkt *pkt)
 {
 	struct netif *netif = NULL;
 	struct sock *sock = sock_tcp->sock;
@@ -1311,8 +1360,8 @@ end:
 	return ret;
 }
 
-static int forge_pkt(struct sock_tcp *sock_tcp, size_t bytes,
-                     struct netpkt **pkt)
+static int
+forge_pkt(struct sock_tcp *sock_tcp, size_t bytes, struct netpkt **pkt)
 {
 	struct sock *sock = sock_tcp->sock;
 	struct tcphdr *tcphdr;
@@ -1361,7 +1410,8 @@ static int forge_pkt(struct sock_tcp *sock_tcp, size_t bytes,
 	return 0;
 }
 
-static int forge_syn(struct sock_tcp *sock_tcp, struct netpkt **pkt)
+static int
+forge_syn(struct sock_tcp *sock_tcp, struct netpkt **pkt)
 {
 	struct sock *sock = sock_tcp->sock;
 	struct tcphdr *tcphdr;
@@ -1385,7 +1435,8 @@ static int forge_syn(struct sock_tcp *sock_tcp, struct netpkt **pkt)
 	return 0;
 }
 
-static int forge_ack(struct sock_tcp *sock_tcp, struct netpkt **pkt)
+static int
+forge_ack(struct sock_tcp *sock_tcp, struct netpkt **pkt)
 {
 	struct sock *sock = sock_tcp->sock;
 	struct tcphdr *tcphdr;
@@ -1409,7 +1460,8 @@ static int forge_ack(struct sock_tcp *sock_tcp, struct netpkt **pkt)
 	return 0;
 }
 
-static int forge_synack(struct sock_tcp *sock_tcp, struct netpkt **pkt)
+static int
+forge_synack(struct sock_tcp *sock_tcp, struct netpkt **pkt)
 {
 	struct sock *sock = sock_tcp->sock;
 	struct tcphdr *tcphdr;
@@ -1433,8 +1485,8 @@ static int forge_synack(struct sock_tcp *sock_tcp, struct netpkt **pkt)
 	return 0;
 }
 
-static int forge_data(struct sock_tcp *sock_tcp, size_t bytes,
-                      struct netpkt **pkt)
+static int
+forge_data(struct sock_tcp *sock_tcp, size_t bytes, struct netpkt **pkt)
 {
 	struct sock *sock = sock_tcp->sock;
 	struct tcphdr *tcphdr;
@@ -1458,7 +1510,8 @@ static int forge_data(struct sock_tcp *sock_tcp, size_t bytes,
 	return 0;
 }
 
-static int send_data(struct sock_tcp *sock_tcp)
+static int
+send_data(struct sock_tcp *sock_tcp)
 {
 	struct netif *netif = NULL;
 	struct netpkt *pkt = NULL;
@@ -1487,7 +1540,8 @@ end:
 	return ret;
 }
 
-int init(void)
+int
+init(void)
 {
 	int ret;
 
@@ -1503,11 +1557,13 @@ int init(void)
 	return 0;
 }
 
-void fini(void)
+void
+fini(void)
 {
 }
 
-struct kmod_info kmod =
+struct kmod_info
+kmod =
 {
 	.magic = KMOD_MAGIC,
 	.version = 1,

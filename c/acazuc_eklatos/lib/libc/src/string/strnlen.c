@@ -2,7 +2,8 @@
 
 #include <string.h>
 
-size_t strnlen(const char *s, size_t maxlen)
+size_t
+strnlen(const char *s, size_t maxlen)
 {
 	size_t i = 0;
 	if (i < maxlen && ((size_t)s + i) % sizeof(size_t))

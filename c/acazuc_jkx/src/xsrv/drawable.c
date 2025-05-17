@@ -5,9 +5,13 @@
 #include <stdio.h>
 #include <errno.h>
 
-int drawable_init(struct xsrv *xsrv, struct drawable *drawable,
-                  uint16_t width, uint16_t height,
-                  const struct format *format, struct window *root)
+int
+drawable_init(struct xsrv *xsrv,
+              struct drawable *drawable,
+              uint16_t width,
+              uint16_t height,
+              const struct format *format,
+              struct window *root)
 {
 	uint32_t alloc_width = npot32(width);
 	uint32_t alloc_height = npot32(height);
@@ -18,7 +22,8 @@ int drawable_init(struct xsrv *xsrv, struct drawable *drawable,
 	drawable->data = malloc(alloc_height * drawable->pitch);
 	if (!drawable->data)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", xsrv->progname,
+		fprintf(stderr, "%s: malloc: %s\n",
+		        xsrv->progname,
 		        strerror(errno));
 		return 1;
 	}
@@ -32,9 +37,12 @@ int drawable_init(struct xsrv *xsrv, struct drawable *drawable,
 	return 0;
 }
 
-struct drawable *drawable_get(struct xsrv *xsrv, uint32_t id)
+struct drawable *
+drawable_get(struct xsrv *xsrv, uint32_t id)
 {
-	struct object *object = object_get(xsrv, id);
+	struct object *object;
+
+	object = object_get(xsrv, id);
 	if (!object)
 		return NULL;
 	if (object->type != xsrv->obj_window
@@ -46,23 +54,29 @@ struct drawable *drawable_get(struct xsrv *xsrv, uint32_t id)
 	return (struct drawable*)object;
 }
 
-static void *get_y_ptr(struct drawable *drawable, uint16_t y)
+static void *
+get_y_ptr(struct drawable *drawable, uint16_t y)
 {
 	return &((uint8_t*)drawable->data)[y * drawable->pitch];
 }
 
-static void *get_x_ptr(struct drawable *drawable, void *lptr, uint16_t x)
+static void *
+get_x_ptr(struct drawable *drawable, void *lptr, uint16_t x)
 {
 	return &((uint8_t*)lptr)[x * drawable->format->bpp / 8];
 }
 
-static void *get_xy_ptr(struct drawable *drawable, uint16_t x, uint16_t y)
+static void *
+get_xy_ptr(struct drawable *drawable, uint16_t x, uint16_t y)
 {
 	return get_x_ptr(drawable, get_y_ptr(drawable, y), x);
 }
 
-uint32_t drawable_get_pixel(struct xsrv *xsrv, struct drawable *drawable,
-                            uint16_t x, uint16_t y)
+uint32_t
+drawable_get_pixel(struct xsrv *xsrv,
+                   struct drawable *drawable,
+                   uint16_t x,
+                   uint16_t y)
 {
 	(void)xsrv;
 	switch (drawable->format->depth)
@@ -106,8 +120,12 @@ uint32_t drawable_get_pixel(struct xsrv *xsrv, struct drawable *drawable,
 	return 0;
 }
 
-void drawable_set_pixel(struct xsrv *xsrv, struct drawable *drawable,
-                        uint16_t x, uint16_t y, uint32_t value)
+void
+drawable_set_pixel(struct xsrv *xsrv,
+                   struct drawable *drawable,
+                   uint16_t x,
+                   uint16_t y,
+                   uint32_t value)
 {
 	(void)xsrv;
 	switch (drawable->format->depth)

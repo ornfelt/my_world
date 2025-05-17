@@ -168,6 +168,11 @@ PKG_CONFIG_LIBRARIES+= libpng16
 endif
 endif
 
+ifeq ($(WITH_LIBNBT), yes)
+JKL_LIBS+= libnbt
+PKG_CONFIG_LIBRARIES+= libnbt
+endif
+
 ifeq ($(WITH_ZLIB), yes)
 ifeq ($(JKM_OS), wasm)
 CFLAGS+= -s USE_ZLIB=1

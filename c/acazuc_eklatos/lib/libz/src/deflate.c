@@ -42,7 +42,8 @@ struct ctx
 	uint32_t zlib_adler;
 };
 
-int deflateInit(z_stream *stream, int level)
+int
+deflateInit(z_stream *stream, int level)
 {
 	if (level < Z_DEFAULT_COMPRESSION || level > Z_BEST_COMPRESSION)
 		return Z_STREAM_ERROR;
@@ -70,7 +71,8 @@ int deflateInit(z_stream *stream, int level)
 	return Z_OK;
 }
 
-static int handle_zlhead(struct ctx *ctx)
+static int
+handle_zlhead(struct ctx *ctx)
 {
 	if (!bitstream_has_write(&ctx->bs, 16))
 		return Z_NEED_MORE;
@@ -80,7 +82,8 @@ static int handle_zlhead(struct ctx *ctx)
 	return Z_OK;
 }
 
-static int handle_gzhead(struct ctx *ctx)
+static int
+handle_gzhead(struct ctx *ctx)
 {
 	if (!bitstream_has_write(&ctx->bs, 16 + 64))
 		return Z_NEED_MORE;
@@ -100,7 +103,8 @@ static int handle_gzhead(struct ctx *ctx)
 	return Z_OK;
 }
 
-static int handle_blkhdr(struct ctx *ctx, int flush)
+static int
+handle_blkhdr(struct ctx *ctx, int flush)
 {
 	if (ctx->last_blk)
 	{
@@ -123,7 +127,8 @@ static int handle_blkhdr(struct ctx *ctx, int flush)
 	return Z_OK;
 }
 
-static int handle_rawhdr(struct ctx *ctx)
+static int
+handle_rawhdr(struct ctx *ctx)
 {
 	uint32_t req = 32;
 	if (ctx->bs.pos)
@@ -143,7 +148,8 @@ static int handle_rawhdr(struct ctx *ctx)
 	return Z_OK;
 }
 
-static int handle_rawblk(struct ctx *ctx)
+static int
+handle_rawblk(struct ctx *ctx)
 {
 	int first = 1;
 	while (ctx->blk_len)
@@ -169,7 +175,8 @@ static int handle_rawblk(struct ctx *ctx)
 	return Z_OK;
 }
 
-static int handle_zadler(struct ctx *ctx)
+static int
+handle_zadler(struct ctx *ctx)
 {
 	if (ctx->bs.pos)
 	{
@@ -191,7 +198,8 @@ static int handle_zadler(struct ctx *ctx)
 	return Z_OK;
 }
 
-static int handle_gzecrc(struct ctx *ctx)
+static int
+handle_gzecrc(struct ctx *ctx)
 {
 	if (ctx->bs.pos)
 	{
@@ -208,7 +216,8 @@ static int handle_gzecrc(struct ctx *ctx)
 	return Z_OK;
 }
 
-static int handle_gzelen(struct ctx *ctx)
+static int
+handle_gzelen(struct ctx *ctx)
 {
 	if (!bitstream_has_write(&ctx->bs, 32))
 		return Z_NEED_MORE;
@@ -217,13 +226,15 @@ static int handle_gzelen(struct ctx *ctx)
 	return Z_OK;
 }
 
-static int handle_strend(struct ctx *ctx)
+static int
+handle_strend(struct ctx *ctx)
 {
 	(void)ctx;
 	return Z_STREAM_END;
 }
 
-static size_t copy_in(z_stream *stream)
+static size_t
+copy_in(z_stream *stream)
 {
 	struct ctx *ctx = stream->internal_state;
 	size_t cpy_len = ringbuf_write_size(&ctx->input);
@@ -242,7 +253,8 @@ static size_t copy_in(z_stream *stream)
 	return cpy_len;
 }
 
-static size_t copy_out(z_stream *stream)
+static size_t
+copy_out(z_stream *stream)
 {
 	struct ctx *ctx = stream->internal_state;
 	size_t cpy_len = ringbuf_read_size(&ctx->output);
@@ -258,7 +270,8 @@ static size_t copy_out(z_stream *stream)
 	return cpy_len;
 }
 
-int deflate(z_stream *stream, int flush)
+int
+deflate(z_stream *stream, int flush)
 {
 	struct ctx *ctx = stream->internal_state;
 	if (!ctx->inf_def)
@@ -325,7 +338,8 @@ int deflate(z_stream *stream, int flush)
 	return ret;
 }
 
-int deflateEnd(z_stream *stream)
+int
+deflateEnd(z_stream *stream)
 {
 	if (!stream || !stream->internal_state)
 		return Z_STREAM_ERROR;

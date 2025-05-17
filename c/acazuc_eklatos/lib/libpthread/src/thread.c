@@ -32,7 +32,8 @@ static struct pthread _leader; /* XXX mark as detached, should be initialized
                                 * has been called, and this is not a good idea)
                                 */
 
-int pthread_attr_init(pthread_attr_t *attr)
+int
+pthread_attr_init(pthread_attr_t *attr)
 {
 
 	if (!attr)
@@ -43,14 +44,16 @@ int pthread_attr_init(pthread_attr_t *attr)
 	return 0;
 }
 
-int pthread_attr_destroy(pthread_attr_t *attr)
+int
+pthread_attr_destroy(pthread_attr_t *attr)
 {
 	if (!attr)
 		return EINVAL;
 	return 0;
 }
 
-int pthread_attr_setstacksize(pthread_attr_t *attr, size_t size)
+int
+pthread_attr_setstacksize(pthread_attr_t *attr, size_t size)
 {
 	if (!attr)
 		return EINVAL;
@@ -61,7 +64,8 @@ int pthread_attr_setstacksize(pthread_attr_t *attr, size_t size)
 	return 0;
 }
 
-int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *size)
+int
+pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *size)
 {
 	if (!attr)
 		return EINVAL;
@@ -70,7 +74,8 @@ int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *size)
 	return 0;
 }
 
-int pthread_attr_setstack(pthread_attr_t *attr, void *stack, size_t size)
+int
+pthread_attr_setstack(pthread_attr_t *attr, void *stack, size_t size)
 {
 	if (!attr)
 		return EINVAL;
@@ -86,7 +91,8 @@ int pthread_attr_setstack(pthread_attr_t *attr, void *stack, size_t size)
 	return 0;
 }
 
-int pthread_attr_getstack(const pthread_attr_t *attr, void **stack, size_t *size)
+int
+pthread_attr_getstack(const pthread_attr_t *attr, void **stack, size_t *size)
 {
 	if (!attr)
 		return EINVAL;
@@ -97,7 +103,8 @@ int pthread_attr_getstack(const pthread_attr_t *attr, void **stack, size_t *size
 	return 0;
 }
 
-int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate)
+int
+pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate)
 {
 	if (!attr)
 		return EINVAL;
@@ -108,7 +115,8 @@ int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate)
 	return 0;
 }
 
-int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate)
+int
+pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate)
 {
 	if (!attr)
 		return EINVAL;
@@ -117,7 +125,8 @@ int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate)
 	return 0;
 }
 
-static void pthread_destroy(pthread_t thread)
+static void
+pthread_destroy(pthread_t thread)
 {
 	if (!thread)
 		return;
@@ -131,7 +140,8 @@ static void pthread_destroy(pthread_t thread)
 }
 
 __attribute__((noreturn))
-void _pthread_start(pthread_t thread)
+void
+_pthread_start(pthread_t thread)
 {
 	if (!_dl_tls_set(thread->dl_tls))
 		_exit(1);
@@ -139,8 +149,10 @@ void _pthread_start(pthread_t thread)
 	pthread_exit(thread->start(thread->arg));
 }
 
-int pthread_create(pthread_t *threadp, const pthread_attr_t *attr,
-                   void *(*start)(void*), void *arg)
+int
+pthread_create(pthread_t *threadp,
+               const pthread_attr_t *attr,
+               void *(*start)(void*), void *arg)
 {
 	pthread_t thread = calloc(1, sizeof(*thread));
 	if (!thread)
@@ -204,7 +216,8 @@ int pthread_create(pthread_t *threadp, const pthread_attr_t *attr,
 	return 0;
 }
 
-int pthread_detach(pthread_t thread)
+int
+pthread_detach(pthread_t thread)
 {
 	if (thread == pthread_self())
 		return EINVAL;
@@ -225,7 +238,8 @@ int pthread_detach(pthread_t thread)
 	return 0;
 }
 
-int pthread_join(pthread_t thread, void **retv)
+int
+pthread_join(pthread_t thread, void **retv)
 {
 	if (thread == pthread_self())
 		return EDEADLK;
@@ -252,7 +266,8 @@ end:
 	return 0;
 }
 
-int pthread_kill(pthread_t thread, int sig)
+int
+pthread_kill(pthread_t thread, int sig)
 {
 	if (!thread)
 		return EINVAL;
@@ -261,7 +276,8 @@ int pthread_kill(pthread_t thread, int sig)
 	return errno;
 }
 
-void pthread_exit(void *ret)
+void
+pthread_exit(void *ret)
 {
 	pthread_t self = pthread_self();
 	pthread_mutex_lock(&self->mutex);
@@ -285,45 +301,54 @@ void pthread_exit(void *ret)
 	while (1);
 }
 
-int pthread_cancel(pthread_t thread)
+int
+pthread_cancel(pthread_t thread)
 {
 	(void)thread;
 	/* XXX */
 	return EINVAL;
 }
 
-pthread_t pthread_self(void)
+pthread_t
+pthread_self(void)
 {
 	if (_self)
 		return _self;
 	return &_leader;
 }
 
-int pthread_compare(pthread_t t1, pthread_t t2)
+int
+pthread_compare(pthread_t t1, pthread_t t2)
 {
 	return t1 != t2;
 }
 
-int pthread_equal(pthread_t t1, pthread_t t2)
+int
+pthread_equal(pthread_t t1, pthread_t t2)
 {
 	return t1 == t2;
 }
 
-int pthread_sigmask(int how, const sigset_t *set, sigset_t *oldset)
+int
+pthread_sigmask(int how, const sigset_t *set, sigset_t *oldset)
 {
 	return sigprocmask(how, set, oldset);
 }
 
-int __libc_atfork(void (*prepare)(void), void (*parent)(void),
+int __libc_atfork(void (*prepare)(void),
+                  void (*parent)(void),
                   void (*child)(void));
 
-int pthread_atfork(void (*prepare)(void), void (*parent)(void),
-                   void (*child)(void))
+int
+pthread_atfork(void (*prepare)(void),
+               void (*parent)(void),
+               void (*child)(void))
 {
 	return __libc_atfork(prepare, parent, child);
 }
 
-int pthread_setschedprio(pthread_t thread, int prio)
+int
+pthread_setschedprio(pthread_t thread, int prio)
 {
 	if (setpriority(PRIO_PROCESS, thread->tid, prio) == -1)
 		return errno;

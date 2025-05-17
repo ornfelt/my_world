@@ -1,17 +1,20 @@
 #include <string.h>
 #include <stdlib.h>
 
-int getsubopt(char **optionp, char * const *tokens, char **valuep)
+int
+getsubopt(char **optionp, char * const *tokens, char **valuep)
 {
+	size_t optlen;
+	char *nextopt;
+	char *eq;
+
 	if (!**optionp)
 		return -1;
-	char *nextopt = strchr(*optionp, ',');
-	char *eq;
+	nextopt = strchr(*optionp, ',');
 	if (nextopt)
 		eq = memchr(*optionp, '=', nextopt - *optionp);
 	else
 		eq = strchr(*optionp, '=');
-	size_t optlen;
 	if (eq)
 		optlen = eq - *optionp;
 	else if (nextopt)

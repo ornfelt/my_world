@@ -2,9 +2,18 @@
 
 #include <string.h>
 
-void framebuffer_redraw(struct xsrv *xsrv, int16_t x, int16_t y,
-                        uint16_t width, uint16_t height)
+void
+framebuffer_redraw(struct xsrv *xsrv,
+                   int16_t x,
+                   int16_t y,
+                   uint16_t width,
+                   uint16_t height)
 {
+	uint32_t left;
+	uint32_t right;
+	uint32_t top;
+	uint32_t bottom;
+
 	if (!width || !height)
 		return;
 	if (x < 0)
@@ -21,10 +30,10 @@ void framebuffer_redraw(struct xsrv *xsrv, int16_t x, int16_t y,
 		height += y;
 		y = 0;
 	}
-	uint32_t left = x;
-	uint32_t right = x + width;
-	uint32_t top = y;
-	uint32_t bottom = y + height;
+	left = x;
+	right = x + width;
+	top = y;
+	bottom = y + height;
 	if (left >= xsrv->backend.width)
 		return;
 	if (right >= xsrv->backend.width)
@@ -47,7 +56,8 @@ void framebuffer_redraw(struct xsrv *xsrv, int16_t x, int16_t y,
 		xsrv->redraw_rect.bottom = bottom;
 }
 
-static int rect_intersect(struct rect *inter, struct rect *a, struct rect *b)
+static int
+rect_intersect(struct rect *inter, struct rect *a, struct rect *b)
 {
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
@@ -70,9 +80,12 @@ static int rect_intersect(struct rect *inter, struct rect *a, struct rect *b)
 #undef MAX
 }
 
-static int draw_left_border(struct xsrv *xsrv, struct rect *rect,
-                            struct window *window,
-                            int32_t adj_x, int32_t adj_y)
+static int
+draw_left_border(struct xsrv *xsrv,
+                 struct rect *rect,
+                 struct window *window,
+                 int32_t adj_x,
+                 int32_t adj_y)
 {
 	if (rect->left >= window->border_width)
 		return 0;
@@ -95,9 +108,12 @@ static int draw_left_border(struct xsrv *xsrv, struct rect *rect,
 	return 0;
 }
 
-static int draw_right_border(struct xsrv *xsrv, struct rect *rect,
-                             struct window *window,
-                             int32_t adj_x, int32_t adj_y)
+static int
+draw_right_border(struct xsrv *xsrv,
+                  struct rect *rect,
+                  struct window *window,
+                  int32_t adj_x,
+                  int32_t adj_y)
 {
 	uint32_t min_border = window->drawable.width + window->border_width;
 	if (rect->right < min_border)
@@ -121,9 +137,12 @@ static int draw_right_border(struct xsrv *xsrv, struct rect *rect,
 	return 0;
 }
 
-static int draw_top_border(struct xsrv *xsrv, struct rect *rect,
-                           struct window *window,
-                           int32_t adj_x, int32_t adj_y)
+static int
+draw_top_border(struct xsrv *xsrv,
+                struct rect *rect,
+                struct window *window,
+                int32_t adj_x,
+                int32_t adj_y)
 {
 	if (rect->top >= window->border_width)
 		return 0;
@@ -146,9 +165,12 @@ static int draw_top_border(struct xsrv *xsrv, struct rect *rect,
 	return 0;
 }
 
-static int draw_bottom_border(struct xsrv *xsrv, struct rect *rect,
-                              struct window *window,
-                              int32_t adj_x, int32_t adj_y)
+static int
+draw_bottom_border(struct xsrv *xsrv,
+                   struct rect *rect,
+                   struct window *window,
+                   int32_t adj_x,
+                   int32_t adj_y)
 {
 	uint32_t min_border = window->drawable.height + window->border_width;
 	if (rect->bottom < min_border)
@@ -172,13 +194,18 @@ static int draw_bottom_border(struct xsrv *xsrv, struct rect *rect,
 	return 0;
 }
 
-void redraw_rect(struct xsrv *xsrv, struct rect rect,
-                 struct window *window, struct window *child,
-                 int32_t adj_x, int32_t adj_y)
+void
+redraw_rect(struct xsrv *xsrv,
+            struct rect rect,
+            struct window *window,
+            struct window *child,
+            int32_t adj_x,
+            int32_t adj_y)
 {
 	for (; child; child = TAILQ_NEXT(child, chain))
 	{
-		if (!child->drawable.width || !child->drawable.height
+		if (!child->drawable.width
+		 || !child->drawable.height
 		 || !(child->flags & WINDOW_MAPPED))
 			continue;
 		struct rect inter;
@@ -204,8 +231,12 @@ void redraw_rect(struct xsrv *xsrv, struct rect rect,
 			left_rect.right = inter.left - 1;
 			left_rect.top = rect.top;
 			left_rect.bottom = rect.bottom;
-			redraw_rect(xsrv, left_rect, window, child,
-			            adj_x, adj_y);
+			redraw_rect(xsrv,
+			            left_rect,
+			            window,
+			            child,
+			            adj_x,
+			            adj_y);
 			rect.left = inter.left;
 		}
 		if (inter.right < rect.right)
@@ -215,8 +246,12 @@ void redraw_rect(struct xsrv *xsrv, struct rect rect,
 			right_rect.right = rect.right;
 			right_rect.top = rect.top;
 			right_rect.bottom = rect.bottom;
-			redraw_rect(xsrv, right_rect, window, child,
-			            adj_x, adj_y);
+			redraw_rect(xsrv,
+			            right_rect,
+			            window,
+			            child,
+			            adj_x,
+			            adj_y);
 			rect.right = inter.right;
 		}
 		if (inter.top > rect.top)
@@ -226,8 +261,12 @@ void redraw_rect(struct xsrv *xsrv, struct rect rect,
 			top_rect.bottom = inter.top - 1;
 			top_rect.left = rect.left;
 			top_rect.right = rect.right;
-			redraw_rect(xsrv, top_rect, window, child,
-			            adj_x, adj_y);
+			redraw_rect(xsrv,
+			            top_rect,
+			            window,
+			            child,
+			            adj_x,
+			            adj_y);
 			rect.right = inter.right;
 		}
 		if (inter.bottom < rect.bottom)
@@ -237,8 +276,12 @@ void redraw_rect(struct xsrv *xsrv, struct rect rect,
 			bottom_rect.bottom = rect.bottom;
 			bottom_rect.left = rect.left;
 			bottom_rect.right = rect.right;
-			redraw_rect(xsrv, bottom_rect, window, child,
-			            adj_x, adj_y);
+			redraw_rect(xsrv,
+			            bottom_rect,
+			            window,
+			            child,
+			            adj_x,
+			            adj_y);
 			rect.bottom = inter.bottom;
 		}
 		int32_t adjust_x = child->x + window->border_width;
@@ -247,8 +290,12 @@ void redraw_rect(struct xsrv *xsrv, struct rect rect,
 		inter.right -= adjust_x;
 		inter.top -= adjust_y;
 		inter.bottom -= adjust_y;
-		redraw_rect(xsrv, inter, child, TAILQ_FIRST(&child->children),
-		            adj_x + adjust_x, adj_y + adjust_y);
+		redraw_rect(xsrv,
+		            inter,
+		            child,
+		            TAILQ_FIRST(&child->children),
+		            adj_x + adjust_x,
+		            adj_y + adjust_y);
 		return;
 	}
 	if (window->border_width)
@@ -277,8 +324,12 @@ void redraw_rect(struct xsrv *xsrv, struct rect rect,
 	}
 }
 
-static int get_cursor_pixel(struct xsrv *xsrv, struct cursor *cursor,
-                            int16_t cx, int16_t cy, uint32_t *pixel)
+static int
+get_cursor_pixel(struct xsrv *xsrv,
+                 struct cursor *cursor,
+                 int16_t cx,
+                 int16_t cy,
+                 uint32_t *pixel)
 {
 	if (cursor->mask)
 	{
@@ -307,7 +358,8 @@ static int get_cursor_pixel(struct xsrv *xsrv, struct cursor *cursor,
 	return 1;
 }
 
-static void redraw_cursor(struct xsrv *xsrv)
+static void
+redraw_cursor(struct xsrv *xsrv)
 {
 	struct rect cursor_rect;
 	struct cursor *cursor = xsrv->pointer.cursor;
@@ -315,6 +367,9 @@ static void redraw_cursor(struct xsrv *xsrv)
 	int32_t cursor_right;
 	int32_t cursor_top;
 	int32_t cursor_bottom;
+	int32_t offset_x;
+	int32_t offset_y;
+
 	if (cursor->mask)
 	{
 		cursor_left = xsrv->pointer.x - cursor->xhot - cursor->maskx;
@@ -331,7 +386,6 @@ static void redraw_cursor(struct xsrv *xsrv)
 	}
 	if (cursor_right < 0 || cursor_bottom < 0)
 		return;
-	int32_t offset_x;
 	if (cursor_left < 0)
 	{
 		cursor_rect.left = 0;
@@ -342,7 +396,6 @@ static void redraw_cursor(struct xsrv *xsrv)
 		cursor_rect.left = cursor_left;
 		offset_x = 0;
 	}
-	int32_t offset_y;
 	if (cursor_top < 0)
 	{
 		cursor_rect.top = 0;
@@ -371,8 +424,10 @@ static void redraw_cursor(struct xsrv *xsrv)
 		for (uint32_t x = 0; x <= width; ++x)
 		{
 			uint32_t pixel;
-			if (!get_cursor_pixel(xsrv, cursor,
-			                      offset_x + x, offset_y + y,
+			if (!get_cursor_pixel(xsrv,
+			                      cursor,
+			                      offset_x + x,
+			                      offset_y + y,
 			                      &pixel))
 				continue;
 			dst_line[x] = pixel;
@@ -381,10 +436,14 @@ static void redraw_cursor(struct xsrv *xsrv)
 	}
 }
 
-void framebuffer_update(struct xsrv *xsrv, struct rect *rect)
+void
+framebuffer_update(struct xsrv *xsrv, struct rect *rect)
 {
-	redraw_rect(xsrv, *rect, xsrv->screens[0]->root,
+	redraw_rect(xsrv,
+	            *rect,
+	            xsrv->screens[0]->root,
 	            TAILQ_FIRST(&xsrv->screens[0]->root->children),
-	            0, 0);
+	            0,
+	            0);
 	redraw_cursor(xsrv);
 }

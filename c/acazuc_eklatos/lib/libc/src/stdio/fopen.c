@@ -3,12 +3,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-FILE *fopen(const char *pathname, const char *mode)
+FILE *
+fopen(const char *pathname, const char *mode)
 {
-	FILE *fp = mkfp();
+	FILE *fp;
+	int flags;
+
+	fp = mkfp();
 	if (!fp)
 		return NULL;
-	int flags;
 	if (!parse_flags(mode, &flags))
 	{
 		free(fp);

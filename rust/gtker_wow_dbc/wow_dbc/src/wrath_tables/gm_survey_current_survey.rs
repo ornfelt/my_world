@@ -4,10 +4,12 @@ use crate::{
 use crate::header::{
     DbcHeader, HEADER_SIZE, parse_header,
 };
+use crate::util::StringCache;
 use crate::wrath_tables::gm_survey_surveys::GMSurveySurveysKey;
 use std::io::Write;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct GMSurveyCurrentSurvey {
     pub rows: Vec<GMSurveyCurrentSurveyRow>,
 }
@@ -16,6 +18,8 @@ impl DbcTable for GMSurveyCurrentSurvey {
     type Row = GMSurveyCurrentSurveyRow;
 
     const FILENAME: &'static str = "GMSurveyCurrentSurvey.dbc";
+    const FIELD_COUNT: usize = 2;
+    const ROW_SIZE: usize = 8;
 
     fn rows(&self) -> &[Self::Row] { &self.rows }
     fn rows_mut(&mut self) -> &mut [Self::Row] { &mut self.rows }
@@ -25,19 +29,19 @@ impl DbcTable for GMSurveyCurrentSurvey {
         b.read_exact(&mut header)?;
         let header = parse_header(&header)?;
 
-        if header.record_size != 8 {
+        if header.record_size != Self::ROW_SIZE as u32 {
             return Err(crate::DbcError::InvalidHeader(
                 crate::InvalidHeaderError::RecordSize {
-                    expected: 8,
+                    expected: Self::ROW_SIZE as u32,
                     actual: header.record_size,
                 },
             ));
         }
 
-        if header.field_count != 2 {
+        if header.field_count != Self::FIELD_COUNT as u32 {
             return Err(crate::DbcError::InvalidHeader(
                 crate::InvalidHeaderError::FieldCount {
-                    expected: 2,
+                    expected: Self::FIELD_COUNT as u32,
                     actual: header.field_count,
                 },
             ));
@@ -67,15 +71,10 @@ impl DbcTable for GMSurveyCurrentSurvey {
         Ok(GMSurveyCurrentSurvey { rows, })
     }
 
-    fn write(&self, b: &mut impl Write) -> Result<(), std::io::Error> {
-        let header = DbcHeader {
-            record_count: self.rows.len() as u32,
-            field_count: 2,
-            record_size: 8,
-            string_block_size: 1,
-        };
+    fn write(&self, w: &mut impl Write) -> Result<(), std::io::Error> {
+        let mut b = Vec::with_capacity(self.rows.len() * Self::ROW_SIZE);
 
-        b.write_all(&header.write_header())?;
+        let  string_cache = StringCache::new();
 
         for row in &self.rows {
             // id: primary_key (GMSurveyCurrentSurvey) int32
@@ -86,8 +85,17 @@ impl DbcTable for GMSurveyCurrentSurvey {
 
         }
 
-        b.write_all(&[0_u8])?;
+        assert_eq!(b.len(), self.rows.len() * Self::ROW_SIZE);
+        let header = DbcHeader {
+            record_count: self.rows.len() as u32,
+            field_count: Self::FIELD_COUNT as u32,
+            record_size: Self::ROW_SIZE as u32,
+            string_block_size: string_cache.size(),
+        };
 
+        w.write_all(&header.write_header())?;
+        w.write_all(&b)?;
+        w.write_all(string_cache.buffer())?;
         Ok(())
     }
 
@@ -107,6 +115,7 @@ impl Indexable for GMSurveyCurrentSurvey {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Hash, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct GMSurveyCurrentSurveyKey {
     pub id: i32
 }
@@ -184,8 +193,28 @@ impl TryFrom<isize> for GMSurveyCurrentSurveyKey {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct GMSurveyCurrentSurveyRow {
     pub id: GMSurveyCurrentSurveyKey,
     pub gm_survey_id: GMSurveySurveysKey,
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::fs::File;
+    use std::io::Read;
+
+    #[test]
+    #[ignore = "requires DBC files"]
+    fn gm_survey_current_survey() {
+        let mut file = File::open("../wrath-dbc/GMSurveyCurrentSurvey.dbc").expect("Failed to open DBC file");
+        let mut contents = Vec::new();
+        file.read_to_end(&mut contents).expect("Failed to read DBC file");
+        let actual = GMSurveyCurrentSurvey::read(&mut contents.as_slice()).unwrap();
+        let mut v = Vec::with_capacity(contents.len());
+        actual.write(&mut v).unwrap();
+        let new = GMSurveyCurrentSurvey::read(&mut v.as_slice()).unwrap();
+        assert_eq!(actual, new);
+    }
+}

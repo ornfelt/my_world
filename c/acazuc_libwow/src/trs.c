@@ -6,23 +6,31 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct wow_trs_file *wow_trs_file_new(struct wow_mpq_file *mpq)
+struct wow_trs_file *
+wow_trs_file_new(struct wow_mpq_file *mpq)
 {
-	(void)mpq;
-	struct wow_trs_file *file = WOW_MALLOC(sizeof(*file));
+	struct wow_trs_file *file;
+	size_t len;
+	char *org;
+	char *ret;
+	char *prv;
+
+	file = WOW_MALLOC(sizeof(*file));
 	if (!file)
 		return NULL;
 	file->dirs = NULL;
 	file->dirs_nb = 0;
-	char *org = (char*)mpq->data;
-	size_t len = mpq->size;
-	if (len >= 3 && ((uint8_t*)org)[0] == 0xEF && ((uint8_t*)org)[1] == 0xBB && ((uint8_t*)org)[2] == 0xBF) /* skip UTF-8 BOM */
+	org = (char*)mpq->data;
+	len = mpq->size;
+	if (len >= 3
+	 && ((uint8_t*)org)[0] == 0xEF
+	 && ((uint8_t*)org)[1] == 0xBB
+	 && ((uint8_t*)org)[2] == 0xBF) /* skip UTF-8 BOM */
 	{
 		org += 3;
 		len -= 3;
 	}
-	char *ret;
-	char *prv = org;
+	prv = org;
 	while ((ret = (char*)memchr(prv, '\n', len - (prv - org))))
 	{
 		if (ret == prv)
@@ -40,7 +48,9 @@ struct wow_trs_file *wow_trs_file_new(struct wow_mpq_file *mpq)
 		}
 		if (!strncmp(prv, "dir: ", 5))
 		{
-			struct wow_trs_file_dir *dirs = WOW_REALLOC(file->dirs, sizeof(*file->dirs) * (file->dirs_nb + 1));
+			struct wow_trs_file_dir *dirs;
+
+			dirs = WOW_REALLOC(file->dirs, sizeof(*file->dirs) * (file->dirs_nb + 1));
 			if (!dirs)
 				goto err;
 			file->dirs = dirs;
@@ -86,7 +96,8 @@ err:
 	return NULL;
 }
 
-void wow_trs_file_delete(struct wow_trs_file *file)
+void
+wow_trs_file_delete(struct wow_trs_file *file)
 {
 	if (!file)
 		return;

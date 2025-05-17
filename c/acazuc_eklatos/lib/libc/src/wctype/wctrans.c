@@ -9,7 +9,8 @@ static const char *trans_str[] =
 	[WCTRANS_TOUPPER] = "toupper",
 };
 
-wctrans_t wctrans(const char *property)
+wctrans_t
+wctrans(const char *property)
 {
 	if (!property)
 		return WCTRANS_NONE;

@@ -10,25 +10,29 @@ struct _funopen_cookie
 	int (*closefn)(void *);
 };
 
-static ssize_t _cookie_read(void *cookie, char *buf, size_t len)
+static ssize_t
+_cookie_read(void *cookie, char *buf, size_t len)
 {
 	struct _funopen_cookie *funopen_cookie = cookie;
 	return funopen_cookie->readfn(funopen_cookie->cookie, buf, len);
 }
 
-static ssize_t _cookie_write(void *cookie, const char *buf, size_t len)
+static ssize_t
+_cookie_write(void *cookie, const char *buf, size_t len)
 {
 	struct _funopen_cookie *funopen_cookie = cookie;
 	return funopen_cookie->writefn(funopen_cookie->cookie, buf, len);
 }
 
-static int _cookie_seek(void *cookie, off_t off, int whence)
+static int
+_cookie_seek(void *cookie, off_t off, int whence)
 {
 	struct _funopen_cookie *funopen_cookie = cookie;
 	return funopen_cookie->seekfn(funopen_cookie->cookie, off, whence);
 }
 
-static int _cookie_close(void *cookie)
+static int
+_cookie_close(void *cookie)
 {
 	struct _funopen_cookie *funopen_cookie = cookie;
 	int ret = 0;
@@ -39,13 +43,17 @@ static int _cookie_close(void *cookie)
 	return ret;
 }
 
-FILE *funopen(const void *cookie, int (*readfn)(void *, char *, int),
-              int (*writefn)(void *, const char *, int),
-              off_t (*seekfn)(void *, off_t, int), int (*closefn)(void *))
+FILE *
+funopen(const void *cookie,
+        int (*readfn)(void *, char *, int),
+        int (*writefn)(void *, const char *, int),
+        off_t (*seekfn)(void *, off_t, int),
+        int (*closefn)(void *))
 {
 	cookie_io_functions_t funcs;
 	struct _funopen_cookie *funopen_cookie;
 	char *mode;
+	FILE *fp;
 
 	funopen_cookie = malloc(sizeof(*funopen_cookie));
 	if (!funopen_cookie)
@@ -73,7 +81,7 @@ FILE *funopen(const void *cookie, int (*readfn)(void *, char *, int),
 	{
 		mode = "rb";
 	}
-	FILE *fp = fopencookie(funopen_cookie, mode, &funcs);
+	fp = fopencookie(funopen_cookie, mode, &funcs);
 	if (!fp)
 	{
 		free(funopen_cookie);

@@ -4,9 +4,11 @@ use crate::{
 use crate::header::{
     DbcHeader, HEADER_SIZE, parse_header,
 };
+use crate::util::StringCache;
 use std::io::Write;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct PowerDisplay {
     pub rows: Vec<PowerDisplayRow>,
 }
@@ -15,6 +17,8 @@ impl DbcTable for PowerDisplay {
     type Row = PowerDisplayRow;
 
     const FILENAME: &'static str = "PowerDisplay.dbc";
+    const FIELD_COUNT: usize = 6;
+    const ROW_SIZE: usize = 15;
 
     fn rows(&self) -> &[Self::Row] { &self.rows }
     fn rows_mut(&mut self) -> &mut [Self::Row] { &mut self.rows }
@@ -24,19 +28,19 @@ impl DbcTable for PowerDisplay {
         b.read_exact(&mut header)?;
         let header = parse_header(&header)?;
 
-        if header.record_size != 15 {
+        if header.record_size != Self::ROW_SIZE as u32 {
             return Err(crate::DbcError::InvalidHeader(
                 crate::InvalidHeaderError::RecordSize {
-                    expected: 15,
+                    expected: Self::ROW_SIZE as u32,
                     actual: header.record_size,
                 },
             ));
         }
 
-        if header.field_count != 6 {
+        if header.field_count != Self::FIELD_COUNT as u32 {
             return Err(crate::DbcError::InvalidHeader(
                 crate::InvalidHeaderError::FieldCount {
-                    expected: 6,
+                    expected: Self::FIELD_COUNT as u32,
                     actual: header.field_count,
                 },
             ));
@@ -87,17 +91,11 @@ impl DbcTable for PowerDisplay {
         Ok(PowerDisplay { rows, })
     }
 
-    fn write(&self, b: &mut impl Write) -> Result<(), std::io::Error> {
-        let header = DbcHeader {
-            record_count: self.rows.len() as u32,
-            field_count: 6,
-            record_size: 15,
-            string_block_size: self.string_block_size(),
-        };
+    fn write(&self, w: &mut impl Write) -> Result<(), std::io::Error> {
+        let mut b = Vec::with_capacity(self.rows.len() * Self::ROW_SIZE);
 
-        b.write_all(&header.write_header())?;
+        let mut string_cache = StringCache::new();
 
-        let mut string_index = 1;
         for row in &self.rows {
             // id: primary_key (PowerDisplay) int32
             b.write_all(&row.id.id.to_le_bytes())?;
@@ -106,13 +104,7 @@ impl DbcTable for PowerDisplay {
             b.write_all(&row.actual_type.to_le_bytes())?;
 
             // global_string_base_tag: string_ref
-            if !row.global_string_base_tag.is_empty() {
-                b.write_all(&(string_index as u32).to_le_bytes())?;
-                string_index += row.global_string_base_tag.len() + 1;
-            }
-            else {
-                b.write_all(&(0_u32).to_le_bytes())?;
-            }
+            b.write_all(&string_cache.add_string(&row.global_string_base_tag).to_le_bytes())?;
 
             // red: int8
             b.write_all(&row.red.to_le_bytes())?;
@@ -125,8 +117,17 @@ impl DbcTable for PowerDisplay {
 
         }
 
-        self.write_string_block(b)?;
+        assert_eq!(b.len(), self.rows.len() * Self::ROW_SIZE);
+        let header = DbcHeader {
+            record_count: self.rows.len() as u32,
+            field_count: Self::FIELD_COUNT as u32,
+            record_size: Self::ROW_SIZE as u32,
+            string_block_size: string_cache.size(),
+        };
 
+        w.write_all(&header.write_header())?;
+        w.write_all(&b)?;
+        w.write_all(string_cache.buffer())?;
         Ok(())
     }
 
@@ -145,29 +146,8 @@ impl Indexable for PowerDisplay {
     }
 }
 
-impl PowerDisplay {
-    fn write_string_block(&self, b: &mut impl Write) -> Result<(), std::io::Error> {
-        b.write_all(&[0])?;
-
-        for row in &self.rows {
-            if !row.global_string_base_tag.is_empty() { b.write_all(row.global_string_base_tag.as_bytes())?; b.write_all(&[0])?; };
-        }
-
-        Ok(())
-    }
-
-    fn string_block_size(&self) -> u32 {
-        let mut sum = 1;
-        for row in &self.rows {
-            if !row.global_string_base_tag.is_empty() { sum += row.global_string_base_tag.len() + 1; };
-        }
-
-        sum as u32
-    }
-
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Hash, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct PowerDisplayKey {
     pub id: i32
 }
@@ -245,6 +225,7 @@ impl TryFrom<isize> for PowerDisplayKey {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct PowerDisplayRow {
     pub id: PowerDisplayKey,
     pub actual_type: i32,
@@ -254,3 +235,22 @@ pub struct PowerDisplayRow {
     pub blue: i8,
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::fs::File;
+    use std::io::Read;
+
+    #[test]
+    #[ignore = "requires DBC files"]
+    fn power_display() {
+        let mut file = File::open("../wrath-dbc/PowerDisplay.dbc").expect("Failed to open DBC file");
+        let mut contents = Vec::new();
+        file.read_to_end(&mut contents).expect("Failed to read DBC file");
+        let actual = PowerDisplay::read(&mut contents.as_slice()).unwrap();
+        let mut v = Vec::with_capacity(contents.len());
+        actual.write(&mut v).unwrap();
+        let new = PowerDisplay::read(&mut v.as_slice()).unwrap();
+        assert_eq!(actual, new);
+    }
+}

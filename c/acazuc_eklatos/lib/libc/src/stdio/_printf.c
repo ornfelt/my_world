@@ -43,7 +43,8 @@ static void print_p(struct buf *buf, struct arg *arg);
 static void print_mod(struct buf *buf, struct arg *arg);
 static void print_f(struct buf *buf, struct arg *arg);
 
-static void arg_ctr(struct arg *arg, va_list *va_arg)
+static void
+arg_ctr(struct arg *arg, va_list *va_arg)
 {
 	arg->va_arg = va_arg;
 	arg->flags = 0;
@@ -52,7 +53,8 @@ static void arg_ctr(struct arg *arg, va_list *va_arg)
 	arg->type = '\0';
 }
 
-static void outstr(struct buf *buf, const char *s, size_t n)
+static void
+outstr(struct buf *buf, const char *s, size_t n)
 {
 	switch (buf->type)
 	{
@@ -93,15 +95,19 @@ static void outstr(struct buf *buf, const char *s, size_t n)
 	buf->len += n;
 }
 
-static void outchar(struct buf *buf, char c)
+static void
+outchar(struct buf *buf, char c)
 {
 	outstr(buf, &c, 1);
 }
 
-static void outchars(struct buf *buf, char c, size_t n)
+static void
+outchars(struct buf *buf, char c, size_t n)
 {
 	char tmp[4096];
-	size_t count = n > sizeof(tmp) ? sizeof(tmp) : n;
+	size_t count;
+
+	count = n > sizeof(tmp) ? sizeof(tmp) : n;
 	memset(tmp, c, count);
 	do
 	{
@@ -111,9 +117,11 @@ static void outchars(struct buf *buf, char c, size_t n)
 	} while (count);
 }
 
-static void outwcs(struct buf *buf, const wchar_t *s, size_t n)
+static void
+outwcs(struct buf *buf, const wchar_t *s, size_t n)
 {
 	char tmp[4096];
+
 	while (n && s)
 	{
 		const wchar_t *prv = s;
@@ -125,7 +133,8 @@ static void outwcs(struct buf *buf, const wchar_t *s, size_t n)
 	}
 }
 
-static long long get_int_val(struct arg *arg)
+static long long
+get_int_val(struct arg *arg)
 {
 	if (arg->flags & FLAG_LL)
 		return va_arg(*arg->va_arg, long long);
@@ -144,7 +153,8 @@ static long long get_int_val(struct arg *arg)
 	return va_arg(*arg->va_arg, int);
 }
 
-static unsigned long long get_uint_val(struct arg *arg)
+static unsigned long long
+get_uint_val(struct arg *arg)
 {
 	if (arg->flags & FLAG_LL)
 		return va_arg(*arg->va_arg, unsigned long long);
@@ -163,13 +173,15 @@ static unsigned long long get_uint_val(struct arg *arg)
 	return va_arg(*arg->va_arg, unsigned);
 }
 
-int printf_buf(struct buf *buf, const char *fmt, va_list va_arg)
+int
+printf_buf(struct buf *buf, const char *fmt, va_list va_arg)
 {
 	va_list va_cpy;
-	va_copy(va_cpy, va_arg);
-	buf->len = 0;
 	size_t first_nonfmt = 0;
 	size_t i;
+
+	va_copy(va_cpy, va_arg);
+	buf->len = 0;
 	for (i = 0; fmt[i]; ++i)
 	{
 		if (fmt[i] != '%')
@@ -228,7 +240,8 @@ int printf_buf(struct buf *buf, const char *fmt, va_list va_arg)
 	return buf->len;
 }
 
-static int parse_flags(struct arg *arg, char c)
+static int
+parse_flags(struct arg *arg, char c)
 {
 	switch (c)
 	{
@@ -253,7 +266,8 @@ static int parse_flags(struct arg *arg, char c)
 	return 1;
 }
 
-static int parse_preci(struct arg *arg, const char *fmt, size_t *i)
+static int
+parse_preci(struct arg *arg, const char *fmt, size_t *i)
 {
 	char *endptr;
 
@@ -274,7 +288,8 @@ static int parse_preci(struct arg *arg, const char *fmt, size_t *i)
 	return 1;
 }
 
-static void parse_length(struct arg *arg, const char *fmt, size_t *i)
+static void
+parse_length(struct arg *arg, const char *fmt, size_t *i)
 {
 	if (fmt[*i] == 'h')
 	{
@@ -319,7 +334,8 @@ static void parse_length(struct arg *arg, const char *fmt, size_t *i)
 	}
 }
 
-static int parse_width(struct arg *arg, const char *fmt, size_t *i)
+static int
+parse_width(struct arg *arg, const char *fmt, size_t *i)
 {
 	char *endptr;
 
@@ -337,7 +353,8 @@ static int parse_width(struct arg *arg, const char *fmt, size_t *i)
 	return 1;
 }
 
-static int parse_arg(struct arg *arg, const char *fmt, size_t *i)
+static int
+parse_arg(struct arg *arg, const char *fmt, size_t *i)
 {
 	while (parse_flags(arg, fmt[*i]))
 		(*i)++;
@@ -352,8 +369,12 @@ static int parse_arg(struct arg *arg, const char *fmt, size_t *i)
 	return 1;
 }
 
-static void print_str(struct buf *buf, struct arg *arg, const char *prefix,
-                      const char *s, size_t len)
+static void
+print_str(struct buf *buf,
+          struct arg *arg,
+          const char *prefix,
+          const char *s,
+          size_t len)
 {
 	size_t prefix_len = prefix ? strlen(prefix) : 0;
 	size_t pad_len;
@@ -373,8 +394,8 @@ static void print_str(struct buf *buf, struct arg *arg, const char *prefix,
 		outchars(buf, ' ', pad_len);
 }
 
-static void print_wcs(struct buf *buf, struct arg *arg, const wchar_t *s,
-                      size_t len)
+static void
+print_wcs(struct buf *buf, struct arg *arg, const wchar_t *s, size_t len)
 {
 	size_t pad_len;
 
@@ -391,8 +412,12 @@ static void print_wcs(struct buf *buf, struct arg *arg, const wchar_t *s,
 		outchars(buf, ' ', pad_len);
 }
 
-static void print_nbr(struct buf *buf, struct arg *arg, const char *prefix,
-                      const char *s, size_t len)
+static void
+print_nbr(struct buf *buf,
+          struct arg *arg,
+          const char *prefix,
+          const char *s,
+          size_t len)
 {
 	size_t prefix_len = prefix ? strlen(prefix) : 0;
 	size_t preci_len;
@@ -418,7 +443,8 @@ static void print_nbr(struct buf *buf, struct arg *arg, const char *prefix,
 		outchars(buf, ' ', pad_len);
 }
 
-static void ulltoa(char *d, unsigned long long int n, const char *base)
+static void
+ulltoa(char *d, unsigned long long int n, const char *base)
 {
 	size_t size;
 	size_t base_len;
@@ -448,7 +474,8 @@ static void ulltoa(char *d, unsigned long long int n, const char *base)
 	d[size - 1] = '\0';
 }
 
-static void lltoa(char *d, long long n, const char *base)
+static void
+lltoa(char *d, long long n, const char *base)
 {
 	if (n < 0)
 	{
@@ -464,7 +491,8 @@ static void lltoa(char *d, long long n, const char *base)
 	}
 }
 
-static void print_c(struct buf *buf, struct arg *arg)
+static void
+print_c(struct buf *buf, struct arg *arg)
 {
 	uint8_t v;
 
@@ -472,7 +500,8 @@ static void print_c(struct buf *buf, struct arg *arg)
 	print_str(buf, arg, NULL, (char*)&v, 1);
 }
 
-static void print_C(struct buf *buf, struct arg *arg)
+static void
+print_C(struct buf *buf, struct arg *arg)
 {
 	wchar_t v;
 
@@ -480,7 +509,8 @@ static void print_C(struct buf *buf, struct arg *arg)
 	print_wcs(buf, arg, &v, 1);
 }
 
-static void print_d(struct buf *buf, struct arg *arg)
+static void
+print_d(struct buf *buf, struct arg *arg)
 {
 	long long val;
 	char str[64];
@@ -490,7 +520,8 @@ static void print_d(struct buf *buf, struct arg *arg)
 	print_nbr(buf, arg, NULL, str, strlen(str));
 }
 
-static void print_o(struct buf *buf, struct arg *arg)
+static void
+print_o(struct buf *buf, struct arg *arg)
 {
 	char str[64];
 	unsigned long long val;
@@ -505,7 +536,8 @@ static void print_o(struct buf *buf, struct arg *arg)
 	print_nbr(buf, arg, prefix, str, strlen(str));
 }
 
-static void print_s(struct buf *buf, struct arg *arg)
+static void
+print_s(struct buf *buf, struct arg *arg)
 {
 	char *str;
 	size_t len;
@@ -524,7 +556,8 @@ static void print_s(struct buf *buf, struct arg *arg)
 	print_str(buf, arg, NULL, str, len);
 }
 
-static void print_S(struct buf *buf, struct arg *arg)
+static void
+print_S(struct buf *buf, struct arg *arg)
 {
 	wchar_t *str;
 	size_t len;
@@ -538,7 +571,8 @@ static void print_S(struct buf *buf, struct arg *arg)
 	print_wcs(buf, arg, str, len);
 }
 
-static void print_u(struct buf *buf, struct arg *arg)
+static void
+print_u(struct buf *buf, struct arg *arg)
 {
 	char str[64];
 	unsigned long long val;
@@ -548,14 +582,16 @@ static void print_u(struct buf *buf, struct arg *arg)
 	print_nbr(buf, arg, NULL, str, strlen(str));
 }
 
-static char *get_x_chars(struct arg *arg)
+static char *
+get_x_chars(struct arg *arg)
 {
 	if (arg->type == 'X')
 		return "0123456789ABCDEF";
 	return "0123456789abcdef";
 }
 
-static void print_x(struct buf *buf, struct arg *arg)
+static void
+print_x(struct buf *buf, struct arg *arg)
 {
 	char str[64];
 	unsigned long long val;
@@ -570,7 +606,8 @@ static void print_x(struct buf *buf, struct arg *arg)
 	print_nbr(buf, arg, prefix, str, strlen(str));
 }
 
-static void print_p(struct buf *buf, struct arg *arg)
+static void
+print_p(struct buf *buf, struct arg *arg)
 {
 	char str[64];
 	unsigned long long val;
@@ -594,13 +631,15 @@ static void print_p(struct buf *buf, struct arg *arg)
 	print_nbr(buf, arg, prefix, str, strlen(str));
 }
 
-static void print_mod(struct buf *buf, struct arg *arg)
+static void
+print_mod(struct buf *buf, struct arg *arg)
 {
 	(void)arg;
 	outchar(buf, '%');
 }
 
-static void print_f(struct buf *buf, struct arg *arg)
+static void
+print_f(struct buf *buf, struct arg *arg)
 {
 	union
 	{

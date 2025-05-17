@@ -70,13 +70,15 @@ static uint16_t udp_checksum(const struct netpkt *pkt,
 static int find_ephemeral_port(struct sock *sock);
 static int has_matching_sock(struct sock_udp_list *list, struct sockaddr *addr);
 
-static void sock_list_init(struct sock_udp_list *list)
+static void
+sock_list_init(struct sock_udp_list *list)
 {
 	spinlock_init(&list->lock);
 	TAILQ_INIT(&list->socks);
 }
 
-static struct sock_udp_list *get_sock_list(int domain)
+static struct sock_udp_list *
+get_sock_list(int domain)
 {
 	switch (domain)
 	{
@@ -88,12 +90,15 @@ static struct sock_udp_list *get_sock_list(int domain)
 	return NULL;
 }
 
-static int udp4_get_send_addresses(struct sock *sock, struct msghdr *msg,
-                                   struct sockaddr_in *src,
-                                   struct sockaddr_in *dst,
-                                   struct netif **netif)
+static int
+udp4_get_send_addresses(struct sock *sock,
+                        struct msghdr *msg,
+                        struct sockaddr_in *src,
+                        struct sockaddr_in *dst,
+                        struct netif **netif)
 {
 	int ret;
+
 	if (msg->msg_name)
 	{
 		if (sock->dst_addrlen)
@@ -159,10 +164,12 @@ static int udp4_get_send_addresses(struct sock *sock, struct msghdr *msg,
 	return 0;
 }
 
-static int udp6_get_send_addresses(struct sock *sock, struct msghdr *msg,
-                                   struct sockaddr_in6 *src,
-                                   struct sockaddr_in6 *dst,
-                                   struct netif **netif)
+static int
+udp6_get_send_addresses(struct sock *sock,
+                        struct msghdr *msg,
+                        struct sockaddr_in6 *src,
+                        struct sockaddr_in6 *dst,
+                        struct netif **netif)
 {
 	(void)sock;
 	(void)msg;
@@ -173,7 +180,8 @@ static int udp6_get_send_addresses(struct sock *sock, struct msghdr *msg,
 	return -EAFNOSUPPORT;
 }
 
-ssize_t udp_send(struct sock *sock, struct msghdr *msg, int flags)
+ssize_t
+udp_send(struct sock *sock, struct msghdr *msg, int flags)
 {
 	struct netpkt *pkt = NULL;
 	union sockaddr_union src;
@@ -268,7 +276,8 @@ end:
 	return ret;
 }
 
-ssize_t udp_recv(struct sock *sock, struct msghdr *msg, int flags)
+ssize_t
+udp_recv(struct sock *sock, struct msghdr *msg, int flags)
 {
 	struct sock_udp *sock_udp = sock->userdata;
 	struct sock_udp_pkt *pkt;
@@ -327,7 +336,8 @@ end:
 	return ret;
 }
 
-int udp_poll(struct sock *sock, struct poll_entry *entry)
+int
+udp_poll(struct sock *sock, struct poll_entry *entry)
 {
 	struct sock_udp *sock_udp = sock->userdata;
 	int ret = 0;
@@ -350,8 +360,8 @@ end:
 	return ret;
 }
 
-int udp_connect(struct sock *sock, const struct sockaddr *addr,
-                socklen_t addrlen)
+int
+udp_connect(struct sock *sock, const struct sockaddr *addr, socklen_t addrlen)
 {
 	int ret;
 
@@ -397,8 +407,8 @@ end:
 	return ret;
 }
 
-int udp_bind(struct sock *sock, const struct sockaddr *addr,
-             socklen_t addrlen)
+int
+udp_bind(struct sock *sock, const struct sockaddr *addr, socklen_t addrlen)
 {
 	struct sock_udp_list *list;
 	uint16_t port;
@@ -464,7 +474,8 @@ end:
 	return ret;
 }
 
-int udp_release(struct sock *sock)
+int
+udp_release(struct sock *sock)
 {
 	struct sock_udp *sock_udp = sock->userdata;
 	struct sock_udp_list *list;
@@ -487,8 +498,12 @@ int udp_release(struct sock *sock)
 	return 0;
 }
 
-int udp_setopt(struct sock *sock, int level, int opt, const void *uval,
-               socklen_t len)
+int
+udp_setopt(struct sock *sock,
+           int level,
+           int opt,
+           const void *uval,
+           socklen_t len)
 {
 	int ret;
 
@@ -518,8 +533,12 @@ int udp_setopt(struct sock *sock, int level, int opt, const void *uval,
 	return ret;
 }
 
-int udp_getopt(struct sock *sock, int level, int opt, void *uval,
-               socklen_t *ulen)
+int
+udp_getopt(struct sock *sock,
+           int level,
+           int opt,
+           void *uval,
+           socklen_t *ulen)
 {
 	int ret;
 
@@ -549,12 +568,14 @@ int udp_getopt(struct sock *sock, int level, int opt, void *uval,
 	return ret;
 }
 
-int udp_ioctl(struct sock *sock, unsigned long request, uintptr_t data)
+int
+udp_ioctl(struct sock *sock, unsigned long request, uintptr_t data)
 {
 	return sock_sol_ioctl(sock, request, data);
 }
 
-int udp_shutdown(struct sock *sock, int how)
+int
+udp_shutdown(struct sock *sock, int how)
 {
 	(void)sock;
 	(void)how;
@@ -563,10 +584,13 @@ int udp_shutdown(struct sock *sock, int how)
 }
 
 int udp_open(int domain, int type, int protocol, struct sock **sock);
-int udp_input(struct netif *netif, struct netpkt *pkt,
-              struct sockaddr *src, struct sockaddr *dst);
+int udp_input(struct netif *netif,
+              struct netpkt *pkt,
+              struct sockaddr *src,
+              struct sockaddr *dst);
 
-static const struct sock_op udp_op =
+static const struct sock_op
+udp_op =
 {
 	.open = udp_open,
 	.release = udp_release,
@@ -582,7 +606,8 @@ static const struct sock_op udp_op =
 	.input = udp_input,
 };
 
-int udp_open(int domain, int type, int protocol, struct sock **sock)
+int
+udp_open(int domain, int type, int protocol, struct sock **sock)
 {
 	struct sock_udp_list *list;
 	struct sock_udp *sock_udp;
@@ -612,9 +637,10 @@ int udp_open(int domain, int type, int protocol, struct sock **sock)
 	return 0;
 }
 
-static uint16_t udp4_checksum(const struct netpkt *pkt,
-                              const struct in_addr src,
-                              const struct in_addr dst)
+static uint16_t
+udp4_checksum(const struct netpkt *pkt,
+              const struct in_addr src,
+              const struct in_addr dst)
 {
 	struct udp4_pseudohdr phdr;
 	uint32_t result;
@@ -635,9 +661,10 @@ static uint16_t udp4_checksum(const struct netpkt *pkt,
 	return ip_checksum(pkt->data, pkt->len, result);
 }
 
-static uint16_t udp6_checksum(const struct netpkt *pkt,
-                              const struct in6_addr *src,
-                              const struct in6_addr *dst)
+static uint16_t
+udp6_checksum(const struct netpkt *pkt,
+              const struct in6_addr *src,
+              const struct in6_addr *dst)
 {
 	struct udp6_pseudohdr phdr;
 	uint32_t result;
@@ -657,9 +684,10 @@ static uint16_t udp6_checksum(const struct netpkt *pkt,
 	return ip_checksum(pkt->data, pkt->len, result);
 }
 
-static uint16_t udp_checksum(const struct netpkt *netpkt,
-                             const struct sockaddr *src,
-                             const struct sockaddr *dst)
+static uint16_t
+udp_checksum(const struct netpkt *netpkt,
+             const struct sockaddr *src,
+             const struct sockaddr *dst)
 {
 	switch (src->sa_family)
 	{
@@ -676,8 +704,10 @@ static uint16_t udp_checksum(const struct netpkt *netpkt,
 	}
 }
 
-static int udp_pkt_queue(struct sock_udp *sock_udp, struct netpkt *pkt,
-                         struct sockaddr *src)
+static int
+udp_pkt_queue(struct sock_udp *sock_udp,
+              struct netpkt *pkt,
+              struct sockaddr *src)
 {
 	struct udphdr *udphdr;
 	struct sock *sock;
@@ -729,11 +759,12 @@ end:
 	return ret;
 }
 
-static void udp4_find_input_sockets(struct sock_udp **both_match,
-                                    struct sock_udp **dst_match,
-                                    const struct sockaddr *src,
-                                    const struct sockaddr *dst,
-                                    const struct udphdr *udphdr)
+static void
+udp4_find_input_sockets(struct sock_udp **both_match,
+                        struct sock_udp **dst_match,
+                        const struct sockaddr *src,
+                        const struct sockaddr *dst,
+                        const struct udphdr *udphdr)
 {
 	struct sock_udp_list *list;
 	struct sock_udp *sock;
@@ -768,11 +799,12 @@ static void udp4_find_input_sockets(struct sock_udp **both_match,
 	spinlock_unlock(&list->lock);
 }
 
-static void udp6_find_input_sockets(struct sock_udp **both_match,
-                                    struct sock_udp **dst_match,
-                                    const struct sockaddr *src,
-                                    const struct sockaddr *dst,
-                                    const struct udphdr *udphdr)
+static void
+udp6_find_input_sockets(struct sock_udp **both_match,
+                        struct sock_udp **dst_match,
+                        const struct sockaddr *src,
+                        const struct sockaddr *dst,
+                        const struct udphdr *udphdr)
 {
 	static const struct in6_addr in6_any = IN6ADDR_ANY_INIT;
 	struct sock_udp_list *list;
@@ -808,10 +840,11 @@ static void udp6_find_input_sockets(struct sock_udp **both_match,
 	spinlock_unlock(&list->lock);
 }
 
-static int find_input_socket(const struct sockaddr *src,
-                             const struct sockaddr *dst,
-                             const struct udphdr *udphdr,
-                             struct sock_udp **sock_udp)
+static int
+find_input_socket(const struct sockaddr *src,
+                  const struct sockaddr *dst,
+                  const struct udphdr *udphdr,
+                  struct sock_udp **sock_udp)
 {
 	struct sock_udp *both_match = NULL;
 	struct sock_udp *dst_match = NULL;
@@ -846,8 +879,11 @@ static int find_input_socket(const struct sockaddr *src,
 	return 0;
 }
 
-int udp_input(struct netif *netif, struct netpkt *pkt,
-              struct sockaddr *src, struct sockaddr *dst)
+int
+udp_input(struct netif *netif,
+          struct netpkt *pkt,
+          struct sockaddr *src,
+          struct sockaddr *dst)
 {
 	struct sock_udp *sock_udp;
 	struct udphdr *udphdr;
@@ -896,8 +932,9 @@ int udp_input(struct netif *netif, struct netpkt *pkt,
 	return ret;
 }
 
-static int has_matching_sock_locked(struct sock_udp_list *list,
-                                    struct sockaddr *addr)
+static int
+has_matching_sock_locked(struct sock_udp_list *list,
+                         struct sockaddr *addr)
 {
 	struct sock_udp *sock;
 
@@ -940,7 +977,8 @@ static int has_matching_sock_locked(struct sock_udp_list *list,
 	return 0;
 }
 
-static int has_matching_sock(struct sock_udp_list *list, struct sockaddr *addr)
+static int
+has_matching_sock(struct sock_udp_list *list, struct sockaddr *addr)
 {
 	spinlock_lock(&list->lock);
 	int ret = has_matching_sock_locked(list, addr);
@@ -948,7 +986,8 @@ static int has_matching_sock(struct sock_udp_list *list, struct sockaddr *addr)
 	return ret;
 }
 
-static int find_ephemeral_port(struct sock *sock)
+static int
+find_ephemeral_port(struct sock *sock)
 {
 	struct sock_udp_list *list;
 	uint16_t ephemeral_count = ephemeral_end - ephemeral_start;
@@ -996,7 +1035,8 @@ static int find_ephemeral_port(struct sock *sock)
 	return -EADDRINUSE;
 }
 
-int init(void)
+int
+init(void)
 {
 	int ret;
 
@@ -1012,11 +1052,13 @@ int init(void)
 	return 0;
 }
 
-void fini(void)
+void
+fini(void)
 {
 }
 
-struct kmod_info kmod =
+struct kmod_info
+kmod =
 {
 	.magic = KMOD_MAGIC,
 	.version = 1,

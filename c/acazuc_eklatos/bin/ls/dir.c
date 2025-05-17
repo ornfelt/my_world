@@ -7,7 +7,8 @@
 #include <errno.h>
 #include <stdio.h>
 
-static void check_lengths(struct env *env, struct dir *dir, struct file *file)
+static void
+check_lengths(struct env *env, struct dir *dir, struct file *file)
 {
 	int len;
 
@@ -29,7 +30,8 @@ static void check_lengths(struct env *env, struct dir *dir, struct file *file)
 		dir->blocks_len = len;
 }
 
-static int insert(struct env *env, struct file *lf, struct file *cf)
+static int
+insert(struct env *env, struct file *lf, struct file *cf)
 {
 	if (env->opt & OPT_U)
 		return 0;
@@ -56,14 +58,16 @@ static int insert(struct env *env, struct file *lf, struct file *cf)
 	}
 }
 
-static void add_file(struct env *env, struct dir *dir, struct file *file)
+static void
+add_file(struct env *env, struct dir *dir, struct file *file)
 {
+	struct file *lst;
+
 	if (TAILQ_EMPTY(&dir->files))
 	{
 		TAILQ_INSERT_HEAD(&dir->files, file, chain);
 		return;
 	}
-	struct file *lst;
 	TAILQ_FOREACH(lst, &dir->files, chain)
 	{
 		if (insert(env, lst, file))
@@ -75,14 +79,17 @@ static void add_file(struct env *env, struct dir *dir, struct file *file)
 	TAILQ_INSERT_TAIL(&dir->files, file, chain);
 }
 
-void dir_add_file(struct env *env, struct dir *dir, const char *name)
+void
+dir_add_file(struct env *env, struct dir *dir, const char *name)
 {
 	struct file *file;
 
 	file = malloc(sizeof(*file));
 	if (!file)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", env->progname, strerror(errno));
+		fprintf(stderr, "%s: malloc: %s\n",
+		        env->progname,
+		        strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 	if (load_file(env, file, name, dir))
@@ -94,14 +101,16 @@ void dir_add_file(struct env *env, struct dir *dir, const char *name)
 	add_file(env, dir, file);
 }
 
-void dir_init(struct dir *dir, const char *path)
+void
+dir_init(struct dir *dir, const char *path)
 {
 	memset(dir, 0, sizeof(*dir));
 	dir->path = path;
 	TAILQ_INIT(&dir->files);
 }
 
-struct dir *load_dir(struct env *env, const char *path)
+struct dir *
+load_dir(struct env *env, const char *path)
 {
 	struct dir *dir;
 	DIR *fdir;
@@ -111,13 +120,17 @@ struct dir *load_dir(struct env *env, const char *path)
 	if (!fdir)
 	{
 		fprintf(stderr, "%s: opendir(%s): %s\n",
-		        env->progname, path, strerror(errno));
+		        env->progname,
+		        path,
+		        strerror(errno));
 		return NULL;
 	}
 	dir = malloc(sizeof(*dir));
 	if (!dir)
 	{
-		fprintf(stderr, "%s: malloc: %s\n", env->progname, strerror(errno));
+		fprintf(stderr, "%s: malloc: %s\n",
+		        env->progname,
+		        strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 	dir_init(dir, path);

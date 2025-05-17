@@ -4,10 +4,13 @@ use crate::{
 use crate::header::{
     DbcHeader, HEADER_SIZE, parse_header,
 };
+use crate::tys::WritableString;
+use crate::util::StringCache;
 use crate::wrath_tables::chr_races::ChrRacesKey;
 use std::io::Write;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct BarberShopStyle {
     pub rows: Vec<BarberShopStyleRow>,
 }
@@ -16,6 +19,8 @@ impl DbcTable for BarberShopStyle {
     type Row = BarberShopStyleRow;
 
     const FILENAME: &'static str = "BarberShopStyle.dbc";
+    const FIELD_COUNT: usize = 40;
+    const ROW_SIZE: usize = 160;
 
     fn rows(&self) -> &[Self::Row] { &self.rows }
     fn rows_mut(&mut self) -> &mut [Self::Row] { &mut self.rows }
@@ -25,19 +30,19 @@ impl DbcTable for BarberShopStyle {
         b.read_exact(&mut header)?;
         let header = parse_header(&header)?;
 
-        if header.record_size != 160 {
+        if header.record_size != Self::ROW_SIZE as u32 {
             return Err(crate::DbcError::InvalidHeader(
                 crate::InvalidHeaderError::RecordSize {
-                    expected: 160,
+                    expected: Self::ROW_SIZE as u32,
                     actual: header.record_size,
                 },
             ));
         }
 
-        if header.field_count != 40 {
+        if header.field_count != Self::FIELD_COUNT as u32 {
             return Err(crate::DbcError::InvalidHeader(
                 crate::InvalidHeaderError::FieldCount {
-                    expected: 40,
+                    expected: Self::FIELD_COUNT as u32,
                     actual: header.field_count,
                 },
             ));
@@ -93,17 +98,11 @@ impl DbcTable for BarberShopStyle {
         Ok(BarberShopStyle { rows, })
     }
 
-    fn write(&self, b: &mut impl Write) -> Result<(), std::io::Error> {
-        let header = DbcHeader {
-            record_count: self.rows.len() as u32,
-            field_count: 40,
-            record_size: 160,
-            string_block_size: self.string_block_size(),
-        };
+    fn write(&self, w: &mut impl Write) -> Result<(), std::io::Error> {
+        let mut b = Vec::with_capacity(self.rows.len() * Self::ROW_SIZE);
 
-        b.write_all(&header.write_header())?;
+        let mut string_cache = StringCache::new();
 
-        let mut string_index = 1;
         for row in &self.rows {
             // id: primary_key (BarberShopStyle) int32
             b.write_all(&row.id.id.to_le_bytes())?;
@@ -112,10 +111,10 @@ impl DbcTable for BarberShopStyle {
             b.write_all(&row.ty.to_le_bytes())?;
 
             // display_name_lang: string_ref_loc (Extended)
-            b.write_all(&row.display_name_lang.string_indices_as_array(&mut string_index))?;
+            b.write_all(&row.display_name_lang.string_indices_as_array(&mut string_cache))?;
 
             // description_lang: string_ref_loc (Extended)
-            b.write_all(&row.description_lang.string_indices_as_array(&mut string_index))?;
+            b.write_all(&row.description_lang.string_indices_as_array(&mut string_cache))?;
 
             // cost_modifier: float
             b.write_all(&row.cost_modifier.to_le_bytes())?;
@@ -131,8 +130,17 @@ impl DbcTable for BarberShopStyle {
 
         }
 
-        self.write_string_block(b)?;
+        assert_eq!(b.len(), self.rows.len() * Self::ROW_SIZE);
+        let header = DbcHeader {
+            record_count: self.rows.len() as u32,
+            field_count: Self::FIELD_COUNT as u32,
+            record_size: Self::ROW_SIZE as u32,
+            string_block_size: string_cache.size(),
+        };
 
+        w.write_all(&header.write_header())?;
+        w.write_all(&b)?;
+        w.write_all(string_cache.buffer())?;
         Ok(())
     }
 
@@ -151,31 +159,8 @@ impl Indexable for BarberShopStyle {
     }
 }
 
-impl BarberShopStyle {
-    fn write_string_block(&self, b: &mut impl Write) -> Result<(), std::io::Error> {
-        b.write_all(&[0])?;
-
-        for row in &self.rows {
-            row.display_name_lang.string_block_as_array(b)?;
-            row.description_lang.string_block_as_array(b)?;
-        }
-
-        Ok(())
-    }
-
-    fn string_block_size(&self) -> u32 {
-        let mut sum = 1;
-        for row in &self.rows {
-            sum += row.display_name_lang.string_block_size();
-            sum += row.description_lang.string_block_size();
-        }
-
-        sum as u32
-    }
-
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Hash, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct BarberShopStyleKey {
     pub id: i32
 }
@@ -253,6 +238,7 @@ impl TryFrom<isize> for BarberShopStyleKey {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct BarberShopStyleRow {
     pub id: BarberShopStyleKey,
     pub ty: i32,
@@ -264,3 +250,22 @@ pub struct BarberShopStyleRow {
     pub data: i32,
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::fs::File;
+    use std::io::Read;
+
+    #[test]
+    #[ignore = "requires DBC files"]
+    fn barber_shop_style() {
+        let mut file = File::open("../wrath-dbc/BarberShopStyle.dbc").expect("Failed to open DBC file");
+        let mut contents = Vec::new();
+        file.read_to_end(&mut contents).expect("Failed to read DBC file");
+        let actual = BarberShopStyle::read(&mut contents.as_slice()).unwrap();
+        let mut v = Vec::with_capacity(contents.len());
+        actual.write(&mut v).unwrap();
+        let new = BarberShopStyle::read(&mut v.as_slice()).unwrap();
+        assert_eq!(actual, new);
+    }
+}

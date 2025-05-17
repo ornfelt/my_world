@@ -1,8 +1,8 @@
 #include "gx/m2_collisions.h"
 #include "gx/frame.h"
 #include "gx/m2.h"
+#include "gx/gx.h"
 
-#include "graphics.h"
 #include "memory.h"
 #include "log.h"
 #include "wow.h"
@@ -120,7 +120,7 @@ void gx_m2_collisions_render(struct gx_m2_collisions *collisions, struct gx_fram
 		return;
 	if (!collisions->triangles_nb)
 		return;
-	gfx_bind_attributes_state(g_wow->device, &collisions->attributes_state, &g_wow->graphics->m2_collisions_input_layout);
+	gfx_bind_attributes_state(g_wow->device, &collisions->attributes_state, &g_wow->gx->m2_collisions_input_layout);
 	struct shader_m2_collisions_mesh_block mesh_block;
 	if (triangles)
 		VEC4_SET(mesh_block.color, .5, .5, 1, .25);

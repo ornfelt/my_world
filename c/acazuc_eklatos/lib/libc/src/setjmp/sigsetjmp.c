@@ -1,6 +1,7 @@
 #include <setjmp.h>
 
-int sigsetjmp(sigjmp_buf env, int savesigs)
+int
+sigsetjmp(sigjmp_buf env, int savesigs)
 {
 	/* XXX signals */
 	(void)savesigs;

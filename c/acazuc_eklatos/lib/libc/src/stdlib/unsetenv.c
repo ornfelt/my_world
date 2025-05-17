@@ -4,7 +4,8 @@
 #include <string.h>
 #include <errno.h>
 
-int unsetenv(const char *name)
+int
+unsetenv(const char *name)
 {
 	if (!environ)
 		return 0;

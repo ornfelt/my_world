@@ -13,12 +13,14 @@ struct sym
 	ElfN_Sym sym;
 };
 
-static int sym_cmp_name(const void *a, const void *b)
+static int
+sym_cmp_name(const void *a, const void *b)
 {
 	const struct sym *sym_a = a;
 	const struct sym *sym_b = b;
 	const char *name_a = sym_a->name;
 	const char *name_b = sym_b->name;
+
 	while (*name_a && !isalnum(*name_a))
 		name_a++;
 	while (*name_b && !isalnum(*name_b))
@@ -26,8 +28,8 @@ static int sym_cmp_name(const void *a, const void *b)
 	return strcasecmp(name_a, name_b);
 }
 
-static const ElfN_Shdr *get_sym_section(struct elfN *elf,
-                                        const ElfN_Addr value)
+static const ElfN_Shdr *
+get_sym_section(struct elfN *elf, const ElfN_Addr value)
 {
 	if (value == STN_UNDEF)
 		return NULL;
@@ -41,10 +43,13 @@ static const ElfN_Shdr *get_sym_section(struct elfN *elf,
 	return NULL;
 }
 
-static int print_symtab(struct env *env, struct elfN *elf,
-                        const ElfN_Shdr *symtab_shdr,
-                        struct sym **syms, ElfN_Off *syms_count,
-                        ElfN_Off *syms_size)
+static int
+print_symtab(struct env *env,
+             struct elfN *elf,
+             const ElfN_Shdr *symtab_shdr,
+             struct sym **syms,
+             ElfN_Off *syms_count,
+             ElfN_Off *syms_size)
 {
 	const ElfN_Shdr *strtab_shdr = NULL;
 	uint8_t *symtab_data = NULL;
@@ -102,7 +107,8 @@ end:
 	return ret;
 }
 
-int print_elfN(struct env *env, struct elfN *elf)
+int
+print_elfN(struct env *env, struct elfN *elf)
 {
 	struct sym *syms = NULL;
 	int ret = 1;

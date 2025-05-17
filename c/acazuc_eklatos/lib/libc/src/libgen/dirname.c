@@ -1,18 +1,24 @@
 #include <libgen.h>
 #include <string.h>
 
-char *dirname(char *path)
+char *
+dirname(char *path)
 {
-	if (!path || !*path)
-		return ".";
 	char *base = path;
 	char *prev = NULL;
+
+	if (!path || !*path)
+		return ".";
 	while (1)
 	{
-		char *slash = strchr(path, '/');
+		char *slash;
+
+		slash = strchr(path, '/');
 		if (slash)
 		{
-			char *tmp = slash;
+			char *tmp;
+
+			tmp = slash;
 			while (*slash == '/')
 				slash++;
 			if (*slash)

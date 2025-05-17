@@ -1,7 +1,10 @@
 #include <stdlib.h>
 
-void qsort(void *base, size_t nmemb, size_t size,
-           int (*cmp)(const void *, const void *))
+void
+qsort(void *base,
+      size_t nmemb,
+      size_t size,
+      int (*cmp)(const void *, const void *))
 {
 	void *pivot;
 	size_t left, right;

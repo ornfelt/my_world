@@ -5,25 +5,27 @@
 #include <string.h>
 #include <stdio.h>
 
-static void print_indent(size_t indent)
+static void
+print_indent(size_t indent)
 {
 	for (size_t i = 0; i < indent; ++i)
 		printf("  ");
 }
 
-static int query_tree(const char *progname, Display *display, Window window,
-                      size_t indent)
+static int
+query_tree(const char *progname, Display *display, Window window, size_t indent)
 {
-	Window root;
-	Window parent;
+	XTextProperty *prop;
 	Window *children;
+	Window parent;
+	Window root;
 	unsigned nchildren;
+
 	if (!XQueryTree(display, window, &root, &parent, &children, &nchildren))
 	{
 		fprintf(stderr, "%s: failed to query tree\n", progname);
 		return 1;
 	}
-	XTextProperty *prop;
 	if (!XGetWMName(display, window, &prop))
 		prop = NULL;
 	print_indent(indent);
@@ -51,16 +53,19 @@ static int query_tree(const char *progname, Display *display, Window window,
 	return 0;
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
+	Display *display;
+	Window win;
+
 	(void)argc;
-	Display *display = XOpenDisplay(NULL);
+	display = XOpenDisplay(NULL);
 	if (!display)
 	{
 		fprintf(stderr, "%s: failed to open display\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	Window win;
 	if (argc > 1)
 	{
 		win = strtol(argv[1], NULL, 10);

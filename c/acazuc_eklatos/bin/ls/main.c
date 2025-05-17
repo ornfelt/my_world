@@ -5,7 +5,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-a] [-A] [-b] [-c] [-d] [-f] [-F] [-g] [-G] [-h] [-H] [-i] [-l] [-L] [-m] [-n] [-N] [-o] [-p] [-q] [-Q] [-r] [-R] [-s] [-S] [-t] [-u] [-U] [-x] [-1] [FILES]\n", progname);
 	printf("-a: display entries starting with .\n");
@@ -40,7 +41,8 @@ static void usage(const char *progname)
 	printf("-1: display one file per line\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

@@ -2,15 +2,18 @@
 
 #include <netdb.h>
 
-struct servent *getservent(void)
+struct servent *
+getservent(void)
 {
+	struct servent *servent;
+
 	if (!servent_fp)
 	{
 		setservent(1);
 		if (!servent_fp)
 			return NULL;
 	}
-	struct servent *servent = next_servent();
+	servent = next_servent();
 	if (!servent_stayopen)
 		endservent();
 	return servent;

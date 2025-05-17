@@ -1,8 +1,8 @@
 #include "gx/wmo_collisions.h"
 #include "gx/frame.h"
 #include "gx/wmo.h"
+#include "gx/gx.h"
 
-#include "graphics.h"
 #include "shaders.h"
 #include "memory.h"
 #include "wow.h"
@@ -129,7 +129,7 @@ void gx_wmo_collisions_render(struct gx_wmo_collisions *collisions, struct gx_fr
 	else
 		VEC4_SET(mesh_block.color, 0.2f, 1.0f, 0.2f, 0.4f);
 	gfx_buffer_t *uniform_buffer = triangles ? &collisions->triangles_uniform_buffers[frame->id] : &collisions->lines_uniform_buffers[frame->id];
-	gfx_bind_attributes_state(g_wow->device, &collisions->attributes_state, &g_wow->graphics->wmo_collisions_input_layout);
+	gfx_bind_attributes_state(g_wow->device, &collisions->attributes_state, &g_wow->gx->wmo_collisions_input_layout);
 	gfx_set_buffer_data(uniform_buffer, &mesh_block, sizeof(mesh_block), 0);
 	gfx_bind_constant(g_wow->device, 0, uniform_buffer, sizeof(mesh_block), 0);
 	gfx_set_line_width(g_wow->device, 1);

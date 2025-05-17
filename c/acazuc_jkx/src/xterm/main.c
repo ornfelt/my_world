@@ -309,7 +309,7 @@ static int process_display(struct xterm *xterm)
 				case '\r':
 					break;
 				case '\t':
-					for (size_t n = line_len % 8; n < 8; ++n)
+					for (size_t j = line_len % 8; j < 8; ++j)
 						line_buf[line_len++] = ' ';
 					break;
 				default:

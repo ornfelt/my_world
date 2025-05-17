@@ -1,6 +1,7 @@
 #include <libintl.h>
 
-char *gettext(const char *msgid)
+char *
+gettext(const char *msgid)
 {
 	/* XXX */
 	return (char*)msgid;

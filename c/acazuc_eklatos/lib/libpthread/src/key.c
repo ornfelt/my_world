@@ -9,7 +9,8 @@ static void (*g_destructors[PTHREAD_KEYS_MAX])(void*);
 static size_t g_bitmap[PTHREAD_KEYS_MAX / BITMAP_BPW];
 static pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-int pthread_key_create(pthread_key_t *key, void (*destructor)(void*))
+int
+pthread_key_create(pthread_key_t *key, void (*destructor)(void*))
 {
 	if (!key)
 		return EINVAL;
@@ -40,7 +41,8 @@ int pthread_key_create(pthread_key_t *key, void (*destructor)(void*))
 	return EAGAIN;
 }
 
-int pthread_key_delete(pthread_key_t key)
+int
+pthread_key_delete(pthread_key_t key)
 {
 	if (key >= PTHREAD_KEYS_MAX)
 		return EINVAL;
@@ -61,18 +63,21 @@ int pthread_key_delete(pthread_key_t key)
 	return 0;
 }
 
-void *pthread_getspecific(pthread_key_t key)
+void *
+pthread_getspecific(pthread_key_t key)
 {
 	return pthread_self()->keys[key];
 }
 
-int pthread_setspecific(pthread_key_t key, const void *val)
+int
+pthread_setspecific(pthread_key_t key, const void *val)
 {
 	pthread_self()->keys[key] = (void*)val;
 	return 0;
 }
 
-int _pthread_key_cleanup(pthread_t thread)
+int
+_pthread_key_cleanup(pthread_t thread)
 {
 	int ret = pthread_mutex_lock(&g_mutex);
 	if (ret)

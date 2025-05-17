@@ -1,7 +1,8 @@
 #include <string.h>
 #include <regex.h>
 
-int regcomp(regex_t *preg, const char *regex, int flags)
+int
+regcomp(regex_t *preg, const char *regex, int flags)
 {
 	preg->regex = strdup(regex);
 	if (!preg->regex)

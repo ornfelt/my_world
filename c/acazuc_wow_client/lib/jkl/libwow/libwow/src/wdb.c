@@ -3,7 +3,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-static bool read_u8(uint8_t *v, const char *buf, size_t n, size_t *i)
+static bool
+read_u8(uint8_t *v, const char *buf, size_t n, size_t *i)
 {
 	if (*i + 1 > n)
 		return false;
@@ -12,7 +13,8 @@ static bool read_u8(uint8_t *v, const char *buf, size_t n, size_t *i)
 	return true;
 }
 
-static bool read_i32(int32_t *v, const char *buf, size_t n, size_t *i)
+static bool
+read_i32(int32_t *v, const char *buf, size_t n, size_t *i)
 {
 	if (*i + 4 > n)
 		return false;
@@ -21,7 +23,8 @@ static bool read_i32(int32_t *v, const char *buf, size_t n, size_t *i)
 	return true;
 }
 
-static bool read_u32(uint32_t *v, const char *buf, size_t n, size_t *i)
+static bool
+read_u32(uint32_t *v, const char *buf, size_t n, size_t *i)
 {
 	if (*i + 4 > n)
 		return false;
@@ -30,7 +33,8 @@ static bool read_u32(uint32_t *v, const char *buf, size_t n, size_t *i)
 	return true;
 }
 
-static bool read_u64(uint64_t *v, const char *buf, size_t n, size_t *i)
+static bool
+read_u64(uint64_t *v, const char *buf, size_t n, size_t *i)
 {
 	if (*i + 8 > n)
 		return false;
@@ -39,7 +43,8 @@ static bool read_u64(uint64_t *v, const char *buf, size_t n, size_t *i)
 	return true;
 }
 
-static bool read_flt(float *v, const char *buf, size_t n, size_t *i)
+static bool
+read_flt(float *v, const char *buf, size_t n, size_t *i)
 {
 	if (*i + 4 > n)
 		return false;
@@ -48,7 +53,8 @@ static bool read_flt(float *v, const char *buf, size_t n, size_t *i)
 	return true;
 }
 
-static bool read_str(char **str, const char *buf, size_t n, size_t *i)
+static bool
+read_str(char **str, const char *buf, size_t n, size_t *i)
 {
 	size_t len = strlen(&buf[*i]);
 	if (*i + len + 1 > n)
@@ -61,40 +67,49 @@ static bool read_str(char **str, const char *buf, size_t n, size_t *i)
 	return true;
 }
 
-static bool write_u8(FILE *fp, uint8_t value)
+static bool
+write_u8(FILE *fp, uint8_t value)
 {
 	return fwrite(&value, 1, sizeof(value), fp) == sizeof(value);
 }
 
-static bool write_i32(FILE *fp, int32_t value)
+static bool
+write_i32(FILE *fp, int32_t value)
 {
 	return fwrite(&value, 1, sizeof(value), fp) == sizeof(value);
 }
 
-static bool write_u32(FILE *fp, uint32_t value)
+static bool
+write_u32(FILE *fp, uint32_t value)
 {
 	return fwrite(&value, 1, sizeof(value), fp) == sizeof(value);
 }
 
-static bool write_u64(FILE *fp, uint64_t value)
+static bool
+write_u64(FILE *fp, uint64_t value)
 {
 	return fwrite(&value, 1, sizeof(value), fp) == sizeof(value);
 }
 
-static bool write_flt(FILE *fp, float value)
+static bool
+write_flt(FILE *fp, float value)
 {
 	return fwrite(&value, 1, sizeof(value), fp) == sizeof(value);
 }
 
-static bool write_str(FILE *fp, const char *str, size_t len)
+static bool
+write_str(FILE *fp, const char *str, size_t len)
 {
 	return fwrite(str, 1, len + 1, fp) == len + 1;
 }
 
-int wow_wdb_creature_read(FILE *fp, struct wow_wdb_creature *creature)
+int
+wow_wdb_creature_read(FILE *fp, struct wow_wdb_creature *creature)
 {
 	uint32_t len;
+	size_t i = 0;
 	char buf[256];
+
 	if (fread(&creature->id, 1, sizeof(creature->id), fp) != sizeof(creature->id)
 	 || fread(&len, 1, sizeof(len), fp) != sizeof(len)
 	 || len >= sizeof(buf)
@@ -103,7 +118,6 @@ int wow_wdb_creature_read(FILE *fp, struct wow_wdb_creature *creature)
 	if (!len)
 		return 0;
 	buf[len] = '\0'; /* safety first */
-	size_t i = 0;
 	creature->name[0] = NULL;
 	creature->name[1] = NULL;
 	creature->name[2] = NULL;
@@ -137,21 +151,23 @@ int wow_wdb_creature_read(FILE *fp, struct wow_wdb_creature *creature)
 	return 1;
 }
 
-bool wow_wdb_creature_write(FILE *fp, const struct wow_wdb_creature *creature)
+bool
+wow_wdb_creature_write(FILE *fp, const struct wow_wdb_creature *creature)
 {
 	uint32_t len = 0;
+	size_t name_len[4];
+	size_t subname_len;
+	size_t icon_len;
+
 	len += sizeof(uint32_t) * 10;
 	len += sizeof(float) * 2;
 	len += sizeof(uint8_t) * 1;
-	size_t name_len[4] =
-	{
-		strlen(creature->name[0]),
-		strlen(creature->name[1]),
-		strlen(creature->name[2]),
-		strlen(creature->name[3]),
-	};
-	size_t subname_len = strlen(creature->subname);
-	size_t icon_len = strlen(creature->icon);
+	name_len[0] = strlen(creature->name[0]);
+	name_len[1] = strlen(creature->name[1]);
+	name_len[2] = strlen(creature->name[2]);
+	name_len[3] = strlen(creature->name[3]);
+	subname_len = strlen(creature->subname);
+	icon_len = strlen(creature->icon);
 	len += name_len[0] + 1;
 	len += name_len[1] + 1;
 	len += name_len[2] + 1;
@@ -183,7 +199,8 @@ bool wow_wdb_creature_write(FILE *fp, const struct wow_wdb_creature *creature)
 	return true;
 }
 
-void wow_wdb_creature_destroy(struct wow_wdb_creature *creature)
+void
+wow_wdb_creature_destroy(struct wow_wdb_creature *creature)
 {
 	if (!creature)
 		return;
@@ -195,10 +212,13 @@ void wow_wdb_creature_destroy(struct wow_wdb_creature *creature)
 	WOW_FREE(creature->icon);
 }
 
-int wow_wdb_item_read(FILE *fp, struct wow_wdb_item *item)
+int
+wow_wdb_item_read(FILE *fp, struct wow_wdb_item *item)
 {
 	uint32_t len;
+	size_t i = 0;
 	char buf[1024];
+
 	if (fread(&item->id, 1, sizeof(item->id), fp) != sizeof(item->id)
 	 || fread(&len, 1, sizeof(len), fp) != sizeof(len)
 	 || len >= sizeof(buf)
@@ -207,7 +227,6 @@ int wow_wdb_item_read(FILE *fp, struct wow_wdb_item *item)
 	if (!len)
 		return 0;
 	buf[len] = '\0'; /* safety first */
-	size_t i = 0;
 	item->name[0] = NULL;
 	item->name[1] = NULL;
 	item->name[2] = NULL;
@@ -352,19 +371,20 @@ int wow_wdb_item_read(FILE *fp, struct wow_wdb_item *item)
 	return 1;
 }
 
-bool wow_wdb_item_write(FILE *fp, const struct wow_wdb_item *item)
+bool
+wow_wdb_item_write(FILE *fp, const struct wow_wdb_item *item)
 {
 	uint32_t len = 0;
+	size_t name_len[4];
+	size_t description_len;
+
 	len += sizeof(uint32_t) * (23 + 2 * 10 + 5 + 9 + 6 * 5 + 17 + 2 * 3 + 4);
 	len += sizeof(float) * (2 * 5 + 2);
-	size_t name_len[4] =
-	{
-		strlen(item->name[0]),
-		strlen(item->name[1]),
-		strlen(item->name[2]),
-		strlen(item->name[3]),
-	};
-	size_t description_len = strlen(item->description);
+	name_len[0] = strlen(item->name[0]);
+	name_len[1] = strlen(item->name[1]);
+	name_len[2] = strlen(item->name[2]);
+	name_len[3] = strlen(item->name[3]);
+	description_len = strlen(item->description);
 	len += name_len[0] + 1;
 	len += name_len[1] + 1;
 	len += name_len[2] + 1;
@@ -507,7 +527,8 @@ bool wow_wdb_item_write(FILE *fp, const struct wow_wdb_item *item)
 	return true;
 }
 
-void wow_wdb_item_destroy(struct wow_wdb_item *item)
+void
+wow_wdb_item_destroy(struct wow_wdb_item *item)
 {
 	if (!item)
 		return;
@@ -518,10 +539,13 @@ void wow_wdb_item_destroy(struct wow_wdb_item *item)
 	WOW_FREE(item->description);
 }
 
-int wow_wdb_name_read(FILE *fp, struct wow_wdb_name *name)
+int
+wow_wdb_name_read(FILE *fp, struct wow_wdb_name *name)
 {
 	uint32_t len;
+	size_t i = 0;
 	char buf[1024];
+
 	if (fread(&name->guid, 1, sizeof(name->guid), fp) != sizeof(name->guid)
 	 || fread(&len, 1, sizeof(len), fp) != sizeof(len)
 	 || len >= sizeof(buf)
@@ -530,7 +554,6 @@ int wow_wdb_name_read(FILE *fp, struct wow_wdb_name *name)
 	if (!len)
 		return 0;
 	buf[len] = '\0'; /* safety first */
-	size_t i = 0;
 	name->name = NULL;
 	if (!read_str(&name->name, buf, len, &i)
 	 || !read_u32(&name->race, buf, len, &i)
@@ -545,12 +568,15 @@ int wow_wdb_name_read(FILE *fp, struct wow_wdb_name *name)
 	return 1;
 }
 
-bool wow_wdb_name_write(FILE *fp, const struct wow_wdb_name *name)
+bool
+wow_wdb_name_write(FILE *fp, const struct wow_wdb_name *name)
 {
 	uint32_t len = 0;
+	size_t name_len;
+
 	len += sizeof(uint32_t) * 3;
 	len += sizeof(uint8_t) * 1;
-	size_t name_len = strlen(name->name);
+	name_len = strlen(name->name);
 	len += name_len + 1;
 	if (!write_u64(fp, name->guid)
 	 || !write_u32(fp, len)
@@ -563,17 +589,21 @@ bool wow_wdb_name_write(FILE *fp, const struct wow_wdb_name *name)
 	return true;
 }
 
-void wow_wdb_name_destroy(struct wow_wdb_name *name)
+void
+wow_wdb_name_destroy(struct wow_wdb_name *name)
 {
 	if (!name)
 		return;
 	WOW_FREE(name->name);
 }
 
-int wow_wdb_guild_read(FILE *fp, struct wow_wdb_guild *guild)
+int
+wow_wdb_guild_read(FILE *fp, struct wow_wdb_guild *guild)
 {
 	uint32_t len;
+	size_t i = 0;
 	char buf[1024];
+
 	if (fread(&guild->id, 1, sizeof(guild->id), fp) != sizeof(guild->id)
 	 || fread(&len, 1, sizeof(len), fp) != sizeof(len)
 	 || len >= sizeof(buf)
@@ -582,7 +612,6 @@ int wow_wdb_guild_read(FILE *fp, struct wow_wdb_guild *guild)
 	if (!len)
 		return 0;
 	buf[len] = '\0'; /* safety first */
-	size_t i = 0;
 	guild->name = NULL;
 	if (!read_str(&guild->name, buf, len, &i)
 	 || !read_str(&guild->ranks[0], buf, len, &i)
@@ -608,24 +637,25 @@ int wow_wdb_guild_read(FILE *fp, struct wow_wdb_guild *guild)
 	return 1;
 }
 
-bool wow_wdb_guild_write(FILE *fp, const struct wow_wdb_guild *guild)
+bool
+wow_wdb_guild_write(FILE *fp, const struct wow_wdb_guild *guild)
 {
 	uint32_t len = 0;
+	size_t name_len;
+	size_t ranks_len[10];
+
 	len += sizeof(uint32_t) * 5;
-	size_t name_len = strlen(guild->name);
-	size_t ranks_len[10] =
-	{
-		strlen(guild->ranks[0]),
-		strlen(guild->ranks[1]),
-		strlen(guild->ranks[2]),
-		strlen(guild->ranks[3]),
-		strlen(guild->ranks[4]),
-		strlen(guild->ranks[5]),
-		strlen(guild->ranks[6]),
-		strlen(guild->ranks[7]),
-		strlen(guild->ranks[8]),
-		strlen(guild->ranks[9]),
-	};
+	name_len = strlen(guild->name);
+	ranks_len[0] = strlen(guild->ranks[0]);
+	ranks_len[1] = strlen(guild->ranks[1]);
+	ranks_len[2] = strlen(guild->ranks[2]);
+	ranks_len[3] = strlen(guild->ranks[3]);
+	ranks_len[4] = strlen(guild->ranks[4]);
+	ranks_len[5] = strlen(guild->ranks[5]);
+	ranks_len[6] = strlen(guild->ranks[6]);
+	ranks_len[7] = strlen(guild->ranks[7]);
+	ranks_len[8] = strlen(guild->ranks[8]);
+	ranks_len[9] = strlen(guild->ranks[9]);
 	len += name_len + 1;
 	len += ranks_len[0] + 1;
 	len += ranks_len[1] + 1;
@@ -659,7 +689,8 @@ bool wow_wdb_guild_write(FILE *fp, const struct wow_wdb_guild *guild)
 	return true;
 }
 
-void wow_wdb_guild_destroy(struct wow_wdb_guild *guild)
+void
+wow_wdb_guild_destroy(struct wow_wdb_guild *guild)
 {
 	if (!guild)
 		return;
@@ -668,10 +699,13 @@ void wow_wdb_guild_destroy(struct wow_wdb_guild *guild)
 		WOW_FREE(guild->ranks[i]);
 }
 
-int wow_wdb_gameobject_read(FILE *fp, struct wow_wdb_gameobject *gameobject)
+int
+wow_wdb_gameobject_read(FILE *fp, struct wow_wdb_gameobject *gameobject)
 {
 	uint32_t len;
+	size_t i = 0;
 	char buf[1024];
+
 	if (fread(&gameobject->id, 1, sizeof(gameobject->id), fp) != sizeof(gameobject->id)
 	 || fread(&len, 1, sizeof(len), fp) != sizeof(len)
 	 || len >= sizeof(buf)
@@ -680,7 +714,6 @@ int wow_wdb_gameobject_read(FILE *fp, struct wow_wdb_gameobject *gameobject)
 	if (!len)
 		return 0;
 	buf[len] = '\0'; /* safety first */
-	size_t i = 0;
 	gameobject->name[0] = NULL;
 	gameobject->name[1] = NULL;
 	gameobject->name[2] = NULL;
@@ -730,21 +763,24 @@ int wow_wdb_gameobject_read(FILE *fp, struct wow_wdb_gameobject *gameobject)
 	return 1;
 }
 
-bool wow_wdb_gameobject_write(FILE *fp, const struct wow_wdb_gameobject *gameobject)
+bool
+wow_wdb_gameobject_write(FILE *fp, const struct wow_wdb_gameobject *gameobject)
 {
 	uint32_t len = 0;
+	size_t name_len[4];
+	size_t icon_len;
+	size_t cast_bar_caption_len;
+	size_t unk_len;
+
 	len += sizeof(uint32_t) * 26;
 	len += sizeof(float) * 1;
-	size_t name_len[4] =
-	{
-		strlen(gameobject->name[0]),
-		strlen(gameobject->name[1]),
-		strlen(gameobject->name[2]),
-		strlen(gameobject->name[3]),
-	};
-	size_t icon_len = strlen(gameobject->icon);
-	size_t cast_bar_caption_len = strlen(gameobject->cast_bar_caption);
-	size_t unk_len = strlen(gameobject->unk);
+	name_len[0] = strlen(gameobject->name[0]);
+	name_len[1] = strlen(gameobject->name[1]);
+	name_len[2] = strlen(gameobject->name[2]);
+	name_len[3] = strlen(gameobject->name[3]);
+	icon_len = strlen(gameobject->icon);
+	cast_bar_caption_len = strlen(gameobject->cast_bar_caption);
+	unk_len = strlen(gameobject->unk);
 	len += name_len[0] + 1;
 	len += name_len[1] + 1;
 	len += name_len[2] + 1;
@@ -792,7 +828,8 @@ bool wow_wdb_gameobject_write(FILE *fp, const struct wow_wdb_gameobject *gameobj
 	return true;
 }
 
-void wow_wdb_gameobject_destroy(struct wow_wdb_gameobject *gameobject)
+void
+wow_wdb_gameobject_destroy(struct wow_wdb_gameobject *gameobject)
 {
 	if (!gameobject)
 		return;

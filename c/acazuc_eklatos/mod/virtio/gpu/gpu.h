@@ -315,6 +315,8 @@ struct virtio_gpu
 	struct mutex mutex;
 	struct dma_buf *buf;
 	struct virtio_gpu_resp_display_info display_info;
+	struct virtio_gpu_resp_capset_info *capsets;
+	uint32_t ncapset;
 	struct virtio_gpu_fb framebuffer;
 	uint32_t resource_id;
 	struct fb *fb;
@@ -324,48 +326,97 @@ struct virtio_gpu
 int get_resource_id(struct virtio_gpu *gpu, uint32_t *id);
 int cmd_get_display_info(struct virtio_gpu *gpu,
                          struct virtio_gpu_resp_display_info *display_info);
-int cmd_resource_create_2d(struct virtio_gpu *gpu, uint32_t id, uint32_t format,
-                           uint32_t width, uint32_t height);
-int cmd_resource_create_3d(struct virtio_gpu *gpu, uint32_t id, uint32_t target,
-                           uint32_t format, uint32_t bind, uint32_t width,
-                           uint32_t height, uint32_t depth, uint32_t array_size,
-                           uint32_t last_level, uint32_t nr_samples,
+int cmd_resource_create_2d(struct virtio_gpu *gpu,
+                           uint32_t id,
+                           uint32_t format,
+                           uint32_t width,
+                           uint32_t height);
+int cmd_resource_create_3d(struct virtio_gpu *gpu,
+                           uint32_t id,
+                           uint32_t target,
+                           uint32_t format,
+                           uint32_t bind,
+                           uint32_t width,
+                           uint32_t height,
+                           uint32_t depth,
+                           uint32_t array_size,
+                           uint32_t last_level,
+                           uint32_t nr_samples,
                            uint32_t flags);
 int cmd_resource_unref(struct virtio_gpu *gpu, uint32_t id);
-int cmd_resource_attach_backing(struct virtio_gpu *gpu, uint32_t id,
-                                struct page **pages, size_t pages_count);
+int cmd_resource_attach_backing(struct virtio_gpu *gpu,
+                                uint32_t id,
+                                struct page **pages,
+                                size_t pages_count);
 int cmd_set_scanout(struct virtio_gpu *gpu,
-                    uint32_t scanout, uint32_t id,
-                    uint32_t x, uint32_t y,
-                    uint32_t width, uint32_t height);
-int cmd_transfer_to_host_2d(struct virtio_gpu *gpu, uint32_t id, uint64_t offset,
-                            uint32_t x, uint32_t y,
-                            uint32_t width, uint32_t height);
-int cmd_transfer_to_host_3d(struct virtio_gpu *gpu, uint32_t id, uint32_t x,
-                            uint32_t y, uint32_t z, uint32_t w, uint32_t h,
-                            uint32_t d, uint64_t offset, uint32_t level,
-                            uint32_t stride, uint32_t layer_stride);
-int cmd_transfer_from_host_3d(struct virtio_gpu *gpu, uint32_t id, uint32_t x,
-                              uint32_t y, uint32_t z, uint32_t w, uint32_t h,
-                              uint32_t d, uint64_t offset, uint32_t level,
-                              uint32_t stride, uint32_t layer_stride);
-int cmd_resource_flush(struct virtio_gpu *gpu, uint32_t id,
-                       uint32_t x, uint32_t y,
-                       uint32_t width, uint32_t height);
-int cmd_get_capset_info(struct virtio_gpu *gpu, uint32_t id,
+                    uint32_t scanout,
+                    uint32_t id,
+                    uint32_t x,
+                    uint32_t y,
+                    uint32_t width,
+                    uint32_t height);
+int cmd_transfer_to_host_2d(struct virtio_gpu *gpu,
+                            uint32_t id,
+                            uint64_t offset,
+                            uint32_t x,
+                            uint32_t y,
+                            uint32_t width,
+                            uint32_t height);
+int cmd_transfer_to_host_3d(struct virtio_gpu *gpu,
+                            uint32_t id,
+                            uint32_t x,
+                            uint32_t y,
+                            uint32_t z,
+                            uint32_t width,
+                            uint32_t height,
+                            uint32_t depth,
+                            uint64_t offset,
+                            uint32_t level,
+                            uint32_t stride,
+                            uint32_t layer_stride);
+int cmd_transfer_from_host_3d(struct virtio_gpu *gpu,
+                              uint32_t id,
+                              uint32_t x,
+                              uint32_t y,
+                              uint32_t z,
+                              uint32_t width,
+                              uint32_t height,
+                              uint32_t depth,
+                              uint64_t offset,
+                              uint32_t level,
+                              uint32_t stride,
+                              uint32_t layer_stride);
+int cmd_resource_flush(struct virtio_gpu *gpu,
+                       uint32_t id,
+                       uint32_t x,
+                       uint32_t y,
+                       uint32_t width,
+                       uint32_t height);
+int cmd_get_capset_info(struct virtio_gpu *gpu,
+                        uint32_t id,
                         struct virtio_gpu_resp_capset_info *info);
-int cmd_get_capset(struct virtio_gpu *gpu, uint32_t id, uint32_t version,
-                   void *data, size_t size);
-int cmd_ctx_create(struct virtio_gpu *gpu, uint32_t id, uint8_t capset_id,
+int cmd_get_capset(struct virtio_gpu *gpu,
+                   uint32_t id,
+                   uint32_t version,
+                   void *data,
+                   size_t size);
+int cmd_ctx_create(struct virtio_gpu *gpu,
+                   uint32_t id,
+                   uint8_t capset_id,
                    const char *name);
 int cmd_ctx_destroy(struct virtio_gpu *gpu, uint32_t id);
-int cmd_submit_3d(struct virtio_gpu *gpu, uint32_t context, const void *udata,
+int cmd_submit_3d(struct virtio_gpu *gpu,
+                  uint32_t context,
+                  const void *udata,
                   size_t size);
-int cmd_ctx_attach_resource(struct virtio_gpu *gpu, uint32_t ctx,
+int cmd_ctx_attach_resource(struct virtio_gpu *gpu,
+                            uint32_t ctx,
                             uint32_t resource);
-int cmd_ctx_detach_resource(struct virtio_gpu *gpu, uint32_t ctx,
+int cmd_ctx_detach_resource(struct virtio_gpu *gpu,
+                            uint32_t ctx,
                             uint32_t resource);
 
-int virgl_init(struct virtio_gpu *gpu, struct virtio_gpu_resp_capset_info *info);
+int virgl_init(struct virtio_gpu *gpu,
+               struct virtio_gpu_resp_capset_info *info);
 
 #endif

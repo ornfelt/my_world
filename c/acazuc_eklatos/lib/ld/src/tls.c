@@ -6,7 +6,8 @@
 #include <stdio.h>
 #include <errno.h>
 
-static void init_tls_data(const struct tls_module *module)
+static void
+init_tls_data(const struct tls_module *module)
 {
 	struct elf *elf = module->elf;
 	const Elf_Phdr *pt_tls = elf->pt_tls;
@@ -18,8 +19,10 @@ static void init_tls_data(const struct tls_module *module)
 
 }
 
-static void generate_initial_tls_offsets(struct elf *elf, size_t *total_size,
-                                         size_t *mods_count)
+static void
+generate_initial_tls_offsets(struct elf *elf,
+                             size_t *total_size,
+                             size_t *mods_count)
 {
 	if (elf->pt_tls && !elf->has_tls_module)
 	{
@@ -40,8 +43,9 @@ static void generate_initial_tls_offsets(struct elf *elf, size_t *total_size,
 		generate_initial_tls_offsets(link->dep, total_size, mods_count);
 }
 
-static void generate_initial_tls_pointers(struct elf *elf,
-                                          struct tls_block *tls)
+static void
+generate_initial_tls_pointers(struct elf *elf,
+                              struct tls_block *tls)
 {
 	if (elf->pt_tls)
 	{
@@ -61,7 +65,8 @@ static void generate_initial_tls_pointers(struct elf *elf,
 		generate_initial_tls_pointers(link->dep, tls);
 }
 
-static struct tls_block *allocate_tls(size_t static_size)
+static struct tls_block *
+allocate_tls(size_t static_size)
 {
 	uint8_t *data = malloc(static_size + sizeof(struct tls_block));
 	if (!data)
@@ -86,7 +91,8 @@ static struct tls_block *allocate_tls(size_t static_size)
 	return tls;
 }
 
-int create_initial_tls(struct elf *elf)
+int
+create_initial_tls(struct elf *elf)
 {
 	size_t total_size = 0;
 	size_t mods_count = 1;
@@ -118,7 +124,8 @@ int create_initial_tls(struct elf *elf)
 	return 0;
 }
 
-void cleanup_dynamic_tls(struct elf *elf)
+void
+cleanup_dynamic_tls(struct elf *elf)
 {
 	struct tls_block *tls;
 	TAILQ_FOREACH(tls, &tls_list, chain)
@@ -132,7 +139,8 @@ void cleanup_dynamic_tls(struct elf *elf)
 	}
 }
 
-int create_dynamic_tls(struct elf *elf)
+int
+create_dynamic_tls(struct elf *elf)
 {
 	if (!elf->pt_tls)
 		return 0;
@@ -178,8 +186,9 @@ int create_dynamic_tls(struct elf *elf)
 	return 0;
 }
 
-int generate_dynamic_tls_pointers(struct tls_block *dup,
-                                  struct tls_block *tls)
+int
+generate_dynamic_tls_pointers(struct tls_block *dup,
+                              struct tls_block *tls)
 {
 	for (size_t i = dup->initial_mods_count; i < dup->mods_size; ++i)
 	{
@@ -200,7 +209,8 @@ int generate_dynamic_tls_pointers(struct tls_block *dup,
 	return 0;
 }
 
-struct tls_block *tls_block_alloc(void)
+struct tls_block *
+tls_block_alloc(void)
 {
 	struct tls_block *tls = TAILQ_FIRST(&tls_list);
 	struct tls_block *dup = allocate_tls(tls->initial_size);
@@ -242,7 +252,8 @@ struct tls_block *tls_block_alloc(void)
 	return dup;
 }
 
-void tls_block_free(struct tls_block *tls)
+void
+tls_block_free(struct tls_block *tls)
 {
 	TAILQ_REMOVE(&tls_list, tls, chain);
 	for (size_t i = tls->initial_mods_count; i < tls->mods_size; ++i)

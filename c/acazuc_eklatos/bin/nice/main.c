@@ -14,14 +14,16 @@ struct env
 	long increment;
 };
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-h] [-n increment] [COMMAND [ARGS]]\n", progname);
 	printf("-h          : display this help\n");
 	printf("-n increment: adjust the priority by given increment\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int prio;
@@ -73,8 +75,7 @@ int main(int argc, char **argv)
 		printf("%d\n", prio);
 		return EXIT_SUCCESS;
 	}
-	int ret = setpriority(PRIO_PROCESS, getpid(), prio + env.increment);
-	if (ret == -1)
+	if (setpriority(PRIO_PROCESS, getpid(), prio + env.increment) == -1)
 	{
 		fprintf(stderr, "%s: setpriority: %s\n", argv[0],
 		        strerror(errno));

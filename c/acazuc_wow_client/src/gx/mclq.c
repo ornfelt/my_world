@@ -1,7 +1,10 @@
 #include "gx/frame.h"
 #include "gx/mclq.h"
+#include "gx/blp.h"
+#include "gx/gx.h"
 
-#include "graphics.h"
+#include "map/map.h"
+
 #include "shaders.h"
 #include "camera.h"
 #include "memory.h"
@@ -17,6 +20,7 @@
 
 #include <sys/types.h>
 #include <string.h>
+#include <stdlib.h>
 #include <math.h>
 
 MEMORY_DECL(GX);
@@ -28,7 +32,8 @@ struct gx_mclq_init_data
 	struct jks_array depths; /* uint8_t */
 };
 
-static void clear_init_data(struct gx_mclq_init_data *init_data)
+static void
+clear_init_data(struct gx_mclq_init_data *init_data)
 {
 	if (!init_data)
 		return;
@@ -38,7 +43,8 @@ static void clear_init_data(struct gx_mclq_init_data *init_data)
 	mem_free(MEM_GX, init_data);
 }
 
-static struct gx_mclq_init_data *create_init_data(void)
+static struct
+gx_mclq_init_data *create_init_data(void)
 {
 	struct gx_mclq_init_data *init_data = mem_malloc(MEM_GX, sizeof(*init_data));
 	if (!init_data)
@@ -49,7 +55,8 @@ static struct gx_mclq_init_data *create_init_data(void)
 	return init_data;
 }
 
-static bool get_liquid_id(uint8_t liquid_type, uint8_t *type)
+static bool
+get_liquid_id(uint8_t liquid_type, uint8_t *type)
 {
 	switch (liquid_type & WOW_MCLQ_TILE_LIQUID_TYPE)
 	{
@@ -70,7 +77,8 @@ static bool get_liquid_id(uint8_t liquid_type, uint8_t *type)
 	return false;
 }
 
-static bool is_uniform_batch(struct wow_mclq_data *mclq)
+static bool
+is_uniform_batch(struct wow_mclq_data *mclq)
 {
 	float height = mclq->verts[0].water.height;
 	uint8_t depth = mclq->verts[0].water.depth;
@@ -102,13 +110,14 @@ static bool is_uniform_batch(struct wow_mclq_data *mclq)
 	return true;
 }
 
-static void init_liquid(struct gx_mclq_liquid *liquid)
+static void
+init_liquid(struct gx_mclq_liquid *liquid)
 {
 	liquid->init_data = NULL;
 	liquid->batches = NULL;
 	liquid->batches_nb = 0;
 #ifdef WITH_DEBUG_RENDERING
-	gx_aabb_init(&liquid->gx_aabb, (struct vec4f){0, .5, 1, 1}, 3);
+	gx_aabb_init(&liquid->gx_aabb, (struct vec4f){0.0, 0.5, 1.0, 1.0}, 3);
 	gx_aabb_set_aabb(&liquid->gx_aabb, &liquid->aabb);
 #endif
 	liquid->attributes_state = GFX_ATTRIBUTES_STATE_INIT();
@@ -120,7 +129,123 @@ static void init_liquid(struct gx_mclq_liquid *liquid)
 	liquid->flags = 0;
 }
 
-static struct gx_mclq_batch *get_new_batch(struct gx_mclq_liquid *liquid)
+static struct gx_mclq_water *
+water_alloc(void)
+{
+	struct gx_mclq_water *water;
+
+	water = mem_malloc(MEM_GX, sizeof(*water));
+	if (!water)
+	{
+		LOG_ERROR("water allocation failed");
+		return NULL;
+	}
+	memset(water->data, 0, sizeof(water->data));
+	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
+		water->textures[i] = GFX_TEXTURE_INIT();
+	water->last_update = 0;
+	water->revision = 0;
+	return water;
+}
+
+static void
+water_free(struct gx_mclq_water *water)
+{
+	if (!water)
+		return;
+	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
+		gfx_delete_texture(g_wow->device, &water->textures[i]);
+	mem_free(MEM_GX, water);
+}
+
+static void
+droplet(struct gx_mclq_water *water,
+        uint32_t x,
+        uint32_t y)
+{
+	float *data = &water->data[water->revision][0];
+	data[x + 0 + (y + 0) * GX_MCLQ_WATER_WIDTH] = 1;
+	data[x + 1 + (y + 0) * GX_MCLQ_WATER_WIDTH] = 1;
+	data[x - 1 + (y + 0) * GX_MCLQ_WATER_WIDTH] = 1;
+	data[x + 0 + (y + 1) * GX_MCLQ_WATER_WIDTH] = 1;
+	data[x + 0 + (y - 1) * GX_MCLQ_WATER_WIDTH] = 1;
+	data[x + 2 + (y + 0) * GX_MCLQ_WATER_WIDTH] = 1;
+	data[x - 2 + (y + 0) * GX_MCLQ_WATER_WIDTH] = 1;
+	data[x + 0 + (y + 2) * GX_MCLQ_WATER_WIDTH] = 1;
+	data[x + 0 + (y - 2) * GX_MCLQ_WATER_WIDTH] = 1;
+	data[x + 1 + (y + 1) * GX_MCLQ_WATER_WIDTH] = 1;
+	data[x + 1 + (y - 1) * GX_MCLQ_WATER_WIDTH] = 1;
+	data[x - 1 + (y + 1) * GX_MCLQ_WATER_WIDTH] = 1;
+	data[x - 1 + (y - 1) * GX_MCLQ_WATER_WIDTH] = 1;
+}
+
+static void
+water_update_data(struct gx_mclq_water *water)
+{
+	const float * restrict prv = &water->data[(water->revision + RENDER_FRAMES_COUNT - 2) % RENDER_FRAMES_COUNT][0];
+	const float * restrict cur = &water->data[(water->revision + RENDER_FRAMES_COUNT - 1) % RENDER_FRAMES_COUNT][0];
+	float * restrict nxt = &water->data[water->revision][0];
+	for (size_t y = 1; y < GX_MCLQ_WATER_WIDTH - 1; ++y)
+	{
+		for (size_t x = 1; x < GX_MCLQ_WATER_WIDTH - 1; ++x)
+		{
+			size_t i = y * GX_MCLQ_WATER_WIDTH + x;
+			nxt[i] = ((cur[i - 1] + cur[i + 1] + cur[i - GX_MCLQ_WATER_WIDTH] + cur[i + GX_MCLQ_WATER_WIDTH]) / 2 - prv[i]);
+			if (nxt[i] < -1)
+				nxt[i] = -1;
+			else if (nxt[i] > 1)
+				nxt[i] = 1;
+			nxt[i] *= 0.95;
+		}
+	}
+	for (size_t i = 0; i < 1; ++i)
+		droplet(water,
+		        3 + rand() / (float)RAND_MAX * (GX_MCLQ_WATER_WIDTH - 6),
+		        3 + rand() / (float)RAND_MAX * (GX_MCLQ_WATER_WIDTH - 6));
+	uint8_t *tex_data = &water->tex_data[water->revision][0];
+	for (size_t i = 0; i < GX_MCLQ_WATER_WIDTH * GX_MCLQ_WATER_WIDTH; ++i)
+		tex_data[i] = 127 + nxt[i] * 127;
+	water->revision = (water->revision + 1) % RENDER_FRAMES_COUNT;
+}
+
+static void
+water_update_texture(struct gx_mclq_water *water, struct gx_frame *frame)
+{
+	gfx_texture_t *texture = &water->textures[frame->id];
+	if (!texture->handle.ptr)
+	{
+		gfx_create_texture(g_wow->device,
+		                   texture,
+		                   GFX_TEXTURE_2D,
+		                   GFX_R8,
+		                   1,
+		                   GX_MCLQ_WATER_WIDTH,
+		                   GX_MCLQ_WATER_WIDTH,
+		                   0);
+		gfx_set_texture_levels(texture, 0, 0);
+		gfx_set_texture_anisotropy(texture, g_wow->anisotropy);
+		gfx_set_texture_filtering(texture,
+		                          GFX_FILTERING_LINEAR,
+		                          GFX_FILTERING_LINEAR,
+		                          GFX_FILTERING_LINEAR);
+		gfx_set_texture_addressing(texture,
+		                           GFX_TEXTURE_ADDRESSING_REPEAT,
+		                           GFX_TEXTURE_ADDRESSING_REPEAT,
+		                           GFX_TEXTURE_ADDRESSING_REPEAT);
+		gfx_finalize_texture(texture);
+	}
+	gfx_set_texture_data(texture,
+	                     0,
+	                     0,
+	                     GX_MCLQ_WATER_WIDTH,
+	                     GX_MCLQ_WATER_WIDTH,
+	                     0,
+	                     sizeof(water->tex_data[water->id[frame->id]]),
+	                     water->tex_data[water->id[frame->id]]);
+}
+
+static struct gx_mclq_batch *
+batch_alloc(struct gx_mclq_liquid *liquid)
 {
 	struct gx_mclq_batch *tmp = mem_realloc(MEM_GX, liquid->batches, sizeof(*liquid->batches) * (liquid->batches_nb + 1));
 	if (!tmp)
@@ -129,7 +254,14 @@ static struct gx_mclq_batch *get_new_batch(struct gx_mclq_liquid *liquid)
 	return &tmp[liquid->batches_nb++];
 }
 
-static bool init_uniform_batch(struct gx_mclq *mclq, struct wow_mclq_data *wow_mclq, uint32_t cx, uint32_t cz, struct vec3f *min_pos, struct vec3f *max_pos, bool *first_min_max)
+static bool
+init_uniform_batch(struct gx_mclq *mclq,
+                   struct wow_mclq_data *wow_mclq,
+                   uint32_t cx,
+                   uint32_t cz,
+                   struct vec3f *min_pos,
+                   struct vec3f *max_pos,
+                   bool *first_min_max)
 {
 	if (wow_mclq->tiles[0][0] & WOW_MCLQ_TILE_HIDDEN)
 		return true;
@@ -140,9 +272,10 @@ static bool init_uniform_batch(struct gx_mclq *mclq, struct wow_mclq_data *wow_m
 	if (!get_liquid_id(liquid_type, &type))
 		return true;
 	struct gx_mclq_liquid *liquid = &mclq->liquids[type];
-	struct gx_mclq_batch *batch = get_new_batch(liquid);
+	struct gx_mclq_batch *batch = batch_alloc(liquid);
 	if (!batch)
 		return false;
+	batch->water = NULL;
 	if (!liquid->init_data)
 	{
 		liquid->init_data = create_init_data();
@@ -216,11 +349,11 @@ static bool init_uniform_batch(struct gx_mclq *mclq, struct wow_mclq_data *wow_m
 	VEC3_MAX(batch->aabb.p1, p0, p1);
 	aabb_move(&batch->aabb, mclq->pos);
 #ifdef WITH_DEBUG_RENDERING
-	gx_aabb_init(&batch->gx_aabb, (struct vec4f){0, 1, .5, 1}, 1);
+	gx_aabb_init(&batch->gx_aabb, (struct vec4f){0.0, 1.0, 0.5, 1.0}, 1);
 	gx_aabb_set_aabb(&batch->gx_aabb, &batch->aabb);
 #endif
 	VEC3_ADD(batch->center, batch->aabb.p0, batch->aabb.p1);
-	VEC3_MULV(batch->center, batch->center, .5f);
+	VEC3_MULV(batch->center, batch->center, 0.5f);
 	batch->indices_nb = liquid->init_data->indices.size - batch->indices_offset;
 	if (first_min_max[type])
 	{
@@ -236,7 +369,14 @@ static bool init_uniform_batch(struct gx_mclq *mclq, struct wow_mclq_data *wow_m
 	return true;
 }
 
-static bool init_full_batch(struct gx_mclq *mclq, struct wow_mclq_data *wow_mclq, uint32_t cx, uint32_t cz, struct vec3f *min_pos, struct vec3f *max_pos, bool *first_min_max)
+static bool
+init_full_batch(struct gx_mclq *mclq,
+                struct wow_mclq_data *wow_mclq,
+                uint32_t cx,
+                uint32_t cz,
+                struct vec3f *min_pos,
+                struct vec3f *max_pos,
+                bool *first_min_max)
 {
 	uint32_t indices_bck[GX_MCLQ_LIQUIDS_NB];
 	for (size_t i = 0; i < GX_MCLQ_LIQUIDS_NB; ++i)
@@ -291,10 +431,10 @@ static bool init_full_batch(struct gx_mclq *mclq, struct wow_mclq_data *wow_mclq
 					LOG_ERROR("allocation failed");
 					return false;
 				}
-				float x0 = -(1 + (ssize_t)cz - (8 -  z     ) / 8.) * CHUNK_WIDTH;
-				float x1 = -(1 + (ssize_t)cz - (8 - (z + 1)) / 8.) * CHUNK_WIDTH;
-				float z0 =  (1 + (ssize_t)cx - (8 -  x     ) / 8.) * CHUNK_WIDTH;
-				float z1 =  (1 + (ssize_t)cx - (8 - (x + 1)) / 8.) * CHUNK_WIDTH;
+				float x0 = -(1 + (ssize_t)cz - (8 -  z     ) / 8.0) * CHUNK_WIDTH;
+				float x1 = -(1 + (ssize_t)cz - (8 - (z + 1)) / 8.0) * CHUNK_WIDTH;
+				float z0 =  (1 + (ssize_t)cx - (8 -  x     ) / 8.0) * CHUNK_WIDTH;
+				float z1 =  (1 + (ssize_t)cx - (8 - (x + 1)) / 8.0) * CHUNK_WIDTH;
 				float y1 = wow_mclq->verts[ z      * 9 +  x     ].water.height;
 				float y2 = wow_mclq->verts[ z      * 9 + (x + 1)].water.height;
 				float y3 = wow_mclq->verts[(z + 1) * 9 + (x + 1)].water.height;
@@ -406,18 +546,19 @@ static bool init_full_batch(struct gx_mclq *mclq, struct wow_mclq_data *wow_mclq
 			continue;
 		if (!(liquid->init_data->indices.size - indices_bck[i]))
 			continue;
-		struct gx_mclq_batch *batch = get_new_batch(liquid);
+		struct gx_mclq_batch *batch = batch_alloc(liquid);
+		batch->water = NULL;
 		batch->indices_offset = indices_bck[i];
 		batch->indices_nb = liquid->init_data->indices.size - batch->indices_offset;
 		batch->aabb.p0 = batch_min[i];
 		batch->aabb.p1 = batch_max[i];
 		aabb_move(&batch->aabb, mclq->pos);
 #ifdef WITH_DEBUG_RENDERING
-		gx_aabb_init(&batch->gx_aabb, (struct vec4f){0, 1, .5, 1}, 1);
+		gx_aabb_init(&batch->gx_aabb, (struct vec4f){0.0, 1.0, 0.5, 1.0}, 1);
 		gx_aabb_set_aabb(&batch->gx_aabb, &batch->aabb);
 #endif
 		VEC3_ADD(batch->center, batch->aabb.p0, batch->aabb.p1);
-		VEC3_MULV(batch->center, batch->center, .5f);
+		VEC3_MULV(batch->center, batch->center, 0.5f);
 		if (first_min_max[i])
 		{
 			min_pos[i] = batch->aabb.p0;
@@ -433,7 +574,8 @@ static bool init_full_batch(struct gx_mclq *mclq, struct wow_mclq_data *wow_mclq
 	return true;
 }
 
-struct gx_mclq *gx_mclq_new(struct map_tile *parent, struct wow_adt_file *file)
+struct gx_mclq *
+gx_mclq_new(struct map_tile *parent, struct wow_adt_file *file)
 {
 	struct gx_mclq *mclq = mem_malloc(MEM_GX, sizeof(*mclq));
 	if (!mclq)
@@ -489,7 +631,8 @@ err:
 	return NULL;
 }
 
-void gx_mclq_delete(struct gx_mclq *mclq)
+void
+gx_mclq_delete(struct gx_mclq *mclq)
 {
 	if (!mclq)
 		return;
@@ -505,8 +648,10 @@ void gx_mclq_delete(struct gx_mclq *mclq)
 		clear_init_data(liquid->init_data);
 		for (size_t j = 0; j < liquid->batches_nb; ++j)
 		{
-#ifdef WITH_DEBUG_RENDERING
 			struct gx_mclq_batch *batch = &liquid->batches[j];
+			if (batch->water)
+				water_free(batch->water);
+#ifdef WITH_DEBUG_RENDERING
 			gx_aabb_destroy(&batch->gx_aabb);
 #endif
 		}
@@ -518,7 +663,8 @@ void gx_mclq_delete(struct gx_mclq *mclq)
 	mem_free(MEM_GX, mclq);
 }
 
-int gx_mclq_initialize(struct gx_mclq *mclq)
+int
+gx_mclq_initialize(struct gx_mclq *mclq)
 {
 	if (gx_mclq_flag_get(mclq, GX_MCLQ_FLAG_INITIALIZED))
 		return 1;
@@ -565,7 +711,65 @@ int gx_mclq_initialize(struct gx_mclq *mclq)
 	return 1;
 }
 
-void gx_mclq_cull(struct gx_mclq *mclq, struct gx_frame *frame)
+static void
+batch_cull(struct gx_mclq_batch *batch,
+           size_t liquid_id,
+           struct gx_frame *frame,
+           enum frustum_result result)
+{
+	struct gx_mclq_batch_frame *batch_frame = &batch->frames[frame->id];
+	struct vec3f delta;
+	VEC3_SUB(delta, batch->center, frame->cull_pos);
+	float distance_to_camera = sqrtf(delta.x * delta.x + delta.z * delta.z);
+	bool culled;
+	if (distance_to_camera > frame->view_distance * 1.4142)
+		culled = true;
+	else if (result == FRUSTUM_INSIDE)
+		culled = false;
+	else
+		culled = !frustum_check_fast(&frame->frustum, &batch->aabb);
+	batch_frame->culled = culled;
+	if (culled)
+	{
+		//water_free(batch->water);
+		return;
+	}
+#ifdef WITH_DEBUG_RENDERING
+	if (!culled && (g_wow->gx->opt & GX_OPT_MCLQ_AABB))
+		gx_aabb_add_to_render(&batch->gx_aabb, frame, &frame->view_vp);
+#endif
+	if (liquid_id == 0 || liquid_id == 1)
+	{
+		if (g_wow->gx->opt & GX_OPT_DYN_WATER)
+		{
+			if (distance_to_camera < CHUNK_WIDTH * 4)
+			{
+				if (!batch->water)
+					batch->water = water_alloc();
+				if (batch->water)
+				{
+					batch->water->id[frame->id] = batch->water->revision;
+					if (frame->time - batch->water->last_update > 30000000)
+					{
+						batch->water->last_update = frame->time;
+						water_update_data(batch->water);
+					}
+				}
+			}
+			else
+			{
+				//water_free(batch->water);
+			}
+		}
+		else
+		{
+			//water_free(batch->water);
+		}
+	}
+}
+
+void
+gx_mclq_cull(struct gx_mclq *mclq, struct gx_frame *frame)
 {
 	if (!gx_mclq_flag_get(mclq, GX_MCLQ_FLAG_INITIALIZED))
 		return;
@@ -579,39 +783,25 @@ void gx_mclq_cull(struct gx_mclq *mclq, struct gx_frame *frame)
 		if (result == FRUSTUM_OUTSIDE)
 			continue;
 #ifdef WITH_DEBUG_RENDERING
-		if (g_wow->render_opt & RENDER_OPT_MCLQ_AABB)
+		if (g_wow->gx->opt & GX_OPT_MCLQ_AABB)
 			gx_aabb_add_to_render(&liquid->gx_aabb, frame, &frame->view_vp);
 #endif
 		if (!gx_mclq_liquid_flag_set(&mclq->liquids[i], GX_MCLQ_FLAG_IN_RENDER_LIST))
 		{
 			gx_frame_add_mclq(frame, i, mclq);
+			struct mat4f ident;
+			MAT4_IDENTITY(ident);
 			MAT4_TRANSLATE(mclq_frame->mvp, frame->view_vp, mclq->pos);
 			MAT4_TRANSLATE(mclq_frame->mv, frame->view_v, mclq->pos);
+			MAT4_TRANSLATE(mclq_frame->m, ident, mclq->pos);
 		}
 		for (size_t j = 0; j < liquid->batches_nb; ++j)
-		{
-			struct gx_mclq_batch *batch = &liquid->batches[j];
-			struct gx_mclq_batch_frame *batch_frame = &batch->frames[frame->id];
-			struct vec3f delta;
-			VEC3_SUB(delta, batch->center, frame->cull_pos);
-			float distance_to_camera = sqrtf(delta.x * delta.x + delta.z * delta.z);
-			bool culled;
-			if (distance_to_camera > frame->view_distance * 1.4142)
-				culled = true;
-			else if (result == FRUSTUM_INSIDE)
-				culled = false;
-			else
-				culled = !frustum_check_fast(&frame->frustum, &batch->aabb);
-			batch_frame->culled = culled;
-#ifdef WITH_DEBUG_RENDERING
-			if (!culled && (g_wow->render_opt & RENDER_OPT_MCLQ_AABB))
-				gx_aabb_add_to_render(&batch->gx_aabb, frame, &frame->view_vp);
-#endif
-		}
+			batch_cull(&liquid->batches[j], i, frame, result);
 	}
 }
 
-void gx_mclq_render(struct gx_mclq *mclq, struct gx_frame *frame, uint8_t type)
+void
+gx_mclq_render(struct gx_mclq *mclq, struct gx_frame *frame, uint8_t type)
 {
 	if (!gx_mclq_flag_get(mclq, GX_MCLQ_FLAG_INITIALIZED))
 		return;
@@ -636,10 +826,11 @@ void gx_mclq_render(struct gx_mclq *mclq, struct gx_frame *frame, uint8_t type)
 					struct shader_mclq_water_model_block model_block;
 					model_block.p = *(struct mat4f*)&frame->view_p;
 					model_block.v = *(struct mat4f*)&frame->view_v;
+					model_block.m = mclq_frame->m;
 					model_block.mv = mclq_frame->mv;
 					model_block.mvp = mclq_frame->mvp;
 					gfx_set_buffer_data(&liquid->uniform_buffers[frame->id], &model_block, sizeof(model_block), 0);
-					gfx_bind_attributes_state(g_wow->device, &liquid->attributes_state, &g_wow->graphics->mclq_water_input_layout);
+					gfx_bind_attributes_state(g_wow->device, &liquid->attributes_state, &g_wow->gx->mclq_water_input_layout);
 					break;
 				}
 				case 2:
@@ -650,12 +841,32 @@ void gx_mclq_render(struct gx_mclq *mclq, struct gx_frame *frame, uint8_t type)
 					model_block.mv = mclq_frame->mv;
 					model_block.mvp = mclq_frame->mvp;
 					gfx_set_buffer_data(&liquid->uniform_buffers[frame->id], &model_block, sizeof(model_block), 0);
-					gfx_bind_attributes_state(g_wow->device, &liquid->attributes_state, &g_wow->graphics->mclq_magma_input_layout);
+					gfx_bind_attributes_state(g_wow->device, &liquid->attributes_state, &g_wow->gx->mclq_magma_input_layout);
 					break;
 				}
 			}
 			gfx_bind_constant(g_wow->device, 1, &liquid->uniform_buffers[frame->id], sizeof(struct shader_mclq_water_model_block), 0);
 			initialized = true;
+		}
+		else if (g_wow->gx->opt & GX_OPT_DYN_WATER)
+		{
+			if (type == 0 || type == 1)
+			{
+				if (batch->water)
+				{
+					water_update_texture(batch->water, frame);
+					const gfx_texture_t *ref = &batch->water->textures[frame->id];
+					gfx_bind_samplers(g_wow->device, 0, 1, &ref);
+				}
+				else
+				{
+					uint8_t idx = (frame->time / 30000000) % 30;
+					if (type)
+						gx_blp_bind(g_wow->gx->ocean_textures[idx], 0);
+					else
+						gx_blp_bind(g_wow->gx->river_textures[idx], 0);
+				}
+			}
 		}
 		gfx_draw_indexed(g_wow->device, batch->indices_nb, batch->indices_offset);
 	}

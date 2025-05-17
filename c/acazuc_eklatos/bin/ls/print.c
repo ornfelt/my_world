@@ -7,7 +7,8 @@
 #include <stdio.h>
 #include <ctype.h>
 
-static void print_name(struct env *env, const char *name, mode_t mode)
+static void
+print_name(struct env *env, const char *name, mode_t mode)
 {
 	/* XXX quote if non-alphanum */
 	if (mode != (mode_t)-1 && (env->opt & OPT_x))
@@ -94,7 +95,8 @@ static void print_name(struct env *env, const char *name, mode_t mode)
 	}
 }
 
-void print_file(struct env *env, struct file *file, struct dir *dir, int last)
+void
+print_file(struct env *env, struct file *file, struct dir *dir, int last)
 {
 	env->printed_file = 1;
 	if (env->opt & OPT_i)
@@ -124,7 +126,8 @@ void print_file(struct env *env, struct file *file, struct dir *dir, int last)
 		putchar(' ');
 }
 
-void print_subdirs(struct env *env, struct dir *dir)
+void
+print_subdirs(struct env *env, struct dir *dir)
 {
 	struct file *lst, *nxt;
 	TAILQ_FOREACH_SAFE(lst, &dir->files, chain, nxt)
@@ -143,7 +146,8 @@ void print_subdirs(struct env *env, struct dir *dir)
 	}
 }
 
-void print_dir(struct env *env, const char *path, int is_recur, const char *display_path)
+void
+print_dir(struct env *env, const char *path, int is_recur, const char *display_path)
 {
 	struct dir *dir;
 	struct file *lst;
@@ -167,9 +171,11 @@ void print_dir(struct env *env, const char *path, int is_recur, const char *disp
 	free(dir);
 }
 
-void print_sources(struct env *env, int recur)
+void
+print_sources(struct env *env, int recur)
 {
 	struct source *lst;
+
 	TAILQ_FOREACH(lst, &env->sources, chain)
 		print_dir(env, lst->path, recur, lst->display_path);
 }

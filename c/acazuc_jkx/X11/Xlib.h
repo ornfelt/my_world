@@ -1,9 +1,13 @@
 #ifndef X11_XLIB_H
 #define X11_XLIB_H
 
-#include <X11/X.h>
+#include "X.h"
 
 #include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define False 0
 #define True  1
@@ -1085,5 +1089,9 @@ int XChangeKeyboardControl(Display *display, unsigned long value_mask,
 int XGetKeyboardControl(Display *display, XKeyboardState *values);
 int XAutoRepeatOn(Display *display);
 int XAutoRepeatOff(Display *display);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -1,11 +1,14 @@
 #include <ifaddrs.h>
 #include <stdlib.h>
 
-void freeifaddrs(struct ifaddrs *addrs)
+void
+freeifaddrs(struct ifaddrs *addrs)
 {
 	while (addrs)
 	{
-		struct ifaddrs *next = addrs->ifa_next;
+		struct ifaddrs *next;
+
+		next = addrs->ifa_next;
 		free(addrs->ifa_name);
 		free(addrs->ifa_addr);
 		free(addrs->ifa_netmask);

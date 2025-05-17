@@ -4,9 +4,12 @@ use crate::{
 use crate::header::{
     DbcHeader, HEADER_SIZE, parse_header,
 };
+use crate::tys::WritableString;
+use crate::util::StringCache;
 use std::io::Write;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SpellAuraNames {
     pub rows: Vec<SpellAuraNamesRow>,
 }
@@ -15,6 +18,8 @@ impl DbcTable for SpellAuraNames {
     type Row = SpellAuraNamesRow;
 
     const FILENAME: &'static str = "SpellAuraNames.dbc";
+    const FIELD_COUNT: usize = 12;
+    const ROW_SIZE: usize = 48;
 
     fn rows(&self) -> &[Self::Row] { &self.rows }
     fn rows_mut(&mut self) -> &mut [Self::Row] { &mut self.rows }
@@ -24,19 +29,19 @@ impl DbcTable for SpellAuraNames {
         b.read_exact(&mut header)?;
         let header = parse_header(&header)?;
 
-        if header.record_size != 48 {
+        if header.record_size != Self::ROW_SIZE as u32 {
             return Err(crate::DbcError::InvalidHeader(
                 crate::InvalidHeaderError::RecordSize {
-                    expected: 48,
+                    expected: Self::ROW_SIZE as u32,
                     actual: header.record_size,
                 },
             ));
         }
 
-        if header.field_count != 12 {
+        if header.field_count != Self::FIELD_COUNT as u32 {
             return Err(crate::DbcError::InvalidHeader(
                 crate::InvalidHeaderError::FieldCount {
-                    expected: 12,
+                    expected: Self::FIELD_COUNT as u32,
                     actual: header.field_count,
                 },
             ));
@@ -79,17 +84,11 @@ impl DbcTable for SpellAuraNames {
         Ok(SpellAuraNames { rows, })
     }
 
-    fn write(&self, b: &mut impl Write) -> Result<(), std::io::Error> {
-        let header = DbcHeader {
-            record_count: self.rows.len() as u32,
-            field_count: 12,
-            record_size: 48,
-            string_block_size: self.string_block_size(),
-        };
+    fn write(&self, w: &mut impl Write) -> Result<(), std::io::Error> {
+        let mut b = Vec::with_capacity(self.rows.len() * Self::ROW_SIZE);
 
-        b.write_all(&header.write_header())?;
+        let mut string_cache = StringCache::new();
 
-        let mut string_index = 1;
         for row in &self.rows {
             // id: primary_key (SpellAuraNames) uint32
             b.write_all(&row.id.id.to_le_bytes())?;
@@ -98,21 +97,24 @@ impl DbcTable for SpellAuraNames {
             b.write_all(&row.unknown.to_le_bytes())?;
 
             // internal_name: string_ref
-            if !row.internal_name.is_empty() {
-                b.write_all(&(string_index as u32).to_le_bytes())?;
-                string_index += row.internal_name.len() + 1;
-            }
-            else {
-                b.write_all(&(0_u32).to_le_bytes())?;
-            }
+            b.write_all(&string_cache.add_string(&row.internal_name).to_le_bytes())?;
 
             // name: string_ref_loc
-            b.write_all(&row.name.string_indices_as_array(&mut string_index))?;
+            b.write_all(&row.name.string_indices_as_array(&mut string_cache))?;
 
         }
 
-        self.write_string_block(b)?;
+        assert_eq!(b.len(), self.rows.len() * Self::ROW_SIZE);
+        let header = DbcHeader {
+            record_count: self.rows.len() as u32,
+            field_count: Self::FIELD_COUNT as u32,
+            record_size: Self::ROW_SIZE as u32,
+            string_block_size: string_cache.size(),
+        };
 
+        w.write_all(&header.write_header())?;
+        w.write_all(&b)?;
+        w.write_all(string_cache.buffer())?;
         Ok(())
     }
 
@@ -131,31 +133,8 @@ impl Indexable for SpellAuraNames {
     }
 }
 
-impl SpellAuraNames {
-    fn write_string_block(&self, b: &mut impl Write) -> Result<(), std::io::Error> {
-        b.write_all(&[0])?;
-
-        for row in &self.rows {
-            if !row.internal_name.is_empty() { b.write_all(row.internal_name.as_bytes())?; b.write_all(&[0])?; };
-            row.name.string_block_as_array(b)?;
-        }
-
-        Ok(())
-    }
-
-    fn string_block_size(&self) -> u32 {
-        let mut sum = 1;
-        for row in &self.rows {
-            if !row.internal_name.is_empty() { sum += row.internal_name.len() + 1; };
-            sum += row.name.string_block_size();
-        }
-
-        sum as u32
-    }
-
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Hash, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SpellAuraNamesKey {
     pub id: u32
 }
@@ -235,6 +214,7 @@ impl TryFrom<isize> for SpellAuraNamesKey {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SpellAuraNamesRow {
     pub id: SpellAuraNamesKey,
     pub unknown: u32,

@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+### Added
+
+* Added `serde` support for all tables via the optional `serde` feature.
+* Added `FIELD_COUNT` and `ROW_SIZE` constants to DbcTable traits.
+
+### Changed
+
+* BREAKING: Updated definitions of `VideoHardware` table in vanilla for generic array to proper fields.
+* Writing DBC files now does proper string deduplication, which appears to be required for the game to read them properly.
+
 ## [0.3.0] - 2024-02-22
 
 ### Added

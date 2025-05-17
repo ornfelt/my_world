@@ -1,6 +1,7 @@
 #include <stdlib.h>
 
-uintmax_t strtoumax(const char *nptr, char **endptr, int base)
+uintmax_t
+strtoumax(const char *nptr, char **endptr, int base)
 {
 #if __SIZE_WIDTH__ == 32
 	return strtoull(nptr, endptr, base);

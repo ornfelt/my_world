@@ -1,5 +1,6 @@
 GL_1.0 {
 	global:
+		glActiveTexture;
 		glBegin;
 		glBlendFunc;
 		glCallList;
@@ -47,9 +48,12 @@ GL_1.0 {
 		glDepthMask;
 		glDepthRange;
 		glDisable;
+		glDrawBuffer;
 		glEnable;
 		glEnd;
 		glEndList;
+		glFinish;
+		glFlush;
 		glFogf;
 		glFogfv;
 		glFogi;
@@ -66,6 +70,10 @@ GL_1.0 {
 		glGetLightiv;
 		glGetMaterialfv;
 		glGetMaterialiv;
+		glGetString;
+		glGetTexImage;
+		glGetTexParameterfv;
+		glGetTexParameteriv;
 		glIsEnabled;
 		glIsList;
 		glLightf;
@@ -77,6 +85,7 @@ GL_1.0 {
 		glLoadIdentity;
 		glLoadMatrixd;
 		glLoadMatrixf;
+		glLogicOp;
 		glMaterialf;
 		glMaterialfv;
 		glMateriali;
@@ -97,8 +106,12 @@ GL_1.0 {
 		glNormal3sv;
 		glOrtho;
 		glPointSize;
+		glPolygonMode;
+		glPopClientAttrib;
 		glPopMatrix;
+		glPushClientAttrib;
 		glPushMatrix;
+		glReadBuffer;
 		glReadPixels;
 		glRotated;
 		glRotatef;
@@ -106,6 +119,9 @@ GL_1.0 {
 		glScalef;
 		glScissor;
 		glShadeModel;
+		glStencilFunc;
+		glStencilMask;
+		glStencilOp;
 		glTexCoord1d;
 		glTexCoord1dv;
 		glTexCoord1f;
@@ -138,9 +154,16 @@ GL_1.0 {
 		glTexCoord4iv;
 		glTexCoord4s;
 		glTexCoord4sv;
+		glTexImage1D;
 		glTexImage2D;
+		glTexImage3D;
 		glTexParameterf;
+		glTexParameterfv;
 		glTexParameteri;
+		glTexParameteriv;
+		glTexSubImage1D;
+		glTexSubImage2D;
+		glTexSubImage3D;
 		glTranslated;
 		glTranslatef;
 		glVertex2d;
@@ -181,9 +204,11 @@ GL_1.1 {
 		glEnableClientState;
 		glGenTextures;
 		glGetPointerv;
+		glInterleavedArrays;
 		glIsTexture;
 		glNormalPointer;
 		glTexCoordPointer;
+		glVertexAttribPointer;
 		glVertexPointer;
 } GL_1.0;
 
@@ -209,46 +234,208 @@ GL_1.4 {
 } GL_1.3;
 
 GL_1.5 {
+	global:
+		glBindBuffer;
+		glBufferData;
+		glBufferSubData;
+		glDeleteBuffers;
+		glGenBuffers;
+		glGetBufferSubData;
+		glIsBuffer;
 } GL_1.4;
 
 GL_2.0 {
 	global:
+		glAttachShader;
 		glBlendEquationSeparate;
+		glCompileShader;
+		glCreateProgram;
+		glCreateShader;
+		glDeleteProgram;
+		glDeleteShader;
+		glDisableVertexAttribArray;
+		glDrawBuffers;
+		glEnableVertexAttribArray;
+		glGetProgramiv;
+		glGetShaderiv;
+		glIsProgram;
+		glIsShader;
+		glLinkProgram;
+		glShaderSource;
+		glStencilFuncSeparate;
+		glStencilMaskSeparate;
+		glStencilOpSeparate;
+		glUseProgram;
 } GL_1.5;
 
 GL_2.1 {
 } GL_2.0;
 
 GL_3.0 {
+	global:
+		glBindBufferBase;
+		glBindBufferRange;
+		glBindFramebuffer;
+		glBindRenderbuffer;
+		glBindVertexArray;
+		glCheckFramebufferStatus;
+		glClearBufferfi;
+		glClearBufferfv;
+		glClearBufferiv;
+		glClearBufferuiv;
+		glColorMaski;
+		glDeleteFramebuffers;
+		glDeleteRenderbuffers;
+		glDeleteVertexArrays;
+		glFramebufferRenderbuffer;
+		glFramebufferTexture1D;
+		glFramebufferTexture2D;
+		glFramebufferTexture3D;
+		glGenFramebuffers;
+		glGenRenderbuffers;
+		glGenVertexArrays;
+		glGetBooleani_v;
+		glGetFramebufferAttachmentParameteriv;
+		glGetIntegeri_v;
+		glGetStringi;
+		glIsFramebuffer;
+		glIsVertexArray;
+		glRenderbufferStorage;
+		glVertexAttribIPointer;
 } GL_2.1;
 
 GL_3.1 {
+	global:
+		glCopyBufferSubData;
+		glDrawArraysInstanced;
+		glDrawElementsInstanced;
+		glPrimitiveRestartIndex;
 } GL_3.0;
 
 GL_3.2 {
+	global:
+		glDrawElementsBaseVertex;
+		glDrawElementsInstancedBaseVertex;
+		glFramebufferTexture;
+		glGetInteger64i_v;
+		glGetSamplerParameterfv;
+		glGetSamplerParameteriv;
+		glMultiDrawElementsBaseVertex;
+		glSamplerParameterf;
+		glSamplerParameterfv;
+		glSamplerParameteri;
+		glSamplerParameteriv;
 } GL_3.1;
 
 GL_3.3 {
+	global:
+		glBindSampler;
+		glDeleteSamplers;
+		glGenSamplers;
+		glIsSampler;
+		glVertexAttribDivisor;
 } GL_3.2;
 
 GL_4.0 {
+	global:
+		glBlendEquationi;
+		glBlendEquationSeparatei;
+		glBlendFunci;
+		glBlendFuncSeparatei;
 } GL_3.3;
 
 GL_4.1 {
 	global:
+		glClearDepthf;
 		glDepthRangef;
+		glGetDoublei_v;
+		glGetFloati_v;
+		glVertexAttribLPointer;
 } GL_4.0;
 
 GL_4.2 {
+	global:
+		glDrawArraysInstancedBaseInstance;
+		glDrawElementsInstancedBaseInstance;
+		glDrawElementsInstancedBaseVertexBaseInstance;
+		glTexStorage1D;
+		glTexStorage2D;
+		glTexStorage3D;
 } GL_4.1;
 
 GL_4.3 {
+	global:
+		glBindVertexBuffer;
+		glClearBufferSubData;
+		glClearNamedBufferSubData;
+		glCopyImageSubData;
+		glGetInteger64v;
+		glVertexAttribBinding;
+		glVertexAttribFormat;
+		glVertexAttribIFormat;
+		glVertexAttribLFormat;
+		glVertexBindingDivisor;
 } GL_4.2;
 
 GL_4.4 {
+	global:
+		glBindBuffersBase;
+		glBindBuffersRange;
+		glBindSamplers;
+		glBindVertexBuffers;
+		glBufferStorage;
 } GL_4.3;
 
 GL_4.5 {
+	global:
+		glBindTextures;
+		glBindTextureUnit;
+		glCheckNamedFramebufferStatus;
+		glClearNamedFramebufferfi;
+		glClearNamedFramebufferfv;
+		glClearNamedFramebufferiv;
+		glClearNamedFramebufferuiv;
+		glCopyNamedBufferSubData;
+		glCreateBuffers;
+		glCreateFramebuffers;
+		glCreateSamplers;
+		glCreateTextures;
+		glCreateVertexArrays;
+		glDisableVertexArrayAttrib;
+		glEnableVertexArrayAttrib;
+		glGetNamedBufferSubData;
+		glGetNamedFramebufferAttachmentParameteriv;
+		glGetnTexImage;
+		glGetTextureImage;
+		glGetTextureParameterfv;
+		glGetTextureParameteriv;
+		glGetTextureSubImage;
+		glNamedFramebufferDrawBuffer;
+		glNamedFramebufferDrawBuffers;
+		glNamedFramebufferReadBuffer;
+		glNamedFramebufferRenderbuffer;
+		glNamedFramebufferTexture;
+		glNamedBufferData;
+		glNamedBufferStorage;
+		glNamedBufferSubData;
+		glNamedRenderbufferStorage;
+		glTextureParameterf;
+		glTextureParameterfv;
+		glTextureParameteri;
+		glTextureParameteriv;
+		glTextureStorage1D;
+		glTextureStorage2D;
+		glTextureStorage3D;
+		glTextureSubImage1D;
+		glTextureSubImage2D;
+		glTextureSubImage3D;
+		glVertexArrayAttribBinding;
+		glVertexArrayAttribFormat;
+		glVertexArrayAttribIFormat;
+		glVertexArrayAttribLFormat;
+		glVertexArrayBindingDivisor;
+		glVertexArrayVertexBuffer;
+		glVertexArrayVertexBuffers;
 } GL_4.4;
 
 GL_4.6 {
@@ -256,20 +443,11 @@ GL_4.6 {
 
 JKGL_1.0 {
 	global:
-		g_ctx;
+		gl_ctx_free;
 		gl_ctx_new;
+		gl_ctx_resize;
 		gl_ctx_set;
-		mat4_clear;
-		mat4_dump;
-		mat4_init_identity;
-		mat4_init_projection;
-		mat4_init_rotation_x;
-		mat4_init_rotation_y;
-		mat4_init_rotation_z;
-		mat4_init_translation;
-		mat4_init_scale;
-		mat4_mult;
-		mat4_reverse;
-		mat4_transform_vec4;
+		gl_ctx_swap_buffers;
+		gl_sample;
 	local: *;
 };

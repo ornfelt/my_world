@@ -5,13 +5,15 @@
 #include <stdio.h>
 #include <pwd.h>
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-s shell] [user]\n", progname);
 	printf("-s shell: use the given shell\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	char *shell = NULL;
 	uid_t uid;

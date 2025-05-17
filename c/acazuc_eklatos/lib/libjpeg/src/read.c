@@ -4,7 +4,8 @@
 #include <string.h>
 #include <errno.h>
 
-static const uint8_t inv_zigzag_table[64] =
+static const uint8_t
+inv_zigzag_table[64] =
 {
 	 0,  1,  5,  6, 14, 15, 27, 28,
 	 2,  4,  7, 13, 16, 26, 29, 42,
@@ -16,7 +17,8 @@ static const uint8_t inv_zigzag_table[64] =
 	35, 36, 48, 49, 57, 58, 62, 63,
 };
 
-static int parse_app0(struct jpeg *jpeg, uint16_t length)
+static int
+parse_app0(struct jpeg *jpeg, uint16_t length)
 {
 	if (length < 16)
 	{
@@ -87,7 +89,8 @@ static int parse_app0(struct jpeg *jpeg, uint16_t length)
 	return 0;
 }
 
-static int parse_dqt(struct jpeg *jpeg, uint16_t length)
+static int
+parse_dqt(struct jpeg *jpeg, uint16_t length)
 {
 	if (length != 67)
 	{
@@ -120,7 +123,8 @@ static int parse_dqt(struct jpeg *jpeg, uint16_t length)
 	return 0;
 }
 
-static int parse_sof0(struct jpeg *jpeg, uint16_t length)
+static int
+parse_sof0(struct jpeg *jpeg, uint16_t length)
 {
 	if (length != 17 && length != 11)
 	{
@@ -222,7 +226,8 @@ static int parse_sof0(struct jpeg *jpeg, uint16_t length)
 	return 0;
 }
 
-static int parse_dht(struct jpeg *jpeg, uint16_t length)
+static int
+parse_dht(struct jpeg *jpeg, uint16_t length)
 {
 	if (jpeg->huff_count >= 4)
 	{
@@ -258,7 +263,8 @@ static int parse_dht(struct jpeg *jpeg, uint16_t length)
 	return 0;
 }
 
-static int parse_sos(struct jpeg *jpeg, uint16_t length)
+static int
+parse_sos(struct jpeg *jpeg, uint16_t length)
 {
 	if (length != 12 && length != 8)
 	{
@@ -296,7 +302,8 @@ static int parse_sos(struct jpeg *jpeg, uint16_t length)
 	return 0;
 }
 
-static int parse_dri(struct jpeg *jpeg, uint16_t length)
+static int
+parse_dri(struct jpeg *jpeg, uint16_t length)
 {
 	if (length != 4)
 	{
@@ -316,7 +323,8 @@ static int parse_dri(struct jpeg *jpeg, uint16_t length)
 	return 0;
 }
 
-static int get_huffman(struct jpeg *jpeg, size_t class, size_t dst)
+static int
+get_huffman(struct jpeg *jpeg, size_t class, size_t dst)
 {
 	for (size_t i = 0; i < jpeg->huff_count; ++i)
 	{
@@ -328,7 +336,8 @@ static int get_huffman(struct jpeg *jpeg, size_t class, size_t dst)
 	return -1;
 }
 
-int jpeg_read_headers(struct jpeg *jpeg)
+int
+jpeg_read_headers(struct jpeg *jpeg)
 {
 	if (!jpeg->fp)
 	{
@@ -440,7 +449,8 @@ int jpeg_read_headers(struct jpeg *jpeg)
 	return 0;
 }
 
-static int huffman_decode(struct jpeg *jpeg, struct huffman *huff)
+static int
+huffman_decode(struct jpeg *jpeg, struct huffman *huff)
 {
 	uint16_t value = 0;
 	size_t i = 0;
@@ -463,7 +473,8 @@ static int huffman_decode(struct jpeg *jpeg, struct huffman *huff)
 	return huff->values[huff->offsets[i] + (value - huff->codes[i])];
 }
 
-static int decode_component(struct jpeg *jpeg, size_t component, int32_t *values)
+static int
+decode_component(struct jpeg *jpeg, size_t component, int32_t *values)
 {
 	struct huffman *dct = &jpeg->huff_tables[jpeg->components[component].dc_huff].huffman;
 	struct huffman *act = &jpeg->huff_tables[jpeg->components[component].ac_huff].huffman;
@@ -523,21 +534,26 @@ static int decode_component(struct jpeg *jpeg, size_t component, int32_t *values
 	return 0;
 }
 
-static void dequantify(struct jpeg *jpeg, size_t component,
-                       int32_t *restrict dst, int32_t *restrict src)
+static void
+dequantify(struct jpeg *jpeg,
+           size_t component,
+           int32_t * restrict dst,
+           int32_t * restrict src)
 {
 	int32_t *qt = &jpeg->dqt[jpeg->components[component].table][0];
 	for (size_t i = 0; i < 64; ++i)
 		dst[i] = src[i] * qt[i];
 }
 
-static void dezigzag(int32_t *restrict dst, int32_t *restrict src)
+static void
+dezigzag(int32_t * restrict dst, int32_t * restrict src)
 {
 	for (size_t i = 0; i < 64; ++i)
 		dst[i] = src[inv_zigzag_table[i]];
 }
 
-static void idct1(int32_t *restrict dst, const int32_t *restrict src)
+static void
+idct1(int32_t * restrict dst, const int32_t * restrict src)
 {
 	for (size_t x = 0; x < 8; ++x)
 	{
@@ -585,7 +601,8 @@ static void idct1(int32_t *restrict dst, const int32_t *restrict src)
 	}
 }
 
-static void idct2(int32_t *restrict dst, const int32_t *restrict src)
+static void
+idct2(int32_t * restrict dst, const int32_t * restrict src)
 {
 	for (size_t y = 0; y < 8; ++y)
 	{
@@ -634,14 +651,16 @@ static void idct2(int32_t *restrict dst, const int32_t *restrict src)
 	}
 }
 
-static void idct(int32_t *restrict dst, const int32_t *restrict src)
+static void
+idct(int32_t * restrict dst, const int32_t * restrict src)
 {
 	int32_t tmp[64];
 	idct1(tmp, src);
 	idct2(dst, tmp);
 }
 
-static int decode_block_component(struct jpeg *jpeg, int32_t *values, size_t component)
+static int
+decode_block_component(struct jpeg *jpeg, int32_t *values, size_t component)
 {
 	int32_t tmp1[64];
 	int32_t tmp2[64];
@@ -655,7 +674,8 @@ static int decode_block_component(struct jpeg *jpeg, int32_t *values, size_t com
 	return 0;
 }
 
-static void copy_block(int32_t *dst, int32_t *src, size_t dst_pitch, size_t src_shift)
+static void
+copy_block(int32_t *dst, int32_t *src, size_t dst_pitch, size_t src_shift)
 {
 	for (size_t y = 0; y < 8; ++y)
 	{
@@ -666,7 +686,12 @@ static void copy_block(int32_t *dst, int32_t *src, size_t dst_pitch, size_t src_
 	}
 }
 
-static void apply_block_component(struct jpeg *jpeg, int32_t *values, size_t component, size_t bx, size_t by)
+static void
+apply_block_component(struct jpeg *jpeg,
+                      int32_t *values,
+                      size_t component,
+                      size_t bx,
+                      size_t by)
 {
 	int32_t *dst = jpeg->components[component].data;
 	dst += (jpeg->block_y + by * jpeg->components[component].height) * jpeg->component_width;
@@ -700,7 +725,8 @@ static void apply_block_component(struct jpeg *jpeg, int32_t *values, size_t com
 	}
 }
 
-static int decode_block(struct jpeg *jpeg)
+static int
+decode_block(struct jpeg *jpeg)
 {
 	for (size_t i = 0; i < jpeg->components_count; ++i)
 	{
@@ -738,7 +764,8 @@ static int decode_block(struct jpeg *jpeg)
 	return 0;
 }
 
-static void merge_gray(struct jpeg *jpeg, uint8_t *data)
+static void
+merge_gray(struct jpeg *jpeg, uint8_t *data)
 {
 	for (size_t y = 0; y < jpeg->height; ++y)
 	{
@@ -758,7 +785,8 @@ static void merge_gray(struct jpeg *jpeg, uint8_t *data)
 	}
 }
 
-static void merge_rgb(struct jpeg *jpeg, uint8_t *data)
+static void
+merge_rgb(struct jpeg *jpeg, uint8_t *data)
 {
 	const int32_t *Y_row = jpeg->components[0].data;
 	const int32_t *Cb_row = jpeg->components[1].data;
@@ -805,7 +833,8 @@ static void merge_rgb(struct jpeg *jpeg, uint8_t *data)
 	}
 }
 
-int jpeg_read_data(struct jpeg *jpeg, void *data)
+int
+jpeg_read_data(struct jpeg *jpeg, void *data)
 {
 	if (!jpeg->fp || !jpeg->sos)
 		return 0;

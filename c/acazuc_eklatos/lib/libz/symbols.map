@@ -2,6 +2,8 @@ ZLIB_1.0 {
 	global:
 		adler32;
 		adler32_z;
+		compress;
+		compress2;
 		crc32;
 		crc32_z;
 		deflate;
@@ -19,5 +21,7 @@ ZLIB_1.0 {
 		inflateEnd;
 		inflateGetHeader;
 		inflateInit;
+		uncompress;
+		uncompress2;
 	local: *;
 };

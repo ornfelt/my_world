@@ -7,13 +7,16 @@
 #undef vsnprintf
 #endif
 
-int vsnprintf(char *d, size_t n, const char *fmt, va_list va_arg)
+int
+vsnprintf(char *d, size_t n, const char *fmt, va_list va_arg)
 {
 	struct buf buf;
+	int ret;
+
 	buf.type = PRINTF_BUF;
 	buf.data = d;
 	buf.size = n;
-	int ret = printf_buf(&buf, fmt, va_arg);
+	ret = printf_buf(&buf, fmt, va_arg);
 	if (buf.size)
 	{
 		if (buf.len < buf.size)
@@ -24,12 +27,19 @@ int vsnprintf(char *d, size_t n, const char *fmt, va_list va_arg)
 	return ret;
 }
 
-int __vsnprintf_chk(char *d, size_t n, int flag, size_t ds,
-                    const char *fmt, va_list va_arg)
+int
+__vsnprintf_chk(char *d,
+                size_t n,
+                int flag,
+                size_t ds,
+                const char *fmt,
+                va_list va_arg)
 {
-	(void)flag;
 	size_t lim = n > ds ? ds : n;
-	int ret = vsnprintf(d, lim, fmt, va_arg);
+	int ret;
+
+	(void)flag;
+	ret = vsnprintf(d, lim, fmt, va_arg);
 	if (ds < n && ret >= 0 && (size_t)ret >= ds)
 		__chk_fail();
 	return ret;

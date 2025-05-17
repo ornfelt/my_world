@@ -9,7 +9,8 @@
 #include <std.h>
 
 /* qwerty scan code set 1 table */
-static const enum kbd_key key_table[128] =
+static const enum kbd_key
+key_table[128] =
 {
 	/* 0x00 */ KBD_KEY_NONE       , KBD_KEY_ESCAPE,
 	/* 0x02 */ KBD_KEY_1          , KBD_KEY_2,
@@ -59,7 +60,8 @@ static const enum kbd_key key_table[128] =
 };
 
 /* extended qwerty scan code 1 table (0xE0 prefixed) */
-static const enum kbd_key key_table_ext[128] =
+static const enum kbd_key
+key_table_ext[128] =
 {
 	[0x10] = KBD_KEY_MM_PREV_TRACK,
 	[0x19] = KBD_KEY_MM_NEXT_TRACK,
@@ -107,7 +109,8 @@ static enum kbd_mod kbd_mods;
 static struct irq_handle kbd_irq_handle;
 static struct evdev *kbd_evdev;
 
-void ps2_kbd_input(uint8_t value)
+void
+ps2_kbd_input(uint8_t value)
 {
 #if 0
 	TRACE("ps2 keyboard 0x%02x", value);
@@ -196,7 +199,8 @@ void ps2_kbd_input(uint8_t value)
 	ev_send_key_event(kbd_evdev, key, kbd_mods, !release);
 }
 
-void ps2_kbd_init(void)
+void
+ps2_kbd_init(void)
 {
 	uint8_t tmp;
 

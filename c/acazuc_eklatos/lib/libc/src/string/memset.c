@@ -5,7 +5,8 @@
 
 #include <string.h>
 
-void *memset(void *d, int c, size_t n)
+void *
+memset(void *d, int c, size_t n)
 {
 	size_t i = 0;
 	if (n >= sizeof(size_t))
@@ -27,7 +28,8 @@ void *memset(void *d, int c, size_t n)
 	return d;
 }
 
-void *__memset_chk(void *d, int c, size_t n, size_t ds)
+void *
+__memset_chk(void *d, int c, size_t n, size_t ds)
 {
 	if (n > ds)
 		__chk_fail();

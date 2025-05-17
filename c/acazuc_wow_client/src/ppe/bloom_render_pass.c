@@ -38,13 +38,15 @@ struct bloom_render_pass
 	gfx_buffer_t indices_buffer;
 };
 
-static const struct gfx_input_layout_bind g_binds[] =
+static const struct gfx_input_layout_bind
+g_binds[] =
 {
 	{0, GFX_ATTR_R32G32_FLOAT, sizeof(struct shader_ppe_input), offsetof(struct shader_ppe_input, position)},
 	{0, GFX_ATTR_R32G32_FLOAT, sizeof(struct shader_ppe_input), offsetof(struct shader_ppe_input, uv)},
 };
 
-static void ctr(struct render_pass *render_pass)
+static void
+ctr(struct render_pass *render_pass)
 {
 	render_pass_vtable.ctr(render_pass);
 	struct bloom_render_pass *bloom = (struct bloom_render_pass*)render_pass;
@@ -106,34 +108,36 @@ static void ctr(struct render_pass *render_pass)
 	gfx_create_depth_stencil_state(g_wow->device, &bloom->depth_stencil_state, false, false, GFX_CMP_ALWAYS, false, 0, GFX_CMP_ALWAYS, 0, 0, GFX_STENCIL_KEEP, GFX_STENCIL_KEEP, GFX_STENCIL_KEEP);
 	gfx_create_blend_state(g_wow->device, &bloom->blend_state, true, GFX_BLEND_SRC_ALPHA, GFX_BLEND_ONE_MINUS_SRC_ALPHA, GFX_BLEND_SRC_ALPHA, GFX_BLEND_ONE_MINUS_SRC_ALPHA, GFX_EQUATION_ADD, GFX_EQUATION_ADD, GFX_COLOR_MASK_ALL);
 	gfx_create_pipeline_state(g_wow->device,
-		&bloom->merge_pipeline_state,
-		&g_wow->shaders->bloom_merge,
-		&bloom->rasterizer_state,
-		&bloom->depth_stencil_state,
-		&bloom->blend_state,
-		&bloom->input_layout,
-		GFX_PRIMITIVE_TRIANGLES);
+	                          &bloom->merge_pipeline_state,
+	                          &g_wow->shaders->bloom_merge,
+	                          &bloom->rasterizer_state,
+	                          &bloom->depth_stencil_state,
+	                          &bloom->blend_state,
+	                          &bloom->input_layout,
+	                          GFX_PRIMITIVE_TRIANGLES);
 	gfx_create_pipeline_state(g_wow->device,
-		&bloom->bloom_pipeline_state,
-		&g_wow->shaders->bloom,
-		&bloom->rasterizer_state,
-		&bloom->depth_stencil_state,
-		&bloom->blend_state,
-		&bloom->input_layout,
-		GFX_PRIMITIVE_TRIANGLES);
+	                          &bloom->bloom_pipeline_state,
+	                          &g_wow->shaders->bloom,
+	                          &bloom->rasterizer_state,
+	                          &bloom->depth_stencil_state,
+	                          &bloom->blend_state,
+	                          &bloom->input_layout,
+	                          GFX_PRIMITIVE_TRIANGLES);
 	gfx_create_pipeline_state(g_wow->device,
-		&bloom->blur_pipeline_state,
-		&g_wow->shaders->bloom_blur,
-		&bloom->rasterizer_state,
-		&bloom->depth_stencil_state,
-		&bloom->blend_state,
-		&bloom->input_layout,
-		GFX_PRIMITIVE_TRIANGLES);
+	                          &bloom->blur_pipeline_state,
+	                          &g_wow->shaders->bloom_blur,
+	                          &bloom->rasterizer_state,
+	                          &bloom->depth_stencil_state,
+	                          &bloom->blend_state,
+	                          &bloom->input_layout,
+	                          GFX_PRIMITIVE_TRIANGLES);
 }
 
-static void dtr(struct render_pass *render_pass)
+static void
+dtr(struct render_pass *render_pass)
 {
 	struct bloom_render_pass *bloom = (struct bloom_render_pass*)render_pass;
+
 	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
 	{
 		gfx_delete_buffer(g_wow->device, &bloom->merge_uniform_buffers[i]);
@@ -159,10 +163,12 @@ static void dtr(struct render_pass *render_pass)
 	render_pass_vtable.dtr(render_pass);
 }
 
-static void resize(struct render_pass *render_pass, uint32_t width, uint32_t height)
+static void
+resize(struct render_pass *render_pass, uint32_t width, uint32_t height)
 {
-	render_pass_vtable.resize(render_pass, width, height);
 	struct bloom_render_pass *bloom = (struct bloom_render_pass*)render_pass;
+
+	render_pass_vtable.resize(render_pass, width, height);
 	gfx_delete_texture(g_wow->device, &bloom->texture1);
 	width *= scale_factor;
 	height *= scale_factor;
@@ -182,9 +188,11 @@ static void resize(struct render_pass *render_pass, uint32_t width, uint32_t hei
 	gfx_set_render_target_texture(&bloom->hblur_render_target, GFX_RENDERTARGET_ATTACHMENT_COLOR0, &bloom->texture1);
 }
 
-static void render_bloom(struct render_pass *render_pass, struct render_target *src)
+static void
+render_bloom(struct render_pass *render_pass, struct render_target *src)
 {
 	struct bloom_render_pass *bloom = (struct bloom_render_pass*)render_pass;
+
 	gfx_bind_render_target(g_wow->device, &bloom->bloom_render_target);
 	gfx_bind_pipeline_state(g_wow->device, &bloom->bloom_pipeline_state);
 	gfx_set_viewport(g_wow->device, 0, 0, render_pass->width * scale_factor, render_pass->height * scale_factor);
@@ -205,9 +213,11 @@ static void render_bloom(struct render_pass *render_pass, struct render_target *
 	gfx_draw_indexed(g_wow->device, 6, 0);
 }
 
-static void render_vblur(struct render_pass *render_pass)
+static void
+render_vblur(struct render_pass *render_pass)
 {
 	struct bloom_render_pass *bloom = (struct bloom_render_pass*)render_pass;
+
 	gfx_bind_render_target(g_wow->device, &bloom->vblur_render_target);
 	gfx_bind_pipeline_state(g_wow->device, &bloom->blur_pipeline_state);
 	gfx_set_viewport(g_wow->device, 0, 0, render_pass->width * scale_factor, render_pass->height * scale_factor);
@@ -229,9 +239,11 @@ static void render_vblur(struct render_pass *render_pass)
 	gfx_draw_indexed(g_wow->device, 6, 0);
 }
 
-static void render_hblur(struct render_pass *render_pass)
+static void
+render_hblur(struct render_pass *render_pass)
 {
 	struct bloom_render_pass *bloom = (struct bloom_render_pass*)render_pass;
+
 	gfx_bind_render_target(g_wow->device, &bloom->hblur_render_target);
 	gfx_bind_pipeline_state(g_wow->device, &bloom->blur_pipeline_state);
 	gfx_set_viewport(g_wow->device, 0, 0, render_pass->width * scale_factor, render_pass->height * scale_factor);
@@ -253,10 +265,15 @@ static void render_hblur(struct render_pass *render_pass)
 	gfx_draw_indexed(g_wow->device, 6, 0);
 }
 
-static void merge_bloom(struct render_pass *render_pass, struct render_target *src, struct render_target *dst, uint32_t buffers)
+static void
+merge_bloom(struct render_pass *render_pass,
+            struct render_target *src,
+            struct render_target *dst,
+            uint32_t buffers)
 {
 	struct bloom_render_pass *bloom = (struct bloom_render_pass*)render_pass;
 	gfx_render_target_t *render_target;
+
 	if (dst)
 	{
 		render_target = &dst->render_target;
@@ -289,7 +306,11 @@ static void merge_bloom(struct render_pass *render_pass, struct render_target *s
 	gfx_draw_indexed(g_wow->device, 6, 0);
 }
 
-static void process(struct render_pass *render_pass, struct render_target *src, struct render_target *dst, uint32_t buffers)
+static void
+process(struct render_pass *render_pass,
+        struct render_target *src,
+        struct render_target *dst,
+        uint32_t buffers)
 {
 	render_pass_vtable.process(render_pass, src, dst, buffers);
 	render_bloom(render_pass, src);
@@ -298,7 +319,8 @@ static void process(struct render_pass *render_pass, struct render_target *src, 
 	merge_bloom(render_pass, src, dst, buffers);
 }
 
-static const struct render_pass_vtable bloom_render_pass_vtable =
+static const struct render_pass_vtable
+bloom_render_pass_vtable =
 {
 	.ctr     = ctr,
 	.dtr     = dtr,
@@ -306,9 +328,12 @@ static const struct render_pass_vtable bloom_render_pass_vtable =
 	.resize  = resize,
 };
 
-struct render_pass *bloom_render_pass_new(void)
+struct render_pass *
+bloom_render_pass_new(void)
 {
-	struct render_pass *render_pass = mem_malloc(MEM_PPE, sizeof(struct bloom_render_pass));
+	struct render_pass *render_pass;
+
+	render_pass = mem_malloc(MEM_PPE, sizeof(struct bloom_render_pass));
 	if (!render_pass)
 		return NULL;
 	render_pass->vtable = &bloom_render_pass_vtable;

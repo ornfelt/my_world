@@ -15,7 +15,8 @@ struct env
 	const char *type;
 };
 
-static int print_rr(struct env *env, ns_msg *msg, ns_sect sect, ns_rr *rr)
+static int
+print_rr(struct env *env, ns_msg *msg, ns_sect sect, ns_rr *rr)
 {
 	(void)msg;
 	printf(" rr:\n");
@@ -53,7 +54,8 @@ static int print_rr(struct env *env, ns_msg *msg, ns_sect sect, ns_rr *rr)
 	return 0;
 }
 
-static int print_sec(struct env *env, ns_msg *msg, ns_sect sect)
+static int
+print_sec(struct env *env, ns_msg *msg, ns_sect sect)
 {
 	int count;
 
@@ -75,7 +77,8 @@ static int print_sec(struct env *env, ns_msg *msg, ns_sect sect)
 	return 0;
 }
 
-static int ns_t_from_str(struct env *env, const char *type, ns_type *ns_t)
+static int
+ns_t_from_str(struct env *env, const char *type, ns_type *ns_t)
 {
 #define TEST_T(v) \
 	if (!strcasecmp(type, #v)) \
@@ -108,7 +111,8 @@ static int ns_t_from_str(struct env *env, const char *type, ns_type *ns_t)
 #undef TEST_T
 }
 
-static int dig_query(struct env *env, const char *hostname)
+static int
+dig_query(struct env *env, const char *hostname)
 {
 	struct __res_state state;
 	uint8_t buf[512];
@@ -157,13 +161,15 @@ static int dig_query(struct env *env, const char *hostname)
 	return 0;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-h]\n", progname);
 	printf("-h: display this help\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	const char *hostname;

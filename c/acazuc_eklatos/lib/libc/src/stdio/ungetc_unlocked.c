@@ -2,7 +2,8 @@
 
 #include <stdio.h>
 
-int ungetc_unlocked(int c, FILE *fp)
+int
+ungetc_unlocked(int c, FILE *fp)
 {
 	if (fp->unget != EOF)
 		return EOF;

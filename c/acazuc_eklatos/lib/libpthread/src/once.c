@@ -5,7 +5,8 @@
 #include <limits.h>
 #include <errno.h>
 
-int pthread_once(pthread_once_t *once, void (*init)(void))
+int
+pthread_once(pthread_once_t *once, void (*init)(void))
 {
 	if (!once)
 		return EINVAL;
@@ -39,7 +40,8 @@ int pthread_once(pthread_once_t *once, void (*init)(void))
 	return 0;
 }
 
-void call_once(once_flag *flag, void (*func)(void))
+void
+call_once(once_flag *flag, void (*func)(void))
 {
 	pthread_once(&flag->once, func);
 }

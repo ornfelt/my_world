@@ -6,7 +6,8 @@
 #include <errno.h>
 #include <stdio.h>
 
-static int insert(struct env *env, struct source *ls, struct source *cs)
+static int
+insert(struct env *env, struct source *ls, struct source *cs)
 {
 	if (env->opt & OPT_U)
 		return 0;
@@ -33,14 +34,16 @@ static int insert(struct env *env, struct source *ls, struct source *cs)
 	}
 }
 
-static void push(struct env *env, struct source *source)
+static void
+push(struct env *env, struct source *source)
 {
+	struct source *lst;
+
 	if (TAILQ_EMPTY(&env->sources))
 	{
 		TAILQ_INSERT_HEAD(&env->sources, source, chain);
 		return;
 	}
-	struct source *lst;
 	TAILQ_FOREACH(lst, &env->sources, chain)
 	{
 		if (insert(env, lst, source))
@@ -52,9 +55,12 @@ static void push(struct env *env, struct source *source)
 	TAILQ_INSERT_TAIL(&env->sources, source, chain);
 }
 
-static void print_dir_fast(struct env *env, struct dir *dir)
+static void
+print_dir_fast(struct env *env, struct dir *dir)
 {
-	struct file *lst, *nxt;
+	struct file *lst;
+	struct file *nxt;
+
 	TAILQ_FOREACH_SAFE(lst, &dir->files, chain, nxt)
 	{
 		print_file(env, lst, dir, !nxt);
@@ -62,7 +68,11 @@ static void print_dir_fast(struct env *env, struct dir *dir)
 	}
 }
 
-static void push_source(struct env *env, char *path, char *display_path, const struct stat *st)
+static void
+push_source(struct env *env,
+            char *path,
+            char *display_path,
+            const struct stat *st)
 {
 	struct source *new;
 
@@ -79,7 +89,8 @@ static void push_source(struct env *env, char *path, char *display_path, const s
 	push(env, new);
 }
 
-static int add_source(struct env *env, char *path, struct dir *dir, char *display_path)
+static int
+add_source(struct env *env, char *path, struct dir *dir, char *display_path)
 {
 	struct stat st;
 
@@ -110,7 +121,8 @@ static int add_source(struct env *env, char *path, struct dir *dir, char *displa
 	return 1;
 }
 
-void parse_sources(struct env *env, int argc, char **argv)
+void
+parse_sources(struct env *env, int argc, char **argv)
 {
 	struct dir dir;
 	char *display_path;

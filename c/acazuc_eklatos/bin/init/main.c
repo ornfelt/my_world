@@ -8,18 +8,23 @@
 #include <fcntl.h>
 #include <errno.h>
 
-static int open_std_fd(void)
+static int
+open_std_fd(void)
 {
+	int fdin;
+	int fdout;
+	int fderr;
+
 	close(0);
 	close(1);
 	close(2);
-	int fdin = open("/dev/tty0", O_RDONLY);
+	fdin = open("/dev/tty0", O_RDONLY);
 	if (fdin == -1)
 		fdin = open("/dev/ttyS0", O_RDONLY);
-	int fdout = open("/dev/tty0", O_WRONLY);
+	fdout = open("/dev/tty0", O_WRONLY);
 	if (fdout == -1)
 		fdout = open("/dev/ttyS0", O_WRONLY);
-	int fderr = open("/dev/tty0", O_WRONLY);
+	fderr = open("/dev/tty0", O_WRONLY);
 	if (fderr == -1)
 		fderr = open("/dev/ttyS0", O_WRONLY);
 	if (fdin != 0 || fdout != 1 || fderr != 2)
@@ -27,9 +32,13 @@ static int open_std_fd(void)
 	return 0;
 }
 
-static pid_t run_sh(void)
+static pid_t
+run_sh(void)
 {
-	int pid = fork();
+	int pid;
+	char * const argv[] = {"/bin/sh", NULL};
+
+	pid = fork();
 	if (pid == -1)
 	{
 		perror("init: fork");
@@ -39,14 +48,20 @@ static pid_t run_sh(void)
 		return pid;
 	if (open_std_fd())
 		return EXIT_FAILURE;
-	char * const argv[] = {"/bin/sh", NULL};
 	execv("/bin/sh", argv);
 	perror("init: sh");
 	exit(EXIT_FAILURE);
 }
 
-int main()
+int
+main(int argc, char **argv)
 {
+	int wstatus;
+	pid_t sh_pid;
+	pid_t wpid;
+
+	(void)argc;
+	(void)argv;
 	umask(02);
 	if (open_std_fd())
 		return EXIT_FAILURE;
@@ -59,9 +74,7 @@ int main()
 	setenv("PS2", "> ", 1);
 	setenv("IFS", " \t\n", 1);
 	system("/etc/rc");
-	pid_t sh_pid = run_sh();
-	pid_t wpid;
-	int wstatus;
+	sh_pid = run_sh();
 	while ((wpid = waitpid(-1, &wstatus, 0)))
 	{
 		if (wpid == -1)

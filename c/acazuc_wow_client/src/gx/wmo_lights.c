@@ -1,7 +1,7 @@
 #include "gx/wmo_lights.h"
 #include "gx/frame.h"
+#include "gx/gx.h"
 
-#include "graphics.h"
 #include "memory.h"
 #include "log.h"
 #include "wow.h"
@@ -100,7 +100,7 @@ void gx_wmo_lights_render(struct gx_wmo_lights *lights, struct gx_frame *frame)
 	if (!lights->lights_nb)
 		return;
 	gfx_set_point_size(g_wow->device, 5);
-	gfx_bind_attributes_state(g_wow->device, &lights->attributes_state, &g_wow->graphics->wmo_lights_input_layout);
+	gfx_bind_attributes_state(g_wow->device, &lights->attributes_state, &g_wow->gx->wmo_lights_input_layout);
 	gfx_set_buffer_data(&lights->uniform_buffers[frame->id], &lights->model_block, sizeof(lights->model_block), 0);
 	gfx_bind_constant(g_wow->device, 1, &lights->uniform_buffers[frame->id], sizeof(lights->model_block), 0);
 	gfx_draw(g_wow->device, lights->lights_nb, 0);

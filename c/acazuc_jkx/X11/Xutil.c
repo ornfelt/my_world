@@ -7,18 +7,23 @@
 #include <stdlib.h>
 #include <string.h>
 
-XVisualInfo *XGetVisualInfo(Display *display,
-                            long vinfo_mask,
-                            XVisualInfo *vinfo_template,
-                            int *nitems_return)
+XVisualInfo *
+XGetVisualInfo(Display *display,
+               long vinfo_mask,
+               XVisualInfo *vinfo_template,
+               int *nitems_return)
 {
-	*nitems_return = 0;
+	xcb_screen_iterator_t screen_it;
+	const xcb_setup_t *setup;
 	XVisualInfo *vi = NULL;
-	const xcb_setup_t *setup = xcb_get_setup(display->conn);
-	xcb_screen_iterator_t screen_it = xcb_setup_roots_iterator(setup);
+
+	*nitems_return = 0;
+	setup = xcb_get_setup(display->conn);
+	screen_it = xcb_setup_roots_iterator(setup);
 	for (size_t i = 0; screen_it.rem; xcb_screen_next(&screen_it), ++i)
 	{
 		xcb_screen_t *screen = screen_it.data;
+
 		if ((vinfo_mask & VisualScreenMask)
 		 && vinfo_template->screen != (int)i)
 			continue;
@@ -76,17 +81,22 @@ XVisualInfo *XGetVisualInfo(Display *display,
 	return vi;
 }
 
-Status XMatchVisualInfo(Display *display,
-                        int screenid,
-                        int depthv,
-                        int class,
-                        XVisualInfo *vinfo)
+Status
+XMatchVisualInfo(Display *display,
+                 int screenid,
+                 int depthv,
+                 int class,
+                 XVisualInfo *vinfo)
 {
-	const xcb_setup_t *setup = xcb_get_setup(display->conn);
-	xcb_screen_iterator_t screen_it = xcb_setup_roots_iterator(setup);
+	xcb_screen_iterator_t screen_it;
+	const xcb_setup_t *setup;
+
+	setup = xcb_get_setup(display->conn);
+	screen_it = xcb_setup_roots_iterator(setup);
 	for (size_t i = 0; screen_it.rem; xcb_screen_next(&screen_it), ++i)
 	{
 		xcb_screen_t *screen = screen_it.data;
+
 		if ((int)i != screenid)
 			continue;
 		xcb_depth_iterator_t depth_it = xcb_screen_allowed_depths_iterator(screen);
@@ -118,14 +128,15 @@ Status XMatchVisualInfo(Display *display,
 	return 0;
 }
 
-void XSetStandardProperties(Display *display,
-                            Window window,
-                            char *window_name,
-                            char *icon_name,
-                            Pixmap icon_pixmap,
-                            char **argv,
-                            int argc,
-                            XSizeHints *hints)
+void
+XSetStandardProperties(Display *display,
+                       Window window,
+                       char *window_name,
+                       char *icon_name,
+                       Pixmap icon_pixmap,
+                       char **argv,
+                       int argc,
+                       XSizeHints *hints)
 {
 	if (window_name)
 	{
@@ -158,15 +169,16 @@ void XSetStandardProperties(Display *display,
 		XSetWMNormalHints(display, window, hints);
 }
 
-void XSetWMProperties(Display *display,
-                      Window window,
-                      XTextProperty *window_name,
-                      XTextProperty *icon_name,
-                      char **argv,
-                      int argc,
-                      XSizeHints *normal_hints,
-                      XWMHints *wm_hints,
-                      XClassHint *class_hints)
+void
+XSetWMProperties(Display *display,
+                 Window window,
+                 XTextProperty *window_name,
+                 XTextProperty *icon_name,
+                 char **argv,
+                 int argc,
+                 XSizeHints *normal_hints,
+                 XWMHints *wm_hints,
+                 XClassHint *class_hints)
 {
 	if (window_name)
 		XSetWMName(display, window, window_name);
@@ -208,34 +220,60 @@ void XSetWMProperties(Display *display,
 	}
 }
 
-void XSetTextProperty(Display *display,
-                      Window window,
-                      XTextProperty *prop,
-                      Atom property)
+void
+XSetTextProperty(Display *display,
+                 Window window,
+                 XTextProperty *prop,
+                 Atom property)
 {
-	XChangeProperty(display, window, property, prop->encoding, prop->format,
-	                PropModeReplace, prop->value, prop->nitems);
+	XChangeProperty(display,
+	                window,
+	                property,
+	                prop->encoding,
+	                prop->format,
+	                PropModeReplace,
+	                prop->value,
+	                prop->nitems);
 }
 
-Status XGetTextProperty(Display *display,
-                        Window window,
-                        XTextProperty **prop,
-                        Atom property)
+Status
+XGetTextProperty(Display *display,
+                 Window window,
+                 XTextProperty **prop,
+                 Atom property)
 {
 	Atom actual_type;
 	int actual_format;
 	unsigned long nitems;
 	unsigned long bytes_after;
 	unsigned char *propv = NULL;
-	if (XGetWindowProperty(display, window, property, 0, 0, False,
-	                       AnyPropertyType, &actual_type, &actual_format,
-	                       &nitems, &bytes_after, &propv) != Success)
+
+	if (XGetWindowProperty(display,
+	                       window,
+	                       property,
+	                       0,
+	                       0,
+	                       False,
+	                       AnyPropertyType,
+	                       &actual_type,
+	                       &actual_format,
+	                       &nitems,
+	                       &bytes_after,
+	                       &propv) != Success)
 		return False;
 	free(propv);
-	if (XGetWindowProperty(display, window, property, 0,
-	                       (bytes_after + 3) / 4, False, actual_type,
-	                       &actual_type, &actual_format,
-	                       &nitems, &bytes_after, &propv) != Success)
+	if (XGetWindowProperty(display,
+	                       window,
+	                       property,
+	                       0,
+	                       (bytes_after + 3) / 4,
+	                       False,
+	                       actual_type,
+	                       &actual_type,
+	                       &actual_format,
+	                       &nitems,
+	                       &bytes_after,
+	                       &propv) != Success)
 		return False;
 	*prop = malloc(sizeof(**prop));
 	if (!*prop)
@@ -250,44 +288,49 @@ Status XGetTextProperty(Display *display,
 	return True;
 }
 
-void XSetWMName(Display *display, Window window, XTextProperty *text)
+void
+XSetWMName(Display *display, Window window, XTextProperty *text)
 {
 	XSetTextProperty(display, window, text, XA_WM_NAME);
 }
 
-Status XGetWMName(Display *display, Window window, XTextProperty **text)
+Status
+XGetWMName(Display *display, Window window, XTextProperty **text)
 {
 	return XGetTextProperty(display, window, text, XA_WM_NAME);
 }
 
-void XSetWMIconName(Display *display, Window window, XTextProperty *text)
+void
+XSetWMIconName(Display *display, Window window, XTextProperty *text)
 {
 	XSetTextProperty(display, window, text, XA_WM_ICON_NAME);
 }
 
-Status XGetWMIconName(Display *display, Window window,
-                             XTextProperty **text)
+Status
+XGetWMIconName(Display *display, Window window, XTextProperty **text)
 {
 	return XGetTextProperty(display, window, text, XA_WM_ICON_NAME);
 }
 
-void XSetWMClientMachine(Display *display, Window window,
-                                XTextProperty *text)
+void
+XSetWMClientMachine(Display *display, Window window, XTextProperty *text)
 {
 	XSetTextProperty(display, window, text, XA_WM_CLIENT_MACHINE);
 }
 
-Status XGetWMClientMachine(Display *display,
-                           Window window,
-                           XTextProperty **text)
+Status
+XGetWMClientMachine(Display *display, Window window, XTextProperty **text)
 {
 	return XGetTextProperty(display, window, text, XA_WM_CLIENT_MACHINE);
 }
 
-void XSetCommand(Display *display, Window window, char **argv, int argc)
+void
+XSetCommand(Display *display, Window window, char **argv, int argc)
 {
 	XTextProperty *property;
-	Status status = XStringListToTextProperty(argv, argc, &property);
+	Status status;
+
+	status = XStringListToTextProperty(argv, argc, &property);
 	if (status)
 		return;
 	XSetTextProperty(display, window, property, XA_WM_COMMAND);
@@ -295,26 +338,40 @@ void XSetCommand(Display *display, Window window, char **argv, int argc)
 	free(property);
 }
 
-void XSetWMNormalHints(Display *display,
-                       Window window,
-                       XSizeHints *hints)
+void
+XSetWMNormalHints(Display *display, Window window, XSizeHints *hints)
 {
-	XChangeProperty(display, window, XA_WM_NORMAL_HINTS, XA_WM_SIZE_HINTS,
-	                32, PropModeReplace, (uint8_t*)hints, 18);
+	XChangeProperty(display,
+	                window,
+	                XA_WM_NORMAL_HINTS,
+	                XA_WM_SIZE_HINTS,
+	                32,
+	                PropModeReplace,
+	                (uint8_t*)hints,
+	                18);
 }
 
-void XSetWMHints(Display *display, Window window, XWMHints *hints)
+void
+XSetWMHints(Display *display, Window window, XWMHints *hints)
 {
-	XChangeProperty(display, window, XA_WM_HINTS, XA_WM_HINTS, 32,
-	                PropModeReplace, (uint8_t*)hints, 9);
+	XChangeProperty(display,
+	                window,
+	                XA_WM_HINTS,
+	                XA_WM_HINTS,
+	                32,
+	                PropModeReplace,
+	                (uint8_t*)hints,
+	                9);
 }
 
-void XSetClassHint(Display *display, Window window, XClassHint *hints)
+void
+XSetClassHint(Display *display, Window window, XClassHint *hints)
 {
 	char *data;
 	size_t name_len = hints->res_name ? strlen(hints->res_name) : 0;
 	size_t class_len = hints->res_class ? strlen(hints->res_class) : 0;
 	size_t len = name_len + class_len + 2;
+
 	data = malloc(len);
 	if (!data)
 		return;
@@ -326,14 +383,22 @@ void XSetClassHint(Display *display, Window window, XClassHint *hints)
 		memcpy(data + name_len + 1, hints->res_class, class_len + 1);
 	else
 		data[name_len + 1] = '\0';
-	XChangeProperty(display, window, XA_WM_CLASS, XA_STRING, 8,
-	                PropModeReplace, (uint8_t*)data, len);
+	XChangeProperty(display,
+	                window,
+	                XA_WM_CLASS,
+	                XA_STRING,
+	                8,
+	                PropModeReplace,
+	                (uint8_t*)data,
+	                len);
 	free(data);
 }
 
-void XStoreName(Display *display, Window window, char *window_name)
+void
+XStoreName(Display *display, Window window, char *window_name)
 {
 	XTextProperty prop;
+
 	prop.value = (uint8_t*)window_name;
 	prop.encoding = XA_STRING;
 	prop.format = 8;
@@ -341,27 +406,35 @@ void XStoreName(Display *display, Window window, char *window_name)
 	XSetWMName(display, window, &prop);
 }
 
-XClassHint *XAllocClassHint(void)
+XClassHint *
+XAllocClassHint(void)
 {
 	return calloc(sizeof(XClassHint), 1);
 }
 
-XWMHints *XAllocWMHints(void)
+XWMHints *
+XAllocWMHints(void)
 {
 	return calloc(sizeof(XWMHints), 1);
 }
 
-XSizeHints *XAllocSizeHints(void)
+XSizeHints *
+XAllocSizeHints(void)
 {
 	return calloc(sizeof(XSizeHints), 1);
 }
 
-Status XStringListToTextProperty(char **list, int count, XTextProperty **prop)
+Status
+XStringListToTextProperty(char **list, int count, XTextProperty **prop)
 {
-	XTextProperty *p = malloc(sizeof(*p));
+	XTextProperty *p;
+	size_t length;
+	size_t it;
+
+	p = malloc(sizeof(*p));
 	if (!p)
 		return BadAlloc;
-	size_t length = 0;
+	length = 0;
 	for (int i = 0; i < count; ++i)
 		length += strlen(list[i]) + 1;
 	p->value = malloc(length);
@@ -370,7 +443,7 @@ Status XStringListToTextProperty(char **list, int count, XTextProperty **prop)
 		free(p);
 		return BadAlloc;
 	}
-	size_t it = 0;
+	it = 0;
 	for (int i = 0; i < count; ++i)
 	{
 		size_t len = strlen(list[i]) + 1;

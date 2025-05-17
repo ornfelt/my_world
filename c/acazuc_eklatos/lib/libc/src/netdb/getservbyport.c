@@ -3,12 +3,14 @@
 #include <string.h>
 #include <netdb.h>
 
-struct servent *getservbyport(int port, const char *proto)
+struct servent *
+getservbyport(int port, const char *proto)
 {
+	struct servent *servent;
+
 	setservent(0);
 	if (!servent_fp)
 		return NULL;
-	struct servent *servent;
 	while (1)
 	{
 		servent = next_servent();

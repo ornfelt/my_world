@@ -4,7 +4,8 @@
 #include <errno.h>
 #include <stdio.h>
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	if (argc > 2)
 	{
@@ -13,7 +14,10 @@ int main(int argc, char **argv)
 	}
 	if (unlink(argv[1]) == -1)
 	{
-		fprintf(stderr, "%s: unlink: %s\n", argv[0], strerror(errno));
+		fprintf(stderr, "%s: unlink(%s): %s\n",
+		        argv[0],
+		        argv[1],
+		        strerror(errno));
 		return EXIT_FAILURE;
 	}
 	return EXIT_SUCCESS;

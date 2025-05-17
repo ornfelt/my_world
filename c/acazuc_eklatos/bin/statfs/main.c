@@ -7,7 +7,8 @@
 #include <errno.h>
 #include <stdio.h>
 
-static const char *fs_name(unsigned long magic)
+static const char *
+fs_name(unsigned long magic)
 {
 	switch (magic)
 	{
@@ -28,9 +29,11 @@ static const char *fs_name(unsigned long magic)
 	}
 }
 
-static const char *flags_str(unsigned long flags)
+static const char *
+flags_str(unsigned long flags)
 {
 	static char str[512];
+
 	str[0] = '\0';
 	if (flags & ST_RDONLY)
 		strlcat(str, "ro,", sizeof(str));
@@ -44,12 +47,16 @@ static const char *flags_str(unsigned long flags)
 	return str;
 }
 
-static int statfs_file(const char *progname, const char *file)
+static int
+statfs_file(const char *progname, const char *file)
 {
 	struct statvfs st;
+
 	if (statvfs(file, &st) == -1)
 	{
-		fprintf(stderr, "%s: statvfs: %s\n", progname, strerror(errno));
+		fprintf(stderr, "%s: statvfs: %s\n",
+		        progname,
+		        strerror(errno));
 		return 1;
 	}
 	printf(" block size: %lu\n", st.f_bsize);
@@ -68,7 +75,8 @@ static int statfs_file(const char *progname, const char *file)
 	return 0;
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	if (argc < 2)
 	{

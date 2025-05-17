@@ -46,19 +46,21 @@ struct ipc_limits
 	unsigned long msgmnb;
 };
 
-typedef void (*print_msg_t)(int msgid, struct msgid_ds *ds);
-typedef void (*print_shm_t)(int shmid, struct shmid_ds *ds);
-typedef void (*print_sem_t)(int semid, struct semid_ds *ds);
+typedef void (*print_msg_t)(int msgid, const struct msgid_ds *ds);
+typedef void (*print_shm_t)(int shmid, const struct shmid_ds *ds);
+typedef void (*print_sem_t)(int semid, const struct semid_ds *ds);
 
-static const char *time_str(time_t t)
+static const char *
+time_str(time_t t)
 {
 	static char buf[1024];
+	struct tm tm;
+
 	if (!t)
 	{
 		strlcpy(buf, "No set", sizeof(buf));
 		return buf;
 	}
-	struct tm tm;
 	if (!localtime_r(&t, &tm))
 		return NULL;
 	if (!strftime(buf, sizeof(buf), "%c", &tm))
@@ -66,10 +68,13 @@ static const char *time_str(time_t t)
 	return buf;
 }
 
-static const char *uid_str(uid_t uid)
+static const char *
+uid_str(uid_t uid)
 {
 	static char buf[128];
-	struct passwd *pw = getpwuid(uid);
+	struct passwd *pw;
+
+	pw = getpwuid(uid);
 	if (pw)
 		strlcpy(buf, pw->pw_name, sizeof(buf));
 	else
@@ -77,10 +82,13 @@ static const char *uid_str(uid_t uid)
 	return buf;
 }
 
-static const char *gid_str(gid_t gid)
+static const char *
+gid_str(gid_t gid)
 {
 	static char buf[128];
-	struct group *gr = getgrgid(gid);
+	struct group *gr;
+
+	gr = getgrgid(gid);
 	if (gr)
 		strlcpy(buf, gr->gr_name, sizeof(buf));
 	else
@@ -91,8 +99,8 @@ static const char *gid_str(gid_t gid)
 static int print_single_msg(struct env *env)
 {
 	struct msgid_ds ds;
-	int ret = msgctl(env->id, IPC_STAT, &ds);
-	if (ret == -1)
+
+	if (msgctl(env->id, IPC_STAT, &ds) == -1)
 	{
 		fprintf(stderr, "%s: msgctl: %s\n", env->progname,
 		        strerror(errno));
@@ -101,21 +109,29 @@ static int print_single_msg(struct env *env)
 	printf("Message queue msgid=%d\n", env->id);
 	printf("uid=%" PRId32 "\tgid=%" PRId32 "\t"
 	       "cuid=%" PRId32 "\tcgid=%" PRId32 "\n",
-	       ds.msg_perm.uid, ds.msg_perm.gid,
-	       ds.msg_perm.cuid, ds.msg_perm.cgid);
+	       ds.msg_perm.uid,
+	       ds.msg_perm.gid,
+	       ds.msg_perm.cuid,
+	       ds.msg_perm.cgid);
 	printf("mode=%o\tseq=%u\tkey=0x%08zx\n",
-	       ds.msg_perm.mode, ds.msg_perm.seq, ds.msg_perm.key);
+	       ds.msg_perm.mode,
+	       ds.msg_perm.seq,
+	       ds.msg_perm.key);
 	printf("cbytes: %lu\tqnum: %zu\tqbytes: %zu\n",
-	       ds.msg_cbytes, ds.msg_qnum, ds.msg_qbytes);
+	       ds.msg_cbytes,
+	       ds.msg_qnum,
+	       ds.msg_qbytes);
 	printf("lspid: %" PRId32 "\tlrpid: %" PRId32 "\n",
-	       ds.msg_lspid, ds.msg_lrpid);
+	       ds.msg_lspid,
+	       ds.msg_lrpid);
 	printf("stime: %s\n", time_str(ds.msg_stime));
 	printf("rtime: %s\n", time_str(ds.msg_rtime));
 	printf("ctime: %s\n", time_str(ds.msg_ctime));
 	return 0;
 }
 
-static void print_msg(int msgid, struct msgid_ds *ds)
+static void
+print_msg(int msgid, const struct msgid_ds *ds)
 {
 	printf("0x%08zx ", ds->msg_perm.key);
 	printf("%-10d ", msgid);
@@ -125,7 +141,8 @@ static void print_msg(int msgid, struct msgid_ds *ds)
 	printf("%zu\n", ds->msg_qnum);
 }
 
-static void print_msg_pid(int msgid, struct msgid_ds *ds)
+static void
+print_msg_pid(int msgid, const struct msgid_ds *ds)
 {
 	printf("%-10d ", msgid);
 	printf("%-10s ", uid_str(ds->msg_perm.uid));
@@ -133,7 +150,8 @@ static void print_msg_pid(int msgid, struct msgid_ds *ds)
 	printf("%" PRId32 "\n", ds->msg_lrpid);
 }
 
-static void print_msg_time(int msgid, struct msgid_ds *ds)
+static void
+print_msg_time(int msgid, const struct msgid_ds *ds)
 {
 	printf("%-10d ", msgid);
 	printf("%-10s ", uid_str(ds->msg_perm.uid));
@@ -142,7 +160,8 @@ static void print_msg_time(int msgid, struct msgid_ds *ds)
 	printf("%s\n", time_str(ds->msg_ctime));
 }
 
-static void print_msg_ugid(int msgid, struct msgid_ds *ds)
+static void
+print_msg_ugid(int msgid, const struct msgid_ds *ds)
 {
 	printf("%-10d ", msgid);
 	printf("%-10o ", ds->msg_perm.mode);
@@ -152,33 +171,40 @@ static void print_msg_ugid(int msgid, struct msgid_ds *ds)
 	printf("%s\n", gid_str(ds->msg_perm.gid));
 }
 
-static void print_msgs(struct env *env, print_msg_t print_fn)
+static void
+print_msgs(struct env *env, print_msg_t print_fn)
 {
-	FILE *fp = fopen("/sys/sysv/msglist", "r");
+	char *line = NULL;
+	size_t len = 0;
+	FILE *fp;
+
+	fp = fopen("/sys/sysv/msglist", "r");
 	if (!fp)
 	{
-		fprintf(stderr, "%s: open: %s\n", env->progname,
+		fprintf(stderr, "%s: open(%s): %s\n",
+		        env->progname,
+		        "/sys/sysv/msglist",
 		        strerror(errno));
 		return;
 	}
-	char *line = NULL;
-	size_t len = 0;
 	while (getline(&line, &len, fp) > 0)
 	{
+		struct msgid_ds ds;
 		char *endptr;
+		long msgid;
+
 		errno = 0;
-		long msgid = strtol(line, &endptr, 10);
+		msgid = strtol(line, &endptr, 10);
 		if (errno || *endptr != '\n')
 		{
 			fprintf(stderr, "%s: invalid msg line\n",
 			        env->progname);
 			break;
 		}
-		struct msgid_ds ds;
-		int ret = msgctl(msgid, IPC_STAT, &ds);
-		if (ret == -1)
+		if (msgctl(msgid, IPC_STAT, &ds) == -1)
 		{
-			fprintf(stderr, "%s: msgctl: %s\n", env->progname,
+			fprintf(stderr, "%s: msgctl: %s\n",
+			        env->progname,
 			        strerror(errno));
 			break;
 		}
@@ -190,8 +216,8 @@ static void print_msgs(struct env *env, print_msg_t print_fn)
 static int print_single_shm(struct env *env)
 {
 	struct shmid_ds ds;
-	int ret = shmctl(env->id, IPC_STAT, &ds);
-	if (ret == -1)
+
+	if (shmctl(env->id, IPC_STAT, &ds) == -1)
 	{
 		fprintf(stderr, "%s: shmctl: %s\n", env->progname,
 		        strerror(errno));
@@ -200,20 +226,26 @@ static int print_single_shm(struct env *env)
 	printf("Shared memory segment shmid=%d\n", env->id);
 	printf("uid=%" PRId32 "\tgid=%" PRId32 "\t"
 	       "cuid=%" PRId32 "\tcgid=%" PRId32 "\n",
-	       ds.shm_perm.uid, ds.shm_perm.gid,
-	       ds.shm_perm.cuid, ds.shm_perm.cgid);
+	       ds.shm_perm.uid,
+	       ds.shm_perm.gid,
+	       ds.shm_perm.cuid,
+	       ds.shm_perm.cgid);
 	printf("mode=%o\tseq=%u\tkey=0x%08zx\n",
-	       ds.shm_perm.mode, ds.shm_perm.seq, ds.shm_perm.key);
+	       ds.shm_perm.mode,
+	       ds.shm_perm.seq,
+	       ds.shm_perm.key);
 	printf("segsz: %zu\tnattch: %zu\n", ds.shm_segsz, ds.shm_nattch);
 	printf("cpid: %" PRId32 "\tlpid: %" PRId32 "\n",
-	       ds.shm_cpid, ds.shm_lpid);
+	       ds.shm_cpid,
+	       ds.shm_lpid);
 	printf("atime: %s\n", time_str(ds.shm_atime));
 	printf("dtime: %s\n", time_str(ds.shm_dtime));
 	printf("ctime: %s\n", time_str(ds.shm_ctime));
 	return 0;
 }
 
-static void print_shm(int shmid, struct shmid_ds *ds)
+static void
+print_shm(int shmid, const struct shmid_ds *ds)
 {
 	printf("0x%08zx ", ds->shm_perm.key);
 	printf("%-10d ", shmid);
@@ -223,7 +255,8 @@ static void print_shm(int shmid, struct shmid_ds *ds)
 	printf("%zu\n", ds->shm_nattch);
 }
 
-static void print_shm_pid(int shmid, struct shmid_ds *ds)
+static void
+print_shm_pid(int shmid, const struct shmid_ds *ds)
 {
 	printf("%-10u ", shmid);
 	printf("%-10s ", uid_str(ds->shm_perm.uid));
@@ -231,7 +264,8 @@ static void print_shm_pid(int shmid, struct shmid_ds *ds)
 	printf("%" PRId32 "\n", ds->shm_lpid);
 }
 
-static void print_shm_time(int shmid, struct shmid_ds *ds)
+static void
+print_shm_time(int shmid, const struct shmid_ds *ds)
 {
 	printf("%-10u ", shmid);
 	printf("%-10s ", uid_str(ds->shm_perm.uid));
@@ -240,7 +274,8 @@ static void print_shm_time(int shmid, struct shmid_ds *ds)
 	printf("%s\n", time_str(ds->shm_ctime));
 }
 
-static void print_shm_ugid(int shmid, struct shmid_ds *ds)
+static void
+print_shm_ugid(int shmid, const struct shmid_ds *ds)
 {
 	printf("%-10u ", shmid);
 	printf("%-10o ", ds->shm_perm.mode);
@@ -250,33 +285,40 @@ static void print_shm_ugid(int shmid, struct shmid_ds *ds)
 	printf("%s\n", gid_str(ds->shm_perm.gid));
 }
 
-static void print_shms(struct env *env, print_shm_t print_fn)
+static void
+print_shms(struct env *env, print_shm_t print_fn)
 {
-	FILE *fp = fopen("/sys/sysv/shmlist", "r");
+	char *line = NULL;
+	size_t len = 0;
+	FILE *fp;
+
+	fp = fopen("/sys/sysv/shmlist", "r");
 	if (!fp)
 	{
-		fprintf(stderr, "%s: open: %s\n", env->progname,
+		fprintf(stderr, "%s: open(%s): %s\n",
+		        env->progname,
+		        "/sys/sysv/shmlist",
 		        strerror(errno));
 		return;
 	}
-	char *line = NULL;
-	size_t len = 0;
 	while (getline(&line, &len, fp) > 0)
 	{
+		struct shmid_ds ds;
 		char *endptr;
+		long shmid;
+
 		errno = 0;
-		long shmid = strtol(line, &endptr, 10);
+		shmid = strtol(line, &endptr, 10);
 		if (errno || *endptr != '\n')
 		{
 			fprintf(stderr, "%s: invalid shm line\n",
 			        env->progname);
 			break;
 		}
-		struct shmid_ds ds;
-		int ret = shmctl(shmid, IPC_STAT, &ds);
-		if (ret == -1)
+		if (shmctl(shmid, IPC_STAT, &ds) == -1)
 		{
-			fprintf(stderr, "%s: shmctl: %s\n", env->progname,
+			fprintf(stderr, "%s: shmctl: %s\n",
+			        env->progname,
 			        strerror(errno));
 			break;
 		}
@@ -285,30 +327,37 @@ static void print_shms(struct env *env, print_shm_t print_fn)
 	fclose(fp);
 }
 
-static int print_single_sem(struct env *env)
+static int
+print_single_sem(struct env *env)
 {
 	struct semid_ds ds;
-	int ret = semctl(env->id, 0, IPC_STAT, &ds);
-	if (ret == -1)
+
+	if (semctl(env->id, 0, IPC_STAT, &ds) == -1)
 	{
-		fprintf(stderr, "%s: semctl: %s\n", env->progname,
+		fprintf(stderr, "%s: semctl: %s\n",
+		        env->progname,
 		        strerror(errno));
 		return 1;
 	}
 	printf("Semaphore semid=%d\n", env->id);
 	printf("uid=%" PRId32 "\tgid=%" PRId32 "\t"
 	       "cuid=%" PRId32 "\tcgid=%" PRId32 "\n",
-	       ds.sem_perm.uid, ds.sem_perm.gid,
-	       ds.sem_perm.cuid, ds.sem_perm.cgid);
+	       ds.sem_perm.uid,
+	       ds.sem_perm.gid,
+	       ds.sem_perm.cuid,
+	       ds.sem_perm.cgid);
 	printf("mode=%o\tseq=%u\tkey=0x%08zx\n",
-	       ds.sem_perm.mode, ds.sem_perm.seq, ds.sem_perm.key);
+	       ds.sem_perm.mode,
+	       ds.sem_perm.seq,
+	       ds.sem_perm.key);
 	printf("nsems: %lu\n", ds.sem_nsems);
 	printf("otime: %s\n", time_str(ds.sem_otime));
 	printf("ctime: %s\n", time_str(ds.sem_ctime));
 	return 0;
 }
 
-static void print_sem(int semid, struct semid_ds *ds)
+static void
+print_sem(int semid, const struct semid_ds *ds)
 {
 	printf("0x%08zx ", ds->sem_perm.key);
 	printf("%-10d ", semid);
@@ -317,7 +366,8 @@ static void print_sem(int semid, struct semid_ds *ds)
 	printf("%lu\n", ds->sem_nsems);
 }
 
-static void print_sem_time(int semid, struct semid_ds *ds)
+static void
+print_sem_time(int semid, const struct semid_ds *ds)
 {
 	printf("%-10d ", semid);
 	printf("%-10s ", uid_str(ds->sem_perm.uid));
@@ -325,7 +375,8 @@ static void print_sem_time(int semid, struct semid_ds *ds)
 	printf("%s\n", time_str(ds->sem_ctime));
 }
 
-static void print_sem_ugid(int semid, struct semid_ds *ds)
+static void
+print_sem_ugid(int semid, const struct semid_ds *ds)
 {
 	printf("%-10d ", semid);
 	printf("%-10o ", ds->sem_perm.mode);
@@ -335,33 +386,40 @@ static void print_sem_ugid(int semid, struct semid_ds *ds)
 	printf("%s\n", gid_str(ds->sem_perm.gid));
 }
 
-static void print_sems(struct env *env, print_sem_t print_fn)
+static void
+print_sems(struct env *env, print_sem_t print_fn)
 {
-	FILE *fp = fopen("/sys/sysv/semlist", "r");
+	char *line = NULL;
+	size_t len = 0;
+	FILE *fp;
+
+	fp = fopen("/sys/sysv/semlist", "r");
 	if (!fp)
 	{
-		fprintf(stderr, "%s: open: %s\n", env->progname,
+		fprintf(stderr, "%s: open(%s): %s\n",
+		        env->progname,
+		        "/sys/sysv/semlist",
 		        strerror(errno));
 		return;
 	}
-	char *line = NULL;
-	size_t len = 0;
 	while (getline(&line, &len, fp) > 0)
 	{
+		struct semid_ds ds;
 		char *endptr;
+		long semid;
+
 		errno = 0;
-		long semid = strtol(line, &endptr, 10);
+		semid = strtol(line, &endptr, 10);
 		if (errno || *endptr != '\n')
 		{
 			fprintf(stderr, "%s: invalid sem line\n",
 			        env->progname);
 			break;
 		}
-		struct semid_ds ds;
-		int ret = semctl(semid, 0, IPC_STAT, &ds);
-		if (ret == -1)
+		if (semctl(semid, 0, IPC_STAT, &ds) == -1)
 		{
-			fprintf(stderr, "%s: semctl: %s\n", env->progname,
+			fprintf(stderr, "%s: semctl: %s\n",
+			        env->progname,
 			        strerror(errno));
 			break;
 		}
@@ -370,18 +428,23 @@ static void print_sems(struct env *env, print_sem_t print_fn)
 	fclose(fp);
 }
 
-static int get_limits(struct env *env, struct ipc_limits *limits)
+static int
+get_limits(struct env *env, struct ipc_limits *limits)
 {
-	FILE *fp = fopen("/sys/sysv/limits", "r");
+	char *line = NULL;
+	size_t size = 0;
+	FILE *fp;
+
+	fp = fopen("/sys/sysv/limits", "r");
 	if (!fp)
 	{
-		fprintf(stderr, "%s: open: %s\n", env->progname,
+		fprintf(stderr, "%s: open(%s): %s\n",
+		        env->progname,
+		        "/sys/sysv/limits",
 		        strerror(errno));
 		return 1;
 	}
 	memset(limits, 0, sizeof(*limits));
-	char *line = NULL;
-	size_t size = 0;
 	while (getline(&line, &size, fp) > 0)
 	{
 #define TEST_LIMIT(name, entry) \
@@ -420,7 +483,8 @@ do \
 	return 0;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-m] [-q] [-s] [-a] [-i id] [-l] [-p] [-t] [-c] [-h]\n", progname);
 	printf("-m   : display shared memory\n");
@@ -435,7 +499,8 @@ static void usage(const char *progname)
 	printf("-h   : display this help\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

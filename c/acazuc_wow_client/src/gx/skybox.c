@@ -1,8 +1,8 @@
 #include "gx/skybox.h"
 #include "gx/frame.h"
 #include "gx/m2.h"
+#include "gx/gx.h"
 
-#include "graphics.h"
 #include "shaders.h"
 #include "camera.h"
 #include "memory.h"
@@ -655,7 +655,7 @@ void gx_skybox_update(struct gx_skybox *skybox, struct gx_frame *frame)
 	/* hack: avoid fog behind distance view, maybe there is a better solution */
 	if (skybox->float_values[0] > 1000 * 36)
 		skybox->float_values[0] = 1000 * 36;
-	if (!(g_wow->render_opt & RENDER_OPT_FOG))
+	if (!(g_wow->gx->opt & GX_OPT_FOG))
 	{
 		skybox->float_values[0] = 1000000000;
 		skybox->float_values[1] = 1;
@@ -791,9 +791,9 @@ void gx_skybox_render(struct gx_skybox *skybox, struct gx_frame *frame)
 	gfx_bind_samplers(g_wow->device, 0, 2, clouds);
 	gfx_set_buffer_data(&skybox->uniform_buffers[frame->id], &model_block, sizeof(model_block), 0);
 	gfx_bind_constant(g_wow->device, 1, &skybox->uniform_buffers[frame->id], sizeof(model_block), 0);
-	gfx_bind_attributes_state(g_wow->device, &skybox->attributes_state, &g_wow->graphics->skybox_input_layout);
+	gfx_bind_attributes_state(g_wow->device, &skybox->attributes_state, &g_wow->gx->skybox_input_layout);
 	gfx_draw_indexed(g_wow->device, skybox->indices_nb, 0);
-	if (skybox->skybox_m2 && skybox->skybox_m2->parent && gx_m2_flag_get(skybox->skybox_m2->parent, GX_M2_FLAG_LOADED) && (g_wow->render_opt & RENDER_OPT_M2))
+	if (skybox->skybox_m2 && skybox->skybox_m2->parent && gx_m2_flag_get(skybox->skybox_m2->parent, GX_M2_FLAG_LOADED) && (g_wow->gx->opt & GX_OPT_M2))
 	{
 		struct shader_m2_scene_block scene_block;
 		VEC4_SET(scene_block.light_direction, -1, -1, 1, 0);
@@ -802,6 +802,7 @@ void gx_skybox_render(struct gx_skybox *skybox, struct gx_frame *frame)
 		VEC3_CPY(scene_block.ambient_color, skybox->int_values[SKYBOX_INT_AMBIENT]);
 		scene_block.ambient_color.w = 1;
 		VEC2_SETV(scene_block.fog_range, INFINITY);
+		scene_block.params.x = 0;
 		gfx_set_buffer_data(&skybox->m2_uniform_buffers[frame->id], &scene_block, sizeof(scene_block), 0);
 		gfx_bind_constant(g_wow->device, 2, &skybox->m2_uniform_buffers[frame->id], sizeof(scene_block), 0);
 		VEC3_CPY(skybox->skybox_m2->pos, frame->cull_pos);

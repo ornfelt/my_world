@@ -339,17 +339,27 @@ struct pci_device
 typedef int (*pci_probe_t)(struct pci_device *device, void *userdata);
 
 int pci_find_capability(struct pci_device *device, uint8_t id, uint8_t *ptr);
-int pci_register_irq(struct pci_device *device, irq_fn_t fn, void *userdata,
+int pci_register_irq(struct pci_device *device,
+                     irq_fn_t fn,
+                     void *userdata,
                      struct irq_handle *handler);
 void pci_unregister_irq(struct pci_device *device, struct irq_handle *handle);
 int pci_map(size_t addr, size_t size, size_t offset, struct pci_map **mapp);
-int pci_map_bar(struct pci_device *device, size_t bar, size_t size,
-                size_t offset, struct pci_map **mapp);
+int pci_map_bar(struct pci_device *device,
+                size_t bar,
+                size_t size,
+                size_t offset,
+                struct pci_map **mapp);
 void pci_unmap(struct pci_device *device, struct pci_map *map);
-void pci_probe(uint16_t vendor, uint16_t device, pci_probe_t probe,
+void pci_probe(uint16_t vendor,
+               uint16_t device,
+               pci_probe_t probe,
                void *userdata);
-void pci_probe_progif(uint8_t class, uint8_t subclass, uint8_t progif,
-                      pci_probe_t probe, void *userdata);
+void pci_probe_progif(uint8_t class,
+                      uint8_t subclass,
+                      uint8_t progif,
+                      pci_probe_t probe,
+                      void *userdata);
 
 uint8_t pci_r8(struct pci_map *map, uint32_t off);
 uint16_t pci_r16(struct pci_map *map, uint32_t off);

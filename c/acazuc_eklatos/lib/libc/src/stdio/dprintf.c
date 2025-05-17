@@ -1,10 +1,13 @@
 #include <stdio.h>
 
-int dprintf(int fd, const char *fmt, ...)
+int
+dprintf(int fd, const char *fmt, ...)
 {
 	va_list va_arg;
+	int ret;
+
 	va_start(va_arg, fmt);
-	int ret = vdprintf(fd, fmt, va_arg);
+	ret = vdprintf(fd, fmt, va_arg);
 	va_end(va_arg);
 	return ret;
 }

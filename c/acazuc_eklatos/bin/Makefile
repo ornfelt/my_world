@@ -1,97 +1,96 @@
 include $(MAKEDIR)/env.mk
 
-DIRS = sh \
+DIRS = [ \
+       basename \
+       beep \
        cat \
-       init \
-       ls \
-       touch \
-       sleep \
-       colors \
-       tests \
-       env \
-       mkdir \
+       chgrp \
        chmod \
        chown \
-       date \
-       stat \
-       mkfifo \
-       readlink \
-       ln \
-       echo \
-       mknod \
-       mv \
-       cp \
-       unlink \
-       rm \
-       chgrp \
-       wc \
-       true \
-       false \
-       [ \
-       which \
-       pwd \
-       uname \
-       head \
-       sort \
-       test \
-       realpath \
-       strings \
-       mount \
-       tail \
-       truncate \
-       statfs \
-       su \
-       whoami \
        clear \
-       strace \
-       kmadd \
-       kmdel \
-       yes \
-       tests.sh \
-       ipcs \
-       beep \
+       colors \
+       cp \
+       date \
+       dhclient \
+       diff \
+       dig \
+       dirname \
+       echo \
+       egrep \
+       env \
+       false \
+       fetch \
+       fgrep \
+       getent \
+       gunzip \
+       gzip \
+       halt \
+       head \
+       hexdump \
+       hibernate \
+       ifconfig \
+       init \
        ipcmk \
        ipcrm \
-       gunzip \
-       nm \
-       ping \
-       traceroute \
-       getent \
-       dig \
-       dhclient \
+       ipcs \
+       jdb \
+       jpeg \
+       kill \
+       kmadd \
+       kmdel \
+       kmls \
+       ldd \
+       ln \
+       ls \
+       lspci \
+       mkdir \
+       mkfifo \
+       mknod \
+       mktemp \
        more \
-       ifconfig \
-       nmap \
-       nice \
-       pngview \
-       top \
-       hexdump \
-       uptime \
+       mount \
+       mv \
        named \
        nc \
-       fetch \
-       kill \
-       gzip \
-       jdb \
-       tee \
-       ldd \
-       time \
-       egrep \
-       fgrep \
-       rgrep \
-       diff \
-       mktemp \
-       kmls \
+       nice \
+       nm \
+       nmap \
+       ping \
+       pngview \
+       pwd \
+       readlink \
+       realpath \
        reboot \
-       halt \
+       rgrep \
+       rm \
+       sh \
+       sleep \
+       sort \
+       stat \
+       statfs \
+       strace \
+       strings \
+       su \
        suspend \
-       hibernate \
-       basename \
-       dirname \
-       jpeg \
+       tail \
+       tee \
+       test \
+       tests \
+       tests.sh \
+       time \
+       top \
+       touch \
        tr \
+       traceroute \
+       true \
+       uname \
+       unlink \
+       uptime \
        virgl \
-       lspci \
+       wc \
+       which \
+       whoami \
+       yes \
 
 ifneq ($(WITH_BINUTILS), yes)
 DIRS += readelf \

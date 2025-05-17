@@ -36,10 +36,11 @@ struct cmd
 	int (*cmd)(struct env *env, int argc, const char **argv);
 };
 
-static int run_cmd(struct env *env, const struct cmd *cmds,
-                   int argc, const char **argv)
+static int
+run_cmd(struct env *env, const struct cmd *cmds, int argc, const char **argv)
 {
 	const struct cmd *cmd = NULL;
+
 	if (!argc)
 		return -2;
 	for (size_t i = 0; cmds[i].name; ++i)
@@ -58,7 +59,8 @@ static int run_cmd(struct env *env, const struct cmd *cmds,
 	return cmd->cmd(env, argc, argv);
 }
 
-static int launch_child(struct env *env)
+static int
+launch_child(struct env *env)
 {
 	env->child = fork();
 	if (env->child == -1)
@@ -120,12 +122,15 @@ static int launch_child(struct env *env)
 	}
 }
 
-static int child_wait(struct env *env)
+static int
+child_wait(struct env *env)
 {
 	while (1)
 	{
 		int wstatus;
-		pid_t pid = waitpid(env->child, &wstatus, 0);
+		pid_t pid;
+
+		pid = waitpid(env->child, &wstatus, 0);
 		if (pid == -1)
 		{
 			if (errno == EINTR)
@@ -140,7 +145,9 @@ static int child_wait(struct env *env)
 		}
 		if (WIFSIGNALED(wstatus))
 		{
-			const struct dbg_signal *sig = dbg_signal_get(WTERMSIG(wstatus));
+			const struct dbg_signal *sig;
+
+			sig = dbg_signal_get(WTERMSIG(wstatus));
 			if (sig)
 				printf("[process %" PRId32 " killed by signal %s]\n",
 				       pid, sig->name);
@@ -175,7 +182,8 @@ static int child_wait(struct env *env)
 	}
 }
 
-static int cmd_run(struct env *env, int argc, const char **argv)
+static int
+cmd_run(struct env *env, int argc, const char **argv)
 {
 	(void)argc;
 	(void)argv;
@@ -189,11 +197,13 @@ static int cmd_run(struct env *env, int argc, const char **argv)
 	return child_wait(env);
 }
 
-static int cmd_info_registers(struct env *env, int argc, const char **argv)
+static int
+cmd_info_registers(struct env *env, int argc, const char **argv)
 {
+	struct user_regs_struct regs;
+
 	(void)argc;
 	(void)argv;
-	struct user_regs_struct regs;
 	if (ptrace(PTRACE_GETREGS, env->child, 0, &regs))
 	{
 		fprintf(stderr, "%s: ptrace(PTRACE_GETREGS): %s\n",
@@ -361,15 +371,19 @@ PRINT_REG(ra);
 	return 0;
 }
 
-static const struct cmd info_cmds[] =
+static const struct cmd
+info_cmds[] =
 {
 	{"registers", cmd_info_registers},
 	{NULL       , NULL},
 };
 
-static int cmd_info(struct env *env, int argc, const char **argv)
+static int
+cmd_info(struct env *env, int argc, const char **argv)
 {
-	int ret = run_cmd(env, info_cmds, argc - 1, argv + 1);
+	int ret;
+
+	ret = run_cmd(env, info_cmds, argc - 1, argv + 1);
 	switch (ret)
 	{
 		case -2:
@@ -386,7 +400,8 @@ static int cmd_info(struct env *env, int argc, const char **argv)
 	return ret;
 }
 
-static int cmd_continue(struct env *env, int argc, const char **argv)
+static int
+cmd_continue(struct env *env, int argc, const char **argv)
 {
 	(void)argc;
 	(void)argv;
@@ -405,7 +420,8 @@ static int cmd_continue(struct env *env, int argc, const char **argv)
 	return child_wait(env);
 }
 
-static int cmd_stepi(struct env *env, int argc, const char **argv)
+static int
+cmd_stepi(struct env *env, int argc, const char **argv)
 {
 	(void)argc;
 	(void)argv;
@@ -424,7 +440,8 @@ static int cmd_stepi(struct env *env, int argc, const char **argv)
 	return child_wait(env);
 }
 
-static int cmd_help(struct env *env, int argc, const char **argv)
+static int
+cmd_help(struct env *env, int argc, const char **argv)
 {
 	(void)env;
 	(void)argc;
@@ -436,7 +453,8 @@ static int cmd_help(struct env *env, int argc, const char **argv)
 	return 0;
 }
 
-static int cmd_quit(struct env *env, int argc, const char **argv)
+static int
+cmd_quit(struct env *env, int argc, const char **argv)
 {
 	(void)argc;
 	(void)argv;
@@ -445,10 +463,9 @@ static int cmd_quit(struct env *env, int argc, const char **argv)
 	exit(EXIT_SUCCESS);
 }
 
-static int cmd_disas(struct env *env, int argc, const char **argv)
+static int
+cmd_disas(struct env *env, int argc, const char **argv)
 {
-	(void)argc;
-	(void)argv;
 #if defined(__x86_64__) /* XXX */
 	char buf[4096];
 	uint8_t data[16];
@@ -456,6 +473,8 @@ static int cmd_disas(struct env *env, int argc, const char **argv)
 	uintptr_t addr;
 	uintptr_t pad;
 
+	(void)argc;
+	(void)argv;
 	if (ptrace(PTRACE_GETREGS, env->child, 0, &regs) == -1)
 	{
 		fprintf(stderr, "%s: ptrace(PTRACE_GETREGS): %s\n",
@@ -487,7 +506,8 @@ static int cmd_disas(struct env *env, int argc, const char **argv)
 	return 0;
 }
 
-static int cmd_backtrace(struct env *env, int argc, const char **argv)
+static int
+cmd_backtrace(struct env *env, int argc, const char **argv)
 {
 	struct user_regs_struct regs;
 	uintptr_t off;
@@ -558,7 +578,8 @@ static int cmd_backtrace(struct env *env, int argc, const char **argv)
 	return 0;
 }
 
-static int cmd_signal(struct env *env, int argc, const char **argv)
+static int
+cmd_signal(struct env *env, int argc, const char **argv)
 {
 	char *endptr;
 	long signum;
@@ -594,7 +615,8 @@ static int cmd_signal(struct env *env, int argc, const char **argv)
 	return child_wait(env);
 }
 
-static const struct cmd cmds[] =
+static const struct cmd
+cmds[] =
 {
 	{"run"      , cmd_run},
 	{"info"     , cmd_info},
@@ -609,7 +631,8 @@ static const struct cmd cmds[] =
 	{NULL       , NULL},
 };
 
-static int exec_line(struct env *env, const char *line)
+static int
+exec_line(struct env *env, const char *line)
 {
 	char **argv = NULL;
 	int argc = 0;
@@ -666,7 +689,8 @@ end:
 	return ret;
 }
 
-static int hist_up(void)
+static int
+hist_up(void)
 {
 	HIST_ENTRY *entry = previous_history();
 	if (!entry)
@@ -676,7 +700,8 @@ static int hist_up(void)
 	return 0;
 }
 
-static int hist_down(void)
+static int
+hist_down(void)
 {
 	HIST_ENTRY *entry = next_history();
 	if (!entry)
@@ -689,7 +714,8 @@ static int hist_down(void)
 	return 0;
 }
 
-static int run_interactive(struct env *env)
+static int
+run_interactive(struct env *env)
 {
 	using_history();
 	stifle_history(100);
@@ -718,13 +744,15 @@ static int run_interactive(struct env *env)
 	return 0;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-h] PROGRAM ARGS\n", progname);
 	printf("-h: show this help\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

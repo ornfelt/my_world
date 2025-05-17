@@ -16,6 +16,7 @@ config.status
 .libs
 libtool
 .dirstamp
+*.pc
 /draw
 /xdpyinfo
 /xlsfonts
@@ -46,3 +47,4 @@ libtool
 /xterm
 /xrender
 /xsysmon
+/glx

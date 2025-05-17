@@ -5,14 +5,16 @@
 #include <fetch.h>
 #include <errno.h>
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-h] [-o output] URL\n", progname);
 	printf("-h       : show this help\n");
 	printf("-o output: output to the given file\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	FILE *fp;
 	FILE *out = stdout;
@@ -58,7 +60,9 @@ int main(int argc, char **argv)
 	while (!feof(fp))
 	{
 		uint8_t buf[4096];
-		size_t rd = fread(buf, 1, sizeof(buf), fp);
+		size_t rd;
+
+		rd = fread(buf, 1, sizeof(buf), fp);
 		if (ferror(fp))
 		{
 			fprintf(stderr, "%s: read: %s\n", argv[0], strerror(errno));

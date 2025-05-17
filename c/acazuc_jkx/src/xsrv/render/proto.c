@@ -6,8 +6,10 @@
 #define RENDER_COMPOSITE          8
 #define RENDER_FILL_RECTANGLES    26
 
-static int req_render_query_version(struct xsrv *xsrv, struct client *client,
-                                    struct request *request)
+static int
+req_render_query_version(struct xsrv *xsrv,
+                         struct client *client,
+                         struct request *request)
 {
 	if (request->length != 3)
 		return CLIENT_BAD_LENGTH(xsrv, client, request);
@@ -23,18 +25,20 @@ static int req_render_query_version(struct xsrv *xsrv, struct client *client,
 	return 1;
 }
 
-static int req_render_query_pict_formats(struct xsrv *xsrv,
-                                         struct client *client,
-                                         struct request *request)
+static int
+req_render_query_pict_formats(struct xsrv *xsrv,
+                              struct client *client,
+                              struct request *request)
 {
 	if (request->length != 1)
 		return CLIENT_BAD_LENGTH(xsrv, client, request);
 	return 1;
 }
 
-static int req_render_create_picture(struct xsrv *xsrv,
-                                     struct client *client,
-                                     struct request *request)
+static int
+req_render_create_picture(struct xsrv *xsrv,
+                          struct client *client,
+                          struct request *request)
 {
 	if (request->length < 5)
 		return CLIENT_BAD_LENGTH(xsrv, client, request);
@@ -75,26 +79,30 @@ static int req_render_create_picture(struct xsrv *xsrv,
 	return 1;
 }
 
-static int req_render_composite(struct xsrv *xsrv,
-                                struct client *client,
-                                struct request *request)
+static int
+req_render_composite(struct xsrv *xsrv,
+                     struct client *client,
+                     struct request *request)
 {
 	if (request->length != 9)
 		return CLIENT_BAD_LENGTH(xsrv, client, request);
 	return 1;
 }
 
-static int req_render_fill_rectangles(struct xsrv *xsrv,
-                                      struct client *client,
-                                      struct request *request)
+static int
+req_render_fill_rectangles(struct xsrv *xsrv,
+                           struct client *client,
+                           struct request *request)
 {
 	if (request->length < 7)
 		return CLIENT_BAD_LENGTH(xsrv, client, request);
 	return 1;
 }
 
-int render_req(struct xsrv *xsrv, struct client *client,
-               struct request *request)
+int
+render_req(struct xsrv *xsrv,
+           struct client *client,
+           struct request *request)
 {
 	static const req_handler_t render_handlers[] =
 	{

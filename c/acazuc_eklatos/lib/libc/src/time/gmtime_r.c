@@ -4,9 +4,11 @@
 static const int g_mdays[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
 /* not perfect but close enough implementation */
-struct tm *gmtime_r(const time_t *timep, struct tm *tm)
+struct tm *
+gmtime_r(const time_t *timep, struct tm *tm)
 {
 	time_t t = *timep;
+
 	if (t < -2208988800 || t > 253402300799) /* < 1900 || > 9999 */
 	{
 		errno = EINVAL;

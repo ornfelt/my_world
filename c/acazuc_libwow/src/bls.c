@@ -6,7 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-static bool read_params(struct wow_bls_shader_param **params, uint32_t *nb, struct wow_mpq_file *mpq)
+static bool
+read_params(struct wow_bls_shader_param **params,
+            uint32_t *nb,
+            struct wow_mpq_file *mpq)
 {
 	if (wow_mpq_read(mpq, nb, sizeof(*nb)) != sizeof(*nb))
 		return false;
@@ -21,7 +24,10 @@ static bool read_params(struct wow_bls_shader_param **params, uint32_t *nb, stru
 	return true;
 }
 
-static bool read_block(struct wow_bls_file *file, struct wow_bls_block *block, struct wow_mpq_file *mpq)
+static bool
+read_block(struct wow_bls_file *file,
+           struct wow_bls_block *block,
+           struct wow_mpq_file *mpq)
 {
 	block->shaders_nb = file->header.header.permutation_count;
 	block->shaders = WOW_MALLOC(sizeof(*block->shaders) * block->shaders_nb);
@@ -55,9 +61,12 @@ static bool read_block(struct wow_bls_file *file, struct wow_bls_block *block, s
 	return true;
 }
 
-struct wow_bls_file *wow_bls_file_new(struct wow_mpq_file *mpq)
+struct wow_bls_file *
+wow_bls_file_new(struct wow_mpq_file *mpq)
 {
-	struct wow_bls_file *file = WOW_MALLOC(sizeof(*file));
+	struct wow_bls_file *file;
+
+	file = WOW_MALLOC(sizeof(*file));
 	if (!file)
 		return NULL;
 	file->blocks_nb = 0;
@@ -113,7 +122,8 @@ err:
 	return NULL;
 }
 
-void wow_bls_file_delete(struct wow_bls_file *file)
+void
+wow_bls_file_delete(struct wow_bls_file *file)
 {
 	if (!file)
 		return;

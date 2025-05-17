@@ -8,7 +8,8 @@
 #include <stdio.h>
 #include <errno.h>
 
-static const char *window_gravities[] =
+static const char *
+window_gravities[] =
 {
 	[UnmapGravity]     = "Unmap",
 	[NorthWestGravity] = "NorthWest",
@@ -23,7 +24,8 @@ static const char *window_gravities[] =
 	[StaticGravity]    = "Static",
 };
 
-static const char *initial_states[] =
+static const char *
+initial_states[] =
 {
 	[DontCareState] = "Don't Care State",
 	[NormalState]   = "Normal State",
@@ -32,24 +34,29 @@ static const char *initial_states[] =
 	[InactiveState] = "Inactive State",
 };
 
-static const char *window_states[] =
+static const char *
+window_states[] =
 {
 	[WithdrawnState] = "Withdrawn",
 	[NormalState]    = "Normal",
 	[IconicState]    = "Iconic",
 };
 
-static char *atom_name(Display *display, Atom atom)
+static char *
+atom_name(Display *display, Atom atom)
 {
-	char *name = XGetAtomName(display, atom);
+	char *name;
+	char tmp[64];
+
+	name = XGetAtomName(display, atom);
 	if (name)
 		return name;
-	char tmp[64];
 	snprintf(tmp, sizeof(tmp), "UNKNOWN (%u)", atom);
 	return strdup(tmp);
 }
 
-static void print_size_hints(XSizeHints *size_hints)
+static void
+print_size_hints(XSizeHints *size_hints)
 {
 	if (size_hints->flags & USPosition)
 		printf("\n\t\tuser specified location: %d, %d",
@@ -87,7 +94,8 @@ static void print_size_hints(XSizeHints *size_hints)
 		       window_gravities[size_hints->win_gravity]);
 }
 
-static void print_wm_hints(XWMHints *hints)
+static void
+print_wm_hints(XWMHints *hints)
 {
 	if (hints->flags & InputHint)
 		printf("\n\t\tclient accepts input or output focus: %s",
@@ -114,7 +122,8 @@ static void print_wm_hints(XWMHints *hints)
 		printf("\n\t\tThe urgency hint bit is set");
 }
 
-static void print_strings(char *strings, unsigned long nitems)
+static void
+print_strings(char *strings, unsigned long nitems)
 {
 	printf(" = \"");
 	for (unsigned j = 0; j < nitems; ++j)
@@ -135,9 +144,11 @@ static void print_strings(char *strings, unsigned long nitems)
 	printf("\"");
 }
 
-static void print_wm_icon(uint32_t *data, unsigned long nitems)
+static void
+print_wm_icon(uint32_t *data, unsigned long nitems)
 {
 	static const char chars[] = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'.";
+
 	while (nitems >= 2)
 	{
 		uint32_t width = data[0];
@@ -166,16 +177,22 @@ static void print_wm_icon(uint32_t *data, unsigned long nitems)
 	}
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
+	Display *display;
+	Window window;
+	Atom *properties;
+	char **names;
+	int nprops;
+
 	(void)argc;
-	Display *display = XOpenDisplay(NULL);
+	display = XOpenDisplay(NULL);
 	if (!display)
 	{
 		fprintf(stderr, "%s: failed to open display\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	Window window;
 	if (argc > 1)
 	{
 		window = strtol(argv[1], NULL, 10);
@@ -192,8 +209,7 @@ int main(int argc, char **argv)
 	}
 	if (!window)
 		window = DefaultRootWindow(display);
-	int nprops;
-	Atom *properties = XListProperties(display, window, &nprops);
+	properties = XListProperties(display, window, &nprops);
 	if (!properties)
 	{
 		fprintf(stderr, "%s: failed to list properties\n", argv[0]);
@@ -201,7 +217,7 @@ int main(int argc, char **argv)
 	}
 	if (!nprops)
 		return EXIT_SUCCESS;
-	char **names = malloc(sizeof(*names) * nprops);
+	names = malloc(sizeof(*names) * nprops);
 	if (!names)
 	{
 		fprintf(stderr, "%s: malloc: %s\n", argv[0], strerror(errno));
@@ -221,12 +237,31 @@ int main(int argc, char **argv)
 		unsigned long nitems;
 		unsigned long bytes_after;
 		uint8_t *prop;
-		if (XGetWindowProperty(display, window, properties[i], 0,
-		                       0, False, AnyPropertyType, &type,
-		                       &format, &nitems, &bytes_after, &prop)
-		 || XGetWindowProperty(display, window, properties[i], 0,
-		                       (bytes_after + 3) / 4, False, type, &type,
-		                       &format, &nitems, &bytes_after, &prop))
+
+		if (XGetWindowProperty(display,
+		                       window,
+		                       properties[i],
+		                       0,
+		                       0,
+		                       False,
+		                       AnyPropertyType,
+		                       &type,
+		                       &format,
+		                       &nitems,
+		                       &bytes_after,
+		                       &prop)
+		 || XGetWindowProperty(display,
+		                       window,
+		                       properties[i],
+		                       0,
+		                       (bytes_after + 3) / 4,
+		                       False,
+		                       type,
+		                       &type,
+		                       &format,
+		                       &nitems,
+		                       &bytes_after,
+		                       &prop))
 		{
 			printf("%s\n", name);
 			free(name);

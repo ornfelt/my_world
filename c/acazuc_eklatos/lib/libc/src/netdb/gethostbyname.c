@@ -7,7 +7,8 @@
 #include <resolv.h>
 #include <netdb.h>
 
-static struct hostent *resolve_dns(const char *name)
+static struct hostent *
+resolve_dns(const char *name)
 {
 	struct __res_state state;
 	uint8_t buf[4096];
@@ -29,10 +30,17 @@ static struct hostent *resolve_dns(const char *name)
 		return NULL;
 	for (int sect = 0; sect < ns_s_max; ++sect)
 	{
-		int count = ns_msg_count(msg, sect);
+		int count;
+
+		count = ns_msg_count(msg, sect);
 		for (int i = 0; i < count; ++i)
 		{
+			static char hostent_name[256];
+			static struct in_addr hostent_addr;
+			static char *hostent_addr_list[256];
+			static struct hostent hostent;
 			ns_rr rr;
+
 			if (ns_parserr(&msg, sect, i, &rr))
 				return NULL;
 			if (sect == ns_s_qd)
@@ -42,10 +50,6 @@ static struct hostent *resolve_dns(const char *name)
 			if (ns_rr_rdlen(rr) != 4)
 				continue;
 			/* XXX multiple addr */
-			static char hostent_name[256];
-			static struct in_addr hostent_addr;
-			static char *hostent_addr_list[256];
-			static struct hostent hostent;
 			hostent_addr = *(struct in_addr*)ns_rr_rdata(rr);
 			strlcpy(hostent_name, name, sizeof(hostent_name));
 			hostent.h_name = hostent_name;
@@ -61,14 +65,20 @@ static struct hostent *resolve_dns(const char *name)
 	return NULL;
 }
 
-struct hostent *gethostbyname(const char *name)
+struct hostent *
+gethostbyname(const char *name)
 {
+	static char ip_hostent_name[256];
+	static struct in_addr ip_hostent_addr;
+	static char *ip_hostent_addr_list[256];
+	static struct hostent ip_hostent;
+	struct hostent *hostent;
+
 	if (!name)
 		return NULL;
 	sethostent(0);
 	if (!hostent_fp)
 		return resolve_dns(name);
-	struct hostent *hostent;
 	while (1)
 	{
 		hostent = next_hostent();
@@ -82,10 +92,6 @@ struct hostent *gethostbyname(const char *name)
 		endhostent();
 	if (hostent)
 		return hostent;
-	static char ip_hostent_name[256];
-	static struct in_addr ip_hostent_addr;
-	static char *ip_hostent_addr_list[256];
-	static struct hostent ip_hostent;
 	if (inet_aton(name, &ip_hostent_addr) != 1)
 		return resolve_dns(name);
 	strlcpy(ip_hostent_name, name, sizeof(ip_hostent_name));

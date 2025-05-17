@@ -3,10 +3,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int fclose(FILE *fp)
+int
+fclose(FILE *fp)
 {
-	flockfile(fp);
 	int err = 0;
+
+	flockfile(fp);
 	if (fflush(fp))
 		err = EOF;
 	if (fp->io_funcs.close && fp->io_funcs.close(fp->cookie))

@@ -1,7 +1,10 @@
 #include <string.h>
 
-void *memmem(const void *haystack, size_t haystacklen,
-             const void *needle, size_t needlelen)
+void *
+memmem(const void *haystack,
+       size_t haystacklen,
+       const void *needle,
+       size_t needlelen)
 {
 	if (needlelen > haystacklen)
 		return NULL;

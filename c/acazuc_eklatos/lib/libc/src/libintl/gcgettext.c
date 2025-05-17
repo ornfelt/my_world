@@ -1,6 +1,7 @@
 #include <libintl.h>
 
-char *dcgettext(const char *domain, const char *msgid, int category)
+char *
+dcgettext(const char *domain, const char *msgid, int category)
 {
 	(void)domain;
 	(void)category;

@@ -15,7 +15,8 @@
 #include <errno.h>
 #include <ctype.h>
 
-const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
+const char *
+inet_ntop(int af, const void *src, char *dst, socklen_t size)
 {
 	switch (af)
 	{
@@ -73,7 +74,8 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
 	}
 }
 
-int inet_pton(int af, const char *src, void *dst)
+int
+inet_pton(int af, const char *src, void *dst)
 {
 	switch (af)
 	{
@@ -106,18 +108,21 @@ int inet_pton(int af, const char *src, void *dst)
 	}
 }
 
-char *inet_ntoa(struct in_addr in)
+char *
+inet_ntoa(struct in_addr in)
 {
 	static char buf[64];
 	return (char*)inet_ntop(AF_INET, &in, buf, sizeof(buf));
 }
 
-int inet_aton(const char *src, struct in_addr *dst)
+int
+inet_aton(const char *src, struct in_addr *dst)
 {
 	return inet_pton(AF_INET, src, dst);
 }
 
-char *ether_ntoa(const struct ether_addr *addr)
+char *
+ether_ntoa(const struct ether_addr *addr)
 {
 	static char buf[64];
 	snprintf(buf, sizeof(buf), "%02" PRIx8 ":%02" PRIx8 ":%02" PRIx8 ":"

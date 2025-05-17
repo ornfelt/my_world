@@ -23,7 +23,8 @@ pub fn create_table(d: &DbcDescription, o: &Objects, version: DbcVersion) -> Wri
 
     create_row(&mut s, d, o);
 
-    create_test(&mut s, d, &version.test_dir_name());
+
+    create_test(&mut s, d, version);
 
     s
 }
@@ -54,6 +55,7 @@ fn includes(s: &mut Writer, d: &DbcDescription, o: &Objects, version: DbcVersion
     insert(&mut map, "crate::header", "HEADER_SIZE");
     insert(&mut map, "crate::header", "DbcHeader");
     insert(&mut map, "crate::header", "parse_header");
+    insert(&mut map, "crate::util", "StringCache");
 
     insert(&mut map, "crate", "DbcTable");
 
@@ -67,6 +69,10 @@ fn includes(s: &mut Writer, d: &DbcDescription, o: &Objects, version: DbcVersion
 
     if d.contains_extended_localized_string() {
         insert(&mut map, "crate", "ExtendedLocalizedString");
+    }
+
+    if d.contains_localized_string() || d.contains_extended_localized_string() {
+        insert(&mut map, "crate::tys", "WritableString");
     }
 
     let include_path = version.module_name();
@@ -143,6 +149,9 @@ fn print_derives(s: &mut Writer, fields: &[Field], derive_copy: bool) {
     }
 
     s.wln_no_indent(")]");
+
+    // add optional derive for serde
+    s.wln("#[cfg_attr(feature = \"serde\", derive(serde::Serialize, serde::Deserialize))]");
 }
 
 fn can_derive_copy(fields: &[Field]) -> bool {
@@ -223,6 +232,10 @@ fn create_primary_keys(s: &mut Writer, d: &DbcDescription) {
             s.wln("#[allow(non_camel_case_types)]");
         }
         s.wln("#[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Hash, Default)]");
+
+        // add optional derive for serde
+        s.wln("#[cfg_attr(feature = \"serde\", derive(serde::Serialize, serde::Deserialize))]");
+
         s.new_struct(key.ty().rust_str(), |s| {
             s.wln(format!("pub id: {}", native_ty));
         });
@@ -255,7 +268,7 @@ fn create_primary_key_froms(s: &mut Writer, key: &Field, ty: &Type) {
     };
 
     for t in from_tys {
-        s.bodyn(format!("impl From<{t}> for {primary_key}",), |s| {
+        s.bodyn(format!("impl From<{t}> for {primary_key}"), |s| {
             s.body(format!("fn from(v: {t}) -> Self"), |s| {
                 if t == &original_ty {
                     s.wln("Self::new(v)");
@@ -277,7 +290,7 @@ fn create_primary_key_froms(s: &mut Writer, key: &Field, ty: &Type) {
     };
 
     for t in try_from_tys {
-        s.bodyn(format!("impl TryFrom<{t}> for {primary_key}",), |s| {
+        s.bodyn(format!("impl TryFrom<{t}> for {primary_key}"), |s| {
             s.wln(format!("type Error = {t};"));
             s.body(
                 format!("fn try_from(v: {t}) -> Result<Self, Self::Error>"),
@@ -295,12 +308,7 @@ fn print_field_comment(s: &mut Writer, field: &Field) {
     s.wln(format!("// {}: {}", field.name(), field.ty().str()));
 }
 
-fn create_test(s: &mut Writer, d: &DbcDescription, test_dir_name: &str) {
-    const BUILD_TESTS: bool = false;
-    if !BUILD_TESTS {
-        return;
-    }
-
+fn create_test(s: &mut Writer, d: &DbcDescription, version: DbcVersion) {
     if d.name() == "CharacterCreateCameras"
         || d.name() == "SoundCharacterMacroLines"
         || d.name() == "SpellAuraNames"
@@ -310,26 +318,47 @@ fn create_test(s: &mut Writer, d: &DbcDescription, test_dir_name: &str) {
         return;
     }
 
+    // some files are just empty in a default dbc set
+    if match version {
+        DbcVersion::Vanilla => false,
+        DbcVersion::Tbc => false,
+        DbcVersion::Wrath => {
+            d.name() == "CharVariations"
+        }
+    }
+    {
+        return;
+    }
+
     s.wln("#[cfg(test)]");
     s.open_curly("mod test");
     s.wln("use super::*;");
+    s.wln("use std::fs::File;");
+    s.wln("use std::io::Read;");
     s.newline();
 
     s.wln("#[test]");
+    s.wln("#[ignore = \"requires DBC files\"]");
     s.open_curly(format!("fn {name}()", name = d.name().to_snake_case()));
 
     let ty = d.name();
 
+    let test_dir_name = version.test_dir_name();
+
+    // need to ascent once to get to the workspace root where the DBC files are
     s.wln(format!(
-        "let contents = include_bytes!(\"../../../{test_dir_name}/{ty}.dbc\");",
+        "let mut file = File::open(\"../{test_dir_name}/{ty}.dbc\").expect(\"Failed to open DBC file\");",
     ));
+    s.wln("let mut contents = Vec::new();");
+    s.wln("file.read_to_end(&mut contents).expect(\"Failed to read DBC file\");");
+
     s.wln(format!(
         "let actual = {ty}::read(&mut contents.as_slice()).unwrap();",
     ));
     s.wln("let mut v = Vec::with_capacity(contents.len());");
     s.wln("actual.write(&mut v).unwrap();");
 
-    s.wln(format!("let new = {ty}::read(&mut v.as_slice()).unwrap();",));
+    s.wln(format!("let new = {ty}::read(&mut v.as_slice()).unwrap();"));
     s.wln("assert_eq!(actual, new);");
 
     s.closing_curly(); // fn

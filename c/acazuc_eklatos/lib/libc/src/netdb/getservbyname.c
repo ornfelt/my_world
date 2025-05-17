@@ -3,14 +3,16 @@
 #include <string.h>
 #include <netdb.h>
 
-struct servent *getservbyname(const char *name, const char *proto)
+struct servent *
+getservbyname(const char *name, const char *proto)
 {
+	struct servent *servent;
+
 	if (!name)
 		return NULL;
 	setservent(0);
 	if (!servent_fp)
 		return NULL;
-	struct servent *servent;
 	while (1)
 	{
 		servent = next_servent();

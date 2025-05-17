@@ -3,6 +3,10 @@
 
 #include <X11/Xlib.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define PictFormatID        (1 << 0)
 #define PictFormatType      (1 << 1)
 #define PictFormatDepth     (1 << 2)
@@ -291,5 +295,9 @@ void XRenderComposite(Display *display,
                       int dst_y,
                       unsigned int width,
                       unsigned int height);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

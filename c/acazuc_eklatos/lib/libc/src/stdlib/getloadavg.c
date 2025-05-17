@@ -2,7 +2,8 @@
 #include <stdio.h>
 #include <errno.h>
 
-int getloadavg(double loadavg[], int nelem)
+int
+getloadavg(double loadavg[], int nelem)
 {
 	if (nelem < 3)
 		return -1;

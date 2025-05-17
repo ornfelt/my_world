@@ -13,6 +13,7 @@ constant 1 model_block
 {
 	mat4 p
 	mat4 v
+	mat4 m
 	mat4 mv
 	mat4 mvp
 }

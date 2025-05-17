@@ -1,7 +1,8 @@
 #include <termios.h>
 #include <errno.h>
 
-int tcdrain(int fd)
+int
+tcdrain(int fd)
 {
 	(void)fd;
 	/* XXX */

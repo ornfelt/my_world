@@ -197,503 +197,1135 @@ struct wow_m2_particle_int
 	/* 0x1DC */ struct wow_m2_track_int enabled_in; /* uint8_t */
 };
 
-static void *array_read(size_t data_size, uint32_t *elem_nb, struct wow_m2_array *array, struct wow_mpq_file *mpq)
+#define READ_ARRAY_INT(name) \
+static bool \
+name##s_read(struct wow_m2_file *file, struct wow_mpq_file *mpq) \
+{ \
+	struct wow_m2_##name##_int *name##s; \
+	bool ret = false; \
+	if (!array_read((void**)&name##s, \
+	                sizeof(*name##s), \
+	                &file->name##s_nb, \
+	                &file->header.name##s, \
+	                mpq)) \
+		goto end; \
+	file->name##s = WOW_MALLOC(sizeof(*file->name##s) * file->name##s_nb); \
+	if (!file->name##s) \
+		goto end; \
+	memset(file->name##s, 0, sizeof(*file->name##s) * file->name##s_nb); \
+	for (uint32_t i = 0; i < file->name##s_nb; ++i) \
+	{ \
+		if (!name##_read(&file->name##s[i], \
+		                 &name##s[i], \
+		                 mpq)) \
+			goto end; \
+	} \
+	ret = true; \
+end: \
+	WOW_FREE(name##s); \
+	return ret; \
+}
+
+#define DUP_ARRAY_INT(name) \
+struct wow_m2_##name * \
+wow_m2_##name##s_dup(const struct wow_m2_##name *dup, uint32_t nb) \
+{ \
+	struct wow_m2_##name *name##s; \
+	if (!dup || !nb) \
+		return NULL; \
+	name##s = WOW_MALLOC(sizeof(*name##s) * nb); \
+	if (!name##s) \
+		return NULL; \
+	memset(name##s, 0, sizeof(*name##s) * nb); \
+	for (uint32_t i = 0; i < nb; ++i) \
+	{ \
+		if (!name##_dup(&name##s[i], &dup[i])) \
+		{ \
+			wow_m2_##name##s_delete(name##s, i + 1); \
+			return NULL; \
+		} \
+	} \
+	return name##s; \
+}
+
+#define FREE_ARRAY_INT(name) \
+void \
+wow_m2_##name##s_delete(struct wow_m2_##name *val, uint32_t nb) \
+{ \
+	if (!val) \
+		return; \
+	for (uint32_t i = 0; i < nb; ++i) \
+		name##_free(&val[i]); \
+	WOW_FREE(val); \
+}
+
+#define ARRAY_FUNCTIONS(name) \
+	READ_ARRAY_INT(name) \
+	DUP_ARRAY_INT(name) \
+	FREE_ARRAY_INT(name)
+
+static bool
+array_read(void **dst,
+           size_t data_size,
+           uint32_t *elem_nb,
+           struct wow_m2_array *array,
+           struct wow_mpq_file *mpq)
 {
-	void *data = WOW_MALLOC(data_size * array->count);
-	if (!data)
-		return NULL;
-	if (wow_mpq_seek(mpq, array->offset, SEEK_SET) == -1)
+	void *data;
+
+	data = WOW_MALLOC(data_size * array->count);
+	if (!data
+	 || wow_mpq_seek(mpq, array->offset, SEEK_SET) == -1
+	 || wow_mpq_read(mpq, data, data_size * array->count) != data_size * array->count)
 	{
 		WOW_FREE(data);
-		return NULL;
-	}
-	if (wow_mpq_read(mpq, data, data_size * array->count) != data_size * array->count)
-	{
-		WOW_FREE(data);
-		return NULL;
+		return false;
 	}
 	if (elem_nb)
 		*elem_nb = array->count;
-	return data;
+	*dst = data;
+	return true;
 }
 
-static bool read_track(struct wow_m2_track *track, size_t data_size, struct wow_m2_track_int *track_int, struct wow_mpq_file *mpq)
+static bool
+array_dup(void **dst_data,
+          uint32_t *dst_size,
+          const void *data,
+          uint32_t size,
+          size_t data_size)
+{
+	void *dup;
+
+	dup = WOW_MALLOC(data_size * size);
+	if (!dup)
+		return false;
+	memcpy(dup, data, data_size * size);
+	*dst_data = dup;
+	if (dst_size)
+		*dst_size = size;
+	return true;
+}
+
+static void
+array_free(void *data)
+{
+	WOW_FREE(data);
+}
+
+static bool
+track_read(struct wow_m2_track *track,
+           size_t data_size,
+           struct wow_m2_track_int *track_int,
+           struct wow_mpq_file *mpq)
 {
 	track->interpolation_type = track_int->base.interpolation_type;
 	track->global_sequence = track_int->base.global_sequence;
-	track->interpolation_ranges = array_read(sizeof(struct wow_m2_range), &track->interpolation_ranges_nb, &track_int->base.interpolation_ranges, mpq);
-	if (!track->interpolation_ranges)
-		return false;
-	track->timestamps = array_read(sizeof(uint32_t), &track->timestamps_nb, &track_int->base.timestamps, mpq);
-	if (!track->timestamps)
-		return false;
-	track->values = array_read(data_size, &track->values_nb, &track_int->values, mpq);
-	if (!track->values)
+	if (!array_read((void**)&track->interpolation_ranges,
+	                sizeof(struct wow_m2_range),
+	                &track->interpolation_ranges_nb,
+	                &track_int->base.interpolation_ranges,
+	                mpq)
+	 || !array_read((void**)&track->timestamps,
+	                sizeof(uint32_t),
+	                &track->timestamps_nb,
+	                &track_int->base.timestamps,
+	                mpq)
+	 || !array_read((void**)&track->values,
+	                data_size,
+	                &track->values_nb,
+	                &track_int->values,
+	                mpq))
 		return false;
 	return true;
 }
 
-static bool read_texture_transforms(struct wow_m2_file *file, struct wow_mpq_file *mpq)
+static bool
+track_dup(struct wow_m2_track *dst,
+          const struct wow_m2_track *src,
+          size_t data_size)
 {
-	bool ret = false;
-	struct wow_m2_texture_transform_int *texture_transforms = array_read(sizeof(*texture_transforms), &file->texture_transforms_nb, &file->header.texture_transforms, mpq);
-	if (!texture_transforms)
-		goto err;
-	file->texture_transforms = WOW_MALLOC(sizeof(*file->texture_transforms) * file->texture_transforms_nb);
-	if (!file->texture_transforms)
-		goto err;
-	memset(file->texture_transforms, 0, sizeof(*file->texture_transforms) * file->texture_transforms_nb);
-	for (uint32_t i = 0; i < file->texture_transforms_nb; ++i)
-	{
-		struct wow_m2_texture_transform *texture_transform = &file->texture_transforms[i];
-		if (!read_track(&texture_transform->translation, sizeof(struct wow_vec3f), &texture_transforms[i].translation, mpq)
-		 || !read_track(&texture_transform->rotation, sizeof(struct wow_quatf), &texture_transforms[i].rotation, mpq)
-		 || !read_track(&texture_transform->scaling, sizeof(struct wow_vec3f), &texture_transforms[i].scaling, mpq))
-			goto err;
-	}
-	ret = true;
-
-err:
-	WOW_FREE(texture_transforms);
-	return ret;
+	dst->interpolation_type = src->interpolation_type;
+	dst->global_sequence = src->global_sequence;
+	if (!array_dup((void**)&dst->interpolation_ranges,
+	               &dst->interpolation_ranges_nb,
+	               src->interpolation_ranges,
+	               src->interpolation_ranges_nb,
+	               sizeof(*dst->interpolation_ranges))
+	 || !array_dup((void**)&dst->timestamps,
+	               &dst->timestamps_nb,
+	               src->timestamps,
+	               src->timestamps_nb,
+	               sizeof(*dst->timestamps))
+	 || !array_dup((void**)&dst->values,
+	               &dst->values_nb,
+	               src->values,
+	               src->values_nb,
+	               data_size))
+		return false;
+	return true;
 }
 
-static bool read_texture_weights(struct wow_m2_file *file, struct wow_mpq_file *mpq)
+static void
+track_free(struct wow_m2_track *track)
 {
-	bool ret = false;
-	struct wow_m2_texture_weight_int *texture_weights = array_read(sizeof(*texture_weights), &file->texture_weights_nb, &file->header.texture_weights, mpq);
-	if (!texture_weights)
-		goto err;
-	file->texture_weights = WOW_MALLOC(sizeof(*file->texture_weights) * file->texture_weights_nb);
-	if (!file->texture_weights)
-		goto err;
-	memset(file->texture_weights, 0, sizeof(*file->texture_weights) * file->texture_weights_nb);
-	for (uint32_t i = 0;i  < file->texture_weights_nb; ++i)
-	{
-		struct wow_m2_texture_weight *texture_weight = &file->texture_weights[i];
-		if (!read_track(&texture_weight->weight, sizeof(int16_t), &texture_weights[i].weight, mpq))
-			goto err;
-	}
-	ret = true;
-
-err:
-	WOW_FREE(texture_weights);
-	return ret;
+	array_free(track->interpolation_ranges);
+	array_free(track->timestamps);
+	array_free(track->values);
 }
 
-static bool read_skin_profiles(struct wow_m2_file *file, struct wow_mpq_file *mpq)
+static bool
+texture_transform_read(struct wow_m2_texture_transform *texture_transform,
+                       struct wow_m2_texture_transform_int *texture_transform_int,
+                       struct wow_mpq_file *mpq)
 {
-	bool ret = false;
-	struct wow_m2_skin_profile_int *skin_profiles = array_read(sizeof(*skin_profiles), &file->skin_profiles_nb, &file->header.skin_profiles, mpq);
-	if (!skin_profiles)
-		goto err;
-	file->skin_profiles = WOW_MALLOC(sizeof(*file->skin_profiles) * file->skin_profiles_nb);
-	if (!file->skin_profiles)
-		goto err;
-	memset(file->skin_profiles, 0, sizeof(*file->skin_profiles) * file->skin_profiles_nb);
-	for (uint32_t i = 0; i < file->skin_profiles_nb; ++i)
-	{
-		struct wow_m2_skin_profile *skin_profile = &file->skin_profiles[i];
-		skin_profile->sections = array_read(sizeof(*skin_profile->sections), &skin_profile->sections_nb, &skin_profiles[i].sections, mpq);
-		if (!skin_profile->sections)
-			goto err;
-		skin_profile->batches = array_read(sizeof(*skin_profile->batches), &skin_profile->batches_nb, &skin_profiles[i].batches, mpq);
-		if (!skin_profile->batches)
-			goto err;
-		skin_profile->vertexes = array_read(sizeof(*skin_profile->vertexes), &skin_profile->vertexes_nb, &skin_profiles[i].vertexes, mpq);
-		if (!skin_profile->vertexes)
-			goto err;
-		skin_profile->indices = array_read(sizeof(*skin_profile->indices), &skin_profile->indices_nb, &skin_profiles[i].indices, mpq);
-		if (!skin_profile->indices)
-			goto err;
-		skin_profile->bones = array_read(sizeof(*skin_profile->bones), &skin_profile->bones_nb, &skin_profiles[i].bones, mpq);
-		if (!skin_profile->bones)
-			goto err;
-	}
-	ret = true;
-
-err:
-	WOW_FREE(skin_profiles);
-	return ret;
+	if (!track_read(&texture_transform->translation,
+	                sizeof(struct wow_vec3f),
+	                &texture_transform_int->translation,
+	                mpq)
+	 || !track_read(&texture_transform->rotation,
+	                sizeof(struct wow_quatf),
+	                &texture_transform_int->rotation,
+	                mpq)
+	 || !track_read(&texture_transform->scaling,
+	                sizeof(struct wow_vec3f),
+	                &texture_transform_int->scaling,
+	                mpq))
+		return false;
+	return true;
 }
 
-static bool read_attachments(struct wow_m2_file *file, struct wow_mpq_file *mpq)
+static bool
+texture_transform_dup(struct wow_m2_texture_transform *dst,
+                      const struct wow_m2_texture_transform *src)
 {
-	bool ret = false;
-	struct wow_m2_attachment_int *attachments = array_read(sizeof(*attachments), &file->attachments_nb, &file->header.attachments, mpq);
-	if (!attachments)
-		goto err;
-	file->attachments = WOW_MALLOC(sizeof(*file->attachments) * file->attachments_nb);
-	if (!file->attachments)
-		goto err;
-	memset(file->attachments, 0, sizeof(*file->attachments) * file->attachments_nb);
-	for (uint32_t i = 0; i < file->attachments_nb; ++i)
-	{
-		struct wow_m2_attachment *attachment = &file->attachments[i];
-		attachment->id = attachments[i].id;
-		attachment->bone = attachments[i].bone;
-		attachment->unknown = attachments[i].unknown;
-		attachment->position = attachments[i].position;
-		if (!read_track(&attachment->animate_attached, sizeof(uint8_t), &attachments[i].animate_attached, mpq))
-			goto err;
-	}
-	ret = true;
-
-err:
-	WOW_FREE(attachments);
-	return ret;
+	if (!track_dup(&dst->translation,
+	               &src->translation,
+	               sizeof(struct wow_vec3f))
+	 || !track_dup(&dst->rotation,
+	               &src->rotation,
+	               sizeof(struct wow_quatf))
+	 || !track_dup(&dst->scaling,
+	               &src->scaling,
+	               sizeof(struct wow_vec3f)))
+		return false;
+	return true;
 }
 
-static bool read_particles(struct wow_m2_file *file, struct wow_mpq_file *mpq)
+static void
+texture_transform_free(struct wow_m2_texture_transform *val)
 {
-	bool ret = false;
-	struct wow_m2_particle_int *particles = array_read(sizeof(*particles), &file->particles_nb, &file->header.particles, mpq);
-	if (!particles)
-		goto err;
-	file->particles = WOW_MALLOC(sizeof(*file->particles) * file->particles_nb);
-	if (!file->particles)
-		goto err;
-	memset(file->particles, 0, sizeof(*file->particles) * file->particles_nb);
-	for (uint32_t i = 0; i < file->particles_nb; ++i)
-	{
-		struct wow_m2_particle *particle = &file->particles[i];
-		particle->id = particles[i].id;
-		particle->flags = particles[i].flags;
-		particle->position = particles[i].position;
-		particle->bone = particles[i].bone;
-		particle->texture = particles[i].texture;
-		particle->geometry_model_filename = array_read(sizeof(*particle->geometry_model_filename), NULL, &particles[i].geometry_model_filename, mpq);
-		if (!particle->geometry_model_filename)
-			goto err;
-		particle->recursion_model_filename = array_read(sizeof(*particle->recursion_model_filename), NULL, &particles[i].recursion_model_filename, mpq);
-		if (!particle->recursion_model_filename)
-			goto err;
-		particle->blending_type = particles[i].blending_type;
-		particle->emitter_type = particles[i].emitter_type;
-		particle->particle_type = particles[i].particle_type;
-		particle->head_or_tail = particles[i].head_or_tail;
-		particle->texture_tile_rotation = particles[i].texture_tile_rotation;
-		particle->texture_dimensions_rows = particles[i].texture_dimensions_rows;
-		particle->texture_dimensions_columns = particles[i].texture_dimensions_columns;
-		if (!read_track(&particle->emission_speed, sizeof(float), &particles[i].emission_speed, mpq)
-		 || !read_track(&particle->speed_variation, sizeof(float), &particles[i].speed_variation, mpq)
-		 || !read_track(&particle->vertical_range, sizeof(float), &particles[i].vertical_range, mpq)
-		 || !read_track(&particle->horizontal_range, sizeof(float), &particles[i].horizontal_range, mpq)
-		 || !read_track(&particle->gravity, sizeof(float), &particles[i].gravity, mpq)
-		 || !read_track(&particle->lifespan, sizeof(float), &particles[i].lifespan, mpq)
-		 || !read_track(&particle->emission_rate, sizeof(float), &particles[i].emission_rate, mpq)
-		 || !read_track(&particle->emission_area_length, sizeof(float), &particles[i].emission_area_length, mpq)
-		 || !read_track(&particle->emission_area_width, sizeof(float), &particles[i].emission_area_width, mpq)
-		 || !read_track(&particle->z_source, sizeof(float), &particles[i].z_source, mpq))
-			goto err;
-		particle->mid_point = particles[i].mid_point;
-		memcpy(particle->color_values, particles[i].color_values, sizeof(particle->color_values));
-		memcpy(particle->scale_values, particles[i].scale_values, sizeof(particle->scale_values));
-		memcpy(particle->lifespan_uv_anim, particles[i].lifespan_uv_anim, sizeof(particle->lifespan_uv_anim));
-		memcpy(particle->decay_uv_anim, particles[i].decay_uv_anim, sizeof(particle->decay_uv_anim));
-		memcpy(particle->tail_uv_anim, particles[i].tail_uv_anim, sizeof(particle->tail_uv_anim));
-		memcpy(particle->tail_decay_uv_anim, particles[i].tail_decay_uv_anim, sizeof(particle->tail_decay_uv_anim));
-		particle->tail_length = particles[i].tail_length;
-		particle->twinkle_speed = particles[i].twinkle_speed;
-		particle->twinkle_percent = particles[i].twinkle_percent;
-		particle->twinkle_scale_min = particles[i].twinkle_scale_min;
-		particle->twinkle_scale_max = particles[i].twinkle_scale_max;
-		particle->burst_multiplier = particles[i].burst_multiplier;
-		particle->drag = particles[i].drag;
-		particle->spin = particles[i].spin;
-		particle->tumble = particles[i].tumble;
-		particle->wind_vector = particles[i].wind_vector;
-		particle->wind_time = particles[i].wind_time;
-		particle->follow_speed1 = particles[i].follow_speed1;
-		particle->follow_scale1 = particles[i].follow_scale1;
-		particle->follow_speed2 = particles[i].follow_speed2;
-		particle->follow_scale2 = particles[i].follow_scale2;
-		particle->spline_points = array_read(sizeof(*particle->spline_points), &particle->spline_points_nb, &particles[i].spline_points, mpq);
-		if (!particle->spline_points)
-			goto err;
-		if (!read_track(&particle->enabled_in, sizeof(uint8_t), &particles[i].enabled_in, mpq))
-			goto err;
-	}
-	ret = true;
-
-err:
-	WOW_FREE(particles);
-	return ret;
+	track_free(&val->translation);
+	track_free(&val->rotation);
+	track_free(&val->scaling);
 }
 
-static bool read_textures(struct wow_m2_file *file, struct wow_mpq_file *mpq)
-{
-	bool ret = false;
-	struct wow_m2_texture_int *textures = array_read(sizeof(*textures), &file->textures_nb, &file->header.textures, mpq);
-	if (!textures)
-		goto err;
-	file->textures = WOW_MALLOC(sizeof(*file->textures) * file->textures_nb);
-	if (!file->textures)
-		goto err;
-	memset(file->textures, 0, sizeof(*file->textures) * file->textures_nb);
-	for (uint32_t i = 0; i < file->textures_nb; ++i)
-	{
-		struct wow_m2_texture *texture = &file->textures[i];
-		texture->type = textures[i].type;
-		texture->flags = textures[i].flags;
-		texture->filename = array_read(sizeof(*texture->filename), NULL, &textures[i].filename, mpq);
-		if (!texture->filename)
-			goto err;
-	}
-	ret = true;
+ARRAY_FUNCTIONS(texture_transform);
 
-err:
-	WOW_FREE(textures);
-	return ret;
+static bool
+texture_weight_read(struct wow_m2_texture_weight *texture_weight,
+                    struct wow_m2_texture_weight_int *texture_weight_int,
+                    struct wow_mpq_file *mpq)
+{
+	if (!track_read(&texture_weight->weight,
+	                sizeof(int16_t),
+	                &texture_weight_int->weight,
+	                mpq))
+		return false;
+	return true;
 }
 
-static bool read_cameras(struct wow_m2_file *file, struct wow_mpq_file *mpq)
+static bool
+texture_weight_dup(struct wow_m2_texture_weight *dst,
+                   const struct wow_m2_texture_weight *src)
 {
-	bool ret = false;
-	struct wow_m2_camera_int *cameras = array_read(sizeof(*cameras), &file->cameras_nb, &file->header.cameras, mpq);
-	if (!cameras)
-		goto err;
-	file->cameras = WOW_MALLOC(sizeof(*file->cameras) * file->cameras_nb);
-	if (!file->cameras)
-		goto err;
-	memset(file->cameras, 0, sizeof(*file->cameras) * file->cameras_nb);
-	for (uint32_t i = 0; i < file->cameras_nb; ++i)
-	{
-		struct wow_m2_camera *camera = &file->cameras[i];
-		camera->type = cameras[i].type;
-		camera->fov = cameras[i].fov;
-		camera->far_clip = cameras[i].far_clip;
-		camera->near_clip = cameras[i].near_clip;
-		camera->position_base = cameras[i].position_base;
-		camera->target_position_base = cameras[i].target_position_base;
-		if (!read_track(&camera->position, sizeof(struct wow_m2_spline_vec3f), &cameras[i].position, mpq)
-		 || !read_track(&camera->target_position, sizeof(struct wow_m2_spline_vec3f), &cameras[i].target_position, mpq)
-		 || !read_track(&camera->roll, sizeof(struct wow_m2_spline_float), &cameras[i].roll, mpq))
-			goto err;
-	}
-	ret = true;
-
-err:
-	WOW_FREE(cameras);
-	return ret;
+	if (!track_dup(&dst->weight, &src->weight, sizeof(int16_t)))
+		return false;
+	return true;
 }
 
-static bool read_ribbons(struct wow_m2_file *file, struct wow_mpq_file *mpq)
+static void
+texture_weight_free(struct wow_m2_texture_weight *val)
 {
-	bool ret = false;
-	struct wow_m2_ribbon_int *ribbons = array_read(sizeof(*ribbons), &file->ribbons_nb, &file->header.ribbons, mpq);
-	if (!ribbons)
-		goto err;
-	file->ribbons = WOW_MALLOC(sizeof(*file->ribbons) * file->ribbons_nb);
-	if (!file->ribbons)
-		goto err;
-	memset(file->ribbons, 0, sizeof(*file->ribbons) * file->ribbons_nb);
-	for (uint32_t i = 0; i < file->ribbons_nb; ++i)
-	{
-		struct wow_m2_ribbon *ribbon = &file->ribbons[i];
-		ribbon->ribbon_id = ribbons[i].ribbon_id;
-		ribbon->bone_index = ribbons[i].bone_index;
-		ribbon->position = ribbons[i].position;
-		ribbon->edges_per_second = ribbons[i].edges_per_second;
-		ribbon->edge_lifetime = ribbons[i].edge_lifetime;
-		ribbon->gravity = ribbons[i].gravity;
-		ribbon->texture_rows = ribbons[i].texture_rows;
-		ribbon->texture_cols = ribbons[i].texture_cols;
-		ribbon->texture_indices = array_read(sizeof(uint16_t), &ribbon->texture_indices_nb, &ribbons[i].texture_indices, mpq);
-		ribbon->material_indices = array_read(sizeof(uint16_t), &ribbon->material_indices_nb, &ribbons[i].material_indices, mpq);
-		if (!ribbon->texture_indices
-		 || !ribbon->material_indices
-		 || !read_track(&ribbon->color, sizeof(struct wow_vec3f), &ribbons[i].color, mpq)
-		 || !read_track(&ribbon->alpha, sizeof(int16_t), &ribbons[i].alpha, mpq)
-		 || !read_track(&ribbon->height_above, sizeof(float), &ribbons[i].height_above, mpq)
-		 || !read_track(&ribbon->height_below, sizeof(float), &ribbons[i].height_below, mpq)
-		 || !read_track(&ribbon->tex_slot, sizeof(uint16_t), &ribbons[i].tex_slot, mpq)
-		 || !read_track(&ribbon->visibility, sizeof(uint8_t), &ribbons[i].visibility, mpq))
-			goto err;
-	}
-	ret = true;
-
-err:
-	WOW_FREE(ribbons);
-	return ret;
+	track_free(&val->weight);
 }
 
-static bool read_colors(struct wow_m2_file *file, struct wow_mpq_file *mpq)
-{
-	bool ret = false;
-	struct wow_m2_color_int *colors = array_read(sizeof(*colors), &file->colors_nb, &file->header.colors, mpq);
-	if (!colors)
-		goto err;
-	file->colors = WOW_MALLOC(sizeof(*file->colors) * file->colors_nb);
-	if (!file->colors)
-		goto err;
-	memset(file->colors, 0, sizeof(*file->colors) * file->colors_nb);
-	for (uint32_t i = 0; i < file->colors_nb; ++i)
-	{
-		struct wow_m2_color *color = &file->colors[i];
-		if (!read_track(&color->color, sizeof(struct wow_vec3f), &colors[i].color, mpq)
-		 || !read_track(&color->alpha, sizeof(int16_t), &colors[i].alpha, mpq))
-			goto err;
-	}
-	ret = true;
+ARRAY_FUNCTIONS(texture_weight);
 
-err:
-	WOW_FREE(colors);
-	return ret;
+static bool
+skin_profile_read(struct wow_m2_skin_profile *skin_profile,
+                  struct wow_m2_skin_profile_int *skin_profile_int,
+                  struct wow_mpq_file *mpq)
+{
+	if (!array_read((void**)&skin_profile->sections,
+	                sizeof(*skin_profile->sections),
+	                &skin_profile->sections_nb,
+	                &skin_profile_int->sections,
+	                mpq)
+	 || !array_read((void**)&skin_profile->batches,
+	                sizeof(*skin_profile->batches),
+	                &skin_profile->batches_nb,
+	                &skin_profile_int->batches,
+	                mpq)
+	 || !array_read((void**)&skin_profile->vertexes,
+	                sizeof(*skin_profile->vertexes),
+	                &skin_profile->vertexes_nb,
+	                &skin_profile_int->vertexes,
+	                mpq)
+	 || !array_read((void**)&skin_profile->indices,
+	                sizeof(*skin_profile->indices),
+	                &skin_profile->indices_nb,
+	                &skin_profile_int->indices,
+	                mpq)
+	 || !array_read((void**)&skin_profile->bones,
+	                sizeof(*skin_profile->bones),
+	                &skin_profile->bones_nb,
+	                &skin_profile_int->bones,
+	                mpq))
+		return false;
+	return true;
 }
 
-static bool read_lights(struct wow_m2_file *file, struct wow_mpq_file *mpq)
+static bool
+skin_profile_dup(struct wow_m2_skin_profile *dst,
+                 const struct wow_m2_skin_profile *src)
 {
-	bool ret = false;
-	struct wow_m2_light_int *lights = array_read(sizeof(*lights), &file->lights_nb, &file->header.lights, mpq);
-	if (!lights)
-		goto err;
-	file->lights = WOW_MALLOC(sizeof(*file->lights) * file->lights_nb);
-	if (!file->lights)
-		goto err;
-	memset(file->lights, 0, sizeof(*file->lights) * file->lights_nb);
-	for (uint32_t i = 0; i < file->lights_nb; ++i)
-	{
-		struct wow_m2_light *light = &file->lights[i];
-		light->type = lights[i].type;
-		light->bone = lights[i].bone;
-		light->position = lights[i].position;
-		if (!read_track(&light->ambient_color, sizeof(struct wow_vec3f), &lights[i].ambient_color, mpq)
-		 || !read_track(&light->ambient_intensity, sizeof(float), &lights[i].ambient_intensity, mpq)
-		 || !read_track(&light->diffuse_color, sizeof(struct wow_vec3f), &lights[i].diffuse_color, mpq)
-		 || !read_track(&light->diffuse_intensity, sizeof(float), &lights[i].diffuse_intensity, mpq)
-		 || !read_track(&light->attenuation_start, sizeof(float), &lights[i].attenuation_start, mpq)
-		 || !read_track(&light->attenuation_end, sizeof(float), &lights[i].attenuation_end, mpq)
-		 || !read_track(&light->visibility, sizeof(uint8_t), &lights[i].visibility, mpq))
-			goto err;
-	}
-	ret = true;
-
-err:
-	WOW_FREE(lights);
-	return ret;
+	if (!array_dup((void**)&dst->sections,
+	               &dst->sections_nb,
+	               src->sections,
+	               src->sections_nb,
+	               sizeof(*dst->sections))
+	 || !array_dup((void**)&dst->batches,
+	               &dst->batches_nb,
+	               src->batches,
+	               src->batches_nb,
+	               sizeof(*dst->batches))
+	 || !array_dup((void**)&dst->vertexes,
+	               &dst->vertexes_nb,
+	               src->vertexes,
+	               src->vertexes_nb,
+	               sizeof(*dst->vertexes))
+	 || !array_dup((void**)&dst->indices,
+	               &dst->indices_nb,
+	               src->indices,
+	               src->indices_nb,
+	               sizeof(*dst->indices))
+	 || !array_dup((void**)&dst->bones,
+	               &dst->bones_nb,
+	               src->bones,
+	               src->bones_nb,
+	               sizeof(*dst->bones)))
+		return false;
+	return true;
 }
 
-static bool read_bones(struct wow_m2_file *file, struct wow_mpq_file *mpq)
+static void
+skin_profile_free(struct wow_m2_skin_profile *val)
 {
-	bool ret = false;
-	struct wow_m2_bone_int *bones = array_read(sizeof(*bones), &file->bones_nb, &file->header.bones, mpq);
-	if (!bones)
-		goto err;
-	file->bones = WOW_MALLOC(sizeof(*file->bones) * file->bones_nb);
-	if (!file->bones)
-		goto err;
-	memset(file->bones, 0, sizeof(*file->bones) * file->bones_nb);
-	for (uint32_t i = 0; i < file->bones_nb; ++i)
-	{
-		struct wow_m2_bone *bone = &file->bones[i];
-		bone->key_bone_id = bones[i].key_bone_id;
-		bone->flags = bones[i].flags;
-		bone->parent_bone = bones[i].parent_bone;
-		bone->submesh_id = bones[i].submesh_id;
-		bone->bone_name_crc = bones[i].bone_name_crc;
-		bone->pivot = bones[i].pivot;
-		if (!read_track(&bone->translation, sizeof(struct wow_vec3f), &bones[i].translation, mpq)
-		 || !read_track(&bone->rotation, sizeof(struct wow_quats), &bones[i].rotation, mpq)
-		 || !read_track(&bone->scale, sizeof(struct wow_vec3f), &bones[i].scale, mpq))
-			goto err;
-	}
-	ret = true;
-
-err:
-	WOW_FREE(bones);
-	return ret;
+	array_free(val->sections);
+	array_free(val->batches);
+	array_free(val->vertexes);
+	array_free(val->indices);
+	array_free(val->bones);
 }
 
-struct wow_m2_file *wow_m2_file_new(struct wow_mpq_file *mpq)
+ARRAY_FUNCTIONS(skin_profile);
+
+static bool
+attachment_read(struct wow_m2_attachment *attachment,
+                struct wow_m2_attachment_int *attachment_int,
+                struct wow_mpq_file *mpq)
 {
-	struct wow_m2_file *file = WOW_MALLOC(sizeof(*file));
+	attachment->id = attachment_int->id;
+	attachment->bone = attachment_int->bone;
+	attachment->unknown = attachment_int->unknown;
+	attachment->position = attachment_int->position;
+	if (!track_read(&attachment->animate_attached,
+	                sizeof(uint8_t),
+	                &attachment_int->animate_attached,
+	                mpq))
+		return false;
+	return true;
+}
+
+static bool
+attachment_dup(struct wow_m2_attachment *dst,
+               const struct wow_m2_attachment *src)
+{
+	dst->id = src->id;
+	dst->bone = src->bone;
+	dst->unknown = src->unknown;
+	dst->position = src->position;
+	if (!track_dup(&dst->animate_attached,
+	               &src->animate_attached,
+	               sizeof(uint8_t)))
+		return false;
+	return true;
+}
+
+static void
+attachment_free(struct wow_m2_attachment *val)
+{
+	track_free(&val->animate_attached);
+}
+
+ARRAY_FUNCTIONS(attachment);
+
+static bool
+particle_read(struct wow_m2_particle *particle,
+              struct wow_m2_particle_int *particle_int,
+              struct wow_mpq_file *mpq)
+{
+	particle->id = particle_int->id;
+	particle->flags = particle_int->flags;
+	particle->position = particle_int->position;
+	particle->bone = particle_int->bone;
+	particle->texture = particle_int->texture;
+	particle->blending_type = particle_int->blending_type;
+	particle->emitter_type = particle_int->emitter_type;
+	particle->particle_type = particle_int->particle_type;
+	particle->head_or_tail = particle_int->head_or_tail;
+	particle->texture_tile_rotation = particle_int->texture_tile_rotation;
+	particle->texture_dimensions_rows = particle_int->texture_dimensions_rows;
+	particle->texture_dimensions_columns = particle_int->texture_dimensions_columns;
+	particle->mid_point = particle_int->mid_point;
+	memcpy(particle->color_values,
+	       particle_int->color_values,
+	       sizeof(particle->color_values));
+	memcpy(particle->scale_values,
+	       particle_int->scale_values,
+	       sizeof(particle->scale_values));
+	memcpy(particle->lifespan_uv_anim,
+	       particle_int->lifespan_uv_anim,
+	       sizeof(particle->lifespan_uv_anim));
+	memcpy(particle->decay_uv_anim,
+	       particle_int->decay_uv_anim,
+	       sizeof(particle->decay_uv_anim));
+	memcpy(particle->tail_uv_anim,
+	       particle_int->tail_uv_anim,
+	       sizeof(particle->tail_uv_anim));
+	memcpy(particle->tail_decay_uv_anim,
+	       particle_int->tail_decay_uv_anim,
+	       sizeof(particle->tail_decay_uv_anim));
+	particle->tail_length = particle_int->tail_length;
+	particle->twinkle_speed = particle_int->twinkle_speed;
+	particle->twinkle_percent = particle_int->twinkle_percent;
+	particle->twinkle_scale_min = particle_int->twinkle_scale_min;
+	particle->twinkle_scale_max = particle_int->twinkle_scale_max;
+	particle->burst_multiplier = particle_int->burst_multiplier;
+	particle->drag = particle_int->drag;
+	particle->spin = particle_int->spin;
+	particle->tumble = particle_int->tumble;
+	particle->wind_vector = particle_int->wind_vector;
+	particle->wind_time = particle_int->wind_time;
+	particle->follow_speed1 = particle_int->follow_speed1;
+	particle->follow_scale1 = particle_int->follow_scale1;
+	particle->follow_speed2 = particle_int->follow_speed2;
+	particle->follow_scale2 = particle_int->follow_scale2;
+	if (!array_read((void**)&particle->geometry_model_filename,
+	                sizeof(*particle->geometry_model_filename),
+	                NULL,
+	                &particle_int->geometry_model_filename,
+	                mpq)
+	 || !array_read((void**)&particle->recursion_model_filename,
+	                sizeof(*particle->recursion_model_filename),
+	                NULL,
+	                &particle_int->recursion_model_filename,
+	                mpq)
+	 || !track_read(&particle->emission_speed,
+	                sizeof(float),
+	                &particle_int->emission_speed,
+	                mpq)
+	 || !track_read(&particle->speed_variation,
+	                sizeof(float),
+	                &particle_int->speed_variation,
+	                mpq)
+	 || !track_read(&particle->vertical_range,
+	                sizeof(float),
+	                &particle_int->vertical_range,
+	                mpq)
+	 || !track_read(&particle->horizontal_range,
+	                sizeof(float),
+	                &particle_int->horizontal_range,
+	                mpq)
+	 || !track_read(&particle->gravity,
+	                sizeof(float),
+	                &particle_int->gravity,
+	                mpq)
+	 || !track_read(&particle->lifespan,
+	                sizeof(float),
+	                &particle_int->lifespan,
+	                mpq)
+	 || !track_read(&particle->emission_rate,
+	                sizeof(float),
+	                &particle_int->emission_rate,
+	                mpq)
+	 || !track_read(&particle->emission_area_length,
+	                sizeof(float),
+	                &particle_int->emission_area_length,
+	                mpq)
+	 || !track_read(&particle->emission_area_width,
+	                sizeof(float),
+	                &particle_int->emission_area_width,
+	                mpq)
+	 || !track_read(&particle->z_source,
+	                sizeof(float),
+	                &particle_int->z_source,
+	                mpq)
+	 || !array_read((void**)&particle->spline_points,
+	                sizeof(*particle->spline_points),
+	                &particle->spline_points_nb,
+	                &particle_int->spline_points,
+	                mpq)
+	 || !track_read(&particle->enabled_in,
+	                sizeof(uint8_t),
+	                &particle_int->enabled_in,
+	                mpq))
+		return false;
+	return true;
+}
+
+static bool
+particle_dup(struct wow_m2_particle *dst,
+             const struct wow_m2_particle *src)
+{
+	dst->id = src->id;
+	dst->flags = src->flags;
+	dst->position = src->position;
+	dst->bone = src->bone;
+	dst->texture = src->texture;
+	dst->blending_type = src->blending_type;
+	dst->emitter_type = src->emitter_type;
+	dst->particle_type = src->particle_type;
+	dst->head_or_tail = src->head_or_tail;
+	dst->texture_tile_rotation = src->texture_tile_rotation;
+	dst->texture_dimensions_rows = src->texture_dimensions_rows;
+	dst->texture_dimensions_columns = src->texture_dimensions_columns;
+	dst->mid_point = src->mid_point;
+	memcpy(dst->color_values,
+	       src->color_values,
+	       sizeof(src->color_values));
+	memcpy(dst->scale_values,
+	       src->scale_values,
+	       sizeof(src->scale_values));
+	memcpy(dst->lifespan_uv_anim,
+	       src->lifespan_uv_anim,
+	       sizeof(src->lifespan_uv_anim));
+	memcpy(dst->decay_uv_anim,
+	       src->decay_uv_anim,
+	       sizeof(src->decay_uv_anim));
+	memcpy(dst->tail_uv_anim,
+	       src->tail_uv_anim,
+	       sizeof(src->tail_uv_anim));
+	memcpy(dst->tail_decay_uv_anim,
+	       src->tail_decay_uv_anim,
+	       sizeof(src->tail_decay_uv_anim));
+	dst->tail_length = src->tail_length;
+	dst->twinkle_speed = src->twinkle_speed;
+	dst->twinkle_percent = src->twinkle_percent;
+	dst->twinkle_scale_min = src->twinkle_scale_min;
+	dst->twinkle_scale_max = src->twinkle_scale_max;
+	dst->burst_multiplier = src->burst_multiplier;
+	dst->drag = src->drag;
+	dst->spin = src->spin;
+	dst->tumble = src->tumble;
+	dst->wind_vector = src->wind_vector;
+	dst->wind_time = src->wind_time;
+	dst->follow_speed1 = src->follow_speed1;
+	dst->follow_scale1 = src->follow_scale1;
+	dst->follow_speed2 = src->follow_speed2;
+	dst->follow_scale2 = src->follow_scale2;
+	dst->spline_points_nb = src->spline_points_nb;
+	if (!array_dup((void**)&dst->geometry_model_filename,
+	               NULL,
+	               src->geometry_model_filename,
+	               strlen(src->geometry_model_filename) + 1,
+	               sizeof(char))
+	 || !array_dup((void**)&dst->recursion_model_filename,
+	               NULL,
+	               src->recursion_model_filename,
+	               strlen(src->recursion_model_filename) + 1,
+	               sizeof(char))
+	 || !track_dup(&dst->emission_speed,
+	               &src->emission_speed,
+	               sizeof(float))
+	 || !track_dup(&dst->speed_variation,
+	               &src->speed_variation,
+	               sizeof(float))
+	 || !track_dup(&dst->vertical_range,
+	               &src->vertical_range,
+	               sizeof(float))
+	 || !track_dup(&dst->horizontal_range,
+	               &src->horizontal_range,
+	               sizeof(float))
+	 || !track_dup(&dst->gravity,
+	               &src->gravity,
+	               sizeof(float))
+	 || !track_dup(&dst->lifespan,
+	               &src->lifespan,
+	               sizeof(float))
+	 || !track_dup(&dst->emission_rate,
+	               &src->emission_rate,
+	               sizeof(float))
+	 || !track_dup(&dst->emission_area_length,
+	               &src->emission_area_length,
+	               sizeof(float))
+	 || !track_dup(&dst->emission_area_width,
+	               &src->emission_area_width,
+	               sizeof(float))
+	 || !track_dup(&dst->z_source,
+	               &src->z_source,
+	               sizeof(float))
+	 || !array_dup((void**)&dst->spline_points,
+	               &dst->spline_points_nb,
+	               src->spline_points,
+	               src->spline_points_nb,
+	               sizeof(*dst->spline_points))
+	 || !track_dup(&dst->enabled_in,
+	               &src->enabled_in,
+	               sizeof(uint8_t)))
+		return false;
+	return true;
+}
+
+static void
+particle_free(struct wow_m2_particle *val)
+{
+	array_free(val->geometry_model_filename);
+	array_free(val->recursion_model_filename);
+	track_free(&val->emission_speed);
+	track_free(&val->speed_variation);
+	track_free(&val->vertical_range);
+	track_free(&val->horizontal_range);
+	track_free(&val->gravity);
+	track_free(&val->lifespan);
+	track_free(&val->emission_rate);
+	track_free(&val->emission_area_length);
+	track_free(&val->emission_area_width);
+	track_free(&val->z_source);
+	array_free(val->spline_points);
+	track_free(&val->enabled_in);
+}
+
+ARRAY_FUNCTIONS(particle);
+
+static bool
+texture_read(struct wow_m2_texture *texture,
+             struct wow_m2_texture_int *texture_int,
+             struct wow_mpq_file *mpq)
+{
+	texture->type = texture_int->type;
+	texture->flags = texture_int->flags;
+	if (!array_read((void**)&texture->filename,
+	                sizeof(*texture->filename),
+	                NULL,
+	                &texture_int->filename,
+	                mpq))
+		return false;
+	return true;
+}
+
+static bool
+texture_dup(struct wow_m2_texture *dst,
+            const struct wow_m2_texture *src)
+{
+	dst->type = src->type;
+	dst->flags = src->flags;
+	if (src->filename)
+	{
+		if (!array_dup((void**)&dst->filename,
+		               NULL,
+		               src->filename,
+		               strlen(src->filename) + 1,
+		               sizeof(char)))
+			return false;
+	}
+	return true;
+}
+
+static void
+texture_free(struct wow_m2_texture *val)
+{
+	array_free(val->filename);
+}
+
+ARRAY_FUNCTIONS(texture);
+
+static bool
+camera_read(struct wow_m2_camera *camera,
+            struct wow_m2_camera_int *camera_int,
+            struct wow_mpq_file *mpq)
+{
+	camera->type = camera_int->type;
+	camera->fov = camera_int->fov;
+	camera->far_clip = camera_int->far_clip;
+	camera->near_clip = camera_int->near_clip;
+	camera->position_base = camera_int->position_base;
+	camera->target_position_base = camera_int->target_position_base;
+	if (!track_read(&camera->position,
+	                sizeof(struct wow_m2_spline_vec3f),
+	                &camera_int->position,
+	                mpq)
+	 || !track_read(&camera->target_position,
+	                sizeof(struct wow_m2_spline_vec3f),
+	                &camera_int->target_position,
+	                mpq)
+	 || !track_read(&camera->roll,
+	                sizeof(struct wow_m2_spline_float),
+	                &camera_int->roll,
+	                mpq))
+		return false;
+	return true;
+}
+
+static bool
+camera_dup(struct wow_m2_camera *dst,
+           const struct wow_m2_camera *src)
+{
+	dst->type = src->type;
+	dst->fov = src->fov;
+	dst->far_clip = src->far_clip;
+	dst->near_clip = src->near_clip;
+	dst->position_base = src->position_base;
+	dst->target_position_base = src->target_position_base;
+	if (!track_dup(&dst->position,
+	               &src->position,
+	               sizeof(struct wow_m2_spline_vec3f))
+	 || !track_dup(&dst->target_position,
+	               &src->target_position,
+	               sizeof(struct wow_m2_spline_vec3f))
+	 || !track_dup(&dst->roll,
+	               &src->roll,
+	               sizeof(struct wow_m2_spline_float)))
+		return false;
+	return true;
+}
+
+static void
+camera_free(struct wow_m2_camera *val)
+{
+	track_free(&val->position);
+	track_free(&val->target_position);
+	track_free(&val->roll);
+}
+
+ARRAY_FUNCTIONS(camera);
+
+static bool
+ribbon_read(struct wow_m2_ribbon *ribbon,
+            struct wow_m2_ribbon_int *ribbon_int,
+            struct wow_mpq_file *mpq)
+{
+	ribbon->ribbon_id = ribbon_int->ribbon_id;
+	ribbon->bone_index = ribbon_int->bone_index;
+	ribbon->position = ribbon_int->position;
+	ribbon->edges_per_second = ribbon_int->edges_per_second;
+	ribbon->edge_lifetime = ribbon_int->edge_lifetime;
+	ribbon->gravity = ribbon_int->gravity;
+	ribbon->texture_rows = ribbon_int->texture_rows;
+	ribbon->texture_cols = ribbon_int->texture_cols;
+	if (!array_read((void**)&ribbon->texture_indices,
+	                sizeof(uint16_t),
+	                &ribbon->texture_indices_nb,
+	                &ribbon_int->texture_indices,
+	                mpq)
+	 || !array_read((void**)&ribbon->material_indices,
+	                sizeof(uint16_t),
+	                &ribbon->material_indices_nb,
+	                &ribbon_int->material_indices,
+	                mpq)
+	 || !track_read(&ribbon->color,
+	                sizeof(struct wow_vec3f),
+	                &ribbon_int->color,
+	                mpq)
+	 || !track_read(&ribbon->alpha,
+	                sizeof(int16_t),
+	                &ribbon_int->alpha, mpq)
+	 || !track_read(&ribbon->height_above,
+	                sizeof(float),
+	                &ribbon_int->height_above,
+	                mpq)
+	 || !track_read(&ribbon->height_below,
+	                sizeof(float),
+	                &ribbon_int->height_below,
+	                mpq)
+	 || !track_read(&ribbon->tex_slot,
+	                sizeof(uint16_t),
+	                &ribbon_int->tex_slot,
+	                mpq)
+	 || !track_read(&ribbon->visibility,
+	                sizeof(uint8_t),
+	                &ribbon_int->visibility,
+	                mpq))
+		return false;
+	return true;
+}
+
+static bool
+ribbon_dup(struct wow_m2_ribbon *dst,
+           const struct wow_m2_ribbon *src)
+{
+	dst->ribbon_id = src->ribbon_id;
+	dst->bone_index = src->bone_index;
+	dst->position = src->position;
+	dst->edges_per_second = src->edges_per_second;
+	dst->edge_lifetime = src->edge_lifetime;
+	dst->gravity = src->gravity;
+	dst->texture_rows = src->texture_rows;
+	dst->texture_cols = src->texture_cols;
+	if (!array_dup((void**)&dst->texture_indices,
+	               &dst->texture_indices_nb,
+	               src->texture_indices,
+	               src->texture_indices_nb,
+	               sizeof(*dst->texture_indices))
+	 || !array_dup((void**)&dst->material_indices,
+	               &dst->material_indices_nb,
+	               src->material_indices,
+	               src->material_indices_nb,
+	               sizeof(*dst->material_indices))
+	 || !track_dup(&dst->color,
+	               &src->color,
+	               sizeof(struct wow_vec3f))
+	 || !track_dup(&dst->alpha,
+	               &src->alpha,
+	               sizeof(int16_t))
+	 || !track_dup(&dst->height_above,
+	               &src->height_above,
+	               sizeof(float))
+	 || !track_dup(&dst->height_below,
+	               &src->height_below,
+	               sizeof(float))
+	 || !track_dup(&dst->tex_slot,
+	               &src->tex_slot,
+	               sizeof(uint16_t))
+	 || !track_dup(&dst->visibility,
+	               &src->visibility,
+	               sizeof(uint8_t)))
+		return false;
+	return true;
+}
+
+static void
+ribbon_free(struct wow_m2_ribbon *val)
+{
+	array_free(val->texture_indices);
+	array_free(val->material_indices);
+	track_free(&val->color);
+	track_free(&val->alpha);
+	track_free(&val->height_above);
+	track_free(&val->height_below);
+	track_free(&val->tex_slot);
+	track_free(&val->visibility);
+}
+
+ARRAY_FUNCTIONS(ribbon);
+
+static bool
+color_read(struct wow_m2_color *color,
+           struct wow_m2_color_int *color_int,
+           struct wow_mpq_file *mpq)
+{
+	if (!track_read(&color->color,
+	                sizeof(struct wow_vec3f),
+	                &color_int->color,
+	                mpq)
+	 || !track_read(&color->alpha,
+	                sizeof(int16_t),
+	                &color_int->alpha,
+	                mpq))
+		return false;
+	return true;
+}
+
+static bool
+color_dup(struct wow_m2_color *dst,
+          const struct wow_m2_color *src)
+{
+	if (!track_dup(&dst->color,
+	               &src->color,
+	               sizeof(struct wow_vec3f))
+	 || !track_dup(&dst->alpha,
+	               &src->alpha,
+	               sizeof(int16_t)))
+		return false;
+	return true;
+}
+
+static void
+color_free(struct wow_m2_color *val)
+{
+	track_free(&val->color);
+	track_free(&val->alpha);
+}
+
+ARRAY_FUNCTIONS(color);
+
+static bool
+light_read(struct wow_m2_light *light,
+           struct wow_m2_light_int *light_int,
+           struct wow_mpq_file *mpq)
+{
+	light->type = light_int->type;
+	light->bone = light_int->bone;
+	light->position = light_int->position;
+	if (!track_read(&light->ambient_color,
+	                sizeof(struct wow_vec3f),
+	                &light_int->ambient_color,
+	                mpq)
+	 || !track_read(&light->ambient_intensity,
+	                sizeof(float),
+	                &light_int->ambient_intensity,
+	                mpq)
+	 || !track_read(&light->diffuse_color,
+	                sizeof(struct wow_vec3f),
+	                &light_int->diffuse_color,
+	                mpq)
+	 || !track_read(&light->diffuse_intensity,
+	                sizeof(float),
+	                &light_int->diffuse_intensity,
+	                mpq)
+	 || !track_read(&light->attenuation_start,
+	                sizeof(float),
+	                &light_int->attenuation_start,
+	                mpq)
+	 || !track_read(&light->attenuation_end,
+	                sizeof(float),
+	                &light_int->attenuation_end,
+	                mpq)
+	 || !track_read(&light->visibility,
+	                sizeof(uint8_t),
+	                &light_int->visibility,
+	                mpq))
+		return false;
+	return true;
+}
+
+static bool
+light_dup(struct wow_m2_light *dst,
+          const struct wow_m2_light *src)
+{
+	dst->type = src->type;
+	dst->bone = src->bone;
+	dst->position = src->position;
+	if (!track_dup(&dst->ambient_color,
+	               &src->ambient_color,
+	               sizeof(struct wow_vec3f))
+	 || !track_dup(&dst->ambient_intensity,
+	               &src->ambient_intensity,
+	               sizeof(float))
+	 || !track_dup(&dst->diffuse_color,
+	               &src->diffuse_color,
+	               sizeof(struct wow_vec3f))
+	 || !track_dup(&dst->diffuse_intensity,
+	               &src->diffuse_intensity,
+	               sizeof(float))
+	 || !track_dup(&dst->attenuation_start,
+	               &src->attenuation_start,
+	               sizeof(float))
+	 || !track_dup(&dst->attenuation_end,
+	               &src->attenuation_end,
+	               sizeof(float))
+	 || !track_dup(&dst->visibility,
+	               &src->visibility,
+	               sizeof(uint8_t)))
+		return false;
+	return true;
+}
+
+static void
+light_free(struct wow_m2_light *val)
+{
+	track_free(&val->ambient_color);
+	track_free(&val->ambient_intensity);
+	track_free(&val->diffuse_color);
+	track_free(&val->diffuse_intensity);
+	track_free(&val->attenuation_start);
+	track_free(&val->attenuation_end);
+	track_free(&val->visibility);
+}
+
+ARRAY_FUNCTIONS(light);
+
+static bool
+bone_read(struct wow_m2_bone *bone,
+          struct wow_m2_bone_int *bone_int,
+          struct wow_mpq_file *mpq)
+{
+	bone->key_bone_id = bone_int->key_bone_id;
+	bone->flags = bone_int->flags;
+	bone->parent_bone = bone_int->parent_bone;
+	bone->submesh_id = bone_int->submesh_id;
+	bone->bone_name_crc = bone_int->bone_name_crc;
+	bone->pivot = bone_int->pivot;
+	if (!track_read(&bone->translation,
+	                sizeof(struct wow_vec3f),
+	                &bone_int->translation,
+	                mpq)
+	 || !track_read(&bone->rotation,
+	                sizeof(struct wow_quats),
+	                &bone_int->rotation,
+	                mpq)
+	 || !track_read(&bone->scale,
+	                sizeof(struct wow_vec3f),
+	                &bone_int->scale,
+	                mpq))
+		return false;
+	return true;
+}
+
+static bool
+bone_dup(struct wow_m2_bone *dst,
+         const struct wow_m2_bone *src)
+{
+	dst->key_bone_id = src->key_bone_id;
+	dst->flags = src->flags;
+	dst->parent_bone = src->parent_bone;
+	dst->submesh_id = src->submesh_id;
+	dst->bone_name_crc = src->bone_name_crc;
+	dst->pivot = src->pivot;
+	if (!track_dup(&dst->translation,
+	               &src->translation,
+	               sizeof(struct wow_vec3f))
+	 || !track_dup(&dst->rotation,
+	               &src->rotation,
+	               sizeof(struct wow_quats))
+	 || !track_dup(&dst->scale,
+	               &src->scale,
+	               sizeof(struct wow_vec3f)))
+		return false;
+	return true;
+}
+
+static void
+bone_free(struct wow_m2_bone *val)
+{
+	track_free(&val->translation);
+	track_free(&val->rotation);
+	track_free(&val->scale);
+}
+
+ARRAY_FUNCTIONS(bone);
+
+struct wow_m2_file *
+wow_m2_file_new(struct wow_mpq_file *mpq)
+{
+	struct wow_m2_file *file;
+
+	file = WOW_MALLOC(sizeof(*file));
 	if (!file)
 		return NULL;
 	memset(file, 0, sizeof(*file));
-	if (wow_mpq_read(mpq, &file->header, sizeof(file->header)) != sizeof(file->header))
-		goto err;
-	file->materials = array_read(sizeof(*file->materials), &file->materials_nb, &file->header.materials, mpq);
-	if (!file->materials)
-		goto err;
-	file->sequences = array_read(sizeof(*file->sequences), &file->sequences_nb, &file->header.sequences, mpq);
-	if (!file->sequences)
-		goto err;
-	file->vertexes = array_read(sizeof(*file->vertexes), &file->vertexes_nb, &file->header.vertexes, mpq);
-	if (!file->vertexes)
-		goto err;
-	file->texture_transforms_lookups = array_read(sizeof(*file->texture_transforms_lookups), &file->texture_transforms_lookups_nb, &file->header.texture_transforms_lookup_table, mpq);
-	if (!file->texture_transforms_lookups)
-		goto err;
-	file->texture_weights_lookups = array_read(sizeof(*file->texture_weights_lookups), &file->texture_weights_lookups_nb, &file->header.texture_weights_lookup_table, mpq);
-	if (!file->texture_weights_lookups)
+	if (wow_mpq_read(mpq, &file->header, sizeof(file->header)) != sizeof(file->header)
+	 || !array_read((void**)&file->materials,
+	                sizeof(*file->materials),
+	                &file->materials_nb,
+	                &file->header.materials,
+	                mpq)
+	 || !array_read((void**)&file->sequences,
+	                sizeof(*file->sequences),
+	                &file->sequences_nb,
+	                &file->header.sequences,
+	                mpq)
+	 || !array_read((void**)&file->vertexes,
+	                sizeof(*file->vertexes),
+	                &file->vertexes_nb,
+	                &file->header.vertexes,
+	                mpq)
+	 || !array_read((void**)&file->texture_transforms_lookups,
+	                sizeof(*file->texture_transforms_lookups),
+	                &file->texture_transforms_lookups_nb,
+	                &file->header.texture_transforms_lookup_table,
+	                mpq)
+	 || !array_read((void**)&file->texture_weights_lookups,
+	                sizeof(*file->texture_weights_lookups),
+	                &file->texture_weights_lookups_nb,
+	                &file->header.texture_weights_lookup_table,
+	                mpq))
 		goto err;
 	if (file->header.flags & WOW_M2_HEADER_FLAG_USE_TEXTURE_COMBINER_COMBO)
 	{
-		file->texture_combiner_combos = array_read(sizeof(*file->texture_combiner_combos), &file->texture_combiner_combos_nb, &file->header.texture_combiner_combos, mpq);
-		if (!file->texture_combiner_combos)
+		if (!array_read((void**)&file->texture_combiner_combos,
+		                sizeof(*file->texture_combiner_combos),
+		                &file->texture_combiner_combos_nb,
+		                &file->header.texture_combiner_combos,
+		                mpq))
 			goto err;
 	}
-	file->texture_unit_lookups = array_read(sizeof(*file->texture_unit_lookups), &file->texture_unit_lookups_nb, &file->header.texture_unit_lookup_table, mpq);
-	if (!file->texture_unit_lookups)
-		goto err;
-	file->attachment_lookups = array_read(sizeof(*file->attachment_lookups), &file->attachment_lookups_nb, &file->header.attachment_lookup_table, mpq);
-	if (!file->attachment_lookups)
-		goto err;
-	file->key_bone_lookups = array_read(sizeof(*file->key_bone_lookups), &file->key_bone_lookups_nb, &file->header.key_bone_lookup_table, mpq);
-	if (!file->key_bone_lookups)
-		goto err;
-	file->sequence_lookups = array_read(sizeof(*file->sequence_lookups), &file->sequence_lookups_nb, &file->header.sequence_lookup_table, mpq);
-	if (!file->sequence_lookups)
-		goto err;
-	file->global_sequences = array_read(sizeof(*file->global_sequences), &file->global_sequences_nb, &file->header.global_sequences, mpq);
-	if (!file->global_sequences)
-		goto err;
-	file->texture_lookups = array_read(sizeof(*file->texture_lookups), &file->texture_lookups_nb, &file->header.texture_lookup_table, mpq);
-	if (!file->texture_lookups)
-		goto err;
-	file->camera_lookups = array_read(sizeof(*file->camera_lookups), &file->camera_lookups_nb, &file->header.camera_lookup_table, mpq);
-	if (!file->camera_lookups)
-		goto err;
-	file->bone_lookups = array_read(sizeof(*file->bone_lookups), &file->bone_lookups_nb, &file->header.bone_lookup_table, mpq);
-	if (!file->bone_lookups)
-		goto err;
-	file->playable_animations = array_read(sizeof(*file->playable_animations), &file->playable_animations_nb, &file->header.playable_animations, mpq);
-	if (!file->playable_animations)
-		goto err;
-	file->collision_triangles = array_read(sizeof(*file->collision_triangles), &file->collision_triangles_nb, &file->header.collision_triangles, mpq);
-	if (!file->collision_triangles)
-		goto err;
-	file->collision_vertexes = array_read(sizeof(*file->collision_vertexes), &file->collision_vertexes_nb, &file->header.collision_vertexes, mpq);
-	if (!file->collision_vertexes)
-		goto err;
-	file->collision_normals = array_read(sizeof(*file->collision_normals), &file->collision_normals_nb, &file->header.collision_normals, mpq);
-	if (!file->collision_normals)
-		goto err;
-	if (!read_texture_transforms(file, mpq))
-		goto err;
-	if (!read_texture_weights(file, mpq))
-		goto err;
-	if (!read_skin_profiles(file, mpq))
-		goto err;
-	if (!read_attachments(file, mpq))
-		goto err;
-	if (!read_particles(file, mpq))
-		goto err;
-	if (!read_textures(file, mpq))
-		goto err;
-	if (!read_cameras(file, mpq))
-		goto err;
-	if (!read_ribbons(file, mpq))
-		goto err;
-	if (!read_colors(file, mpq))
-		goto err;
-	if (!read_lights(file, mpq))
-		goto err;
-	if (!read_bones(file, mpq))
-		goto err;
-	file->name = array_read(sizeof(*file->name), NULL, &file->header.name, mpq);
-	if (!file->name)
+	if (!array_read((void**)&file->texture_unit_lookups,
+	                sizeof(*file->texture_unit_lookups),
+	                &file->texture_unit_lookups_nb,
+	                &file->header.texture_unit_lookup_table,
+	                mpq)
+	 || !array_read((void**)&file->attachment_lookups,
+	                sizeof(*file->attachment_lookups),
+	                &file->attachment_lookups_nb,
+	                &file->header.attachment_lookup_table,
+	                mpq)
+	 || !array_read((void**)&file->key_bone_lookups,
+	                sizeof(*file->key_bone_lookups),
+	                &file->key_bone_lookups_nb,
+	                &file->header.key_bone_lookup_table,
+	                mpq)
+	 || !array_read((void**)&file->sequence_lookups,
+	                sizeof(*file->sequence_lookups),
+	                &file->sequence_lookups_nb,
+	                &file->header.sequence_lookup_table,
+	                mpq)
+	 || !array_read((void**)&file->global_sequences,
+	                sizeof(*file->global_sequences),
+	                &file->global_sequences_nb,
+	                &file->header.global_sequences,
+	                mpq)
+	 || !array_read((void**)&file->texture_lookups,
+	                sizeof(*file->texture_lookups),
+	                &file->texture_lookups_nb,
+	                &file->header.texture_lookup_table,
+	                mpq)
+	 || !array_read((void**)&file->camera_lookups,
+	                sizeof(*file->camera_lookups),
+	                &file->camera_lookups_nb,
+	                &file->header.camera_lookup_table,
+	                mpq)
+	 || !array_read((void**)&file->bone_lookups,
+	                sizeof(*file->bone_lookups),
+	                &file->bone_lookups_nb,
+	                &file->header.bone_lookup_table,
+	                mpq)
+	 || !array_read((void**)&file->playable_animations,
+	                sizeof(*file->playable_animations),
+	                &file->playable_animations_nb,
+	                &file->header.playable_animations,
+	                mpq)
+	 || !array_read((void**)&file->collision_triangles,
+	                sizeof(*file->collision_triangles),
+	                &file->collision_triangles_nb,
+	                &file->header.collision_triangles,
+	                mpq)
+	 || !array_read((void**)&file->collision_vertexes,
+	                sizeof(*file->collision_vertexes),
+	                &file->collision_vertexes_nb,
+	                &file->header.collision_vertexes,
+	                mpq)
+	 || !array_read((void**)&file->collision_normals,
+	                sizeof(*file->collision_normals),
+	                &file->collision_normals_nb,
+	                &file->header.collision_normals,
+	                mpq)
+	 || !texture_transforms_read(file, mpq)
+	 || !texture_weights_read(file, mpq)
+	 || !skin_profiles_read(file, mpq)
+	 || !attachments_read(file, mpq)
+	 || !particles_read(file, mpq)
+	 || !textures_read(file, mpq)
+	 || !cameras_read(file, mpq)
+	 || !ribbons_read(file, mpq)
+	 || !colors_read(file, mpq)
+	 || !lights_read(file, mpq)
+	 || !bones_read(file, mpq)
+	 || !array_read((void**)&file->name,
+	                sizeof(*file->name),
+	                NULL,
+	                &file->header.name,
+	                mpq))
 		goto err;
 	return file;
 
@@ -702,566 +1334,43 @@ err:
 	return NULL;
 }
 
-static bool track_dup(struct wow_m2_track *track, const struct wow_m2_track *dup, size_t data_size)
-{
-	track->interpolation_type = dup->interpolation_type;
-	track->global_sequence = dup->global_sequence;
-	track->interpolation_ranges_nb = dup->interpolation_ranges_nb;
-	track->interpolation_ranges = WOW_MALLOC(sizeof(*track->interpolation_ranges) * track->interpolation_ranges_nb);
-	if (!track->interpolation_ranges)
-		return false;
-	memcpy(track->interpolation_ranges, dup->interpolation_ranges, sizeof(*track->interpolation_ranges) * track->interpolation_ranges_nb);
-	track->timestamps_nb = dup->timestamps_nb;
-	track->timestamps = WOW_MALLOC(sizeof(*track->timestamps) * track->timestamps_nb);
-	if (!track->timestamps)
-		return false;
-	memcpy(track->timestamps, dup->timestamps, sizeof(*track->timestamps) * track->timestamps_nb);
-	track->values_nb = dup->values_nb;
-	track->values = WOW_MALLOC(data_size * track->values_nb);
-	if (!track->values)
-		return false;
-	memcpy(track->values, dup->values, data_size * track->values_nb);
-	return true;
-}
-
-static void track_free(struct wow_m2_track *track)
-{
-	WOW_FREE(track->interpolation_ranges);
-	WOW_FREE(track->timestamps);
-	WOW_FREE(track->values);
-}
-
-void wow_m2_file_delete(struct wow_m2_file *file)
+void
+wow_m2_file_delete(struct wow_m2_file *file)
 {
 	if (!file)
 		return;
-	WOW_FREE(file->playable_animations);
-	wow_m2_texture_transforms_delete(file->texture_transforms, file->texture_transforms_nb);
-	wow_m2_texture_weights_delete(file->texture_weights, file->texture_weights_nb);
-	for (uint32_t i = 0; i < file->skin_profiles_nb; ++i)
-	{
-		WOW_FREE(file->skin_profiles[i].sections);
-		WOW_FREE(file->skin_profiles[i].batches);
-		WOW_FREE(file->skin_profiles[i].vertexes);
-		WOW_FREE(file->skin_profiles[i].indices);
-		WOW_FREE(file->skin_profiles[i].bones);
-	}
-	WOW_FREE(file->skin_profiles);
-	WOW_FREE(file->materials);
+	array_free(file->playable_animations);
+	wow_m2_texture_transforms_delete(file->texture_transforms,
+	                                 file->texture_transforms_nb);
+	wow_m2_texture_weights_delete(file->texture_weights,
+	                              file->texture_weights_nb);
+	wow_m2_skin_profiles_delete(file->skin_profiles,
+	                            file->skin_profiles_nb);
+	array_free(file->materials);
 	wow_m2_attachments_delete(file->attachments, file->attachments_nb);
-	wow_m2_sequences_delete(file->sequences, file->sequences_nb);
+	array_free(file->sequences);
 	wow_m2_particles_delete(file->particles, file->particles_nb);
 	wow_m2_textures_delete(file->textures, file->textures_nb);
-	WOW_FREE(file->vertexes);
+	array_free(file->vertexes);
 	wow_m2_cameras_delete(file->cameras, file->cameras_nb);
 	wow_m2_ribbons_delete(file->ribbons, file->ribbons_nb);
 	wow_m2_colors_delete(file->colors, file->colors_nb);
 	wow_m2_lights_delete(file->lights, file->lights_nb);
 	wow_m2_bones_delete(file->bones, file->bones_nb);
-	WOW_FREE(file->texture_transforms_lookups);
-	WOW_FREE(file->texture_weights_lookups);
-	WOW_FREE(file->texture_combiner_combos);
-	WOW_FREE(file->texture_unit_lookups);
-	WOW_FREE(file->collision_triangles);
-	WOW_FREE(file->attachment_lookups);
-	WOW_FREE(file->collision_vertexes);
-	WOW_FREE(file->collision_normals);
-	WOW_FREE(file->key_bone_lookups);
-	WOW_FREE(file->sequence_lookups);
-	WOW_FREE(file->global_sequences);
-	WOW_FREE(file->texture_lookups);
-	WOW_FREE(file->camera_lookups);
-	WOW_FREE(file->bone_lookups);
-	WOW_FREE(file->name);
-	WOW_FREE(file);
-}
-
-struct wow_m2_texture_transform *wow_m2_texture_transforms_dup(const struct wow_m2_texture_transform *dup, uint32_t nb)
-{
-	if (!dup || !nb)
-		return NULL;
-	struct wow_m2_texture_transform *texture_transforms = WOW_MALLOC(sizeof(*texture_transforms) * nb);
-	if (!texture_transforms)
-		return NULL;
-	memset(texture_transforms, 0, sizeof(*texture_transforms) * nb);
-	for (uint32_t i = 0; i < nb; ++i)
-	{
-		struct wow_m2_texture_transform *texture_transform = &texture_transforms[i];
-		if (!track_dup(&texture_transform->translation, &dup[i].translation, sizeof(struct wow_vec3f))
-		 || !track_dup(&texture_transform->rotation, &dup[i].rotation, sizeof(struct wow_quatf))
-		 || !track_dup(&texture_transform->scaling, &dup[i].scaling, sizeof(struct wow_vec3f)))
-		{
-			wow_m2_texture_transforms_delete(texture_transforms, i + 1);
-			return NULL;
-		}
-	}
-	return texture_transforms;
-}
-
-void wow_m2_texture_transforms_delete(struct wow_m2_texture_transform *val, uint32_t nb)
-{
-	if (!val)
-		return;
-	for (uint32_t i = 0; i < nb; ++i)
-	{
-		track_free(&val[i].translation);
-		track_free(&val[i].rotation);
-		track_free(&val[i].scaling);
-	}
-	WOW_FREE(val);
-}
-
-struct wow_m2_texture_weight *wow_m2_texture_weights_dup(const struct wow_m2_texture_weight *dup, uint32_t nb)
-{
-	if (!dup || !nb)
-		return NULL;
-	struct wow_m2_texture_weight *texture_weights = WOW_MALLOC(sizeof(*texture_weights) * nb);
-	if (!texture_weights)
-		return NULL;
-	memset(texture_weights, 0, sizeof(*texture_weights) * nb);
-	for (uint32_t i = 0; i < nb; ++i)
-	{
-		struct wow_m2_texture_weight *texture_weight = &texture_weights[i];
-		if (!track_dup(&texture_weight->weight, &dup[i].weight, sizeof(int16_t)))
-		{
-			wow_m2_texture_weights_delete(texture_weights, i + 1);
-			return NULL;
-		}
-	}
-	return texture_weights;
-}
-
-void wow_m2_texture_weights_delete(struct wow_m2_texture_weight *val, uint32_t nb)
-{
-	if (!val)
-		return;
-	for (uint32_t i = 0; i < nb; ++i)
-		track_free(&val[i].weight);
-	WOW_FREE(val);
-}
-
-struct wow_m2_attachment *wow_m2_attachments_dup(const struct wow_m2_attachment *dup, uint32_t nb)
-{
-	if (!dup || !nb)
-		return NULL;
-	struct wow_m2_attachment *attachments = WOW_MALLOC(sizeof(*attachments) * nb);
-	if (!attachments)
-		return NULL;
-	memset(attachments, 0, sizeof(*attachments));
-	for (uint32_t i = 0; i < nb; ++i)
-	{
-		struct wow_m2_attachment *attachment = &attachments[i];
-		attachment->id = dup[i].id;
-		attachment->bone = dup[i].bone;
-		attachment->unknown = dup[i].unknown;
-		attachment->position = dup[i].position;
-		if (!track_dup(&attachment->animate_attached, &dup[i].animate_attached, sizeof(uint8_t)))
-			goto err;
-	}
-	return attachments;
-
-err:
-	WOW_FREE(attachments);
-	return NULL;
-}
-
-void wow_m2_attachments_delete(struct wow_m2_attachment *val, uint32_t nb)
-{
-	if (!val)
-		return;
-	for (uint32_t i = 0; i < nb; ++i)
-		track_free(&val[i].animate_attached);
-	WOW_FREE(val);
-}
-
-struct wow_m2_sequence *wow_m2_sequences_dup(const struct wow_m2_sequence *dup, uint32_t nb)
-{
-	if (!dup || !nb)
-		return NULL;
-	struct wow_m2_sequence *sequences = WOW_MALLOC(sizeof(*sequences) * nb);
-	if (!sequences)
-		return NULL;
-	memcpy(sequences, dup, sizeof(*sequences) * nb);
-	return sequences;
-}
-
-void wow_m2_sequences_delete(struct wow_m2_sequence *val, uint32_t nb)
-{
-	(void)nb;
-	if (!val)
-		return;
-	WOW_FREE(val);
-}
-
-struct wow_m2_particle *wow_m2_particles_dup(const struct wow_m2_particle *dup, uint32_t nb)
-{
-	if (!dup || !nb)
-		return NULL;
-	struct wow_m2_particle *particles = WOW_MALLOC(sizeof(*particles) * nb);
-	if (!particles)
-		return NULL;
-	memset(particles, 0, sizeof(*particles) * nb);
-	for (uint32_t i = 0; i < nb; ++i)
-	{
-		struct wow_m2_particle *particle = &particles[i];
-		particle->id = dup[i].id;
-		particle->flags = dup[i].flags;
-		particle->position = dup[i].position;
-		particle->bone = dup[i].bone;
-		particle->texture = dup[i].texture;
-		particle->geometry_model_filename = WOW_MALLOC(strlen(dup[i].geometry_model_filename) + 1);
-		if (!particle->geometry_model_filename)
-			goto err;
-		strcpy(particle->geometry_model_filename, dup[i].geometry_model_filename);
-		particle->recursion_model_filename = WOW_MALLOC(strlen(dup[i].recursion_model_filename) + 1);
-		if (!particle->recursion_model_filename)
-			goto err;
-		strcpy(particle->recursion_model_filename, dup[i].recursion_model_filename);
-		particle->blending_type = dup[i].blending_type;
-		particle->emitter_type = dup[i].emitter_type;
-		particle->particle_type = dup[i].particle_type;
-		particle->head_or_tail = dup[i].head_or_tail;
-		particle->texture_tile_rotation = dup[i].texture_tile_rotation;
-		particle->texture_dimensions_rows = dup[i].texture_dimensions_rows;
-		particle->texture_dimensions_columns = dup[i].texture_dimensions_columns;
-		if (!track_dup(&particle->emission_speed, &dup[i].emission_speed, sizeof(float))
-		 || !track_dup(&particle->speed_variation, &dup[i].speed_variation, sizeof(float))
-		 || !track_dup(&particle->vertical_range, &dup[i].vertical_range, sizeof(float))
-		 || !track_dup(&particle->horizontal_range, &dup[i].horizontal_range, sizeof(float))
-		 || !track_dup(&particle->gravity, &dup[i].gravity, sizeof(float))
-		 || !track_dup(&particle->lifespan, &dup[i].lifespan, sizeof(float))
-		 || !track_dup(&particle->emission_rate, &dup[i].emission_rate, sizeof(float))
-		 || !track_dup(&particle->emission_area_length, &dup[i].emission_area_length, sizeof(float))
-		 || !track_dup(&particle->emission_area_width, &dup[i].emission_area_width, sizeof(float))
-		 || !track_dup(&particle->z_source, &dup[i].z_source, sizeof(float)))
-			goto err;
-		particle->mid_point = dup[i].mid_point;
-		memcpy(particle->color_values, dup[i].color_values, sizeof(particle->color_values));
-		memcpy(particle->scale_values, dup[i].scale_values, sizeof(particle->scale_values));
-		memcpy(particle->lifespan_uv_anim, dup[i].lifespan_uv_anim, sizeof(particle->lifespan_uv_anim));
-		memcpy(particle->decay_uv_anim, dup[i].decay_uv_anim, sizeof(particle->decay_uv_anim));
-		memcpy(particle->tail_uv_anim, dup[i].tail_uv_anim, sizeof(particle->tail_uv_anim));
-		memcpy(particle->tail_decay_uv_anim, dup[i].tail_decay_uv_anim, sizeof(particle->tail_decay_uv_anim));
-		particle->tail_length = dup[i].tail_length;
-		particle->twinkle_speed = dup[i].twinkle_speed;
-		particle->twinkle_percent = dup[i].twinkle_percent;
-		particle->twinkle_scale_min = dup[i].twinkle_scale_min;
-		particle->twinkle_scale_max = dup[i].twinkle_scale_max;
-		particle->burst_multiplier = dup[i].burst_multiplier;
-		particle->drag = dup[i].drag;
-		particle->spin = dup[i].spin;
-		particle->tumble = dup[i].tumble;
-		particle->wind_vector = dup[i].wind_vector;
-		particle->wind_time = dup[i].wind_time;
-		particle->follow_speed1 = dup[i].follow_speed1;
-		particle->follow_scale1 = dup[i].follow_scale1;
-		particle->follow_speed2 = dup[i].follow_speed2;
-		particle->follow_scale2 = dup[i].follow_scale2;
-		particle->spline_points_nb = dup[i].spline_points_nb;
-		particle->spline_points = WOW_MALLOC(sizeof(*particle->spline_points) * particle->spline_points_nb);
-		if (!particle->spline_points)
-			goto err;
-		memcpy(particle->spline_points, dup[i].spline_points, sizeof(*particle->spline_points) * particle->spline_points_nb);
-		if (!track_dup(&particle->enabled_in, &dup[i].enabled_in, sizeof(uint8_t)))
-			goto err;
-	}
-	return particles;
-
-err:
-	WOW_FREE(particles);
-	return NULL;
-}
-
-void wow_m2_particles_delete(struct wow_m2_particle *val, uint32_t nb)
-{
-	if (!val)
-		return;
-	for (uint32_t i = 0; i < nb; ++i)
-	{
-		WOW_FREE(val[i].geometry_model_filename);
-		WOW_FREE(val[i].recursion_model_filename);
-		track_free(&val[i].emission_speed);
-		track_free(&val[i].speed_variation);
-		track_free(&val[i].vertical_range);
-		track_free(&val[i].horizontal_range);
-		track_free(&val[i].gravity);
-		track_free(&val[i].lifespan);
-		track_free(&val[i].emission_rate);
-		track_free(&val[i].emission_area_length);
-		track_free(&val[i].emission_area_width);
-		track_free(&val[i].z_source);
-		WOW_FREE(val[i].spline_points);
-		track_free(&val[i].enabled_in);
-	}
-	WOW_FREE(val);
-}
-
-struct wow_m2_texture *wow_m2_textures_dup(const struct wow_m2_texture *dup, uint32_t nb)
-{
-	if (!dup || !nb)
-		return NULL;
-	struct wow_m2_texture *textures = WOW_MALLOC(sizeof(*textures) * nb);
-	if (!textures)
-		return NULL;
-	memset(textures, 0, sizeof(*textures) * nb);
-	for (uint32_t i = 0; i < nb; ++i)
-	{
-		struct wow_m2_texture *texture = &textures[i];
-		texture->type = dup[i].type;
-		texture->flags = dup[i].flags;
-		if (dup[i].filename)
-		{
-			size_t len = strlen(dup[i].filename);
-			texture->filename = WOW_MALLOC(len + 1);
-			if (!texture->filename)
-				goto err;
-			memcpy(texture->filename, dup[i].filename, len);
-			texture->filename[len] = '\0';
-		}
-	}
-	return textures;
-
-err:
-	WOW_FREE(textures);
-	return NULL;
-}
-
-void wow_m2_textures_delete(struct wow_m2_texture *val, uint32_t nb)
-{
-	if (!val)
-		return;
-	for (uint32_t i = 0; i < nb; ++i)
-	{
-		WOW_FREE(val[i].filename);
-	}
-	WOW_FREE(val);
-}
-
-struct wow_m2_camera *wow_m2_cameras_dup(const struct wow_m2_camera *dup, uint32_t nb)
-{
-	if (!dup || !nb)
-		return NULL;
-	struct wow_m2_camera *cameras = WOW_MALLOC(sizeof(*cameras) * nb);
-	if (!cameras)
-		return NULL;
-	memset(cameras, 0, sizeof(*cameras) * nb);
-	for (uint32_t i = 0; i < nb; ++i)
-	{
-		struct wow_m2_camera *camera = &cameras[i];
-		camera->type = dup[i].type;
-		camera->fov = dup[i].fov;
-		camera->far_clip = dup[i].far_clip;
-		camera->near_clip = dup[i].near_clip;
-		camera->position_base = dup[i].position_base;
-		camera->target_position_base = dup[i].target_position_base;
-		if (!track_dup(&camera->position, &dup[i].position, sizeof(struct wow_m2_spline_vec3f))
-		 || !track_dup(&camera->target_position, &dup[i].target_position, sizeof(struct wow_m2_spline_vec3f))
-		 || !track_dup(&camera->roll, &dup[i].roll, sizeof(struct wow_m2_spline_float)))
-		{
-			wow_m2_cameras_delete(cameras, i + 1);
-			return NULL;
-		}
-	}
-	return cameras;
-}
-
-void wow_m2_cameras_delete(struct wow_m2_camera *val, uint32_t nb)
-{
-	if (!val)
-		return;
-	for (uint32_t i = 0; i < nb; ++i)
-	{
-		track_free(&val[i].position);
-		track_free(&val[i].target_position);
-		track_free(&val[i].roll);
-	}
-	WOW_FREE(val);
-}
-
-struct wow_m2_ribbon *wow_m2_ribbons_dup(const struct wow_m2_ribbon *dup, uint32_t nb)
-{
-	if (!dup || !nb)
-		return NULL;
-	struct wow_m2_ribbon *ribbons = WOW_MALLOC(sizeof(*ribbons) * nb);
-	if (!ribbons)
-		return NULL;
-	memset(ribbons, 0, sizeof(*ribbons) * nb);
-	for (uint32_t i = 0; i < nb; ++i)
-	{
-		struct wow_m2_ribbon *ribbon = &ribbons[i];
-		ribbon->ribbon_id = dup[i].ribbon_id;
-		ribbon->bone_index = dup[i].bone_index;
-		ribbon->position = dup[i].position;
-		ribbon->edges_per_second = dup[i].edges_per_second;
-		ribbon->edge_lifetime = dup[i].edge_lifetime;
-		ribbon->gravity = dup[i].gravity;
-		ribbon->texture_rows = dup[i].texture_rows;
-		ribbon->texture_cols = dup[i].texture_cols;
-		ribbon->texture_indices_nb = dup[i].texture_indices_nb;
-		ribbon->texture_indices = WOW_MALLOC(sizeof(*ribbon->texture_indices) * ribbon->texture_indices_nb);
-		if (!ribbon->texture_indices)
-		{
-			wow_m2_ribbons_delete(ribbons, i + 1);
-			return NULL;
-		}
-		memcpy(ribbon->texture_indices, dup[i].texture_indices, sizeof(*ribbon->texture_indices) * ribbon->texture_indices_nb);
-		ribbon->material_indices_nb = dup[i].material_indices_nb;
-		ribbon->material_indices = WOW_MALLOC(sizeof(*ribbon->material_indices) * ribbon->material_indices_nb);
-		if (!ribbon->material_indices)
-		{
-			wow_m2_ribbons_delete(ribbons, i + 1);
-			return NULL;
-		}
-		memcpy(ribbon->material_indices, dup[i].material_indices, sizeof(*ribbon->material_indices) * ribbon->material_indices_nb);
-		if (!track_dup(&ribbon->color, &dup[i].color, sizeof(struct wow_vec3f))
-		 || !track_dup(&ribbon->alpha, &dup[i].alpha, sizeof(int16_t))
-		 || !track_dup(&ribbon->height_above, &dup[i].height_above, sizeof(float))
-		 || !track_dup(&ribbon->height_below, &dup[i].height_below, sizeof(float))
-		 || !track_dup(&ribbon->tex_slot, &dup[i].tex_slot, sizeof(uint16_t))
-		 || !track_dup(&ribbon->visibility, &dup[i].visibility, sizeof(uint8_t)))
-		{
-			wow_m2_ribbons_delete(ribbons, i + 1);
-			return NULL;
-		}
-	}
-	return ribbons;
-}
-
-void wow_m2_ribbons_delete(struct wow_m2_ribbon *val, uint32_t nb)
-{
-	if (!val)
-		return;
-	for (uint32_t i = 0; i < nb; ++i)
-	{
-		WOW_FREE(val[i].texture_indices);
-		WOW_FREE(val[i].material_indices);
-		track_free(&val[i].color);
-		track_free(&val[i].alpha);
-		track_free(&val[i].height_above);
-		track_free(&val[i].height_below);
-		track_free(&val[i].tex_slot);
-		track_free(&val[i].visibility);
-	}
-	WOW_FREE(val);
-}
-
-struct wow_m2_color *wow_m2_colors_dup(const struct wow_m2_color *dup, uint32_t nb)
-{
-	if (!dup || !nb)
-		return NULL;
-	struct wow_m2_color *colors = WOW_MALLOC(sizeof(*colors) * nb);
-	if (!colors)
-		return NULL;
-	memset(colors, 0, sizeof(*colors) * nb);
-	for (uint32_t i = 0; i < nb; ++i)
-	{
-		struct wow_m2_color *color = &colors[i];
-		if (!track_dup(&color->color, &dup[i].color, sizeof(struct wow_vec3f))
-		 || !track_dup(&color->alpha, &dup[i].alpha, sizeof(int16_t)))
-		{
-			wow_m2_colors_delete(colors, i + 1);
-			return NULL;
-		}
-	}
-	return colors;
-}
-
-void wow_m2_colors_delete(struct wow_m2_color *val, uint32_t nb)
-{
-	if (!val)
-		return;
-	for (uint32_t i = 0; i < nb; ++i)
-	{
-		track_free(&val[i].color);
-		track_free(&val[i].alpha);
-	}
-	WOW_FREE(val);
-}
-
-struct wow_m2_light *wow_m2_lights_dup(const struct wow_m2_light *dup, uint32_t nb)
-{
-	if (!dup || !nb)
-		return NULL;
-	struct wow_m2_light *lights = WOW_MALLOC(sizeof(*lights) * nb);
-	if (!lights)
-		return NULL;
-	memset(lights, 0, sizeof(*lights) * nb);
-	for (uint32_t i = 0; i < nb; ++i)
-	{
-		struct wow_m2_light *light = &lights[i];
-		light->type = dup[i].type;
-		light->bone = dup[i].bone;
-		light->position = dup[i].position;
-		if (!track_dup(&light->ambient_color, &dup[i].ambient_color, sizeof(struct wow_vec3f))
-		 || !track_dup(&light->ambient_intensity, &dup[i].ambient_intensity, sizeof(float))
-		 || !track_dup(&light->diffuse_color, &dup[i].diffuse_color, sizeof(struct wow_vec3f))
-		 || !track_dup(&light->diffuse_intensity, &dup[i].diffuse_intensity, sizeof(float))
-		 || !track_dup(&light->attenuation_start, &dup[i].attenuation_start, sizeof(float))
-		 || !track_dup(&light->attenuation_end, &dup[i].attenuation_end, sizeof(float))
-		 || !track_dup(&light->visibility, &dup[i].visibility, sizeof(uint8_t)))
-		{
-			wow_m2_lights_delete(lights, i + 1);
-			return NULL;
-		}
-	}
-	return lights;
-
-}
-
-void wow_m2_lights_delete(struct wow_m2_light *val, uint32_t nb)
-{
-	if (!val)
-		return;
-	for (uint32_t i = 0; i < nb; ++i)
-	{
-		track_free(&val[i].ambient_color);
-		track_free(&val[i].ambient_intensity);
-		track_free(&val[i].diffuse_color);
-		track_free(&val[i].diffuse_intensity);
-		track_free(&val[i].attenuation_start);
-		track_free(&val[i].attenuation_end);
-		track_free(&val[i].visibility);
-	}
-	WOW_FREE(val);
-}
-
-struct wow_m2_bone *wow_m2_bones_dup(const struct wow_m2_bone *dup, uint32_t nb)
-{
-	if (!dup || !nb)
-		return NULL;
-	struct wow_m2_bone *bones = WOW_MALLOC(sizeof(*bones) * nb);
-	if (!bones)
-		return NULL;
-	memset(bones, 0, sizeof(*bones) * nb);
-	for (uint32_t i = 0; i < nb; ++i)
-	{
-		struct wow_m2_bone *bone = &bones[i];
-		bone->key_bone_id = dup[i].key_bone_id;
-		bone->flags = dup[i].flags;
-		bone->parent_bone = dup[i].parent_bone;
-		bone->submesh_id = dup[i].submesh_id;
-		bone->bone_name_crc = dup[i].bone_name_crc;
-		bone->pivot = dup[i].pivot;
-		if (!track_dup(&bone->translation, &dup[i].translation, sizeof(struct wow_vec3f))
-		 || !track_dup(&bone->rotation, &dup[i].rotation, sizeof(struct wow_quats))
-		 || !track_dup(&bone->scale, &dup[i].scale, sizeof(struct wow_vec3f)))
-		{
-			wow_m2_bones_delete(bones, i + 1);
-			return NULL;
-		}
-	}
-	return bones;
-}
-
-void wow_m2_bones_delete(struct wow_m2_bone *val, uint32_t nb)
-{
-	if (!val)
-		return;
-	for (uint32_t i = 0; i < nb; ++i)
-	{
-		track_free(&val[i].translation);
-		track_free(&val[i].rotation);
-		track_free(&val[i].scale);
-	}
-	WOW_FREE(val);
+	array_free(file->texture_transforms_lookups);
+	array_free(file->texture_weights_lookups);
+	array_free(file->texture_combiner_combos);
+	array_free(file->texture_unit_lookups);
+	array_free(file->collision_triangles);
+	array_free(file->attachment_lookups);
+	array_free(file->collision_vertexes);
+	array_free(file->collision_normals);
+	array_free(file->key_bone_lookups);
+	array_free(file->sequence_lookups);
+	array_free(file->global_sequences);
+	array_free(file->texture_lookups);
+	array_free(file->camera_lookups);
+	array_free(file->bone_lookups);
+	array_free(file->name);
+	array_free(file);
 }

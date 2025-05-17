@@ -2,7 +2,8 @@
 
 #include <stdlib.h>
 
-struct h261 *h261_new(void)
+struct h261 *
+h261_new(void)
 {
 	struct h261 *h261 = calloc(1, sizeof(*h261));
 	if (!h261)
@@ -10,14 +11,16 @@ struct h261 *h261_new(void)
 	return h261;
 }
 
-void h261_free(struct h261 *h261)
+void
+h261_free(struct h261 *h261)
 {
 	if (!h261)
 		return;
 	free(h261);
 }
 
-static int bs_get(struct bitstream *bs)
+static int
+bs_get(struct bitstream *bs)
 {
 	struct h261 *h261 = bs->userdata;
 	uint8_t avail = (sizeof(bs->buf) * 8 - bs->len) / 8;
@@ -37,7 +40,8 @@ static int bs_get(struct bitstream *bs)
 	return 0;
 }
 
-static int bs_put(struct bitstream *bs)
+static int
+bs_put(struct bitstream *bs)
 {
 	struct h261 *h261 = bs->userdata;
 	uint8_t avail = (sizeof(bs->buf) * 8 - bs->len) / 8;
@@ -55,7 +59,8 @@ static int bs_put(struct bitstream *bs)
 	return 0;
 }
 
-void h261_init_io(struct h261 *h261, FILE *fp)
+void
+h261_init_io(struct h261 *h261, FILE *fp)
 {
 	h261->fp = fp;
 	bs_init_read(&h261->bs);
@@ -64,7 +69,8 @@ void h261_init_io(struct h261 *h261, FILE *fp)
 	h261->bs.put = bs_put;
 }
 
-const char *h261_get_err(struct h261 *h261)
+const char *
+h261_get_err(struct h261 *h261)
 {
 	return h261->errbuf;
 }

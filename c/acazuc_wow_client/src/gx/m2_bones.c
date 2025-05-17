@@ -1,8 +1,8 @@
 #include "gx/m2_bones.h"
 #include "gx/frame.h"
 #include "gx/m2.h"
+#include "gx/gx.h"
 
-#include "graphics.h"
 #include "memory.h"
 #include "log.h"
 #include "wow.h"
@@ -138,7 +138,7 @@ void gx_m2_bones_render_points(struct gx_m2_bones *bones, struct gx_frame *frame
 {
 	if (!bones->points_indices_nb || !nb)
 		return;
-	gfx_bind_attributes_state(g_wow->device, &bones->points_attributes_state, &g_wow->graphics->m2_bones_points_input_layout);
+	gfx_bind_attributes_state(g_wow->device, &bones->points_attributes_state, &g_wow->gx->m2_bones_points_input_layout);
 	for (size_t i = 0; i < nb; ++i)
 	{
 		const struct gx_m2_instance *instance = instances[i];
@@ -154,7 +154,7 @@ void gx_m2_bones_render_lines(struct gx_m2_bones *bones, struct gx_frame *frame,
 {
 	if (!bones->lines_indices_nb || !nb)
 		return;
-	gfx_bind_attributes_state(g_wow->device, &bones->lines_attributes_state, &g_wow->graphics->m2_bones_lines_input_layout);
+	gfx_bind_attributes_state(g_wow->device, &bones->lines_attributes_state, &g_wow->gx->m2_bones_lines_input_layout);
 	for (size_t i = 0; i < nb; ++i)
 	{
 		const struct gx_m2_instance *instance = instances[i];

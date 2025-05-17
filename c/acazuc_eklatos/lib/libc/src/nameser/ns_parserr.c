@@ -3,7 +3,8 @@
 
 #include <resolv.h>
 
-static int nextrr(ns_msg *msg, ns_sect sect, ns_rr *rr, const uint8_t **ptr)
+static int
+nextrr(ns_msg *msg, ns_sect sect, ns_rr *rr, const uint8_t **ptr)
 {
 	int ret;
 
@@ -30,7 +31,8 @@ static int nextrr(ns_msg *msg, ns_sect sect, ns_rr *rr, const uint8_t **ptr)
 	return 0;
 }
 
-int ns_parserr(ns_msg *msg, ns_sect sect, int id, ns_rr *rr)
+int
+ns_parserr(ns_msg *msg, ns_sect sect, int id, ns_rr *rr)
 {
 	const uint8_t *ptr;
 

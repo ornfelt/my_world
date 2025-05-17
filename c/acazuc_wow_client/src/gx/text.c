@@ -2,8 +2,8 @@
 
 #include "gx/frame.h"
 #include "gx/text.h"
+#include "gx/gx.h"
 
-#include "graphics.h"
 #include "shaders.h"
 #include "memory.h"
 #include "loader.h"
@@ -207,7 +207,7 @@ void gx_text_render(struct gx_text *text, struct gx_frame *frame)
 	MAT4_SCALE(tmp, model_block.mvp, text_frame->scale);
 	MAT4_MUL(model_block.mvp, frame->view_vp, tmp);
 	gfx_set_buffer_data(&text_frame->uniform_buffer, &model_block, sizeof(model_block), 0);
-	gfx_bind_attributes_state(g_wow->device, &text->attributes_state, &g_wow->graphics->text_input_layout);
+	gfx_bind_attributes_state(g_wow->device, &text->attributes_state, &g_wow->gx->text_input_layout);
 	font_atlas_bind(g_wow->font_3d->atlas, 0);
 	gfx_bind_constant(g_wow->device, 1, &text_frame->uniform_buffer, sizeof(struct shader_text_model_block), 0);
 	gfx_draw_indexed(g_wow->device, text->indices, 0);

@@ -4,19 +4,23 @@
 #include <stdio.h>
 #include <errno.h>
 
-static size_t read_data(FILE *fp, void *data, size_t count, size_t threshold)
+static size_t
+read_data(FILE *fp, void *data, size_t count, size_t threshold)
 {
+	size_t ret = 0;
+
 	if (!fp->io_funcs.read)
 	{
 		fp->eof = 1;
 		return 0;
 	}
-	size_t ret = 0;
 	while (ret < threshold)
 	{
-		ssize_t rd = fp->io_funcs.read(fp->cookie,
-		                               (char*)&((uint8_t*)data)[ret],
-		                               count - ret);
+		ssize_t rd;
+
+		rd = fp->io_funcs.read(fp->cookie,
+		                       (char*)&((uint8_t*)data)[ret],
+		                       count - ret);
 		if (rd == -1)
 		{
 			if (errno == EINTR)
@@ -34,10 +38,12 @@ static size_t read_data(FILE *fp, void *data, size_t count, size_t threshold)
 	return ret;
 }
 
-size_t fread_unlocked(void *ptr, size_t size, size_t nmemb, FILE *fp)
+size_t
+fread_unlocked(void *ptr, size_t size, size_t nmemb, FILE *fp)
 {
 	size_t total;
 	size_t ret = 0;
+
 	if (__builtin_mul_overflow(size, nmemb, &total))
 	{
 		fp->err = 1;

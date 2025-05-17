@@ -12,24 +12,29 @@ struct env
 	mode_t mode;
 };
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-m mode] FILES\n", progname);
 	printf("-m: set the mode of created fifo\n");
 }
 
-static int create_fifo(struct env *env, const char *path)
+static int
+create_fifo(struct env *env, const char *path)
 {
-	int ret = mkfifo(path, env->mode);
-	if (ret < 0)
+	if (mkfifo(path, env->mode) == -1)
 	{
-		fprintf(stderr, "%s: mkfifo: %s\n", env->progname, strerror(errno));
+		fprintf(stderr, "%s: mkfifo(%s): %s\n",
+		        env->progname,
+		        path,
+		        strerror(errno));
 		return 1;
 	}
 	return 0;
 }
 
-static int parse_mode(const char *progname, const char *str, mode_t *mode)
+static int
+parse_mode(const char *progname, const char *str, mode_t *mode)
 {
 	*mode = 0;
 	for (size_t i = 0; str[i]; ++i)
@@ -49,7 +54,8 @@ static int parse_mode(const char *progname, const char *str, mode_t *mode)
 	return 0;
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

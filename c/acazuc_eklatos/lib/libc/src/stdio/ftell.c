@@ -2,9 +2,11 @@
 
 #include <stdio.h>
 
-long ftell(FILE *fp)
+long
+ftell(FILE *fp)
 {
 	long ret;
+
 	flockfile(fp);
 	if (!fp->io_funcs.seek)
 	{

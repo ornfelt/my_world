@@ -1,6 +1,10 @@
 #ifndef X11_X_H
 #define X11_X_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define None 0
 
 #define Success           0
@@ -363,5 +367,9 @@
 
 #define LedModeOff 0
 #define LedModeOn  1
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

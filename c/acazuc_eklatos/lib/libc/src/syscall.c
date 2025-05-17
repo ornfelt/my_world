@@ -4,7 +4,8 @@
 
 #include <stdarg.h>
 
-ssize_t syscall(size_t id, ...)
+ssize_t
+syscall(size_t id, ...)
 {
 	va_list va_arg;
 	va_start(va_arg, id);

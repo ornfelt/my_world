@@ -4,11 +4,10 @@
 #include "gx/frame.h"
 #include "gx/blp.h"
 #include "gx/m2.h"
+#include "gx/gx.h"
 
 #include "map/map.h"
 
-#include "performance.h"
-#include "graphics.h"
 #include "shaders.h"
 #include "camera.h"
 #include "loader.h"
@@ -791,10 +790,10 @@ static bool gx_m2_batch_init(struct gx_m2_batch *batch, struct gx_m2_profile *pa
 			gx_m2_texture_load(&batch->textures[1], file, wow_batch, 1);
 	}
 	struct wow_m2_material *material = &file->materials[batch->material];
-	enum world_rasterizer_state rasterizer_state;
-	enum world_depth_stencil_state depth_stencil_state;
-	enum world_blend_state blend_state;
-	rasterizer_state = (material->flags & WOW_M2_MATERIAL_FLAGS_UNCULLED) ? WORLD_RASTERIZER_UNCULLED : WORLD_RASTERIZER_CULLED;
+	enum gx_rasterizer_state rasterizer_state;
+	enum gx_depth_stencil_state depth_stencil_state;
+	enum gx_blend_state blend_state;
+	rasterizer_state = (material->flags & WOW_M2_MATERIAL_FLAGS_UNCULLED) ? GX_RASTERIZER_UNCULLED : GX_RASTERIZER_CULLED;
 	/* XXX remove this hack */
 	if (0 && strstr(batch->parent->parent->filename, "COT_HOURGLASS"))
 	{
@@ -815,39 +814,39 @@ static bool gx_m2_batch_init(struct gx_m2_batch *batch, struct gx_m2_profile *pa
 	switch (material->blend_mode)
 	{
 		case 0: /* opaque */
-			blend_state = WORLD_BLEND_OPAQUE;
+			blend_state = GX_BLEND_OPAQUE;
 			batch->blending = false;
 			batch->alpha_test = 0.0 / 255.0;
 			batch->fog_override = false;
 			break;
 		case 1: /* alpha key */
-			blend_state = WORLD_BLEND_OPAQUE;
+			blend_state = GX_BLEND_OPAQUE;
 			batch->blending = false;
 			batch->alpha_test = 224.0 / 255.0;
 			batch->fog_override = false;
 			break;
 		case 2: /* alpha */
-			blend_state = WORLD_BLEND_ALPHA;
+			blend_state = GX_BLEND_ALPHA;
 			batch->blending = true;
 			batch->alpha_test = 1.0 / 255.0;
 			batch->fog_override = false;
 			break;
 		case 3: /* no alpha add */
-			blend_state = WORLD_BLEND_NO_ALPHA_ADD;
+			blend_state = GX_BLEND_NO_ALPHA_ADD;
 			batch->blending = true;
 			batch->alpha_test = 1.0 / 255.0;
 			batch->fog_override = true;
 			VEC3_SETV(batch->fog_color, 0);
 			break;
 		case 4: /* add */
-			blend_state = WORLD_BLEND_ADD;
+			blend_state = GX_BLEND_ADD;
 			batch->blending = true;
 			batch->alpha_test = 1.0 / 255.0;
 			batch->fog_override = true;
 			VEC3_SETV(batch->fog_color, 0);
 			break;
 		case 5: /* mod */
-			blend_state = WORLD_BLEND_MOD;
+			blend_state = GX_BLEND_MOD;
 			batch->blending = true;
 			batch->alpha_test = 1.0 / 255.0;
 			batch->fog_override = true;
@@ -855,7 +854,7 @@ static bool gx_m2_batch_init(struct gx_m2_batch *batch, struct gx_m2_profile *pa
 			batch->wow_flags |= WOW_M2_MATERIAL_FLAGS_UNLIT;
 			break;
 		case 6: /* mod2x */
-			blend_state = WORLD_BLEND_MOD2X;
+			blend_state = GX_BLEND_MOD2X;
 			batch->blending = true;
 			batch->alpha_test = 1.0 / 255.0;
 			batch->fog_override = true;
@@ -863,7 +862,7 @@ static bool gx_m2_batch_init(struct gx_m2_batch *batch, struct gx_m2_profile *pa
 			batch->wow_flags |= WOW_M2_MATERIAL_FLAGS_UNLIT;
 			break;
 		default:
-			blend_state = WORLD_BLEND_ALPHA;
+			blend_state = GX_BLEND_ALPHA;
 			batch->blending = true;
 			batch->alpha_test = 1.0 / 255.0;
 			batch->fog_override = false;
@@ -874,38 +873,38 @@ static bool gx_m2_batch_init(struct gx_m2_batch *batch, struct gx_m2_profile *pa
 	{
 		case 0:
 			if (gx_m2_flag_get(batch->parent->parent, GX_M2_FLAG_SKYBOX))
-				depth_stencil_state = WORLD_DEPTH_STENCIL_NO_R;
+				depth_stencil_state = GX_DEPTH_STENCIL_NO_RO;
 			else if (batch->blending)
-				depth_stencil_state = WORLD_DEPTH_STENCIL_NO_NO;
+				depth_stencil_state = GX_DEPTH_STENCIL_NO_NO;
 			else
-				depth_stencil_state = WORLD_DEPTH_STENCIL_NO_W;
+				depth_stencil_state = GX_DEPTH_STENCIL_NO_WO;
 			break;
 		case 1:
 			if (gx_m2_flag_get(batch->parent->parent, GX_M2_FLAG_SKYBOX))
-				depth_stencil_state = WORLD_DEPTH_STENCIL_R_R;
+				depth_stencil_state = GX_DEPTH_STENCIL_RO_RO;
 			else if (batch->blending)
-				depth_stencil_state = WORLD_DEPTH_STENCIL_R_NO;
+				depth_stencil_state = GX_DEPTH_STENCIL_RO_NO;
 			else
-				depth_stencil_state = WORLD_DEPTH_STENCIL_R_W;
+				depth_stencil_state = GX_DEPTH_STENCIL_RO_WO;
 			break;
 		case 2:
 			if (gx_m2_flag_get(batch->parent->parent, GX_M2_FLAG_SKYBOX))
-				depth_stencil_state = WORLD_DEPTH_STENCIL_W_R;
+				depth_stencil_state = GX_DEPTH_STENCIL_WO_RO;
 			else if (batch->blending)
-				depth_stencil_state = WORLD_DEPTH_STENCIL_W_NO;
+				depth_stencil_state = GX_DEPTH_STENCIL_WO_NO;
 			else
-				depth_stencil_state = WORLD_DEPTH_STENCIL_W_W;
+				depth_stencil_state = GX_DEPTH_STENCIL_WO_WO;
 			break;
 		case 3:
 			if (gx_m2_flag_get(batch->parent->parent, GX_M2_FLAG_SKYBOX))
-				depth_stencil_state = WORLD_DEPTH_STENCIL_RW_R;
+				depth_stencil_state = GX_DEPTH_STENCIL_RW_RO;
 			else if (batch->blending)
-				depth_stencil_state = WORLD_DEPTH_STENCIL_RW_NO;
+				depth_stencil_state = GX_DEPTH_STENCIL_RW_NO;
 			else
-				depth_stencil_state = WORLD_DEPTH_STENCIL_RW_W;
+				depth_stencil_state = GX_DEPTH_STENCIL_RW_WO;
 			break;
 	}
-	batch->pipeline_state = &g_wow->graphics->m2_pipeline_states[rasterizer_state][depth_stencil_state][blend_state] - &g_wow->graphics->m2_pipeline_states[0][0][0];
+	batch->pipeline_state = &g_wow->gx->m2_pipeline_states[rasterizer_state][depth_stencil_state][blend_state] - &g_wow->gx->m2_pipeline_states[0][0][0];
 	init_batch_color_transform(batch, file, wow_batch);
 	init_batch_texture_weight(batch, file, wow_batch);
 	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
@@ -952,7 +951,6 @@ static bool gx_m2_batch_prepare_draw(struct gx_m2_batch *batch, struct gx_frame 
 	}
 	if (color.w == 0)
 		return false;
-	PERFORMANCE_BEGIN(M2_RENDER_DATA);
 	struct shader_m2_mesh_block mesh_block;
 	gx_m2_texture_update_matrix(&batch->textures[0], frame, batch, &mesh_block.tex1_matrix);
 	gx_m2_texture_update_matrix(&batch->textures[1], frame, batch, &mesh_block.tex2_matrix);
@@ -983,41 +981,30 @@ static bool gx_m2_batch_prepare_draw(struct gx_m2_batch *batch, struct gx_frame 
 	}
 	mesh_block.alpha_test = batch->alpha_test * color.w;
 	gfx_set_buffer_data(&batch->uniform_buffers[frame->id], &mesh_block, sizeof(mesh_block), 0);
-	PERFORMANCE_END(M2_RENDER_DATA);
-	PERFORMANCE_BEGIN(M2_RENDER_BIND);
 	gfx_bind_constant(g_wow->device, 0, &batch->uniform_buffers[frame->id], sizeof(struct shader_m2_mesh_block), 0);
 	if (pipeline_state)
-		gfx_bind_pipeline_state(g_wow->device, &((gfx_pipeline_state_t*)g_wow->graphics->m2_pipeline_states)[batch->pipeline_state]);
-	PERFORMANCE_END(M2_RENDER_BIND);
+		gfx_bind_pipeline_state(g_wow->device, &((gfx_pipeline_state_t*)g_wow->gx->m2_pipeline_states)[batch->pipeline_state]);
 	return true;
 }
 
 static void gx_m2_batch_render(struct gx_m2_batch *batch, struct gx_frame *frame, struct gx_m2_instance *instance)
 {
 	struct gx_m2_instance_frame *instance_frame = &instance->frames[frame->id];
-	PERFORMANCE_BEGIN(M2_RENDER_BIND);
 	const gfx_texture_t *textures[2];
 	textures[0] = gx_m2_texture_bind(&batch->textures[0], instance);
 	textures[1] = gx_m2_texture_bind(&batch->textures[1], instance);
 	gfx_bind_samplers(g_wow->device, 0, 2, textures);
 	gfx_bind_constant(g_wow->device, 1, &instance_frame->uniform_buffer, sizeof(struct shader_m2_model_block), 0); /* XXX really there ? */
-	PERFORMANCE_END(M2_RENDER_BIND);
-	PERFORMANCE_BEGIN(M2_RENDER_DRAW);
 	gfx_draw_indexed(g_wow->device, batch->indices_nb, batch->indices_offset);
-	PERFORMANCE_END(M2_RENDER_DRAW);
 }
 
 static void gx_m2_batch_render_instanced(struct gx_m2_batch *batch, size_t instances_count)
 {
-	PERFORMANCE_BEGIN(M2_RENDER_BIND);
 	const gfx_texture_t *textures[2];
 	textures[0] = gx_m2_texture_bind_instanced(&batch->textures[0]);
 	textures[1] = gx_m2_texture_bind_instanced(&batch->textures[1]);
 	gfx_bind_samplers(g_wow->device, 0, 2, textures);
-	PERFORMANCE_END(M2_RENDER_BIND);
-	PERFORMANCE_BEGIN(M2_RENDER_DRAW);
 	gfx_draw_indexed_instanced(g_wow->device, batch->indices_nb, batch->indices_offset, instances_count);
-	PERFORMANCE_END(M2_RENDER_DRAW);
 }
 
 static int batch_cmp(const void *v1, const void *v2)
@@ -1195,6 +1182,7 @@ struct gx_m2 *gx_m2_new(char *filename)
 	{
 		jks_array_init(&m2->frames[i].shadow_to_render, sizeof(struct gx_m2_instance*), NULL, &jks_array_memory_fn_GX);
 		jks_array_init(&m2->frames[i].to_render, sizeof(struct gx_m2_instance*), NULL, &jks_array_memory_fn_GX);
+		m2->frames[i].updated = false;
 		pthread_mutex_init(&m2->frames[i].mutex, NULL);
 	}
 	jks_array_init(&m2->instances, sizeof(struct gx_m2_instance*), NULL, &jks_array_memory_fn_GX);
@@ -1264,7 +1252,7 @@ static void m2_unload_task(struct wow_mpq_compound *mpq_compound, void *userdata
 	mem_free(MEM_GX, m2->global_sequences);
 	mem_free(MEM_GX, m2->bone_lookups);
 	wow_m2_attachments_delete(m2->attachments, m2->attachments_nb);
-	wow_m2_sequences_delete(m2->sequences, m2->sequences_nb);
+	mem_free(MEM_GX, m2->sequences);
 	wow_m2_particles_delete(m2->particles, m2->particles_nb);
 	mem_free(MEM_GX, m2->materials);
 	wow_m2_textures_delete(m2->textures, m2->textures_nb);
@@ -1414,12 +1402,13 @@ static void load(struct gx_m2 *m2, struct wow_m2_file *file)
 	}
 	memcpy(m2->collision_normals, file->collision_normals, sizeof(*m2->collision_normals) * m2->collision_normals_nb);
 	m2->sequences_nb = file->sequences_nb;
-	m2->sequences = wow_m2_sequences_dup(file->sequences, file->sequences_nb);
+	m2->sequences = mem_malloc(MEM_GX, sizeof(*m2->sequences) * m2->sequences_nb);
 	if (m2->sequences_nb && !m2->sequences)
 	{
 		LOG_ERROR("failed to allocate m2 sequences");
 		return;
 	}
+	memcpy(m2->sequences, file->sequences, sizeof(*m2->sequences) * m2->sequences_nb);
 	m2->particles_nb = file->particles_nb;
 	m2->particles = wow_m2_particles_dup(file->particles, file->particles_nb);
 	if (m2->particles_nb && !m2->particles)
@@ -1650,17 +1639,17 @@ void gx_m2_render(struct gx_m2 *m2, struct gx_frame *frame, bool transparent)
 {
 	if (!gx_m2_flag_get(m2, GX_M2_FLAG_INITIALIZED))
 		return;
-	PERFORMANCE_BEGIN(M2_RENDER_BIND);
-	gfx_bind_attributes_state(g_wow->device, &m2->attributes_state, &g_wow->graphics->m2_input_layout);
-	PERFORMANCE_END(M2_RENDER_BIND);
-	PERFORMANCE_BEGIN(M2_RENDER_DATA);
+	gfx_bind_attributes_state(g_wow->device, &m2->attributes_state, &g_wow->gx->m2_input_layout);
 	struct gx_m2_frame *m2_frame = &m2->frames[frame->id];
-	for (size_t i = 0; i < m2_frame->to_render.size; ++i)
+	if (!m2_frame->updated)
 	{
-		struct gx_m2_instance *instance = *JKS_ARRAY_GET(&m2_frame->to_render, i, struct gx_m2_instance*);
-		update_instance_uniform_buffer(instance, frame);
+		for (size_t i = 0; i < m2_frame->to_render.size; ++i)
+		{
+			struct gx_m2_instance *instance = *JKS_ARRAY_GET(&m2_frame->to_render, i, struct gx_m2_instance*);
+			update_instance_uniform_buffer(instance, frame);
+		}
+		m2_frame->updated = true;
 	}
-	PERFORMANCE_END(M2_RENDER_DATA);
 	int profile_id = 0;
 	struct gx_m2_profile *profile = JKS_ARRAY_GET(&m2->profiles, profile_id, struct gx_m2_profile);
 	gx_m2_profile_render(profile, frame, &m2_frame->to_render, transparent);
@@ -1670,12 +1659,8 @@ static void gx_m2_render_instance(struct gx_m2 *m2, struct gx_frame *frame, stru
 {
 	if (!gx_m2_flag_get(m2, GX_M2_FLAG_INITIALIZED))
 		return;
-	PERFORMANCE_BEGIN(M2_RENDER_BIND);
-	gfx_bind_attributes_state(g_wow->device, &m2->attributes_state, &g_wow->graphics->m2_input_layout);
-	PERFORMANCE_END(M2_RENDER_BIND);
-	PERFORMANCE_BEGIN(M2_RENDER_DATA);
+	gfx_bind_attributes_state(g_wow->device, &m2->attributes_state, &g_wow->gx->m2_input_layout);
 	update_instance_uniform_buffer(instance, frame);
-	PERFORMANCE_END(M2_RENDER_DATA);
 	int profile_id = 0;
 	struct gx_m2_profile *profile = JKS_ARRAY_GET(&m2->profiles, profile_id, struct gx_m2_profile);
 	gx_m2_profile_render_instance(profile, frame, instance, transparent, params);
@@ -1725,6 +1710,7 @@ void gx_m2_clear_update(struct gx_m2 *m2, struct gx_frame *frame)
 	}
 	jks_array_resize(&m2_frame->shadow_to_render, 0);
 	jks_array_resize(&m2_frame->to_render, 0);
+	m2_frame->updated = false;
 }
 
 static bool instance_init(struct gx_m2_instance *instance)
@@ -1895,6 +1881,9 @@ static void update_instance_uniform_buffer(struct gx_m2_instance *instance, stru
 	data.v = frame->view_v;
 	data.mv = instance_frame->mv;
 	data.mvp = instance_frame->mvp;
+	data.shadow_v = frame->view_shadow_v;
+	data.shadow_mv = instance_frame->shadow_mv;
+	data.shadow_mvp = instance_frame->shadow_mvp;
 	if (instance->parent->bones_nb)
 	{
 		if (instance->parent->bones_nb <= sizeof(data.bone_mats) / sizeof(*data.bone_mats))
@@ -2242,7 +2231,7 @@ void gx_m2_instance_add_to_render(struct gx_m2_instance *instance, struct gx_fra
 		return;
 	}
 	instance_frame->culled = !bypass_frustum && !frustum_check_fast(&frame->frustum, &instance->aabb);
-	instance_frame->shadow_culled = !(g_wow->render_opt & RENDER_OPT_DYN_SHADOW)
+	instance_frame->shadow_culled = !(g_wow->gx->opt & GX_OPT_DYN_SHADOW)
 	                             || !(instance->flags & GX_M2_INSTANCE_FLAG_DYN_SHADOW)
 	                             || !frustum_check_fast(&frame->shadow_frustum, &instance->aabb);
 	if (instance_frame->culled && instance_frame->shadow_culled)
@@ -2251,7 +2240,7 @@ void gx_m2_instance_add_to_render(struct gx_m2_instance *instance, struct gx_fra
 	gx_m2_instance_update_bones(instance, frame);
 	update_sequences_times(instance, frame);
 #ifdef WITH_DEBUG_RENDERING
-	if (g_wow->render_opt & RENDER_OPT_M2_AABB)
+	if (g_wow->gx->opt & GX_OPT_M2_AABB)
 	{
 		gx_aabb_add_to_render(&instance->gx_aabb, frame, &frame->view_vp);
 		gx_aabb_add_to_render(&instance->gx_caabb, frame, &frame->view_vp);
@@ -2577,15 +2566,11 @@ void gx_m2_ground_batch_render(struct gx_m2_ground_batch *batch, struct gx_frame
 	struct gx_m2_ground_batch_frame *batch_frame = &batch->frames[frame->id];
 	if (!batch->initialized)
 		gx_m2_ground_batch_initialize(batch);
-	PERFORMANCE_BEGIN(M2_RENDER_DATA);
 	struct shader_m2_ground_model_block model_block;
 	model_block.v = frame->view_v;
 	model_block.p = frame->view_p;
 	gfx_set_buffer_data(&batch_frame->uniform_buffer, &model_block, sizeof(struct shader_m2_ground_model_block), 0);
-	PERFORMANCE_END(M2_RENDER_DATA);
-	PERFORMANCE_BEGIN(M2_RENDER_BIND);
 	gfx_bind_constant(g_wow->device, 1, &batch_frame->uniform_buffer, sizeof(struct shader_m2_ground_model_block), 0);
-	PERFORMANCE_END(M2_RENDER_BIND);
 	if (batch_frame->instances.size > batch_frame->buffer_size
 	 || batch_frame->instances.size < batch_frame->buffer_size / 2)
 	{
@@ -2602,11 +2587,8 @@ void gx_m2_ground_batch_render(struct gx_m2_ground_batch *batch, struct gx_frame
 		};
 		gfx_create_attributes_state(g_wow->device, &batch_frame->attributes_state, binds, sizeof(binds) / sizeof(*binds), &batch->m2->indices_buffer, GFX_INDEX_UINT16);
 	}
-	PERFORMANCE_BEGIN(M2_RENDER_DATA);
 	gfx_set_buffer_data(&batch_frame->instanced_buffer, batch_frame->instances.data, sizeof(struct shader_m2_ground_input) * batch_frame->instances.size, 0);
-	PERFORMANCE_END(M2_RENDER_DATA);
-	PERFORMANCE_BEGIN(M2_RENDER_BIND);
-	gfx_bind_attributes_state(g_wow->device, &batch_frame->attributes_state, &g_wow->graphics->m2_ground_input_layout);
+	gfx_bind_attributes_state(g_wow->device, &batch_frame->attributes_state, &g_wow->gx->m2_ground_input_layout);
 	if (batch->light)
 	{
 		if (frame->m2_lighting_type != GX_M2_LIGHTING_GROUND_LIGHT)
@@ -2623,11 +2605,10 @@ void gx_m2_ground_batch_render(struct gx_m2_ground_batch *batch, struct gx_frame
 			gfx_bind_constant(g_wow->device, 2, &frame->m2_ground_shadow_uniform_buffer, sizeof(struct shader_m2_scene_block), 0);
 		}
 	}
-	PERFORMANCE_END(M2_RENDER_BIND);
 	struct gx_m2_profile *m2_profile = JKS_ARRAY_GET(&batch->m2->profiles, 0, struct gx_m2_profile);
 	struct gx_m2_batch *m2_batch = JKS_ARRAY_GET(&m2_profile->batches, 0, struct gx_m2_batch);
 	if (!gx_m2_batch_prepare_draw(m2_batch, frame, NULL, false))
 		return;
-	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->m2_ground_pipeline_state);
+	gfx_bind_pipeline_state(g_wow->device, &g_wow->gx->m2_ground_pipeline_state);
 	gx_m2_batch_render_instanced(m2_batch, batch_frame->instances.size);
 }

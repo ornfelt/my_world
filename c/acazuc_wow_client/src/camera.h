@@ -7,12 +7,14 @@
 
 #include <stdbool.h>
 
-#define CAMERA_MOVE_FRONT   0x1
-#define CAMERA_MOVE_BACK    0x2
-#define CAMERA_MOVE_LEFT    0x4
-#define CAMERA_MOVE_RIGHT   0x8
-#define CAMERA_ROTATE_LEFT  0x10
-#define CAMERA_ROTATE_RIGHT 0x20
+#define CAMERA_MOVE_FRONT 0x01
+#define CAMERA_MOVE_BACK  0x02
+#define CAMERA_MOVE_LEFT  0x04
+#define CAMERA_MOVE_RIGHT 0x08
+#define CAMERA_TURN_LEFT  0x10
+#define CAMERA_TURN_RIGHT 0x20
+#define CAMERA_MOVE_UP    0x40
+#define CAMERA_MOVE_DOWN  0x80
 
 struct unit;
 
@@ -42,6 +44,7 @@ struct camera
 	float view_distance;
 	float fov;
 	bool move_unit;
+	bool autorun;
 };
 
 struct camera *camera_new(void);

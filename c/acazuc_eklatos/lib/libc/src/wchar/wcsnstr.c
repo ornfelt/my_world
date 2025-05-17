@@ -1,6 +1,7 @@
 #include <wchar.h>
 
-wchar_t *wcsnstr(const wchar_t *s, const wchar_t *needle, size_t n)
+wchar_t *
+wcsnstr(const wchar_t *s, const wchar_t *needle, size_t n)
 {
 	if (!needle)
 		return (wchar_t*)s;

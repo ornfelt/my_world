@@ -4,242 +4,366 @@
 #include <assert.h>
 #include <math.h>
 
-typedef void (*mat_opf_t)(const GLfloat *m);
-
-static void mat_opf(const GLdouble *m, mat_opf_t opf)
+static void
+matrix_dtf(GLfloat *mf, const GLdouble *m)
 {
-	GLfloat matf[16];
 	for (GLint i = 0; i < 16; ++i)
-		matf[i] = m[i];
-	opf(matf);
+		mf[i] = m[i];
 }
 
-static void get_curmat(struct mat4 *mat)
+static void
+matrix_transpose(GLfloat * restrict dst, const GLfloat * restrict src)
 {
-	switch (g_ctx->matrix_mode)
+	for (int y = 0; y < 4; ++y)
 	{
-		case GL_MODELVIEW:
-			memcpy(mat, &g_ctx->modelview_matrix[g_ctx->modelview_stack_depth], sizeof(*mat));
-			break;
-		case GL_PROJECTION:
-			memcpy(mat, &g_ctx->projection_matrix[g_ctx->projection_stack_depth], sizeof(*mat));
-			break;
-		default:
-			g_ctx->errno = GL_INVALID_ENUM;
-			return;
+		for (int x = 0; x < 4; ++x)
+			dst[y + x * 4] = src[y + x * 4];
 	}
 }
 
-void glFrustum(GLdouble left, GLdouble right, GLdouble bottom,
-               GLdouble top, GLdouble near, GLdouble far)
+static float
+mult_value(const GLfloat *m1, const GLfloat *m2, int x, int y)
 {
-	struct mat4 mat;
+	return (m1[y + 0x0] * m2[0 + x * 4]
+	      + m1[y + 0x4] * m2[1 + x * 4]
+	      + m1[y + 0x8] * m2[2 + x * 4]
+	      + m1[y + 0xC] * m2[3 + x * 4]);
+}
 
-	if (g_ctx->immediate.enabled)
+static void
+matrix_multiply(GLfloat *dst, const GLfloat *m1, const GLfloat *m2)
+{
+	GLfloat tmp[16];
+
+	for (int y = 0; y < 4; ++y)
 	{
-		g_ctx->errno = GL_INVALID_OPERATION;
+		for (int x = 0; x < 4; ++x)
+			tmp[y + x * 4] = mult_value(m1, m2, x, y);
+	}
+	memcpy(dst, &tmp, sizeof(tmp));
+}
+
+static GLfloat *
+get_matrix_pointer(struct gl_ctx *ctx)
+{
+	switch (ctx->fixed.matrix_mode)
+	{
+		case GL_MODELVIEW:
+			return ctx->fixed.modelview_matrix[ctx->fixed.modelview_stack_depth];
+		case GL_PROJECTION:
+			return ctx->fixed.projection_matrix[ctx->fixed.projection_stack_depth];
+		default:
+			return NULL;
+	}
+}
+
+static void
+mult_matrix(struct gl_ctx *ctx,
+            const GLfloat *m)
+{
+	GLfloat *dst;
+
+	if (ctx->immediate.enable)
+	{
+		GL_SET_ERR(ctx, GL_INVALID_OPERATION);
+		return;
+	}
+	dst = get_matrix_pointer(ctx);
+	if (!dst)
+		return;
+	matrix_multiply(dst, dst, m);
+}
+
+void
+glFrustum(GLdouble left,
+          GLdouble right,
+          GLdouble bottom,
+          GLdouble top,
+          GLdouble near,
+          GLdouble far)
+{
+	struct gl_ctx *ctx = g_ctx;
+	GLfloat m[16];
+
+	if (ctx->immediate.enable)
+	{
+		GL_SET_ERR(ctx, GL_INVALID_OPERATION);
 		return;
 	}
 	if (near < 0 || far < 0)
 	{
-		g_ctx->errno = GL_INVALID_ENUM;
+		GL_SET_ERR(ctx, GL_INVALID_ENUM);
 		return;
 	}
-	mat4_clear(&mat);
-	mat.v[0] = (2 * near) / (right - left);
-	mat.v[5] = (2 * near) / (top - bottom);
-	mat.v[8] = (right + left) / (right - left);
-	mat.v[9] = (top + bottom) / (top - bottom);
-	mat.v[10] = -(far + near) / (far - near);
-	mat.v[11] = -1;
-	mat.v[14] = -(2 * far * near) / (far - near);
-	glMultMatrixf(mat.v);
+	m[0x0] = (2 * near) / (right - left);
+	m[0x1] = 0;
+	m[0x2] = 0;
+	m[0x3] = 0;
+	m[0x4] = 0;
+	m[0x5] = (2 * near) / (top - bottom);
+	m[0x6] = 0;
+	m[0x7] = 0;
+	m[0x8] = (right + left) / (right - left);
+	m[0x9] = (top + bottom) / (top - bottom);
+	m[0xA] = -(far + near) / (far - near);
+	m[0xB] = -1;
+	m[0xC] = 0;
+	m[0xD] = 0;
+	m[0xE] = -(2 * far * near) / (far - near);
+	m[0xF] = 0;
+	mult_matrix(ctx, m);
 }
 
-void glLoadMatrixd(const GLdouble *m)
-{
-	mat_opf(m, glLoadMatrixf);
-}
-
-void glLoadMatrixf(const GLfloat *m)
+static void
+load_matrix(struct gl_ctx *ctx,
+            const GLfloat *m)
 {
 	GLfloat *dst;
 
-	if (g_ctx->immediate.enabled)
+	if (ctx->immediate.enable)
 	{
-		g_ctx->errno = GL_INVALID_OPERATION;
+		GL_SET_ERR(ctx, GL_INVALID_OPERATION);
 		return;
 	}
-	switch (g_ctx->matrix_mode)
+	dst = get_matrix_pointer(ctx);
+	if (!dst)
 	{
-		case GL_MODELVIEW:
-			dst = g_ctx->modelview_matrix[g_ctx->modelview_stack_depth].v;
-			break;
-		case GL_PROJECTION:
-			dst = g_ctx->projection_matrix[g_ctx->projection_stack_depth].v;
-			break;
-		default:
-			assert(!"invalid matrix type");
-			return;
+		assert(!"invalid matrix type");
+		GL_SET_ERR(ctx, GL_INVALID_OPERATION);
+		return;
 	}
 	memcpy(dst, m, sizeof(*m) * 16);
 }
 
-void glLoadIdentity(void)
+void
+glLoadMatrixd(const GLdouble *m)
 {
-	struct mat4 identity;
+	struct gl_ctx *ctx = g_ctx;
+	GLfloat mf[16];
 
-	if (g_ctx->immediate.enabled)
+	matrix_dtf(mf, m);
+	load_matrix(ctx, mf);
+}
+
+void
+glLoadMatrixf(const GLfloat *m)
+{
+	struct gl_ctx *ctx = g_ctx;
+
+	load_matrix(ctx, m);
+}
+
+void
+glLoadIdentity(void)
+{
+	struct gl_ctx *ctx = g_ctx;
+	GLfloat *dst;
+
+	if (ctx->immediate.enable)
 	{
-		g_ctx->errno = GL_INVALID_OPERATION;
+		GL_SET_ERR(ctx, GL_INVALID_OPERATION);
 		return;
 	}
-	mat4_init_identity(&identity);
-	glLoadMatrixf(identity.v);
+	dst = get_matrix_pointer(ctx);
+	if (!dst)
+		return;
+	dst[0x0] = 1;
+	dst[0x1] = 0;
+	dst[0x2] = 0;
+	dst[0x3] = 0;
+	dst[0x4] = 0;
+	dst[0x5] = 1;
+	dst[0x6] = 0;
+	dst[0x7] = 0;
+	dst[0x8] = 0;
+	dst[0x9] = 0;
+	dst[0xA] = 1;
+	dst[0xB] = 0;
+	dst[0xC] = 0;
+	dst[0xD] = 0;
+	dst[0xE] = 0;
+	dst[0xF] = 1;
 }
 
-void glLoadTransposeMatrixd(const GLdouble *m)
+static void
+load_transpose_matrix(struct gl_ctx *ctx,
+                      const GLfloat *m)
 {
-	mat_opf(m, glLoadTransposeMatrixf);
-}
+	GLfloat *dst;
 
-void glLoadTransposeMatrixf(const GLfloat *m)
-{
-	struct mat4 *dst;
-
-	if (g_ctx->immediate.enabled)
+	if (ctx->immediate.enable)
 	{
-		g_ctx->errno = GL_INVALID_OPERATION;
+		GL_SET_ERR(ctx, GL_INVALID_OPERATION);
 		return;
 	}
-	switch (g_ctx->matrix_mode)
-	{
-		case GL_MODELVIEW:
-			dst = &g_ctx->modelview_matrix[g_ctx->modelview_stack_depth];
-			break;
-		case GL_PROJECTION:
-			dst = &g_ctx->projection_matrix[g_ctx->projection_stack_depth];
-			break;
-		default:
-			assert(!"invalid matrix type");
-			return;
-	}
-	memcpy(dst->v, m, sizeof(*m) * 16);
-	mat4_reverse(dst);
+	dst = get_matrix_pointer(ctx);
+	if (!dst)
+		return;
+	matrix_transpose(dst, m);
 }
 
-void glMatrixMode(GLenum mode)
+void
+glLoadTransposeMatrixd(const GLdouble *m)
 {
-	if (g_ctx->immediate.enabled)
+	struct gl_ctx *ctx = g_ctx;
+	GLfloat mf[16];
+
+	matrix_dtf(mf, m);
+	load_transpose_matrix(ctx, mf);
+}
+
+void
+glLoadTransposeMatrixf(const GLfloat *m)
+{
+	struct gl_ctx *ctx = g_ctx;
+
+	load_transpose_matrix(ctx, m);
+}
+
+void
+glMatrixMode(GLenum mode)
+{
+	struct gl_ctx *ctx = g_ctx;
+
+	if (ctx->immediate.enable)
 	{
-		g_ctx->errno = GL_INVALID_OPERATION;
+		GL_SET_ERR(ctx, GL_INVALID_OPERATION);
 		return;
 	}
 	switch (mode)
 	{
 		case GL_MODELVIEW:
 		case GL_PROJECTION:
-			g_ctx->matrix_mode = mode;
+			ctx->fixed.matrix_mode = mode;
 			break;
 		default:
-			g_ctx->errno = GL_INVALID_ENUM;
+			GL_SET_ERR(ctx, GL_INVALID_ENUM);
 			return;
 	}
 }
 
-void glMultMatrixd(const GLdouble *m)
+void
+glMultMatrixd(const GLdouble *m)
 {
-	mat_opf(m, glMultMatrixf);
+	struct gl_ctx *ctx = g_ctx;
+	GLfloat mf[16];
+
+	matrix_dtf(mf, m);
+	mult_matrix(ctx, mf);
 }
 
-void glMultMatrixf(const GLfloat *m)
+void
+glMultMatrixf(const GLfloat *m)
 {
-	struct mat4 cur_mat;
-	struct mat4 new;
+	struct gl_ctx *ctx = g_ctx;
 
-	if (g_ctx->immediate.enabled)
+	mult_matrix(ctx, m);
+}
+
+static void
+mult_transpose_matrix(struct gl_ctx *ctx,
+                      const GLfloat *m)
+{
+	GLfloat *dst;
+	GLfloat new[16];
+
+	if (ctx->immediate.enable)
 	{
-		g_ctx->errno = GL_INVALID_OPERATION;
+		GL_SET_ERR(ctx, GL_INVALID_OPERATION);
 		return;
 	}
-	memcpy(new.v, m, sizeof(*m) * 16);
-	get_curmat(&cur_mat);
-	mat4_mult(&cur_mat, &cur_mat, &new);
-	glLoadMatrixf(cur_mat.v);
-}
-
-void glMultTransposeMatrixd(const GLdouble *m)
-{
-	mat_opf(m, glMultTransposeMatrixf);
-}
-
-void glMultTransposeMatrixf(const GLfloat *m)
-{
-	struct mat4 cur_mat;
-	struct mat4 new;
-
-	if (g_ctx->immediate.enabled)
-	{
-		g_ctx->errno = GL_INVALID_OPERATION;
+	dst = get_matrix_pointer(ctx);
+	if (!dst)
 		return;
-	}
-	memcpy(new.v, m, sizeof(*m) * 16);
-	mat4_reverse(&new);
-	get_curmat(&cur_mat);
-	mat4_mult(&cur_mat, &cur_mat, &new);
-	glLoadMatrixf(cur_mat.v);
+	matrix_transpose(new, m);
+	matrix_multiply(dst, dst, new);
 }
 
-void glOrtho(GLdouble left, GLdouble right, GLdouble bottom,
-             GLdouble top, GLdouble near, GLdouble far)
+void
+glMultTransposeMatrixd(const GLdouble *m)
 {
-	struct mat4 mat;
+	struct gl_ctx *ctx = g_ctx;
+	GLfloat mf[16];
 
-	if (g_ctx->immediate.enabled)
+	matrix_dtf(mf, m);
+	mult_transpose_matrix(ctx, mf);
+}
+
+void
+glMultTransposeMatrixf(const GLfloat *m)
+{
+	struct gl_ctx *ctx = g_ctx;
+
+	mult_transpose_matrix(ctx, m);
+}
+
+void
+glOrtho(GLdouble left,
+        GLdouble right,
+        GLdouble bottom,
+        GLdouble top,
+        GLdouble near,
+        GLdouble far)
+{
+	struct gl_ctx *ctx = g_ctx;
+	GLfloat m[16];
+
+	if (ctx->immediate.enable)
 	{
-		g_ctx->errno = GL_INVALID_OPERATION;
+		GL_SET_ERR(ctx, GL_INVALID_OPERATION);
 		return;
 	}
 	if (left == right || bottom == top || near == far)
 	{
-		g_ctx->errno = GL_INVALID_VALUE;
+		GL_SET_ERR(ctx, GL_INVALID_VALUE);
 		return;
 	}
-	mat4_clear(&mat);
-	mat.v[0] = 2 / (right - left);
-	mat.v[5] = 2 / (top - bottom);
-	mat.v[10] = -2 / (far - near);
-	mat.v[12] = -(right + left) / (right - left);
-	mat.v[13] = -(top + bottom) / (top - bottom);
-	mat.v[14] = -(far + near) / (far - near);
-	mat.v[15] = 1;
-	glMultMatrixf(mat.v);
+	m[0x0] = 2 / (right - left);
+	m[0x1] = 0;
+	m[0x2] = 0;
+	m[0x3] = 0;
+	m[0x4] = 0;
+	m[0x5] = 2 / (top - bottom);
+	m[0x6] = 0;
+	m[0x7] = 0;
+	m[0x8] = 0;
+	m[0x9] = 0;
+	m[0xA] = -2 / (far - near);
+	m[0xB] = 0;
+	m[0xC] = -(right + left) / (right - left);
+	m[0xD] = -(top + bottom) / (top - bottom);
+	m[0xE] = -(far + near) / (far - near);
+	m[0xF] = 1;
+	mult_matrix(ctx, m);
 }
 
-void glPopMatrix(void)
+void
+glPopMatrix(void)
 {
-	if (g_ctx->immediate.enabled)
+	struct gl_ctx *ctx = g_ctx;
+
+	if (ctx->immediate.enable)
 	{
-		g_ctx->errno = GL_INVALID_OPERATION;
+		GL_SET_ERR(ctx, GL_INVALID_OPERATION);
 		return;
 	}
-	switch (g_ctx->matrix_mode)
+	switch (ctx->fixed.matrix_mode)
 	{
 		case GL_MODELVIEW:
-			if (g_ctx->modelview_stack_depth <= 0)
+			if (ctx->fixed.modelview_stack_depth <= 0)
 			{
-				g_ctx->errno = GL_STACK_UNDERFLOW;
+				GL_SET_ERR(ctx, GL_STACK_UNDERFLOW);
 				return;
 			}
-			g_ctx->modelview_stack_depth--;
+			ctx->fixed.modelview_stack_depth--;
 			break;
 		case GL_PROJECTION:
-			if (g_ctx->projection_stack_depth <= 0)
+			if (ctx->fixed.projection_stack_depth <= 0)
 			{
-				g_ctx->errno = GL_STACK_UNDERFLOW;
+				GL_SET_ERR(ctx, GL_STACK_UNDERFLOW);
 				return;
 			}
-			g_ctx->projection_stack_depth--;
+			ctx->fixed.projection_stack_depth--;
 			break;
 		default:
 			assert(!"invalid matrix mode");
@@ -247,36 +371,39 @@ void glPopMatrix(void)
 	}
 }
 
-void glPushMatrix(void)
+void
+glPushMatrix(void)
 {
-	if (g_ctx->immediate.enabled)
+	struct gl_ctx *ctx = g_ctx;
+
+	if (ctx->immediate.enable)
 	{
-		g_ctx->errno = GL_INVALID_OPERATION;
+		GL_SET_ERR(ctx, GL_INVALID_OPERATION);
 		return;
 	}
-	switch (g_ctx->matrix_mode)
+	switch (ctx->fixed.matrix_mode)
 	{
 		case GL_MODELVIEW:
-			if (g_ctx->modelview_stack_depth >= g_ctx->modelview_max_stack_depth - 1)
+			if (ctx->fixed.modelview_stack_depth >= ctx->fixed.modelview_max_stack_depth - 1)
 			{
-				g_ctx->errno = GL_STACK_OVERFLOW;
+				GL_SET_ERR(ctx, GL_STACK_OVERFLOW);
 				return;
 			}
-			memcpy(&g_ctx->modelview_matrix[g_ctx->modelview_stack_depth + 1],
-			       &g_ctx->modelview_matrix[g_ctx->modelview_stack_depth],
-			       sizeof(*g_ctx->modelview_matrix));
-			g_ctx->modelview_stack_depth++;
+			memcpy(&ctx->fixed.modelview_matrix[ctx->fixed.modelview_stack_depth + 1],
+			       &ctx->fixed.modelview_matrix[ctx->fixed.modelview_stack_depth],
+			       sizeof(*ctx->fixed.modelview_matrix));
+			ctx->fixed.modelview_stack_depth++;
 			break;
 		case GL_PROJECTION:
-			if (g_ctx->projection_stack_depth >= g_ctx->projection_max_stack_depth - 1)
+			if (ctx->fixed.projection_stack_depth >= ctx->fixed.projection_max_stack_depth - 1)
 			{
-				g_ctx->errno = GL_STACK_OVERFLOW;
+				GL_SET_ERR(ctx, GL_STACK_OVERFLOW);
 				return;
 			}
-			memcpy(&g_ctx->projection_matrix[g_ctx->projection_stack_depth + 1],
-			       &g_ctx->projection_matrix[g_ctx->projection_stack_depth],
-			       sizeof(*g_ctx->projection_matrix));
-			g_ctx->projection_stack_depth++;
+			memcpy(&ctx->fixed.projection_matrix[ctx->fixed.projection_stack_depth + 1],
+			       &ctx->fixed.projection_matrix[ctx->fixed.projection_stack_depth],
+			       sizeof(*ctx->fixed.projection_matrix));
+			ctx->fixed.projection_stack_depth++;
 			break;
 		default:
 			assert(!"invalid matrix mode");
@@ -284,20 +411,20 @@ void glPushMatrix(void)
 	}
 }
 
-void glRotated(GLdouble angle, GLdouble x, GLdouble y, GLdouble z)
+static void
+rotate(struct gl_ctx *ctx,
+       GLfloat angle,
+       GLfloat x,
+       GLfloat y,
+       GLfloat z)
 {
-	glRotatef(angle, x, y, z);
-}
-
-void glRotatef(GLfloat angle, GLfloat x, GLfloat y, GLfloat z)
-{
-	struct mat4 rotation;
+	GLfloat m[16];
 	GLfloat c;
 	GLfloat s;
 
-	if (g_ctx->immediate.enabled)
+	if (ctx->immediate.enable)
 	{
-		g_ctx->errno = GL_INVALID_OPERATION;
+		GL_SET_ERR(ctx, GL_INVALID_OPERATION);
 		return;
 	}
 	x = clampf(x, -1, 1);
@@ -305,52 +432,121 @@ void glRotatef(GLfloat angle, GLfloat x, GLfloat y, GLfloat z)
 	z = clampf(z, -1, 1);
 	c = cosf(angle);
 	s = sinf(angle);
-	mat4_clear(&rotation);
-	rotation.v[0] = x * x * (1 - c) + c;
-	rotation.v[1] = y * x * (1 - c) + z * s;
-	rotation.v[2] = x * z * (1 - c) - y * s;
-	rotation.v[4] = x * y * (1 - c) - z * s;
-	rotation.v[5] = y * y * (1 - c) + c;
-	rotation.v[6] = y * z * (1 - c) + x * s;
-	rotation.v[8] = x * z * (1 - c) + y * s;
-	rotation.v[9] = y * z * (1 - c) - x * s;
-	rotation.v[10] = z * z * (1 - c) + c;
-	rotation.v[15] = 1;
-	glMultMatrixf(rotation.v);
+	m[0x0] = x * x * (1 - c) + c;
+	m[0x1] = y * x * (1 - c) + z * s;
+	m[0x2] = x * z * (1 - c) - y * s;
+	m[0x3] = 0;
+	m[0x4] = x * y * (1 - c) - z * s;
+	m[0x5] = y * y * (1 - c) + c;
+	m[0x6] = y * z * (1 - c) + x * s;
+	m[0x7] = 0;
+	m[0x8] = x * z * (1 - c) + y * s;
+	m[0x9] = y * z * (1 - c) - x * s;
+	m[0xA] = z * z * (1 - c) + c;
+	m[0xB] = 0;
+	m[0xC] = 0;
+	m[0xD] = 0;
+	m[0xE] = 0;
+	m[0xF] = 1;
+	mult_matrix(ctx, m);
 }
 
-void glScaled(GLdouble x, GLdouble y, GLdouble z)
+void
+glRotated(GLdouble angle, GLdouble x, GLdouble y, GLdouble z)
 {
-	glScalef(x, y, z);
+	rotate(g_ctx, angle, x, y, z);
 }
 
-void glScalef(GLfloat x, GLfloat y, GLfloat z)
+void
+glRotatef(GLfloat angle, GLfloat x, GLfloat y, GLfloat z)
 {
-	struct mat4 scale;
+	rotate(g_ctx, angle, x, y, z);
+}
 
-	if (g_ctx->immediate.enabled)
+static void
+scale(struct gl_ctx *ctx,
+      GLfloat x,
+      GLfloat y,
+      GLfloat z)
+{
+	GLfloat m[16];
+
+	if (ctx->immediate.enable)
 	{
-		g_ctx->errno = GL_INVALID_OPERATION;
+		GL_SET_ERR(ctx, GL_INVALID_OPERATION);
 		return;
 	}
-	mat4_init_scale(&scale, x, y, z);
-	glMultMatrixf(scale.v);
+	m[0x0] = x;
+	m[0x1] = 0;
+	m[0x2] = 0;
+	m[0x3] = 0;
+	m[0x4] = 0;
+	m[0x5] = y;
+	m[0x6] = 0;
+	m[0x7] = 0;
+	m[0x8] = 0;
+	m[0x9] = 0;
+	m[0xA] = z;
+	m[0xB] = 0;
+	m[0xC] = 0;
+	m[0xD] = 0;
+	m[0xE] = 0;
+	m[0xF] = 1;
+	mult_matrix(ctx, m);
 }
 
-void glTranslated(GLdouble x, GLdouble y, GLdouble z)
+void
+glScaled(GLdouble x, GLdouble y, GLdouble z)
 {
-	glTranslatef(x, y, z);
+	scale(g_ctx, x, y, z);
 }
 
-void glTranslatef(GLfloat x, GLfloat y, GLfloat z)
+void
+glScalef(GLfloat x, GLfloat y, GLfloat z)
 {
-	struct mat4 translate;
+	scale(g_ctx, x, y, z);
+}
 
-	if (g_ctx->immediate.enabled)
+static void
+translate(struct gl_ctx *ctx,
+          GLfloat x,
+          GLfloat y,
+          GLfloat z)
+{
+	GLfloat m[16];
+
+	if (ctx->immediate.enable)
 	{
-		g_ctx->errno = GL_INVALID_OPERATION;
+		GL_SET_ERR(ctx, GL_INVALID_OPERATION);
 		return;
 	}
-	mat4_init_translation(&translate, x, y, z);
-	glMultMatrixf(translate.v);
+	m[0x0] = 1;
+	m[0x1] = 0;
+	m[0x2] = 0;
+	m[0x3] = 0;
+	m[0x4] = 0;
+	m[0x5] = 1;
+	m[0x6] = 0;
+	m[0x7] = 0;
+	m[0x8] = 0;
+	m[0x9] = 0;
+	m[0xA] = 1;
+	m[0xB] = 0;
+	m[0xC] = x;
+	m[0xD] = y;
+	m[0xE] = z;
+	m[0xF] = 1;
+	mult_matrix(ctx, m);
+}
+
+void
+glTranslated(GLdouble x, GLdouble y, GLdouble z)
+{
+	translate(g_ctx, x, y, z);
+}
+
+void
+glTranslatef(GLfloat x, GLfloat y, GLfloat z)
+{
+	translate(g_ctx, x, y, z);
 }

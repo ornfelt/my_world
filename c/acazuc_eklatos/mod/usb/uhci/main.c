@@ -139,37 +139,44 @@ struct uhci_isoc_pipe
 	int td_ff; /* which list is currently being processed */
 };
 
-static inline uint16_t uhci_r16(struct uhci *uhci, uint32_t reg)
+static inline uint16_t
+uhci_r16(struct uhci *uhci, uint32_t reg)
 {
 	return pci_r16(uhci->pci_map, reg);
 }
 
-static inline uint32_t uhci_r32(struct uhci *uhci, uint32_t reg)
+static inline uint32_t
+uhci_r32(struct uhci *uhci, uint32_t reg)
 {
 	return pci_r32(uhci->pci_map, reg);
 }
 
-static inline void uhci_w16(struct uhci *uhci, uint32_t reg, uint16_t val)
+static inline void
+uhci_w16(struct uhci *uhci, uint32_t reg, uint16_t val)
 {
 	pci_w16(uhci->pci_map, reg, val);
 }
 
-static inline void uhci_w32(struct uhci *uhci, uint32_t reg, uint32_t val)
+static inline void
+uhci_w32(struct uhci *uhci, uint32_t reg, uint32_t val)
 {
 	pci_w32(uhci->pci_map, reg, val);
 }
 
-static inline void uhci_lock(struct uhci *uhci)
+static inline void
+uhci_lock(struct uhci *uhci)
 {
 	mutex_lock(&uhci->mutex);
 }
 
-static inline void uhci_unlock(struct uhci *uhci)
+static inline void
+uhci_unlock(struct uhci *uhci)
 {
 	mutex_unlock(&uhci->mutex);
 }
 
-static struct uhci_td *td_alloc(struct uhci *uhci)
+static struct uhci_td *
+td_alloc(struct uhci *uhci)
 {
 	struct uhci_td *td = TAILQ_LAST(&uhci->free_td, uhci_td_head);
 	if (!td)
@@ -178,19 +185,22 @@ static struct uhci_td *td_alloc(struct uhci *uhci)
 	return td;
 }
 
-static void td_free(struct uhci *uhci, struct uhci_td *td)
+static void
+td_free(struct uhci *uhci, struct uhci_td *td)
 {
 	if (!td)
 		return;
 	TAILQ_INSERT_TAIL(&uhci->free_td, td, chain);
 }
 
-static uint32_t td_paddr(struct uhci *uhci, struct uhci_td *td)
+static uint32_t
+td_paddr(struct uhci *uhci, struct uhci_td *td)
 {
 	return pm_page_addr(uhci->td_dma->pages) + ((uint8_t*)td - (uint8_t*)uhci->td);
 }
 
-static struct uhci_td *td_from_paddr(struct uhci *uhci, uint32_t paddr)
+static struct uhci_td *
+td_from_paddr(struct uhci *uhci, uint32_t paddr)
 {
 	uintptr_t base = pm_page_addr(uhci->td_dma->pages);
 	if (paddr % sizeof(uhci->td)
@@ -200,17 +210,22 @@ static struct uhci_td *td_from_paddr(struct uhci *uhci, uint32_t paddr)
 	return &uhci->td[(paddr - base) / sizeof(*uhci->td)];
 }
 
-static void td_enqueue(struct uhci *uhci, struct uhci_td_head *list,
-                       struct uhci_td *td)
+static void
+td_enqueue(struct uhci *uhci, struct uhci_td_head *list, struct uhci_td *td)
 {
 	if (!TAILQ_EMPTY(list))
 		TAILQ_LAST(list, uhci_td_head)->link = TD_VF | td_paddr(uhci, td);
 	TAILQ_INSERT_TAIL(list, td, chain);
 }
 
-static void td_setup(struct uhci_td *td, uint32_t pid,
-                     uint32_t dev, uint32_t endp, uint32_t datat,
-                     uint32_t maxlen, uint32_t buffer)
+static void
+td_setup(struct uhci_td *td,
+         uint32_t pid,
+         uint32_t dev,
+         uint32_t endp,
+         uint32_t datat,
+         uint32_t maxlen,
+         uint32_t buffer)
 {
 	maxlen = (maxlen - 1) & 0x7FF;
 	td->link = TD_T;
@@ -224,7 +239,8 @@ static void td_setup(struct uhci_td *td, uint32_t pid,
 	td->buffer = buffer;
 }
 
-static size_t td_list_count_bytes(struct uhci_td_head *td_list, int skip_first)
+static size_t
+td_list_count_bytes(struct uhci_td_head *td_list, int skip_first)
 {
 	struct uhci_td *td;
 	size_t ret = 0;
@@ -243,7 +259,8 @@ static size_t td_list_count_bytes(struct uhci_td_head *td_list, int skip_first)
 	return ret;
 }
 
-static void td_list_free(struct uhci *uhci, struct uhci_td_head *td_list)
+static void
+td_list_free(struct uhci *uhci, struct uhci_td_head *td_list)
 {
 	struct uhci_td *td;
 
@@ -254,28 +271,34 @@ static void td_list_free(struct uhci *uhci, struct uhci_td_head *td_list)
 	}
 }
 
-static struct uhci_qh *qh_alloc(struct uhci *uhci)
+static struct uhci_qh *
+qh_alloc(struct uhci *uhci)
 {
-	struct uhci_qh *qh = TAILQ_LAST(&uhci->free_qh, uhci_qh_head);
+	struct uhci_qh *qh;
+
+	qh = TAILQ_LAST(&uhci->free_qh, uhci_qh_head);
 	if (!qh)
 		return NULL;
 	TAILQ_REMOVE(&uhci->free_qh, qh, chain);
 	return qh;
 }
 
-static void qh_free(struct uhci *uhci, struct uhci_qh *qh)
+static void
+qh_free(struct uhci *uhci, struct uhci_qh *qh)
 {
 	if (!qh)
 		return;
 	TAILQ_INSERT_TAIL(&uhci->free_qh, qh, chain);
 }
 
-static uint32_t qh_paddr(struct uhci *uhci, struct uhci_qh *qh)
+static uint32_t
+qh_paddr(struct uhci *uhci, struct uhci_qh *qh)
 {
 	return pm_page_addr(uhci->qh_dma->pages) + ((uint8_t*)qh - (uint8_t*)uhci->qh);
 }
 
-static struct uhci_qh *qh_from_paddr(struct uhci *uhci, uint32_t paddr)
+static struct uhci_qh *
+qh_from_paddr(struct uhci *uhci, uint32_t paddr)
 {
 	uintptr_t base = pm_page_addr(uhci->qh_dma->pages);
 	if (paddr % sizeof(uhci->qh)
@@ -285,8 +308,8 @@ static struct uhci_qh *qh_from_paddr(struct uhci *uhci, uint32_t paddr)
 	return &uhci->qh[(paddr - base) / sizeof(*uhci->qh)];
 }
 
-static void qh_remove(struct uhci *uhci, struct uhci_qh *head,
-                      struct uhci_qh *qh)
+static void
+qh_remove(struct uhci *uhci, struct uhci_qh *head, struct uhci_qh *qh)
 {
 	struct uhci_qh *prev = NULL;
 	struct uhci_qh *it;
@@ -325,16 +348,16 @@ static void qh_remove(struct uhci *uhci, struct uhci_qh *head,
  * push to front is not the best thing to do, but it's really
  * helpful because it's way easier to handle
  */
-static void qh_queue(struct uhci *uhci, struct uhci_qh *head,
-                     struct uhci_qh *qh)
+static void
+qh_queue(struct uhci *uhci, struct uhci_qh *head, struct uhci_qh *qh)
 {
 	qh->link = head->elem;
 	head->elem = QH_Q | qh_paddr(uhci, qh);
 	__atomic_thread_fence(__ATOMIC_RELEASE);
 }
 
-static int qh_poll(struct uhci *uhci, struct uhci_qh *qh,
-                   struct uhci_td_head *td_list)
+static int
+qh_poll(struct uhci *uhci, struct uhci_qh *qh, struct uhci_td_head *td_list)
 {
 	uint32_t td_addr = *(volatile uint32_t*)&qh->elem & ~0xF;
 	if (!td_addr)
@@ -358,8 +381,8 @@ static int qh_poll(struct uhci *uhci, struct uhci_qh *qh,
 	return 0;
 }
 
-static int qh_wait(struct uhci *uhci, struct uhci_qh *qh,
-                   struct uhci_td_head *td_list)
+static int
+qh_wait(struct uhci *uhci, struct uhci_qh *qh, struct uhci_td_head *td_list)
 {
 	int ret;
 
@@ -374,10 +397,16 @@ static int qh_wait(struct uhci *uhci, struct uhci_qh *qh,
 	}
 }
 
-static int setup_data_td_list(struct uhci *uhci, struct uhci_td_head *td_list,
-                              uint32_t pid, uint32_t dev, uint32_t endp,
-                              uint32_t datat, uint32_t data,
-                              size_t size, size_t max_packet_size)
+static int
+setup_data_td_list(struct uhci *uhci,
+                   struct uhci_td_head *td_list,
+                   uint32_t pid,
+                   uint32_t dev,
+                   uint32_t endp,
+                   uint32_t datat,
+                   uint32_t data,
+                   size_t size,
+                   size_t max_packet_size)
 {
 	struct uhci_td *td;
 	size_t n;
@@ -400,10 +429,13 @@ static int setup_data_td_list(struct uhci *uhci, struct uhci_td_head *td_list,
 	return 0;
 }
 
-static ssize_t uhci_ctrl_transfer(struct usb_hcd *hcd,
-                                  struct usb_device *device,
-                                  int in_out, uint32_t req,
-                                  uint32_t data, size_t size)
+static ssize_t
+uhci_ctrl_transfer(struct usb_hcd *hcd,
+                   struct usb_device *device,
+                   int in_out,
+                   uint32_t req,
+                   uint32_t data,
+                   size_t size)
 {
 	struct uhci_td_head td_list;
 	struct uhci_qh *qh;
@@ -472,7 +504,8 @@ end:
 	return ret;
 }
 
-static void uhci_intr_pipe_free(struct uhci *uhci, struct uhci_intr_pipe *pipe)
+static void
+uhci_intr_pipe_free(struct uhci *uhci, struct uhci_intr_pipe *pipe)
 {
 	if (!pipe)
 		return;
@@ -481,7 +514,8 @@ static void uhci_intr_pipe_free(struct uhci *uhci, struct uhci_intr_pipe *pipe)
 	free(pipe);
 }
 
-static int uhci_intr_transfer(struct usb_intr_pipe *usb_pipe)
+static int
+uhci_intr_transfer(struct usb_intr_pipe *usb_pipe)
 {
 	struct usb_endpoint *endpoint = usb_pipe->endpoint;
 	struct usb_device *device = usb_pipe->device;
@@ -538,7 +572,8 @@ err:
 	return ret;
 }
 
-static void uhci_isoc_pipe_free(struct uhci *uhci, struct uhci_isoc_pipe *pipe)
+static void
+uhci_isoc_pipe_free(struct uhci *uhci, struct uhci_isoc_pipe *pipe)
 {
 	if (!pipe)
 		return;
@@ -548,7 +583,8 @@ static void uhci_isoc_pipe_free(struct uhci *uhci, struct uhci_isoc_pipe *pipe)
 	free(pipe);
 }
 
-static uint32_t npot32(uint32_t val)
+static uint32_t
+npot32(uint32_t val)
 {
 	val--;
 	val |= val >> 1;
@@ -559,8 +595,8 @@ static uint32_t npot32(uint32_t val)
 	return ++val;
 }
 
-static void insert_isoc_queue(struct uhci *uhci, struct uhci_td_head *td_list,
-                              size_t frame)
+static void
+insert_isoc_queue(struct uhci *uhci, struct uhci_td_head *td_list, size_t frame)
 {
 	struct uhci_td *td;
 
@@ -579,8 +615,10 @@ static void insert_isoc_queue(struct uhci *uhci, struct uhci_td_head *td_list,
  * maybe we should mirror the td / qh links in the uhci_td / uhci_qh structs
  * to make everything easier ?
  */
-static void remove_isoc_queue(struct uhci *uhci, struct uhci_td_head *td_list,
-                              size_t frame)
+static void
+remove_isoc_queue(struct uhci *uhci,
+                  struct uhci_td_head *td_list,
+                  size_t frame)
 {
 	struct uhci_td *td;
 
@@ -618,7 +656,8 @@ static void remove_isoc_queue(struct uhci *uhci, struct uhci_td_head *td_list,
 	}
 }
 
-static void refill_isoc_pipe(struct uhci_isoc_pipe *pipe, int ff)
+static void
+refill_isoc_pipe(struct uhci_isoc_pipe *pipe, int ff)
 {
 	struct usb_endpoint *endpoint = pipe->pipe->endpoint;
 	size_t sizes[ISOC_MAX_TD];
@@ -632,7 +671,8 @@ static void refill_isoc_pipe(struct uhci_isoc_pipe *pipe, int ff)
 	pipe->pipe->fn(pipe->pipe, data, sizes, pipe->td_count / 2);
 }
 
-static int uhci_isoc_transfer(struct usb_isoc_pipe *usb_pipe)
+static int
+uhci_isoc_transfer(struct usb_isoc_pipe *usb_pipe)
 {
 	struct usb_endpoint *endpoint = usb_pipe->endpoint;
 	struct usb_device *device = usb_pipe->device;
@@ -716,7 +756,8 @@ err:
 	return ret;
 }
 
-static int uhci_get_addr(struct usb_hcd *hcd, uint8_t *addr)
+static int
+uhci_get_addr(struct usb_hcd *hcd, uint8_t *addr)
 {
 	struct uhci *uhci = hcd->userdata;
 
@@ -728,7 +769,8 @@ static int uhci_get_addr(struct usb_hcd *hcd, uint8_t *addr)
 	return 0;
 }
 
-static void setup_port(struct uhci *uhci, uint8_t port)
+static void
+setup_port(struct uhci *uhci, uint8_t port)
 {
 	enum usb_speed speed;
 	uint16_t status;
@@ -754,7 +796,8 @@ static void setup_port(struct uhci *uhci, uint8_t port)
 	usb_device_probe(uhci->devices[port]);
 }
 
-static int setup_frame_list(struct uhci *uhci)
+static int
+setup_frame_list(struct uhci *uhci)
 {
 	int ret;
 
@@ -821,7 +864,8 @@ static int setup_frame_list(struct uhci *uhci)
 	return 0;
 }
 
-static const struct usb_hcd_op op =
+static const struct usb_hcd_op
+op =
 {
 	.get_addr = uhci_get_addr,
 	.ctrl_transfer = uhci_ctrl_transfer,
@@ -829,7 +873,8 @@ static const struct usb_hcd_op op =
 	.isoc_transfer = uhci_isoc_transfer,
 };
 
-static void poll_intr_pipes(struct uhci *uhci)
+static void
+poll_intr_pipes(struct uhci *uhci)
 {
 	struct uhci_intr_pipe_head completed;
 	struct uhci_intr_pipe *pipe;
@@ -863,7 +908,8 @@ static void poll_intr_pipes(struct uhci *uhci)
 	uhci_lock(uhci);
 }
 
-static void poll_isoc_pipes(struct uhci *uhci)
+static void
+poll_isoc_pipes(struct uhci *uhci)
 {
 	struct uhci_isoc_pipe_head completed;
 	struct uhci_isoc_pipe *pipe;
@@ -903,7 +949,8 @@ static void poll_isoc_pipes(struct uhci *uhci)
 	uhci_lock(uhci);
 }
 
-static void int_handler(void *userptr)
+static void
+int_handler(void *userptr)
 {
 	struct uhci *uhci = userptr;
 	uint16_t status = uhci_r16(uhci, REG_USBSTS);
@@ -921,7 +968,8 @@ static void int_handler(void *userptr)
 	uhci_unlock(uhci);
 }
 
-static void uhci_free(struct uhci *uhci)
+static void
+uhci_free(struct uhci *uhci)
 {
 	if (!uhci)
 		return;
@@ -937,7 +985,8 @@ static void uhci_free(struct uhci *uhci)
 	free(uhci);
 }
 
-int init_pci(struct pci_device *device, void *userdata)
+int
+init_pci(struct pci_device *device, void *userdata)
 {
 	struct uhci *uhci = NULL;
 	int ret;
@@ -987,7 +1036,8 @@ err:
 	return ret;
 }
 
-int init(void)
+int
+init(void)
 {
 	pci_probe_progif(PCI_CLASS_SERIAL_BUS,
 	                 PCI_SUBCLASS_SERIAL_BUS_USB,
@@ -996,11 +1046,13 @@ int init(void)
 	return 0;
 }
 
-void fini(void)
+void
+fini(void)
 {
 }
 
-struct kmod_info kmod =
+struct kmod_info
+kmod =
 {
 	.magic = KMOD_MAGIC,
 	.version = 1,

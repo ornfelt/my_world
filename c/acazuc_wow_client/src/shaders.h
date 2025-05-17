@@ -67,6 +67,11 @@ struct shader_bloom_model_block
 	float threshold;
 };
 
+struct shader_death_model_block
+{
+	struct mat4f mvp;
+};
+
 struct shader_cel_model_block
 {
 	struct mat4f mvp;
@@ -120,6 +125,9 @@ struct shader_m2_model_block
 	struct mat4f v;
 	struct mat4f mv;
 	struct mat4f mvp;
+	struct mat4f shadow_v;
+	struct mat4f shadow_mv;
+	struct mat4f shadow_mvp;
 	struct vec4i light_count;
 	struct shader_m2_light_block lights[4];
 	struct mat4f bone_mats[256]; /* must be at the end for offsetof() */
@@ -132,6 +140,7 @@ struct shader_m2_scene_block
 	struct vec4f diffuse_color;
 	struct vec4f ambient_color;
 	struct vec2f fog_range;
+	struct vec4i params;
 };
 
 struct shader_m2_ground_input
@@ -163,6 +172,7 @@ struct shader_mclq_water_model_block
 {
 	struct mat4f p;
 	struct mat4f v;
+	struct mat4f m;
 	struct mat4f mv;
 	struct mat4f mvp;
 };
@@ -177,6 +187,8 @@ struct shader_mclq_water_scene_block
 	struct vec4f fog_color;
 	struct vec2f fog_range;
 	struct vec2f alphas;
+	struct vec2f screen_size;
+	float t;
 };
 
 struct shader_mcnk_scene_block
@@ -187,6 +199,7 @@ struct shader_mcnk_scene_block
 	struct vec4f specular_color;
 	struct vec4f fog_color;
 	struct vec4f fog_range;
+	struct vec4i settings;
 };
 
 struct shader_mcnk_model_block
@@ -194,6 +207,7 @@ struct shader_mcnk_model_block
 	struct mat4f v;
 	struct mat4f mv;
 	struct mat4f mvp;
+	struct mat4f shadow_mvp;
 	float offset_time;
 };
 
@@ -473,6 +487,7 @@ struct shaders
 	gfx_shader_state_t basic;
 	gfx_shader_state_t sobel;
 	gfx_shader_state_t bloom;
+	gfx_shader_state_t death;
 	gfx_shader_state_t glow;
 	gfx_shader_state_t mliq;
 	gfx_shader_state_t ssao;

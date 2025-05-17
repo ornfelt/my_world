@@ -29,7 +29,8 @@ struct ssao_render_pass
 	gfx_buffer_t indices_buffer;
 };
 
-static const struct gfx_input_layout_bind g_binds[] =
+static const struct gfx_input_layout_bind
+g_binds[] =
 {
 	{0, GFX_ATTR_R32G32_FLOAT, sizeof(struct shader_ppe_input), offsetof(struct shader_ppe_input, position)},
 	{0, GFX_ATTR_R32G32_FLOAT, sizeof(struct shader_ppe_input), offsetof(struct shader_ppe_input, uv)},
@@ -37,8 +38,10 @@ static const struct gfx_input_layout_bind g_binds[] =
 
 static void ctr(struct render_pass *render_pass)
 {
+	struct ssao_render_pass *ssao;
+
+	ssao = (struct ssao_render_pass*)render_pass;
 	render_pass_vtable.ctr(render_pass);
-	struct ssao_render_pass *ssao = (struct ssao_render_pass*)render_pass;
 	ssao->depth_stencil_state = GFX_DEPTH_STENCIL_STATE_INIT();
 	ssao->attributes_state = GFX_ATTRIBUTES_STATE_INIT();
 	ssao->rasterizer_state = GFX_RASTERIZER_STATE_INIT();
@@ -86,26 +89,29 @@ static void ctr(struct render_pass *render_pass)
 	gfx_create_depth_stencil_state(g_wow->device, &ssao->depth_stencil_state, false, false, GFX_CMP_ALWAYS, false, 0, GFX_CMP_ALWAYS, 0, 0, GFX_STENCIL_KEEP, GFX_STENCIL_KEEP, GFX_STENCIL_KEEP);
 	gfx_create_blend_state(g_wow->device, &ssao->blend_state, true, GFX_BLEND_SRC_ALPHA, GFX_BLEND_ONE_MINUS_SRC_ALPHA, GFX_BLEND_SRC_ALPHA, GFX_BLEND_ONE_MINUS_SRC_ALPHA, GFX_EQUATION_ADD, GFX_EQUATION_ADD, GFX_COLOR_MASK_ALL);
 	gfx_create_pipeline_state(g_wow->device,
-		&ssao->pipeline_state,
-		&g_wow->shaders->ssao,
-		&ssao->rasterizer_state,
-		&ssao->depth_stencil_state,
-		&ssao->blend_state,
-		&ssao->input_layout,
-		GFX_PRIMITIVE_TRIANGLES);
+	                          &ssao->pipeline_state,
+	                          &g_wow->shaders->ssao,
+	                          &ssao->rasterizer_state,
+	                          &ssao->depth_stencil_state,
+	                          &ssao->blend_state,
+	                          &ssao->input_layout,
+	                          GFX_PRIMITIVE_TRIANGLES);
 	gfx_create_pipeline_state(g_wow->device,
-		&ssao->denoiser_pipeline_state,
-		&g_wow->shaders->ssao_denoiser,
-		&ssao->rasterizer_state,
-		&ssao->depth_stencil_state,
-		&ssao->blend_state,
-		&ssao->input_layout,
-		GFX_PRIMITIVE_TRIANGLES);
+	                          &ssao->denoiser_pipeline_state,
+	                          &g_wow->shaders->ssao_denoiser,
+	                          &ssao->rasterizer_state,
+	                          &ssao->depth_stencil_state,
+	                          &ssao->blend_state,
+	                          &ssao->input_layout,
+	                          GFX_PRIMITIVE_TRIANGLES);
 }
 
-static void dtr(struct render_pass *render_pass)
+static void
+dtr(struct render_pass *render_pass)
 {
-	struct ssao_render_pass *ssao = (struct ssao_render_pass*)render_pass;
+	struct ssao_render_pass *ssao;
+
+	ssao = (struct ssao_render_pass*)render_pass;
 	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
 	{
 		gfx_delete_buffer(g_wow->device, &ssao->denoiser_uniform_buffers[i]);
@@ -125,10 +131,13 @@ static void dtr(struct render_pass *render_pass)
 	render_pass_vtable.dtr(render_pass);
 }
 
-static void resize(struct render_pass *render_pass, uint32_t width, uint32_t height)
+static void
+resize(struct render_pass *render_pass, uint32_t width, uint32_t height)
 {
+	struct ssao_render_pass *ssao;
+
+	ssao = (struct ssao_render_pass*)render_pass;
 	render_pass_vtable.resize(render_pass, width, height);
-	struct ssao_render_pass *ssao = (struct ssao_render_pass*)render_pass;
 	gfx_delete_texture(g_wow->device, &ssao->texture);
 	gfx_create_texture(g_wow->device, &ssao->texture, GFX_TEXTURE_2D, GFX_R8G8B8A8, 1, width, height, 0);
 	gfx_set_texture_filtering(&ssao->texture, GFX_FILTERING_LINEAR, GFX_FILTERING_LINEAR, GFX_FILTERING_NONE);
@@ -136,9 +145,12 @@ static void resize(struct render_pass *render_pass, uint32_t width, uint32_t hei
 	gfx_set_render_target_texture(&ssao->render_target, GFX_RENDERTARGET_ATTACHMENT_COLOR0, &ssao->texture);
 }
 
-static void render_ssao(struct render_pass *render_pass, struct render_target *src)
+static void
+render_ssao(struct render_pass *render_pass, struct render_target *src)
 {
-	struct ssao_render_pass *ssao = (struct ssao_render_pass*)render_pass;
+	struct ssao_render_pass *ssao;
+
+	ssao = (struct ssao_render_pass*)render_pass;
 	gfx_bind_render_target(g_wow->device, &ssao->render_target);
 	gfx_bind_pipeline_state(g_wow->device, &ssao->pipeline_state);
 	gfx_set_viewport(g_wow->device, 0, 0, render_pass->width, render_pass->height);
@@ -162,10 +174,16 @@ static void render_ssao(struct render_pass *render_pass, struct render_target *s
 	gfx_draw_indexed(g_wow->device, 6, 0);
 }
 
-static void merge_ssao(struct render_pass *render_pass, struct render_target *src, struct render_target *dst, uint32_t buffers)
+static void
+merge_ssao(struct render_pass *render_pass,
+           struct render_target *src,
+           struct render_target *dst,
+           uint32_t buffers)
 {
-	struct ssao_render_pass *ssao = (struct ssao_render_pass*)render_pass;
+	struct ssao_render_pass *ssao;
 	gfx_render_target_t *render_target;
+
+	ssao = (struct ssao_render_pass*)render_pass;
 	if (dst)
 	{
 		render_target = &dst->render_target;
@@ -197,14 +215,19 @@ static void merge_ssao(struct render_pass *render_pass, struct render_target *sr
 	gfx_draw_indexed(g_wow->device, 6, 0);
 }
 
-static void process(struct render_pass *render_pass, struct render_target *src, struct render_target *dst, uint32_t buffers)
+static void
+process(struct render_pass *render_pass,
+        struct render_target *src,
+        struct render_target *dst,
+        uint32_t buffers)
 {
 	render_pass_vtable.process(render_pass, src, dst, buffers);
 	render_ssao(render_pass, src);
 	merge_ssao(render_pass, src, dst, buffers);
 }
 
-static const struct render_pass_vtable ssao_render_pass_vtable =
+static const struct render_pass_vtable
+ssao_render_pass_vtable =
 {
 	.ctr     = ctr,
 	.dtr     = dtr,
@@ -212,9 +235,12 @@ static const struct render_pass_vtable ssao_render_pass_vtable =
 	.resize  = resize,
 };
 
-struct render_pass *ssao_render_pass_new(void)
+struct render_pass *
+ssao_render_pass_new(void)
 {
-	struct render_pass *render_pass = mem_malloc(MEM_PPE, sizeof(struct ssao_render_pass));
+	struct render_pass *render_pass;
+
+	render_pass = mem_malloc(MEM_PPE, sizeof(struct ssao_render_pass));
 	if (!render_pass)
 		return NULL;
 	render_pass->vtable = &ssao_render_pass_vtable;

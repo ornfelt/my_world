@@ -1,6 +1,7 @@
 #include <netdb.h>
 
-const char *gai_strerror(int err)
+const char *
+gai_strerror(int err)
 {
 	switch (err)
 	{

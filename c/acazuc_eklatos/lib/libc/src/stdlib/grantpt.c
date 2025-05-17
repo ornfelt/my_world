@@ -1,6 +1,7 @@
 #include <stdlib.h>
 
-int grantpt(int fd)
+int
+grantpt(int fd)
 {
 	(void)fd;
 	/* XXX chmod-ish by ioctl */

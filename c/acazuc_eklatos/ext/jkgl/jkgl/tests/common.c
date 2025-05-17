@@ -7,6 +7,7 @@
 #include <X11/keysym.h>
 #include <X11/Xatom.h>
 
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -15,14 +16,49 @@
 
 #include "gl.h"
 
-uint64_t nanotime(void)
+uint64_t
+nanotime(void)
 {
 	struct timespec ts;
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 	return ts.tv_sec * 1000000000 + ts.tv_nsec;
 }
 
-static int create_shmimg(struct window *window)
+static float
+hue2rgb(float p, float q, float t)
+{
+	if (t < 0)
+		t += 1;
+	else if (t > 1)
+		t -= 1;
+	if (t < 1 / 6.0)
+		return p + (q - p) * 6 * t;
+	if (t < 1 / 2.0)
+		return q;
+	if (t < 2 / 3.0)
+		return p + (q - p) * (2 / 3.0 - t) * 6;
+	return p;
+}
+
+void
+hsl2rgb(float *rgb, float *hsl)
+{
+	if (!hsl[1])
+	{
+		rgb[0] = hsl[2];
+		rgb[1] = hsl[2];
+		rgb[2] = hsl[2];
+		return;
+	}
+	float q = hsl[2] < 0.5 ? hsl[2] * (1 + hsl[1]) : hsl[2] + hsl[1] - hsl[2] * hsl[1];
+	float p = 2 * hsl[2] - q;
+	rgb[0] = hue2rgb(p, q, hsl[0] + 1 / 3.0);
+	rgb[1] = hue2rgb(p, q, hsl[0]);
+	rgb[2] = hue2rgb(p, q, hsl[0] - 1 / 3.0);
+}
+
+static int
+create_shmimg(struct window *window)
 {
 	window->image = XShmCreateImage(window->display, window->vi.visual, 24,
 	                                ZPixmap, NULL, &window->shminfo,
@@ -63,7 +99,8 @@ static int create_shmimg(struct window *window)
 	return 0;
 }
 
-static void handle_configure(struct window *window, XConfigureEvent *event)
+static void
+handle_configure(struct window *window, XConfigureEvent *event)
 {
 	if ((uint32_t)event->width == window->width
 	 && (uint32_t)event->height == window->height)
@@ -78,9 +115,11 @@ static void handle_configure(struct window *window, XConfigureEvent *event)
 	XDestroyImage(window->image);
 	if (create_shmimg(window))
 		exit(EXIT_FAILURE);
+	GL_CALL(gl_ctx_resize, window->ctx, window->width, window->height);
 }
 
-void handle_events(struct window *window)
+void
+handle_events(struct window *window)
 {
 	while (XPending(window->display))
 	{
@@ -109,7 +148,8 @@ void handle_events(struct window *window)
 	}
 }
 
-int setup_window(const char *progname, struct window *window)
+int
+setup_window(const char *progname, struct window *window)
 {
 	memset(window, 0, sizeof(*window));
 	window->progname = progname;
@@ -160,16 +200,45 @@ int setup_window(const char *progname, struct window *window)
 		return 1;
 	}
 	GL_CALL(gl_ctx_set, window->ctx);
-	GL_CALL(glViewport, window->width, window->height);
+	GL_CALL(gl_ctx_resize, window->ctx, window->width, window->height);
+	window->last_fps = nanotime();
 	return 0;
 }
 
-void swap_buffers(struct window *window)
+void
+swap_buffers(struct window *window)
 {
-	glReadPixels(0, 0, window->width, window->height, GL_RGBA,
-	             GL_UNSIGNED_BYTE, window->image->data);
+	GL_CALL(glReadPixels, 0, 0, window->width, window->height, GL_RGBA,
+	        GL_UNSIGNED_BYTE, window->image->data);
+	for (size_t y = 0; y < window->height / 2; ++y)
+	{
+		uint32_t *src = (uint32_t*)&window->image->data[4 * window->width * y];
+		uint32_t *dst = (uint32_t*)&window->image->data[4 * window->width * (window->height - 1 - y)];
+		uint32_t tmp;
+		for (size_t x = 0; x < window->width; ++x)
+		{
+			tmp = src[x];
+			src[x] = dst[x];
+			dst[x] = tmp;
+		}
+	}
+	gl_ctx_swap_buffers(window->ctx);
 	XShmPutImage(window->display, window->window, window->gc,
 	             window->image, 0, 0, 0, 0,
 	             window->width, window->height, False);
 	XSync(window->display, False);
+
+	uint64_t current = nanotime();
+	window->fps++;
+	if (current - window->last_fps >= 1000000000)
+	{
+#if 1
+		printf("fps: %" PRIu64 "\n", window->fps);
+#endif
+		if (current - window->last_fps >= 2000000000)
+			window->last_fps = current;
+		else
+			window->last_fps += 1000000000;
+		window->fps = 0;
+	}
 }

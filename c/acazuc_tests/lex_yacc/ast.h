@@ -1,475 +1,680 @@
-#ifndef AST_H
-#define AST_H
+#ifndef GLSL_AST_H
+#define GLSL_AST_H
 
+#include <sys/queue.h>
+
+#include <stdbool.h>
+#include <stdint.h>
 #include <stddef.h>
 
-enum node_type
+enum glsl_node_type
 {
-	NODE_ASSIGNMENT,
-	NODE_BINARY_OP,
-	NODE_UNARY_OP,
-	NODE_COMPARE_OP,
-	NODE_TERNARY,
-	NODE_STRUCT_DEFINITION,
-	NODE_STRUCT_MEMBER,
-	NODE_STRUCT_MEMBER_IDENTIFIER,
-	NODE_TYPE_QUALIFIER,
-	NODE_LAYOUT_QUALIFIER,
-	NODE_FUNCTION,
-	NODE_FULLY_SPECIFIED_TYPE,
-	NODE_PROTOTYPE,
-	NODE_PROTOTYPE_PARAMETER,
-	NODE_FUNCTION_CALL_ARGUMENT,
-	NODE_FUNCTION_CALL,
-	NODE_TYPE_SPECIFIER,
+	GLSL_NODE_ARRAY_ACCESSOR,
+	GLSL_NODE_ASSIGNMENT,
+	GLSL_NODE_BINARY_OP,
+	GLSL_NODE_BLOCK_DECLARATION,
+	GLSL_NODE_CASE,
+	GLSL_NODE_COMPARE_OP,
+	GLSL_NODE_CONDITION,
+	GLSL_NODE_DECLARATION,
+	GLSL_NODE_DECLARATION_ENTRY,
+	GLSL_NODE_FIELD_ACCESSOR,
+	GLSL_NODE_FOR,
+	GLSL_NODE_FULLY_SPECIFIED_TYPE,
+	GLSL_NODE_FUNCTION,
+	GLSL_NODE_FUNCTION_CALL,
+	GLSL_NODE_IDENTIFIER,
+	GLSL_NODE_IDENTIFIER_DECLARATION,
+	GLSL_NODE_IMMEDIATE_BOOL,
+	GLSL_NODE_IMMEDIATE_DOUBLE,
+	GLSL_NODE_IMMEDIATE_FLOAT,
+	GLSL_NODE_IMMEDIATE_INT,
+	GLSL_NODE_IMMEDIATE_UINT,
+	GLSL_NODE_INTERPOLATION_QUALIFIER,
+	GLSL_NODE_INVARIANT_QUALIFIER,
+	GLSL_NODE_JUMP,
+	GLSL_NODE_LAYOUT_QUALIFIER,
+	GLSL_NODE_LAYOUT_QUALIFIERS,
+	GLSL_NODE_LIST,
+	GLSL_NODE_PRECISE_QUALIFIER,
+	GLSL_NODE_PRECISION_DECLARATION,
+	GLSL_NODE_PRECISION_QUALIFIER,
+	GLSL_NODE_PROTOTYPE,
+	GLSL_NODE_PROTOTYPE_PARAMETER,
+	GLSL_NODE_SHARED_QUALIFIER,
+	GLSL_NODE_STORAGE_QUALIFIER,
+	GLSL_NODE_STRUCT_DEFINITION,
+	GLSL_NODE_STRUCT_MEMBER,
+	GLSL_NODE_STRUCT_MEMBER_IDENTIFIER,
+	GLSL_NODE_SUBROUTINE_QUALIFIER,
+	GLSL_NODE_SWITCH,
+	GLSL_NODE_TERNARY,
+	GLSL_NODE_TYPE,
+	GLSL_NODE_TYPE_SPECIFIER,
+	GLSL_NODE_UNARY_OP,
+	GLSL_NODE_WHILE,
 };
 
-enum binary_op
+enum glsl_assignment_op
 {
-	BINARY_OP_ADD,
-	BINARY_OP_SUB,
-	BINARY_OP_MUL,
-	BINARY_OP_DIV,
-	BINARY_OP_MOD,
-	BINARY_OP_LSL,
-	BINARY_OP_LSR,
-	BINARY_OP_AND,
-	BINARY_OP_OR,
-	BINARY_OP_XOR,
-	BINARY_OP_LAND,
-	BINARY_OP_LOR,
-	BINARY_OP_LXOR,
+	GLSL_ASSIGNMENT_OP_EQ,
+	GLSL_ASSIGNMENT_OP_MUL,
+	GLSL_ASSIGNMENT_OP_DIV,
+	GLSL_ASSIGNMENT_OP_MOD,
+	GLSL_ASSIGNMENT_OP_ADD,
+	GLSL_ASSIGNMENT_OP_SUB,
+	GLSL_ASSIGNMENT_OP_LSL,
+	GLSL_ASSIGNMENT_OP_LSR,
+	GLSL_ASSIGNMENT_OP_AND,
+	GLSL_ASSIGNMENT_OP_XOR,
+	GLSL_ASSIGNMENT_OP_OR,
 };
 
-enum iteration_type
+enum glsl_binary_op
 {
-	ITERATION_WHILE,
-	ITERATION_DO,
-	ITERATION_FOR,
+	GLSL_BINARY_OP_ADD,
+	GLSL_BINARY_OP_SUB,
+	GLSL_BINARY_OP_MUL,
+	GLSL_BINARY_OP_DIV,
+	GLSL_BINARY_OP_MOD,
+	GLSL_BINARY_OP_LSL,
+	GLSL_BINARY_OP_LSR,
+	GLSL_BINARY_OP_AND,
+	GLSL_BINARY_OP_OR,
+	GLSL_BINARY_OP_XOR,
+	GLSL_BINARY_OP_LAND,
+	GLSL_BINARY_OP_LOR,
+	GLSL_BINARY_OP_LXOR,
 };
 
-enum unary_op
+enum glsl_compare_op
 {
-	UNARY_OP_POS,
-	UNARY_OP_NEG,
-	UNARY_OP_NOT,
-	UNARY_OP_INV,
+	GLSL_COMPARE_OP_LT,
+	GLSL_COMPARE_OP_LE,
+	GLSL_COMPARE_OP_EQ,
+	GLSL_COMPARE_OP_NE,
+	GLSL_COMPARE_OP_GE,
+	GLSL_COMPARE_OP_GT,
 };
 
-enum compare_op
+enum glsl_interpolation_qualifier
 {
-	COMPARE_OP_LT,
-	COMPARE_OP_LE,
-	COMPARE_OP_EQ,
-	COMPARE_OP_NE,
-	COMPARE_OP_GE,
-	COMPARE_OP_GT,
+	GLSL_INTERPOLATION_SMOOTH,
+	GLSL_INTERPOLATION_FLAT,
+	GLSL_INTERPOLATION_NOPERSPECTIVE,
 };
 
-enum assignment_op
+enum glsl_jump_type
 {
-	ASSIGNMENT_OP_EQ,
-	ASSIGNMENT_OP_MUL,
-	ASSIGNMENT_OP_DIV,
-	ASSIGNMENT_OP_MOD,
-	ASSIGNMENT_OP_ADD,
-	ASSIGNMENT_OP_SUB,
-	ASSIGNMENT_OP_LSL,
-	ASSIGNMENT_OP_LSR,
-	ASSIGNMENT_OP_AND,
-	ASSIGNMENT_OP_XOR,
-	ASSIGNMENT_OP_OR,
+	GLSL_JUMP_CONTINUE,
+	GLSL_JUMP_BREAK,
+	GLSL_JUMP_RETURN,
+	GLSL_JUMP_DISCARD,
 };
 
-enum storage_qualifier
+enum glsl_precision_qualifier
 {
-	STORAGE_CONST,
-	STORAGE_IN,
-	STORAGE_OUT,
-	STORAGE_INOUT,
-	STORAGE_CENTROID,
-	STORAGE_PATCH,
-	STORAGE_SAMPLE,
-	STORAGE_UNIFORM,
-	STORAGE_BUFFER,
-	STORAGE_SHARED,
-	STORAGE_COHERENT,
-	STORAGE_VOLATILE,
-	STORAGE_RESTRICT,
-	STORAGE_READONLY,
-	STORAGE_WRITEONLY,
-	STORAGE_SUBROUTINE,
+	GLSL_PRECISION_LOW,
+	GLSL_PRECISION_MEDIUM,
+	GLSL_PRECISION_HIGH,
 };
 
-enum type_specifier
+enum glsl_storage_qualifier
 {
-	TYPE_VOID,
-	TYPE_FLOAT,
-	TYPE_DOUBLE,
-	TYPE_INT,
-	TYPE_UINT,
-	TYPE_BOOL,
-	TYPE_VEC2,
-	TYPE_VEC3,
-	TYPE_VEC4,
-	TYPE_DVEC2,
-	TYPE_DVEC3,
-	TYPE_DVEC4,
-	TYPE_BVEC2,
-	TYPE_BVEC3,
-	TYPE_BVEC4,
-	TYPE_IVEC2,
-	TYPE_IVEC3,
-	TYPE_IVEC4,
-	TYPE_UVEC2,
-	TYPE_UVEC3,
-	TYPE_UVEC4,
-	TYPE_MAT2X2,
-	TYPE_MAT2X3,
-	TYPE_MAT2X4,
-	TYPE_MAT3X2,
-	TYPE_MAT3X3,
-	TYPE_MAT3X4,
-	TYPE_MAT4X2,
-	TYPE_MAT4X3,
-	TYPE_MAT4X4,
-	TYPE_DMAT2X2,
-	TYPE_DMAT2X3,
-	TYPE_DMAT2X4,
-	TYPE_DMAT3X2,
-	TYPE_DMAT3X3,
-	TYPE_DMAT3X4,
-	TYPE_DMAT4X2,
-	TYPE_DMAT4X3,
-	TYPE_DMAT4X4,
-	TYPE_ATOMIC_UINT,
-	TYPE_SAMPLER2D,
-	TYPE_SAMPLER3D,
-	TYPE_SAMPLERCUBE,
-	TYPE_SAMPLER2DSHADOW,
-	TYPE_SAMPLERCUBESHADOW,
-	TYPE_SAMPLER2DARRAY,
-	TYPE_SAMPLER2DARRAYSHADOW,
-	TYPE_SAMPLERCUBEARRAY,
-	TYPE_SAMPLERCUBEARRAYSHADOW,
-	TYPE_ISAMPLER2D,
-	TYPE_ISAMPLER3D,
-	TYPE_ISAMPLERCUBE,
-	TYPE_ISAMPLER2DARRAY,
-	TYPE_ISAMPLERCUBEARRAY,
-	TYPE_USAMPLER2D,
-	TYPE_USAMPLER3D,
-	TYPE_USAMPLERCUBE,
-	TYPE_USAMPLER2DARRAY,
-	TYPE_USAMPLERCUBEARRAY,
-	TYPE_SAMPLER1D,
-	TYPE_SAMPLER1DSHADOW,
-	TYPE_SAMPLER1DARRAY,
-	TYPE_SAMPLER1DARRAYSHADOW,
-	TYPE_ISAMPLER1D,
-	TYPE_ISAMPLER1DARRAY,
-	TYPE_USAMPLER1D,
-	TYPE_USAMPLER1DARRAY,
-	TYPE_SAMPLER2DRECT,
-	TYPE_SAMPLER2DRECTSHADOW,
-	TYPE_ISAMPLER2DRECT,
-	TYPE_USAMPLER2DRECT,
-	TYPE_SAMPLERBUFFER,
-	TYPE_ISAMPLERBUFFER,
-	TYPE_USAMPLERBUFFER,
-	TYPE_SAMPLER2DMS,
-	TYPE_ISAMPLER2DMS,
-	TYPE_USAMPLER2DMS,
-	TYPE_SAMPLER2DMSARRAY,
-	TYPE_ISAMPLER2DMSARRAY,
-	TYPE_USAMPLER2DMSARRAY,
-	TYPE_IMAGE2D,
-	TYPE_IIMAGE2D,
-	TYPE_UIMAGE2D,
-	TYPE_IMAGE3D,
-	TYPE_IIMAGE3D,
-	TYPE_UIMAGE3D,
-	TYPE_IMAGECUBE,
-	TYPE_IIMAGECUBE,
-	TYPE_UIMAGECUBE,
-	TYPE_IMAGEBUFFER,
-	TYPE_IIMAGEBUFFER,
-	TYPE_UIMAGEBUFFER,
-	TYPE_IMAGE1D,
-	TYPE_IIMAGE1D,
-	TYPE_UIMAGE1D,
-	TYPE_IMAGE1DARRAY,
-	TYPE_IIMAGE1DARRAY,
-	TYPE_UIMAGE1DARRAY,
-	TYPE_IMAGE2DRECT,
-	TYPE_IIMAGE2DRECT,
-	TYPE_UIMAGE2DRECT,
-	TYPE_IMAGE2DARRAY,
-	TYPE_IIMAGE2DARRAY,
-	TYPE_UIMAGE2DARRAY,
-	TYPE_IMAGECUBEARRAY,
-	TYPE_IIMAGECUBEARRAY,
-	TYPE_UIMAGECUBEARRAY,
-	TYPE_IMAGE2DMS,
-	TYPE_IIMAGE2DMS,
-	TYPE_UIMAGE2DMS,
-	TYPE_IMAGE2DMSARRAY,
-	TYPE_IIMAGE2DMSARRAY,
-	TYPE_UIMAGE2DMSARRAY,
+	GLSL_STORAGE_CONST,
+	GLSL_STORAGE_IN,
+	GLSL_STORAGE_OUT,
+	GLSL_STORAGE_INOUT,
+	GLSL_STORAGE_CENTROID,
+	GLSL_STORAGE_PATCH,
+	GLSL_STORAGE_SAMPLE,
+	GLSL_STORAGE_UNIFORM,
+	GLSL_STORAGE_BUFFER,
+	GLSL_STORAGE_SHARED,
+	GLSL_STORAGE_COHERENT,
+	GLSL_STORAGE_VOLATILE,
+	GLSL_STORAGE_RESTRICT,
+	GLSL_STORAGE_READONLY,
+	GLSL_STORAGE_WRITEONLY,
+	GLSL_STORAGE_SUBROUTINE,
 };
 
-enum type_specifier_type
+enum glsl_type
 {
-	TYPE_SPECIFIER_NATIVE,
-	TYPE_SPECIFIER_STRUCT,
-	TYPE_SPECIFIER_NAMED,
+	GLSL_TYPE_VOID,
+	GLSL_TYPE_FLOAT,
+	GLSL_TYPE_DOUBLE,
+	GLSL_TYPE_INT,
+	GLSL_TYPE_UINT,
+	GLSL_TYPE_BOOL,
+	GLSL_TYPE_VEC2,
+	GLSL_TYPE_VEC3,
+	GLSL_TYPE_VEC4,
+	GLSL_TYPE_DVEC2,
+	GLSL_TYPE_DVEC3,
+	GLSL_TYPE_DVEC4,
+	GLSL_TYPE_BVEC2,
+	GLSL_TYPE_BVEC3,
+	GLSL_TYPE_BVEC4,
+	GLSL_TYPE_IVEC2,
+	GLSL_TYPE_IVEC3,
+	GLSL_TYPE_IVEC4,
+	GLSL_TYPE_UVEC2,
+	GLSL_TYPE_UVEC3,
+	GLSL_TYPE_UVEC4,
+	GLSL_TYPE_MAT2X2,
+	GLSL_TYPE_MAT2X3,
+	GLSL_TYPE_MAT2X4,
+	GLSL_TYPE_MAT3X2,
+	GLSL_TYPE_MAT3X3,
+	GLSL_TYPE_MAT3X4,
+	GLSL_TYPE_MAT4X2,
+	GLSL_TYPE_MAT4X3,
+	GLSL_TYPE_MAT4X4,
+	GLSL_TYPE_DMAT2X2,
+	GLSL_TYPE_DMAT2X3,
+	GLSL_TYPE_DMAT2X4,
+	GLSL_TYPE_DMAT3X2,
+	GLSL_TYPE_DMAT3X3,
+	GLSL_TYPE_DMAT3X4,
+	GLSL_TYPE_DMAT4X2,
+	GLSL_TYPE_DMAT4X3,
+	GLSL_TYPE_DMAT4X4,
+	GLSL_TYPE_ATOMIC_UINT,
+	GLSL_TYPE_SAMPLER2D,
+	GLSL_TYPE_SAMPLER3D,
+	GLSL_TYPE_SAMPLERCUBE,
+	GLSL_TYPE_SAMPLER2DSHADOW,
+	GLSL_TYPE_SAMPLERCUBESHADOW,
+	GLSL_TYPE_SAMPLER2DARRAY,
+	GLSL_TYPE_SAMPLER2DARRAYSHADOW,
+	GLSL_TYPE_SAMPLERCUBEARRAY,
+	GLSL_TYPE_SAMPLERCUBEARRAYSHADOW,
+	GLSL_TYPE_ISAMPLER2D,
+	GLSL_TYPE_ISAMPLER3D,
+	GLSL_TYPE_ISAMPLERCUBE,
+	GLSL_TYPE_ISAMPLER2DARRAY,
+	GLSL_TYPE_ISAMPLERCUBEARRAY,
+	GLSL_TYPE_USAMPLER2D,
+	GLSL_TYPE_USAMPLER3D,
+	GLSL_TYPE_USAMPLERCUBE,
+	GLSL_TYPE_USAMPLER2DARRAY,
+	GLSL_TYPE_USAMPLERCUBEARRAY,
+	GLSL_TYPE_SAMPLER1D,
+	GLSL_TYPE_SAMPLER1DSHADOW,
+	GLSL_TYPE_SAMPLER1DARRAY,
+	GLSL_TYPE_SAMPLER1DARRAYSHADOW,
+	GLSL_TYPE_ISAMPLER1D,
+	GLSL_TYPE_ISAMPLER1DARRAY,
+	GLSL_TYPE_USAMPLER1D,
+	GLSL_TYPE_USAMPLER1DARRAY,
+	GLSL_TYPE_SAMPLER2DRECT,
+	GLSL_TYPE_SAMPLER2DRECTSHADOW,
+	GLSL_TYPE_ISAMPLER2DRECT,
+	GLSL_TYPE_USAMPLER2DRECT,
+	GLSL_TYPE_SAMPLERBUFFER,
+	GLSL_TYPE_ISAMPLERBUFFER,
+	GLSL_TYPE_USAMPLERBUFFER,
+	GLSL_TYPE_SAMPLER2DMS,
+	GLSL_TYPE_ISAMPLER2DMS,
+	GLSL_TYPE_USAMPLER2DMS,
+	GLSL_TYPE_SAMPLER2DMSARRAY,
+	GLSL_TYPE_ISAMPLER2DMSARRAY,
+	GLSL_TYPE_USAMPLER2DMSARRAY,
+	GLSL_TYPE_IMAGE2D,
+	GLSL_TYPE_IIMAGE2D,
+	GLSL_TYPE_UIMAGE2D,
+	GLSL_TYPE_IMAGE3D,
+	GLSL_TYPE_IIMAGE3D,
+	GLSL_TYPE_UIMAGE3D,
+	GLSL_TYPE_IMAGECUBE,
+	GLSL_TYPE_IIMAGECUBE,
+	GLSL_TYPE_UIMAGECUBE,
+	GLSL_TYPE_IMAGEBUFFER,
+	GLSL_TYPE_IIMAGEBUFFER,
+	GLSL_TYPE_UIMAGEBUFFER,
+	GLSL_TYPE_IMAGE1D,
+	GLSL_TYPE_IIMAGE1D,
+	GLSL_TYPE_UIMAGE1D,
+	GLSL_TYPE_IMAGE1DARRAY,
+	GLSL_TYPE_IIMAGE1DARRAY,
+	GLSL_TYPE_UIMAGE1DARRAY,
+	GLSL_TYPE_IMAGE2DRECT,
+	GLSL_TYPE_IIMAGE2DRECT,
+	GLSL_TYPE_UIMAGE2DRECT,
+	GLSL_TYPE_IMAGE2DARRAY,
+	GLSL_TYPE_IIMAGE2DARRAY,
+	GLSL_TYPE_UIMAGE2DARRAY,
+	GLSL_TYPE_IMAGECUBEARRAY,
+	GLSL_TYPE_IIMAGECUBEARRAY,
+	GLSL_TYPE_UIMAGECUBEARRAY,
+	GLSL_TYPE_IMAGE2DMS,
+	GLSL_TYPE_IIMAGE2DMS,
+	GLSL_TYPE_UIMAGE2DMS,
+	GLSL_TYPE_IMAGE2DMSARRAY,
+	GLSL_TYPE_IIMAGE2DMSARRAY,
+	GLSL_TYPE_UIMAGE2DMSARRAY,
 };
 
-enum precision_qualifier
+enum glsl_type_specifier_type
 {
-	PRECISION_LOW,
-	PRECISION_MEDIUM,
-	PRECISION_HIGH,
+	GLSL_TYPE_SPECIFIER_NATIVE,
+	GLSL_TYPE_SPECIFIER_STRUCT,
+	GLSL_TYPE_SPECIFIER_NAMED,
 };
 
-enum interpolation_qualifier
+enum glsl_unary_op
 {
-	INTERPOLATION_SMOOTH,
-	INTERPOLATION_FLAT,
-	INTERPOLATION_NOPERSPECTIVE,
+	GLSL_UNARY_OP_POS,
+	GLSL_UNARY_OP_NEG,
+	GLSL_UNARY_OP_NOT,
+	GLSL_UNARY_OP_INV,
+	GLSL_UNARY_OP_PRE_INC,
+	GLSL_UNARY_OP_PRE_DEC,
+	GLSL_UNARY_OP_POST_INC,
+	GLSL_UNARY_OP_POST_DEC,
 };
 
-enum invariant_qualifier
+struct glsl_node
 {
-	INVARIANT_INVARIANT,
+	enum glsl_node_type type;
+	TAILQ_ENTRY(glsl_node) chain;
 };
 
-enum precise_qualifier
+struct glsl_array_accessor_node
 {
-	PRECISE_PRECISE,
+	struct glsl_node node;
+	struct glsl_node *expression;
+	struct glsl_node *index;
 };
 
-enum qualifier_type
+struct glsl_assignment_node
 {
-	QUALIFIER_STORAGE,
-	QUALIFIER_LAYOUT,
-	QUALIFIER_PRECISION,
-	QUALIFIER_INTERPOLATION,
-	QUALIFIER_INVARIANT,
-	QUALIFIER_PRECISE,
+	struct glsl_node node;
+	enum glsl_assignment_op op;
+	struct glsl_node *dst;
+	struct glsl_node *expr;
 };
 
-struct node
+struct glsl_binary_op_node
 {
-	enum node_type type;
+	struct glsl_node node;
+	enum glsl_binary_op op;
+	struct glsl_node *left;
+	struct glsl_node *right;
 };
 
-struct identifier_node
+struct glsl_block_declaration_node
 {
-	struct node node;
+	struct glsl_node node;
+	struct glsl_node *type_qualifier;
+	struct glsl_node *identifier;
+	struct glsl_node *declaration_list;
+	struct glsl_node *name;
+	struct glsl_node *array_specifier;
+};
+
+struct glsl_case_node
+{
+	struct glsl_node node;
+	struct glsl_node *expression;
+};
+
+struct glsl_compare_op_node
+{
+	struct glsl_node node;
+	enum glsl_compare_op op;
+	struct glsl_node *left;
+	struct glsl_node *right;
+};
+
+struct glsl_condition_node
+{
+	struct glsl_node node;
+	struct glsl_node *condition;
+	struct glsl_node *true_statement;
+	struct glsl_node *false_statement;
+};
+
+struct glsl_declaration_node
+{
+	struct glsl_node node;
+	struct glsl_node *type;
+	struct glsl_node *entries;
+};
+
+struct glsl_declaration_entry_node
+{
+	struct glsl_node node;
+	struct glsl_node *identifier;
+	struct glsl_node *array_specifier;
+	struct glsl_node *initializer;
+};
+
+struct glsl_field_accessor_node
+{
+	struct glsl_node node;
+	struct glsl_node *expression;
+	struct glsl_node *field;
+};
+
+struct glsl_for_node
+{
+	struct glsl_node node;
+	struct glsl_node *initialize;
+	struct glsl_node *condition;
+	struct glsl_node *iteration;
+	struct glsl_node *statement;
+};
+
+struct glsl_fully_specified_type_node
+{
+	struct glsl_node node;
+	struct glsl_node *type_specifier;
+	struct glsl_node *qualifiers;
+};
+
+struct glsl_function_node
+{
+	struct glsl_node node;
+	struct glsl_node *prototype;
+	struct glsl_node *content;
+};
+
+struct glsl_function_call_node
+{
+	struct glsl_node node;
+	struct glsl_node *identifier;
+	struct glsl_node *arguments;
+};
+
+struct glsl_identifier_node
+{
+	struct glsl_node node;
 	char *identifier;
 };
 
-struct binary_op_node
+struct glsl_identifier_declaration_node
 {
-	struct node node;
-	enum binary_op op;
-	struct node *left;
-	struct node *right;
+	struct glsl_node node;
+	struct glsl_node *type_qualifier;
+	struct glsl_node *identifiers;
 };
 
-struct unary_op_node
+struct glsl_immediate_bool_node
 {
-	struct node node;
-	enum unary_op op;
-	struct node *expr;
+	struct glsl_node node;
+	bool value;
 };
 
-struct compare_op_node
+struct glsl_immediate_double_node
 {
-	struct node node;
-	enum compare_op op;
-	struct node *left;
-	struct node *right;
+	struct glsl_node node;
+	double value;
 };
 
-struct assignment_node
+struct glsl_immediate_float_node
 {
-	struct node node;
-	enum assignment_op op;
-	struct node *dst;
-	struct node *expr;
+	struct glsl_node node;
+	float value;
 };
 
-struct cond_node
+struct glsl_immediate_int_node
 {
-	struct node node;
-	struct node *cond;
-	struct node *true_node;
-	struct node *false_node;
+	struct glsl_node node;
+	int32_t value;
 };
 
-struct case_node
+struct glsl_immediate_uint_node
 {
-	struct node node;
-	struct node *expr;
-	struct node *block;
+	struct glsl_node node;
+	uint32_t value;
 };
 
-struct switch_node
+struct glsl_interpolation_qualifier_node
 {
-	struct node node;
-	size_t cases_nb;
-	struct node **cases;
+	struct glsl_node node;
+	enum glsl_interpolation_qualifier qualifier;
 };
 
-struct iteration_node
+struct glsl_invariant_qualifier_node
 {
-	struct node node;
-	enum iteration_type type;
+	struct glsl_node node;
 };
 
-struct ternary_node
+struct glsl_jump_node
 {
-	struct node node;
-	struct node *cond;
-	struct node *true_expr;
-	struct node *false_expr;
+	struct glsl_node node;
+	enum glsl_jump_type type;
+	struct glsl_node *expression;
 };
 
-struct struct_member_identifier_node
+struct glsl_layout_qualifier_node
 {
-	struct node node;
-	char *identifier;
-	struct struct_member_identifier_node *next;
+	struct glsl_node node;
+	struct glsl_node *identifier;
+	struct glsl_node *value;
 };
 
-struct struct_member_node
+struct glsl_layout_qualifiers_node
 {
-	struct node node;
-	struct node *type_qualifiers;
-	struct node *type_specifier;
-	struct node *identifiers;
-	struct struct_member_node *next;
+	struct glsl_node node;
+	struct glsl_node *qualifiers;
 };
 
-struct struct_definition_node
+struct glsl_list_node
 {
-	struct node node;
-	char *identifier;
-	struct node *members;
+	struct glsl_node node;
+	TAILQ_HEAD(, glsl_node) nodes;
 };
 
-struct prototype_parameter_node
+struct glsl_precise_qualifier_node
 {
-	struct node node;
-	struct node *type_qualifiers;
-	struct node *type_specifier;
-	char *identifier;
-	struct prototype_parameter_node *next;
+	struct glsl_node node;
 };
 
-struct prototype_node
+struct glsl_precision_declaration_node
 {
-	struct node node;
-	struct node *return_type;
-	char *identifier;
-	struct prototype_parameter_node *parameters;
+	struct glsl_node node;
+	enum glsl_precision_qualifier precision_qualifier;
+	struct glsl_node *type_specifier;
 };
 
-struct function_node
+struct glsl_precision_qualifier_node
 {
-	struct node node;
-	struct node *prototype;
-	struct node *content;
+	struct glsl_node node;
+	enum glsl_precision_qualifier qualifier;
 };
 
-struct layout_qualifier_node
+struct glsl_prototype_node
 {
-	struct node node;
-	char *identifier;
-	struct node *value;
-	struct layout_qualifier_node *next;
+	struct glsl_node node;
+	struct glsl_node *return_type;
+	struct glsl_node *identifier;
+	struct glsl_node *parameters;
 };
 
-struct type_qualifier_node
+struct glsl_prototype_parameter_node
 {
-	struct node node;
-	enum qualifier_type type;
-	union
-	{
-		enum storage_qualifier storage_qualifier;
-		struct node *layout_qualifier;
-		enum precision_qualifier precision_qualifier;
-		enum interpolation_qualifier interpolation_qualifier;
-		enum invariant_qualifier invariant_qualifier;
-		enum precise_qualifier precise_qualifier;
-	};
-	struct type_qualifier_node *next;
+	struct glsl_node node;
+	struct glsl_node *type_qualifiers;
+	struct glsl_node *type_specifier;
+	struct glsl_node *identifier;
+	struct glsl_node *array_specifier;
 };
 
-struct fully_specified_type_node
+struct glsl_shared_qualifier_node
 {
-	struct node node;
-	struct node *type_specifier;
-	struct node *qualifiers;
+	struct glsl_node node;
 };
 
-struct function_call_argument_node
+struct glsl_storage_qualifier_node
 {
-	struct node node;
-	struct node *expr;
-	struct function_call_argument_node *next;
+	struct glsl_node node;
+	enum glsl_storage_qualifier qualifier;
 };
 
-struct function_call_node
+struct glsl_struct_definition_node
 {
-	struct node node;
-	struct node *identifier;
-	struct node *arguments;
+	struct glsl_node node;
+	struct glsl_node *identifier;
+	struct glsl_node *members;
 };
 
-struct type_specifier_node
+struct glsl_struct_member_node
 {
-	struct node node;
-	enum type_specifier_type type;
-	union
-	{
-		enum type_specifier native;
-		struct node *st;
-		char *identifier;
-	};
+	struct glsl_node node;
+	struct glsl_node *type_qualifiers;
+	struct glsl_node *type_specifier;
+	struct glsl_node *identifiers;
 };
 
-struct node *emit_unary_op_node(enum unary_op op, struct node *expr);
-struct node *emit_binary_op_node(enum binary_op op, struct node *left, struct node *right);
-struct node *emit_compare_op_node(enum compare_op, struct node *left, struct node *right);
-struct node *emit_assignment_node(enum assignment_op op, struct node *dst, struct node *expr);
-struct node *emit_ternary_node(struct node *cond, struct node *true_expr, struct node *false_expr);
-struct node *emit_struct_member_identifier_node(const char *identifier);
-void push_struct_member_identifier(struct node *node, struct node *add);
-struct node *emit_struct_member_node(struct node *type_qualifiers, struct node *type_specifier, struct node *identifiers);
-void push_struct_member(struct node *node, struct node *add);
-struct node *emit_struct_definition_node(const char *identifier, struct node *members);
-struct node *emit_function_node(struct node *prototype, struct node *content);
-struct node *emit_layout_qualifier_node(const char *identifier, struct node *value);
-void push_layout_qualifier(struct node *node, struct node *add);
-struct node *emit_storage_qualifier_node(enum storage_qualifier qualifier);
-struct node *emit_layout_qualifier_specifier_node(struct node *qualifier);
-struct node *emit_precision_qualifier_node(enum precision_qualifier qualifier);
-struct node *emit_interpolation_qualifier_node(enum interpolation_qualifier qualifier);
-struct node *emit_invariant_qualifier_node(enum invariant_qualifier qualifier);
-struct node *emit_precise_qualifier_node(enum precise_qualifier qualifier);
-void push_type_qualifier(struct node *node, struct node *add);
-struct node *emit_fully_specified_type_node(struct node *type_specifier, struct node *qualifiers);
-struct node *emit_prototype_node(struct node *return_type, const char *identifier);
-void push_prototype_parameter(struct node *node, struct node *parameter);
-struct node *emit_prototype_parameter_node(struct node *type_qualifiers, struct node *type_specifier, const char *identifier);
-struct node *emit_function_call_argument(struct node *expr);
-void push_function_call_argument(struct node *node, struct node *add);
-struct node *emit_function_call_node(struct node *identifier, struct node *arguments);
-struct node *emit_type_specifier_native_node(enum type_specifier type_specifier);
-struct node *emit_type_specifier_struct_node(struct node *st);
-struct node *emit_type_specifier_named_node(const char *identifier);
+struct glsl_struct_member_identifier_node
+{
+	struct glsl_node node;
+	struct glsl_node *identifier;
+	struct glsl_node *array_specifier;
+};
+
+struct glsl_subroutine_qualifier_node
+{
+	struct glsl_node node;
+	struct glsl_node *qualifiers;
+};
+
+struct glsl_switch_node
+{
+	struct glsl_node node;
+	struct glsl_node *expression;
+	struct glsl_node *statements;
+};
+
+struct glsl_ternary_node
+{
+	struct glsl_node node;
+	struct glsl_node *cond;
+	struct glsl_node *true_expr;
+	struct glsl_node *false_expr;
+};
+
+struct glsl_type_node
+{
+	struct glsl_node node;
+	enum glsl_type type;
+};
+
+struct glsl_type_specifier_node
+{
+	struct glsl_node node;
+	struct glsl_node *type;
+	struct glsl_node *array_specifier;
+};
+
+struct glsl_unary_op_node
+{
+	struct glsl_node node;
+	enum glsl_unary_op op;
+	struct glsl_node *expr;
+};
+
+struct glsl_while_node
+{
+	struct glsl_node node;
+	bool do_while;
+	struct glsl_node *condition;
+	struct glsl_node *statement;
+};
+
+struct glsl_node *glsl_emit_array_accessor(struct glsl_node *expression,
+                                           struct glsl_node *index);
+struct glsl_node *glsl_emit_assignment(enum glsl_assignment_op op,
+                                       struct glsl_node *dst,
+                                       struct glsl_node *expr);
+struct glsl_node *glsl_emit_binary_op(enum glsl_binary_op op,
+                                      struct glsl_node *left,
+                                      struct glsl_node *right);
+struct glsl_node *glsl_emit_block_declaration(struct glsl_node *type_qualifier,
+                                              struct glsl_node *identifier,
+                                              struct glsl_node *declaration_list,
+                                              struct glsl_node *name,
+                                              struct glsl_node *array_specifier);
+struct glsl_node *glsl_emit_case(struct glsl_node *expression);
+struct glsl_node *glsl_emit_compare_op(enum glsl_compare_op,
+                                       struct glsl_node *left,
+                                       struct glsl_node *right);
+struct glsl_node *glsl_emit_condition(struct glsl_node *condition,
+                                      struct glsl_node *true_statement,
+                                      struct glsl_node *false_statement);
+struct glsl_node *glsl_emit_declaration(struct glsl_node *type,
+                                        struct glsl_node *entries);
+struct glsl_node *glsl_emit_declaration_entry(struct glsl_node *identifier,
+                                              struct glsl_node *array_specifier,
+                                              struct glsl_node *initializer);
+struct glsl_node *glsl_emit_field_accessor(struct glsl_node *expression,
+                                           struct glsl_node *field);
+struct glsl_node *glsl_emit_for(struct glsl_node *initialize,
+                                struct glsl_node *condition,
+                                struct glsl_node *iteration,
+                                struct glsl_node *statement);
+struct glsl_node *glsl_emit_fully_specified_type(struct glsl_node *type_specifier,
+                                                 struct glsl_node *qualifiers);
+struct glsl_node *glsl_emit_function(struct glsl_node *prototype,
+                                     struct glsl_node *content);
+struct glsl_node *glsl_emit_function_call(struct glsl_node *identifier,
+                                          struct glsl_node *arguments);
+struct glsl_node *glsl_emit_identifier(const char *identifier);
+struct glsl_node *glsl_emit_identifier_declaration(struct glsl_node *type_qualifier,
+                                                   struct glsl_node *identifiers);
+struct glsl_node *glsl_emit_immediate_bool(bool value);
+struct glsl_node *glsl_emit_immediate_double(double value);
+struct glsl_node *glsl_emit_immediate_float(float value);
+struct glsl_node *glsl_emit_immediate_int(int32_t value);
+struct glsl_node *glsl_emit_immediate_uint(uint32_t value);
+struct glsl_node *glsl_emit_interpolation_qualifier(enum glsl_interpolation_qualifier qualifier);
+struct glsl_node *glsl_emit_invariant_qualifier(void);
+struct glsl_node *glsl_emit_jump(enum glsl_jump_type type,
+                                 struct glsl_node *expression);
+struct glsl_node *glsl_emit_layout_qualifier(struct glsl_node *identifier,
+                                             struct glsl_node *value);
+struct glsl_node *glsl_emit_layout_qualifiers(struct glsl_node *qualifiers);
+struct glsl_node *glsl_emit_list(void);
+void glsl_list_add(struct glsl_node *list,
+                   struct glsl_node *node);
+struct glsl_node *glsl_emit_precise_qualifier(void);
+struct glsl_node *glsl_emit_precision_declaration(enum glsl_precision_qualifier precision_qualifier,
+                                                  struct glsl_node *type_specifier);
+struct glsl_node *glsl_emit_precision_qualifier(enum glsl_precision_qualifier qualifier);
+struct glsl_node *glsl_emit_prototype(struct glsl_node *return_type,
+                                      struct glsl_node *identifier,
+                                      struct glsl_node *parameters);
+struct glsl_node *glsl_emit_prototype_parameter(struct glsl_node *type_qualifiers,
+                                                struct glsl_node *type_specifier,
+                                                struct glsl_node *identifier,
+                                                struct glsl_node *array_specifier);
+struct glsl_node *glsl_emit_shared_qualifier(void);
+struct glsl_node *glsl_emit_storage_qualifier(enum glsl_storage_qualifier qualifier);
+struct glsl_node *glsl_emit_struct_definition(struct glsl_node *identifier,
+                                             struct glsl_node *members);
+struct glsl_node *glsl_emit_struct_member(struct glsl_node *type_qualifiers,
+                                          struct glsl_node *type_specifier,
+                                          struct glsl_node *identifiers);
+struct glsl_node *glsl_emit_struct_member_identifier(struct glsl_node *identifier,
+                                                     struct glsl_node *array_specifier);
+struct glsl_node *glsl_emit_subroutine_qualifier(struct glsl_node *identifiers);
+struct glsl_node *glsl_emit_switch(struct glsl_node *expression,
+                                   struct glsl_node *statements);
+struct glsl_node *glsl_emit_ternary(struct glsl_node *cond,
+                                    struct glsl_node *true_expr,
+                                    struct glsl_node *false_expr);
+struct glsl_node *glsl_emit_type(enum glsl_type type);
+struct glsl_node *glsl_emit_type_specifier(struct glsl_node *type,
+                                           struct glsl_node *array_specifier);
+struct glsl_node *glsl_emit_unary_op(enum glsl_unary_op op,
+                                     struct glsl_node *expr);
+struct glsl_node *glsl_emit_while(bool do_while,
+                                  struct glsl_node *condition,
+                                  struct glsl_node *statement);
+
+void glsl_print(struct glsl_node *node);
 
 #endif

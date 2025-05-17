@@ -2,9 +2,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	int total = 0;
+
 	if (argc < 2)
 	{
 		fprintf(stderr, "%s: missing operand\n", argv[0]);

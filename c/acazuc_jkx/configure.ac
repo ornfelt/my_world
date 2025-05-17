@@ -11,7 +11,18 @@ AM_PROG_AR
 
 LT_INIT
 
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([
+	Makefile
+	GLX/glx.pc
+	xcb/xcb.pc
+	xcb/xcb-dbe.pc
+	xcb/xcb-glx.pc
+	xcb/xcb-shm.pc
+	xcb/xcb-render.pc
+	X11/x11.pc
+	X11/x11-xcb.pc
+	X11/xext.pc
+])
 
 AC_ARG_ENABLE([tests],
 	AS_HELP_STRING([--enable-tests], [turn on tests binaries]),

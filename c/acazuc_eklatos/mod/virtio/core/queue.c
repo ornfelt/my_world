@@ -44,7 +44,8 @@ struct virtq_used
 	struct virtq_used_elem ring[];
 };
 
-static inline void print(struct uio *uio, struct pci_map *cmn_cfg)
+static inline void
+print(struct uio *uio, struct pci_map *cmn_cfg)
 {
 	uprintf(uio, "queue_size: 0x%" PRIx16 "\n",
 	        pci_r16(cmn_cfg, VIRTIO_C_QUEUE_SIZE));
@@ -62,7 +63,8 @@ static inline void print(struct uio *uio, struct pci_map *cmn_cfg)
 	        pci_r64(cmn_cfg, VIRTIO_C_QUEUE_DEVICE));
 }
 
-int virtq_poll(struct virtq *queue, uint16_t *id, uint32_t *len)
+int
+virtq_poll(struct virtq *queue, uint16_t *id, uint32_t *len)
 {
 	struct virtq_used *used = queue->used->data;
 	struct virtq_used_elem *elem;
@@ -78,7 +80,8 @@ int virtq_poll(struct virtq *queue, uint16_t *id, uint32_t *len)
 	return 0;
 }
 
-void virtq_on_irq(struct virtq *queue)
+void
+virtq_on_irq(struct virtq *queue)
 {
 	struct virtq_used *used = queue->used->data;
 	struct virtq_used_elem *elem;
@@ -95,13 +98,15 @@ void virtq_on_irq(struct virtq *queue)
 	}
 }
 
-static void int_handler(void *userptr)
+static void
+int_handler(void *userptr)
 {
 	struct virtq *queue = userptr;
 	virtq_on_irq(queue);
 }
 
-int virtq_setup_irq(struct virtq *queue)
+int
+virtq_setup_irq(struct virtq *queue)
 {
 	uint16_t vector;
 	int ret;
@@ -123,7 +128,8 @@ int virtq_setup_irq(struct virtq *queue)
 	return 0;
 }
 
-void virtq_notify(struct virtq *queue)
+void
+virtq_notify(struct virtq *queue)
 {
 	__atomic_thread_fence(__ATOMIC_RELEASE);
 	pci_w32(queue->dev->notify_cfg,
@@ -131,7 +137,8 @@ void virtq_notify(struct virtq *queue)
 	        queue->id);
 }
 
-int virtq_init(struct virtq *queue, struct virtio_dev *dev, uint16_t id)
+int
+virtq_init(struct virtq *queue, struct virtio_dev *dev, uint16_t id)
 {
 	int ret;
 
@@ -159,7 +166,8 @@ int virtq_init(struct virtq *queue, struct virtio_dev *dev, uint16_t id)
 		return ret;
 	}
 	memset(queue->desc->data, 0, PAGE_SIZE);
-	pci_w64(dev->common_cfg, VIRTIO_C_QUEUE_DESC,
+	pci_w64(dev->common_cfg,
+	        VIRTIO_C_QUEUE_DESC,
 	        pm_page_addr(queue->desc->pages));
 	ret = dma_buf_alloc(PAGE_SIZE, 0, &queue->avail);
 	if (ret)
@@ -168,7 +176,8 @@ int virtq_init(struct virtq *queue, struct virtio_dev *dev, uint16_t id)
 		return ret;
 	}
 	memset(queue->avail->data, 0, PAGE_SIZE);
-	pci_w64(dev->common_cfg, VIRTIO_C_QUEUE_DRIVER,
+	pci_w64(dev->common_cfg,
+	        VIRTIO_C_QUEUE_DRIVER,
 	        pm_page_addr(queue->avail->pages));
 	ret = dma_buf_alloc(PAGE_SIZE, 0, &queue->used);
 	if (ret)
@@ -177,7 +186,8 @@ int virtq_init(struct virtq *queue, struct virtio_dev *dev, uint16_t id)
 		return ret;
 	}
 	memset(queue->used->data, 0, PAGE_SIZE);
-	pci_w64(dev->common_cfg, VIRTIO_C_QUEUE_DEVICE,
+	pci_w64(dev->common_cfg,
+	        VIRTIO_C_QUEUE_DEVICE,
 	        pm_page_addr(queue->used->pages));
 	pci_w16(dev->common_cfg, VIRTIO_C_QUEUE_ENABLE, 1);
 	((struct virtq_avail*)queue->avail->data)->flags = 0;
@@ -188,7 +198,8 @@ int virtq_init(struct virtq *queue, struct virtio_dev *dev, uint16_t id)
 	return 0;
 }
 
-void virtq_destroy(struct virtq *queue)
+void
+virtq_destroy(struct virtq *queue)
 {
 	if (!queue->size)
 		return;
@@ -199,24 +210,26 @@ void virtq_destroy(struct virtq *queue)
 		pci_unregister_irq(queue->dev->device, &queue->irq_handle);
 }
 
-int virtq_send(struct virtq *queue, const struct sg_head *head,
-               size_t nread, size_t nwrite)
+static void
+add_sg_list(struct virtq *queue,
+            const struct sg_head *sg_head,
+            int write,
+            int last)
 {
-	struct sg *sg = TAILQ_FIRST(&head->sg);
-	struct virtq_avail *avail = queue->avail->data;
 	struct virtq_desc *desc;
-	size_t total = nread + nwrite;
-	uint16_t base = queue->desc_head;
+	struct sg *sg;
+	uint16_t flags;
 	uint16_t next;
 
-	for (size_t i = 0; i < total; ++i)
+	flags = write ? VIRTQ_DESC_F_WRITE : 0;
+	TAILQ_FOREACH(sg, &sg_head->sg, chain)
 	{
 		desc = &((struct virtq_desc*)queue->desc->data)[queue->desc_head];
 		desc->addr = pm_page_addr(sg->page) + sg->offset;
 		desc->size = sg->size;
-		desc->flags = i < nread ? 0 : VIRTQ_DESC_F_WRITE;
+		desc->flags = flags;
 		next = (queue->desc_head + 1) % queue->size;
-		if (i != total - 1)
+		if (!last || TAILQ_NEXT(sg, chain))
 		{
 			desc->next = next;
 			desc->flags |= VIRTQ_DESC_F_NEXT;
@@ -226,8 +239,28 @@ int virtq_send(struct virtq *queue, const struct sg_head *head,
 			desc->next = 0;
 		}
 		queue->desc_head = next;
-		sg = TAILQ_NEXT(sg, chain);
 	}
+}
+
+int
+virtq_send(struct virtq *queue,
+           const struct sg_head *sg_read_head,
+           const struct sg_head *sg_write_head)
+{
+	struct virtq_avail *avail = queue->avail->data;
+	size_t total = 0;
+	uint16_t base = queue->desc_head;
+
+	if (sg_read_head)
+		total += sg_read_head->count;
+	if (sg_write_head)
+		total += sg_write_head->count;
+	if (!total)
+		return 0;
+	if (sg_read_head)
+		add_sg_list(queue, sg_read_head, 0, !sg_write_head || TAILQ_EMPTY(&sg_write_head->sg));
+	if (sg_write_head)
+		add_sg_list(queue, sg_write_head, 1, 1);
 	avail->ring[avail->index % queue->size] = base;
 	__atomic_add_fetch(&avail->index, 1, __ATOMIC_RELEASE);
 	return 0;

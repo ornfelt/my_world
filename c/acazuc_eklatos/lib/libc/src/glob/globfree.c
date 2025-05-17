@@ -1,7 +1,8 @@
 #include <stdlib.h>
 #include <glob.h>
 
-void globfree(glob_t *globp)
+void
+globfree(glob_t *globp)
 {
 	if (!globp || !globp->gl_pathv)
 		return;

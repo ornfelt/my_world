@@ -6,14 +6,16 @@
 #include <errno.h>
 #include <stdio.h>
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-t type] [-o opt] [device] dir\n", progname);
 	printf("-t type: filesystem type\n");
 	printf("-o opt: mount options\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	const char *type = NULL;
 	const char *opt = NULL;

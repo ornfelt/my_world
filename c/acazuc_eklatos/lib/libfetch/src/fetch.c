@@ -1,7 +1,8 @@
 #include <string.h>
 #include <fetch.h>
 
-FILE *fetchGetURL(const char *str, const char *flags)
+FILE *
+fetchGetURL(const char *str, const char *flags)
 {
 	struct url *url = fetchParseURL(str);
 	if (!url)
@@ -11,7 +12,8 @@ FILE *fetchGetURL(const char *str, const char *flags)
 	return fp;
 }
 
-FILE *fetchPutURL(const char *str, const char *flags)
+FILE *
+fetchPutURL(const char *str, const char *flags)
 {
 	struct url *url = fetchParseURL(str);
 	if (!url)
@@ -21,7 +23,8 @@ FILE *fetchPutURL(const char *str, const char *flags)
 	return fp;
 }
 
-int fetchStatURL(const char *str, struct url_stat *stat, const char *flags)
+int
+fetchStatURL(const char *str, struct url_stat *stat, const char *flags)
 {
 	struct url *url = fetchParseURL(str);
 	if (!url)
@@ -31,7 +34,8 @@ int fetchStatURL(const char *str, struct url_stat *stat, const char *flags)
 	return ret;
 }
 
-struct url_ent *fetchListURL(const char *str, const char *flags)
+struct url_ent *
+fetchListURL(const char *str, const char *flags)
 {
 	struct url *url = fetchParseURL(str);
 	if (!url)
@@ -41,7 +45,8 @@ struct url_ent *fetchListURL(const char *str, const char *flags)
 	return ret;
 }
 
-FILE *fetchGet(struct url *url, const char *flags)
+FILE *
+fetchGet(struct url *url, const char *flags)
 {
 	if (!strcmp(url->scheme, SCHEME_FILE))
 		return fetchGetFile(url, flags);
@@ -50,7 +55,8 @@ FILE *fetchGet(struct url *url, const char *flags)
 	return NULL;
 }
 
-FILE *fetchPut(struct url *url, const char *flags)
+FILE *
+fetchPut(struct url *url, const char *flags)
 {
 	if (!strcmp(url->scheme, SCHEME_FILE))
 		return fetchPutFile(url, flags);
@@ -59,7 +65,8 @@ FILE *fetchPut(struct url *url, const char *flags)
 	return NULL;
 }
 
-int fetchStat(struct url *url, struct url_stat *stat, const char *flags)
+int
+fetchStat(struct url *url, struct url_stat *stat, const char *flags)
 {
 	if (!strcmp(url->scheme, SCHEME_FILE))
 		return fetchStatFile(url, stat, flags);
@@ -68,7 +75,8 @@ int fetchStat(struct url *url, struct url_stat *stat, const char *flags)
 	return -1;
 }
 
-struct url_ent *fetchList(struct url *url, const char *flags)
+struct url_ent *
+fetchList(struct url *url, const char *flags)
 {
 	if (!strcmp(url->scheme, SCHEME_FILE))
 		return fetchListFile(url, flags);

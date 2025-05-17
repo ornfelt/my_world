@@ -1,7 +1,8 @@
 #include <strings.h>
 #include <ctype.h>
 
-char *strcasestr(const char *s1, const char *s2)
+char *
+strcasestr(const char *s1, const char *s2)
 {
 	if (!*s2)
 		return (char*)s1;

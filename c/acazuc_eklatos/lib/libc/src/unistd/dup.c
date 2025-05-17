@@ -2,7 +2,8 @@
 
 #include <unistd.h>
 
-int dup(int oldfd)
+int
+dup(int oldfd)
 {
 	return syscall1(SYS_dup, oldfd);
 }

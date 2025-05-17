@@ -31,13 +31,15 @@ static uint8_t buttons_state;
 static struct irq_handle mouse_irq_handle;
 static struct evdev *mouse_evdev;
 
-static int ps2_mouse_wr(uint8_t cmd)
+static int
+ps2_mouse_wr(uint8_t cmd)
 {
 	return ps2_wr(PS2_CMD, PS2_CMD_SEND_P2_IN)
 	    || ps2_wr(PS2_DATA, cmd);
 }
 
-void ps2_mouse_input(uint8_t value)
+void
+ps2_mouse_input(uint8_t value)
 {
 #if 0
 	TRACE("ps2 mouse 0x%02x", value);
@@ -121,7 +123,8 @@ do \
 #undef BUTTON_TEST
 }
 
-void ps2_mouse_init(void)
+void
+ps2_mouse_init(void)
 {
 	uint8_t tmp;
 

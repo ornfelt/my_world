@@ -97,67 +97,80 @@ struct ac97
 	struct snd *out;
 };
 
-static inline uint8_t nam_r8(struct ac97 *ac97, uint32_t reg)
+static inline uint8_t
+nam_r8(struct ac97 *ac97, uint32_t reg)
 {
 	return pci_r8(ac97->nambar, reg);
 }
 
-static inline uint16_t nam_r16(struct ac97 *ac97, uint32_t reg)
+static inline uint16_t
+nam_r16(struct ac97 *ac97, uint32_t reg)
 {
 	return pci_r16(ac97->nambar, reg);
 }
 
-static inline uint8_t nam_r32(struct ac97 *ac97, uint32_t reg)
+static inline uint8_t
+nam_r32(struct ac97 *ac97, uint32_t reg)
 {
 	return pci_r32(ac97->nambar, reg);
 }
 
-static inline void nam_w8(struct ac97 *ac97, uint32_t reg, uint8_t val)
+static inline void
+nam_w8(struct ac97 *ac97, uint32_t reg, uint8_t val)
 {
 	pci_w8(ac97->nambar, reg, val);
 }
 
-static inline void nam_w16(struct ac97 *ac97, uint32_t reg, uint16_t val)
+static inline void
+nam_w16(struct ac97 *ac97, uint32_t reg, uint16_t val)
 {
 	pci_w16(ac97->nambar, reg, val);
 }
 
-static inline void nam_w32(struct ac97 *ac97, uint32_t reg, uint32_t val)
+static inline void
+nam_w32(struct ac97 *ac97, uint32_t reg, uint32_t val)
 {
 	pci_w32(ac97->nambar, reg, val);
 }
 
-static inline uint8_t nabm_r8(struct ac97 *ac97, uint32_t reg)
+static inline uint8_t
+nabm_r8(struct ac97 *ac97, uint32_t reg)
 {
 	return pci_r8(ac97->nabmbar, reg);
 }
 
-static inline uint16_t nabm_r16(struct ac97 *ac97, uint32_t reg)
+static inline uint16_t
+nabm_r16(struct ac97 *ac97, uint32_t reg)
 {
 	return pci_r16(ac97->nabmbar, reg);
 }
 
-static inline uint8_t nabm_r32(struct ac97 *ac97, uint32_t reg)
+static inline uint8_t
+nabm_r32(struct ac97 *ac97, uint32_t reg)
 {
 	return pci_r32(ac97->nabmbar, reg);
 }
 
-static inline void nabm_w8(struct ac97 *ac97, uint32_t reg, uint8_t val)
+static inline void
+nabm_w8(struct ac97 *ac97, uint32_t reg, uint8_t val)
 {
 	pci_w8(ac97->nabmbar, reg, val);
 }
 
-static inline void nabm_w16(struct ac97 *ac97, uint32_t reg, uint16_t val)
+static inline void
+nabm_w16(struct ac97 *ac97, uint32_t reg, uint16_t val)
 {
 	pci_w16(ac97->nabmbar, reg, val);
 }
 
-static inline void nabm_w32(struct ac97 *ac97, uint32_t reg, uint32_t val)
+static inline void
+nabm_w32(struct ac97 *ac97, uint32_t reg, uint32_t val)
 {
 	pci_w32(ac97->nabmbar, reg, val);
 }
 
-void int_handler(void *userptr)
+void
+int_handler(void *userptr)
 {
 	struct ac97 *ac97 = userptr;
 	uint16_t sr;
@@ -190,7 +203,8 @@ void int_handler(void *userptr)
 		         NABMD_CR_IOCE | NABMD_CR_RPBM);
 }
 
-void ac97_free(struct ac97 *ac97)
+void
+ac97_free(struct ac97 *ac97)
 {
 	if (!ac97)
 		return;
@@ -201,7 +215,8 @@ void ac97_free(struct ac97 *ac97)
 	free(ac97);
 }
 
-int init_pci(struct pci_device *device, void *userdata)
+int
+init_pci(struct pci_device *device, void *userdata)
 {
 	struct ac97 *ac97 = NULL;
 	int ret;
@@ -277,17 +292,20 @@ err:
 	return ret;
 }
 
-int init(void)
+int
+init(void)
 {
 	pci_probe(0x8086, 0x2415, init_pci, NULL);
 	return 0;
 }
 
-void fini(void)
+void
+fini(void)
 {
 }
 
-struct kmod_info kmod =
+struct kmod_info
+kmod =
 {
 	.magic = KMOD_MAGIC,
 	.version = 1,

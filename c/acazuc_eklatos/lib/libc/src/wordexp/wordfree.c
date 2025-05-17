@@ -1,7 +1,8 @@
 #include <wordexp.h>
 #include <stdlib.h>
 
-void wordfree(wordexp_t *we)
+void
+wordfree(wordexp_t *we)
 {
 	if (!we || !we->we_wordv)
 		return;

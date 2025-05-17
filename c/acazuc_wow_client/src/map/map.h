@@ -1,8 +1,6 @@
 #ifndef MAP_H
 #define MAP_H
 
-#include "simplex.h"
-
 #include <gfx/objects.h>
 
 #include <jks/array.h>
@@ -81,11 +79,6 @@ struct taxi_info
 
 struct map
 {
-	struct gx_blp *lavag_textures[30];
-	struct gx_blp *river_textures[30];
-	struct gx_blp *ocean_textures[30];
-	struct gx_blp *magma_textures[30];
-	struct gx_blp *slime_textures[30];
 	struct map_tile *tile_array[64 * 64];
 	uint16_t tiles[64 * 64]; /* List of loaded adts */
 	uint32_t tiles_nb;
@@ -99,16 +92,8 @@ struct map
 	uint32_t id;
 	float fog_divisor;
 	uint64_t adt_exists[64];
-	gfx_buffer_t particles_indices_buffer; /* XXX move somewhere else */
-	gfx_buffer_t mcnk_vertexes_buffer; /* XXX move somewhere else */
-	gfx_buffer_t aabb_vertexes_buffer; /* XXX move somewhere else */
-	gfx_buffer_t mcnk_indices_buffer; /* XXX move somewhere else */
-	gfx_buffer_t aabb_indices_buffer; /* XXX move somewhere else */
-	gfx_texture_t water_texture;
-	struct simplex_noise water_noise;
 	struct gx_wmo_instance *wmo;
 	struct vec3f last_pos;
-	uint32_t mcnk_indices_nb;
 	uint32_t wow_flags;
 	int64_t last_check;
 	float last_view_distance;

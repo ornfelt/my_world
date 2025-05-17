@@ -4,10 +4,11 @@
 #include <stdio.h>
 #include <zlib.h>
 
-static int inflate_file(const char *progname, const char *file)
+static int
+inflate_file(const char *progname, const char *file)
 {
+	static uint8_t buf[1024 * 1024];
 	gzFile gzfile;
-	uint8_t buf[4096];
 	int ret = 1;
 
 	gzfile = gzopen(file, "rb");
@@ -18,7 +19,9 @@ static int inflate_file(const char *progname, const char *file)
 	}
 	while (1)
 	{
-		int rd = gzread(gzfile, buf, sizeof(buf));
+		int rd;
+
+		rd = gzread(gzfile, buf, sizeof(buf));
 		if (rd < 0)
 			goto end;
 		if (!rd)
@@ -32,12 +35,14 @@ end:
 	return ret;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s FILES\n", progname);
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	int ret;
 

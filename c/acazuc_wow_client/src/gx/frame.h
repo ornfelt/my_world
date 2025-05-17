@@ -76,6 +76,7 @@ struct gx_frame
 #endif
 	gfx_buffer_t m2_ground_shadow_uniform_buffer;
 	gfx_buffer_t m2_ground_light_uniform_buffer;
+	gfx_buffer_t m2_shadow_uniform_buffer;
 	gfx_buffer_t m2_world_uniform_buffer;
 	gfx_buffer_t particle_uniform_buffer;
 	gfx_buffer_t ribbon_uniform_buffer;
@@ -140,6 +141,27 @@ void gx_frame_add_text(struct gx_frame *frame, struct gx_text *text);
 void gx_frame_add_tile(struct gx_frame *frame, struct map_tile *tile);
 #ifdef WITH_DEBUG_RENDERING
 void gx_frame_add_aabb(struct gx_frame *frame, struct gx_aabb *aabb);
+#endif
+
+void gx_frame_render_mcnk(struct gx_frame *frame);
+void gx_frame_render_mclq(struct gx_frame *frame);
+void gx_frame_render_wmo(struct gx_frame *frame);
+void gx_frame_render_opaque_m2(struct gx_frame *frame);
+void gx_frame_render_shadow_m2(struct gx_frame *frame);
+void gx_frame_render_transparent_m2(struct gx_frame *frame);
+void gx_frame_render_ground_m2(struct gx_frame *frame);
+void gx_frame_render_m2_particles(struct gx_frame *frame);
+void gx_frame_render_m2_ribbons(struct gx_frame *frame);
+void gx_frame_render_texts(struct gx_frame *frame);
+#ifdef WITH_DEBUG_RENDERING
+void gx_frame_render_aabb(struct gx_frame *frame);
+void gx_frame_render_wmo_portals(struct gx_frame *frame);
+void gx_frame_render_wmo_lights(struct gx_frame *frame);
+void gx_frame_render_m2_lights(struct gx_frame *frame);
+void gx_frame_render_m2_bones(struct gx_frame *frame);
+void gx_frame_render_m2_collisions(struct gx_frame *frame);
+void gx_frame_render_wmo_collisions(struct gx_frame *frame);
+void gx_frame_render_collisions(struct gx_frame *frame);
 #endif
 
 #endif

@@ -1,7 +1,8 @@
 #include <stdlib.h>
 #include <netdb.h>
 
-void freeaddrinfo(struct addrinfo *result)
+void
+freeaddrinfo(struct addrinfo *result)
 {
 	while (result)
 	{

@@ -4,7 +4,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-int closedir(DIR *dirp)
+int
+closedir(DIR *dirp)
 {
 	if (!dirp)
 		return 0;

@@ -3,7 +3,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-void xlib_handle_error(Display *display, xcb_generic_error_t *error)
+void
+xlib_handle_error(Display *display, xcb_generic_error_t *error)
 {
 	if (display->error_handler)
 	{
@@ -21,11 +22,14 @@ void xlib_handle_error(Display *display, xcb_generic_error_t *error)
 	xlib_print_error(display, error);
 }
 
-Status xlib_handle_request_check(Display *display,
-                                 xcb_void_cookie_t cookie)
+Status
+xlib_handle_request_check(Display *display,
+                          xcb_void_cookie_t cookie)
 {
+	xcb_generic_error_t *error;
+
 	xcb_flush(display->conn);
-	xcb_generic_error_t *error = xcb_request_check(display->conn, cookie);
+	error = xcb_request_check(display->conn, cookie);
 	if (error)
 	{
 		if (display->error_handler)
@@ -49,19 +53,24 @@ Status xlib_handle_request_check(Display *display,
 	return Success;
 }
 
-Status xlib_handle_request_async(Display *display,
-                                 xcb_void_cookie_t cookie)
+Status
+xlib_handle_request_async(Display *display,
+                          xcb_void_cookie_t cookie)
 {
 	(void)display;
 	(void)cookie;
 	return Success;
 }
 
-XID xlib_handle_request_check_xid(Display *display, XID xid,
-                                  xcb_void_cookie_t cookie)
+XID
+xlib_handle_request_check_xid(Display *display,
+                              XID xid,
+                              xcb_void_cookie_t cookie)
 {
+	xcb_generic_error_t *error;
+
 	xcb_flush(display->conn);
-	xcb_generic_error_t *error = xcb_request_check(display->conn, cookie);
+	error = xcb_request_check(display->conn, cookie);
 	if (error)
 	{
 		if (display->error_handler)
@@ -84,15 +93,18 @@ XID xlib_handle_request_check_xid(Display *display, XID xid,
 	return xid;
 }
 
-XID xlib_handle_request_async_xid(Display *display, XID xid,
-                                  xcb_void_cookie_t cookie)
+XID
+xlib_handle_request_async_xid(Display *display,
+                              XID xid,
+                              xcb_void_cookie_t cookie)
 {
 	(void)display;
 	(void)cookie;
 	return xid;
 }
 
-void xlib_print_error(Display *display, xcb_generic_error_t *error)
+void
+xlib_print_error(Display *display, xcb_generic_error_t *error)
 {
 	static const char *error_str[] =
 	{
@@ -124,7 +136,8 @@ void xlib_print_error(Display *display, xcb_generic_error_t *error)
 	fprintf(stderr, "  Current serial number in output stream: %lu\n", XNextRequest(display));
 }
 
-void xlib_copy_event(Display *display, XEvent *xe, xcb_generic_event_t *e)
+void
+xlib_copy_event(Display *display, XEvent *xe, xcb_generic_event_t *e)
 {
 	xe->xany.type = e->response_type & 0x7F;
 	if (!xe->xany.type)

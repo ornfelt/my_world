@@ -5,9 +5,11 @@
 #include <errno.h>
 #include <stdio.h>
 
-static int parse_signal(const char *progname, const char *str, int *sig)
+static int
+parse_signal(const char *progname, const char *str, int *sig)
 {
 	char *endptr;
+
 	errno = 0;
 	*sig = strtol(str, &endptr, 0);
 	if (errno || *endptr)
@@ -18,15 +20,18 @@ static int parse_signal(const char *progname, const char *str, int *sig)
 	return 0;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-h] [-s signal] pid\n", progname);
 	printf("-h       : show this help\n");
 	printf("-s signal: send the given signal to the pid\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
+	char *endptr;
 	int sig = SIGTERM;
 	pid_t pid;
 	int c;
@@ -57,7 +62,6 @@ int main(int argc, char **argv)
 		fprintf(stderr, "%s: extra operand\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	char *endptr;
 	errno = 0;
 	pid = strtol(argv[optind], &endptr, 0);
 	if (errno || *endptr)

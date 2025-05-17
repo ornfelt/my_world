@@ -2,9 +2,11 @@
 
 #include <ctype.h>
 
-const char *strto_init(const char *nptr, int *base, int *is_neg)
+const char *
+strto_init(const char *nptr, int *base, int *is_neg)
 {
 	const char *it = nptr;
+
 	while (isspace(*it))
 		it++;
 	if (*it == '+')
@@ -38,7 +40,8 @@ const char *strto_init(const char *nptr, int *base, int *is_neg)
 	return it;
 }
 
-int strto_getc(const char *it, int base, char *c)
+int
+strto_getc(const char *it, int base, char *c)
 {
 	*c = tolower(*it);
 	if (*c < '0')

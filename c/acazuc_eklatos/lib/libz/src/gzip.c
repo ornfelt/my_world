@@ -14,7 +14,8 @@ struct gzFile_s
 	int direction;
 };
 
-static gzFile gzfopen(FILE *fp)
+static gzFile
+gzfopen(FILE *fp)
 {
 	gzFile file = calloc(1, sizeof(*file));
 	if (!file)
@@ -24,7 +25,8 @@ static gzFile gzfopen(FILE *fp)
 	return file;
 }
 
-gzFile gzopen(const char *path, const char *mode)
+gzFile
+gzopen(const char *path, const char *mode)
 {
 	FILE *fp = fopen(path, mode);
 	if (!fp)
@@ -35,7 +37,8 @@ gzFile gzopen(const char *path, const char *mode)
 	return file;
 }
 
-gzFile gzdopen(int fd, const char *mode)
+gzFile
+gzdopen(int fd, const char *mode)
 {
 	FILE *fp = fdopen(fd, mode);
 	if (!fp)
@@ -46,7 +49,8 @@ gzFile gzdopen(int fd, const char *mode)
 	return file;
 }
 
-int gzbuffer(gzFile file, unsigned size)
+int
+gzbuffer(gzFile file, unsigned size)
 {
 	if (file->buf)
 		return -1;
@@ -58,7 +62,8 @@ int gzbuffer(gzFile file, unsigned size)
 	return 0;
 }
 
-int gzread(gzFile file, void *buf, unsigned len)
+int
+gzread(gzFile file, void *buf, unsigned len)
 {
 	if (!file->buf)
 	{
@@ -118,7 +123,8 @@ int gzread(gzFile file, void *buf, unsigned len)
 	return total;
 }
 
-size_t gzfread(void *buf, size_t size, size_t nitems, gzFile file)
+size_t
+gzfread(void *buf, size_t size, size_t nitems, gzFile file)
 {
 	int rd = gzread(file, buf, size * nitems);
 	if (rd < 0)
@@ -126,7 +132,8 @@ size_t gzfread(void *buf, size_t size, size_t nitems, gzFile file)
 	return rd;
 }
 
-int gzwrite(gzFile file, void *buf, unsigned len)
+int
+gzwrite(gzFile file, void *buf, unsigned len)
 {
 	if (!file->buf)
 	{
@@ -180,7 +187,8 @@ int gzwrite(gzFile file, void *buf, unsigned len)
 	return total;
 }
 
-size_t gzfwrite(void *buf, size_t size, size_t nitems, gzFile file)
+size_t
+gzfwrite(void *buf, size_t size, size_t nitems, gzFile file)
 {
 	int wr = gzwrite(file, buf, size * nitems);
 	if (wr < 0)
@@ -188,7 +196,8 @@ size_t gzfwrite(void *buf, size_t size, size_t nitems, gzFile file)
 	return wr;
 }
 
-int gzclose(gzFile file)
+int
+gzclose(gzFile file)
 {
 	if (!file)
 		return Z_STREAM_ERROR;

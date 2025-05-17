@@ -26,16 +26,22 @@
 
 #include <math.h>
 
-#define WDL_VIEW_ZFAR 2
-#define WDL_VIEW_ZNEAR .5
+#define WDL_VIEW_ZFAR  2.0f
+#define WDL_VIEW_ZNEAR 0.5f
+
 #define MOVE_SPEED 10
+
+#define SHADOW_WIDTH 300.0f
 
 #define FLYING(camera) (((camera)->worldobj->movement_data.flags & MOVEFLAG_FLYING))
 #define GROUNDED(camera) (!FLYING(camera) && !((camera)->worldobj->movement_data.flags & MOVEFLAG_FALLING))
 
-struct camera *camera_new(void)
+struct camera *
+camera_new(void)
 {
-	struct camera *camera = mem_malloc(MEM_GENERIC, sizeof(*camera));
+	struct camera *camera;
+
+	camera = mem_malloc(MEM_GENERIC, sizeof(*camera));
 	if (!camera)
 		return NULL;
 	camera->worldobj = NULL;
@@ -61,10 +67,12 @@ struct camera *camera_new(void)
 	frustum_init(&camera->wdl_frustum);
 	frustum_init(&camera->frustum);
 	camera->last_move_flags = 0;
+	camera->autorun = false;
 	return camera;
 }
 
-void camera_delete(struct camera *camera)
+void
+camera_delete(struct camera *camera)
 {
 	if (!camera)
 		return;
@@ -73,7 +81,8 @@ void camera_delete(struct camera *camera)
 	mem_free(MEM_GENERIC, camera);
 }
 
-void camera_handle_mouse(struct camera *camera)
+void
+camera_handle_mouse(struct camera *camera)
 {
 	int32_t mouse_x = gfx_get_mouse_x(g_wow->window);
 	int32_t mouse_y = gfx_get_mouse_y(g_wow->window);
@@ -186,7 +195,8 @@ void camera_handle_mouse(struct camera *camera)
 	}
 }
 
-bool camera_update_matrixes(struct camera *camera)
+bool
+camera_update_matrixes(struct camera *camera)
 {
 	float ratio = (float)g_wow->render_width / g_wow->render_height;
 	MAT4_PERSPECTIVE(camera->wdl_p, camera->fov, ratio, camera->view_distance * WDL_VIEW_ZNEAR, camera->view_distance * WDL_VIEW_ZFAR);
@@ -204,7 +214,7 @@ bool camera_update_matrixes(struct camera *camera)
 	}
 	MAT4_MUL(camera->vp, camera->p, camera->v);
 	MAT4_MUL(camera->wdl_vp, camera->wdl_p, camera->v);
-	MAT4_ORTHO(float, camera->shadow_p, -200.0f, 200.0f, -200.0f, 200.0f, 1.0f, 10000.0f);
+	MAT4_ORTHO(float, camera->shadow_p, -SHADOW_WIDTH / 2.0f, SHADOW_WIDTH / 2.0f, -SHADOW_WIDTH / 2.0f, SHADOW_WIDTH / 2.0f, 1.0f, 3000.0f);
 	struct vec3f shadow_center = camera->pos;
 	struct vec3f shadow_eye = {1000.0f, 1500.0f, -1000.0f};
 	VEC3_ADD(shadow_eye, shadow_eye, shadow_center);
@@ -231,7 +241,8 @@ bool camera_update_matrixes(struct camera *camera)
 
 #if 1
 #else
-static struct vec3f edge_collision(struct vec3f a, struct vec3f b, struct vec3f p)
+static struct vec3f
+edge_collision(struct vec3f a, struct vec3f b, struct vec3f p)
 {
 	struct vec3f d[2];
 	VEC3_SUB(d[0], b, a);
@@ -247,7 +258,12 @@ static struct vec3f edge_collision(struct vec3f a, struct vec3f b, struct vec3f 
 	return ret;
 }
 
-static bool get_closest_triangle_point(struct vec3f p, struct collision_triangle *triangle, float *distp, struct vec3f *intersectionp, struct vec3f *normp)
+static bool
+get_closest_triangle_point(struct vec3f p,
+                           struct collision_triangle *triangle,
+                           float *distp,
+                           struct vec3f *intersectionp,
+                           struct vec3f *normp)
 {
 	struct vec3f e0;
 	struct vec3f e1;
@@ -320,7 +336,11 @@ static bool get_closest_triangle_point(struct vec3f p, struct collision_triangle
 	return true;
 }
 
-static bool get_closest_triangle_point2(struct vec3f p, struct collision_triangle *triangle, struct vec3f norm, struct vec3f *reference_point)
+static bool
+get_closest_triangle_point2(struct vec3f p,
+                            struct collision_triangle *triangle,
+                            struct vec3f norm,
+                            struct vec3f *reference_point)
 {
 	struct vec3f edges[3];
 	struct vec3f crossed[3];
@@ -371,7 +391,14 @@ static bool get_closest_triangle_point2(struct vec3f p, struct collision_triangl
 	return best <= SPHERE_RADIUS;
 }
 
-static struct vec3f update_position_collision(struct camera *camera, struct jks_array *triangles, struct vec3f src, struct vec3f dst, size_t recursion, struct vec3f *normp, bool *ground_touched)
+static struct vec3f
+update_position_collision(struct camera *camera,
+                          struct jks_array *triangles,
+                          struct vec3f src,
+                          struct vec3f dst,
+                          size_t recursion,
+                          struct vec3f *normp,
+                          bool *ground_touched)
 {
 	if (recursion >= 10)
 		return src;
@@ -465,35 +492,59 @@ static struct vec3f update_position_collision(struct camera *camera, struct jks_
 }
 #endif
 
-#define KEY_FORWARD      0x01
-#define KEY_BACKWARD     0x02
-#define KEY_STRAFE_LEFT  0x04
-#define KEY_STRAFE_RIGHT 0x08
-#define KEY_TURN_LEFT    0x10
-#define KEY_TURN_RIGHT   0x20
-#define KEY_UPWARD       0x40
-#define KEY_DOWNWARD     0x80
-
-static void handle_keyboard_worldobj(struct camera *camera)
+static uint32_t
+reduce_flags(uint32_t flags, uint32_t test)
 {
-	uint8_t keys = 0;
-	keys |= gfx_is_key_down(g_wow->window, GFX_KEY_W) ? KEY_FORWARD : 0;
-	keys |= gfx_is_key_down(g_wow->window, GFX_KEY_S) ? KEY_BACKWARD : 0;
-	keys |= gfx_is_key_down(g_wow->window, GFX_KEY_Q) ? KEY_STRAFE_LEFT : 0;
-	keys |= gfx_is_key_down(g_wow->window, GFX_KEY_E) ? KEY_STRAFE_RIGHT : 0;
-	keys |= gfx_is_key_down(g_wow->window, GFX_KEY_A) ? KEY_TURN_LEFT : 0;
-	keys |= gfx_is_key_down(g_wow->window, GFX_KEY_D) ? KEY_TURN_RIGHT : 0;
-	keys |= gfx_is_key_down(g_wow->window, GFX_KEY_SPACE) ? KEY_UPWARD : 0;
-	keys |= gfx_is_key_down(g_wow->window, GFX_KEY_LSHIFT) ? KEY_DOWNWARD : 0;
-	uint32_t move_flags = keys & (KEY_FORWARD | KEY_BACKWARD | KEY_STRAFE_LEFT | KEY_STRAFE_RIGHT | KEY_TURN_LEFT | KEY_TURN_RIGHT);
-	if ((keys & (KEY_FORWARD | KEY_BACKWARD)) == (KEY_FORWARD | KEY_BACKWARD))
-		keys &= ~(KEY_FORWARD | KEY_BACKWARD);
-	if ((keys & (KEY_STRAFE_LEFT | KEY_STRAFE_RIGHT)) == (KEY_STRAFE_LEFT | KEY_STRAFE_RIGHT))
-		keys &= ~(KEY_STRAFE_LEFT | KEY_STRAFE_RIGHT);
-	if ((keys & (KEY_TURN_LEFT | KEY_TURN_RIGHT)) == (KEY_TURN_LEFT | KEY_TURN_RIGHT))
-		keys &= ~(KEY_TURN_LEFT | KEY_TURN_RIGHT);
-	if ((keys & (KEY_UPWARD | KEY_DOWNWARD)) == (KEY_UPWARD | KEY_DOWNWARD))
-		keys &= ~(KEY_UPWARD | KEY_DOWNWARD);
+	if ((flags & test) == test)
+		flags &= ~test;
+	return flags;
+}
+
+static uint32_t
+get_move_flags(struct camera *camera)
+{
+	uint32_t flags = 0;
+
+	if (gfx_is_key_down(g_wow->window, GFX_KEY_W))
+		flags |= CAMERA_MOVE_FRONT;
+	if (gfx_is_key_down(g_wow->window, GFX_KEY_S))
+		flags |= CAMERA_MOVE_BACK;
+	if (gfx_is_key_down(g_wow->window, GFX_KEY_Q))
+		flags |= CAMERA_MOVE_LEFT;
+	if (gfx_is_key_down(g_wow->window, GFX_KEY_E))
+		flags |= CAMERA_MOVE_RIGHT;
+	if (gfx_is_key_down(g_wow->window, GFX_KEY_A))
+		flags |= CAMERA_TURN_LEFT;
+	if (gfx_is_key_down(g_wow->window, GFX_KEY_D))
+		flags |= CAMERA_TURN_RIGHT;
+	if (gfx_is_key_down(g_wow->window, GFX_KEY_SPACE))
+		flags |= CAMERA_MOVE_UP;
+	if (gfx_is_key_down(g_wow->window, GFX_KEY_LSHIFT))
+		flags |= CAMERA_MOVE_DOWN;
+	if (gfx_is_mouse_button_down(g_wow->window, GFX_MOUSE_BUTTON_LEFT)
+	 && gfx_is_mouse_button_down(g_wow->window, GFX_MOUSE_BUTTON_RIGHT))
+		flags |= CAMERA_MOVE_FRONT;
+	if (camera->autorun)
+	{
+		if (flags & (CAMERA_MOVE_FRONT | CAMERA_MOVE_BACK))
+			camera->autorun = false;
+		else
+			flags |= CAMERA_MOVE_FRONT;
+	}
+	flags = reduce_flags(flags, CAMERA_MOVE_FRONT | CAMERA_MOVE_BACK);
+	flags = reduce_flags(flags, CAMERA_MOVE_LEFT | CAMERA_MOVE_RIGHT);
+	flags = reduce_flags(flags, CAMERA_TURN_LEFT | CAMERA_TURN_RIGHT);
+	flags = reduce_flags(flags, CAMERA_MOVE_UP | CAMERA_MOVE_DOWN);
+	return flags;
+}
+
+static void
+handle_keyboard_worldobj(struct camera *camera)
+{
+	uint32_t move_flags;
+	uint32_t delta;
+
+	move_flags = get_move_flags(camera);
 	if (GROUNDED(camera))
 	{
 		if (gfx_is_key_down(g_wow->window, GFX_KEY_SPACE))
@@ -502,42 +553,42 @@ static void handle_keyboard_worldobj(struct camera *camera)
 			worldobj_send_move_packet(camera->worldobj, MSG_MOVE_JUMP);
 		}
 	}
-	if (keys & KEY_FORWARD)
+	if (move_flags & CAMERA_MOVE_FRONT)
 		camera->worldobj->movement_data.flags |= MOVEFLAG_FORWARD;
 	else
 		camera->worldobj->movement_data.flags &= ~MOVEFLAG_FORWARD;
-	if (keys & KEY_BACKWARD)
+	if (move_flags & CAMERA_MOVE_BACK)
 		camera->worldobj->movement_data.flags |= MOVEFLAG_BACKWARD;
 	else
 		camera->worldobj->movement_data.flags &= ~MOVEFLAG_BACKWARD;
-	if (keys & KEY_STRAFE_LEFT)
+	if (move_flags & CAMERA_MOVE_LEFT)
 		camera->worldobj->movement_data.flags |= MOVEFLAG_STRAFE_LEFT;
 	else
 		camera->worldobj->movement_data.flags &= ~MOVEFLAG_STRAFE_LEFT;
-	if (keys & KEY_STRAFE_RIGHT)
+	if (move_flags & CAMERA_MOVE_RIGHT)
 		camera->worldobj->movement_data.flags |= MOVEFLAG_STRAFE_RIGHT;
 	else
 		camera->worldobj->movement_data.flags &= ~MOVEFLAG_STRAFE_RIGHT;
-	if (keys & KEY_UPWARD)
+	if (move_flags & CAMERA_MOVE_UP)
 		camera->worldobj->movement_data.flags |= MOVEFLAG_ASCENDING;
 	else
 		camera->worldobj->movement_data.flags &= ~MOVEFLAG_ASCENDING;
-	if (keys & KEY_DOWNWARD)
+	if (move_flags & CAMERA_MOVE_DOWN)
 		camera->worldobj->movement_data.flags |= MOVEFLAG_DESCENDING;
 	else
 		camera->worldobj->movement_data.flags &= ~MOVEFLAG_DESCENDING;
-	if (keys & KEY_TURN_LEFT)
+	if (move_flags & CAMERA_TURN_LEFT)
 		camera->worldobj->movement_data.flags |= MOVEFLAG_TURN_LEFT;
 	else
 		camera->worldobj->movement_data.flags &= ~MOVEFLAG_TURN_LEFT;
-	if (keys & KEY_TURN_RIGHT)
+	if (move_flags & CAMERA_TURN_RIGHT)
 		camera->worldobj->movement_data.flags |= MOVEFLAG_TURN_RIGHT;
 	else
 		camera->worldobj->movement_data.flags &= ~MOVEFLAG_TURN_RIGHT;
 	if (!(g_wow->wow_opt & WOW_OPT_FOCUS_3D))
 		camera->rot.y = -camera->worldobj->orientation;
 	unit_physics((struct unit*)camera->worldobj);
-	uint32_t delta = camera->last_move_flags ^ move_flags;
+	delta = camera->last_move_flags ^ move_flags;
 	if (delta)
 	{
 		if (delta & CAMERA_MOVE_FRONT)
@@ -568,16 +619,16 @@ static void handle_keyboard_worldobj(struct camera *camera)
 			else
 				worldobj_send_move_packet(camera->worldobj, MSG_MOVE_STOP_STRAFE);
 		}
-		if (delta & CAMERA_ROTATE_LEFT)
+		if (delta & CAMERA_TURN_LEFT)
 		{
-			if (move_flags & CAMERA_ROTATE_LEFT)
+			if (move_flags & CAMERA_TURN_LEFT)
 				worldobj_send_move_packet(camera->worldobj, MSG_MOVE_START_TURN_LEFT);
 			else
 				worldobj_send_move_packet(camera->worldobj, MSG_MOVE_STOP_TURN);
 		}
-		if (delta & CAMERA_ROTATE_RIGHT)
+		if (delta & CAMERA_TURN_RIGHT)
 		{
-			if (move_flags & CAMERA_ROTATE_RIGHT)
+			if (move_flags & CAMERA_TURN_RIGHT)
 				worldobj_send_move_packet(camera->worldobj, MSG_MOVE_START_TURN_RIGHT);
 			else
 				worldobj_send_move_packet(camera->worldobj, MSG_MOVE_STOP_TURN);
@@ -595,56 +646,43 @@ static void handle_keyboard_worldobj(struct camera *camera)
 	camera->last_move_flags = move_flags;
 }
 
-void camera_handle_keyboard(struct camera *camera)
+void
+camera_handle_keyboard(struct camera *camera)
 {
-	if (camera->worldobj)
-	{
-		handle_keyboard_worldobj(camera);
-		return;
-	}
-	uint8_t keys = 0;
+	uint32_t move_flags = 0;
 	struct vec3f src;
 	struct vec3f dst;
 	struct vec3f rot;
 	float speed;
 	float dt;
-	keys |= gfx_is_key_down(g_wow->window, GFX_KEY_W) ? KEY_FORWARD : 0;
-	keys |= gfx_is_key_down(g_wow->window, GFX_KEY_S) ? KEY_BACKWARD : 0;
-	keys |= gfx_is_key_down(g_wow->window, GFX_KEY_Q) ? KEY_STRAFE_LEFT : 0;
-	keys |= gfx_is_key_down(g_wow->window, GFX_KEY_E) ? KEY_STRAFE_RIGHT : 0;
-	keys |= gfx_is_key_down(g_wow->window, GFX_KEY_A) ? KEY_TURN_LEFT : 0;
-	keys |= gfx_is_key_down(g_wow->window, GFX_KEY_D) ? KEY_TURN_RIGHT : 0;
-	keys |= gfx_is_key_down(g_wow->window, GFX_KEY_SPACE) ? KEY_UPWARD : 0;
-	keys |= gfx_is_key_down(g_wow->window, GFX_KEY_LSHIFT) ? KEY_DOWNWARD : 0;
-	if ((keys & (KEY_FORWARD | KEY_BACKWARD)) == (KEY_FORWARD | KEY_BACKWARD))
-		keys &= ~(KEY_FORWARD | KEY_BACKWARD);
-	if ((keys & (KEY_STRAFE_LEFT | KEY_STRAFE_RIGHT)) == (KEY_STRAFE_LEFT | KEY_STRAFE_RIGHT))
-		keys &= ~(KEY_STRAFE_LEFT | KEY_STRAFE_RIGHT);
-	if ((keys & (KEY_TURN_LEFT | KEY_TURN_RIGHT)) == (KEY_TURN_LEFT | KEY_TURN_RIGHT))
-		keys &= ~(KEY_TURN_LEFT | KEY_TURN_RIGHT);
-	if ((keys & (KEY_UPWARD | KEY_DOWNWARD)) == (KEY_UPWARD | KEY_DOWNWARD))
-		keys &= ~(KEY_UPWARD | KEY_DOWNWARD);
+
+	if (camera->worldobj)
+	{
+		handle_keyboard_worldobj(camera);
+		return;
+	}
+	move_flags = get_move_flags(camera);
 	src = camera->pos;
 	rot = camera->rot;
 	speed = MOVE_SPEED;
 	dst = src;
-	dt = (g_wow->frametime - g_wow->lastframetime) / 1000000000.f;
+	dt = (g_wow->frametime - g_wow->lastframetime) / 1000000000.0;
 	if (gfx_is_key_down(g_wow->window, GFX_KEY_LCONTROL))
 		speed *= 10;
 	if (gfx_is_key_down(g_wow->window, GFX_KEY_RCONTROL))
 		speed *= 10;
 	if (gfx_is_key_down(g_wow->window, GFX_KEY_RSHIFT))
 		speed /= 10;
-	if (keys & (KEY_FORWARD | KEY_BACKWARD | KEY_STRAFE_LEFT | KEY_STRAFE_RIGHT | KEY_UPWARD | KEY_DOWNWARD))
+	if (move_flags & (CAMERA_MOVE_FRONT | CAMERA_MOVE_BACK | CAMERA_MOVE_LEFT | CAMERA_MOVE_RIGHT | CAMERA_MOVE_UP | CAMERA_MOVE_DOWN))
 	{
 		struct vec3f nxt = {0};
-		if (keys & KEY_FORWARD)
+		if (move_flags & CAMERA_MOVE_FRONT)
 			nxt.z -= 1;
-		if (keys & KEY_BACKWARD)
+		if (move_flags & CAMERA_MOVE_BACK)
 			nxt.z += 1;
-		if (keys & KEY_STRAFE_LEFT)
+		if (move_flags & CAMERA_MOVE_LEFT)
 			nxt.x -= 1;
-		if (keys & KEY_STRAFE_RIGHT)
+		if (move_flags & CAMERA_MOVE_RIGHT)
 			nxt.x += 1;
 		struct mat3f mat;
 		MAT3_IDENTITY(mat);
@@ -658,9 +696,9 @@ void camera_handle_keyboard(struct camera *camera)
 			MAT3_ROTATEX(float, tmp, mat, -rot.x);
 			mat = tmp;
 		}
-		if (keys & KEY_UPWARD)
+		if (move_flags & CAMERA_MOVE_UP)
 			nxt.y += 1;
-		if (keys & KEY_DOWNWARD)
+		if (move_flags & CAMERA_MOVE_DOWN)
 			nxt.y -= 1;
 		float nxt_norm = VEC3_NORM(nxt);
 		if (nxt_norm >= EPSILON)
@@ -677,14 +715,15 @@ void camera_handle_keyboard(struct camera *camera)
 			dst = src;
 		}
 	}
-	if (keys & KEY_TURN_LEFT)
-		camera->rot.y -= M_PI * (g_wow->frametime - g_wow->lastframetime) / 1000000000.;
-	else if (keys & KEY_TURN_RIGHT)
-		camera->rot.y += M_PI * (g_wow->frametime - g_wow->lastframetime) / 1000000000.;
+	if (move_flags & CAMERA_TURN_LEFT)
+		camera->rot.y -= M_PI * dt;
+	else if (move_flags & CAMERA_TURN_RIGHT)
+		camera->rot.y += M_PI * dt;
 	camera->pos = dst;
 }
 
-void camera_handle_scroll(struct camera *camera, float scroll)
+void
+camera_handle_scroll(struct camera *camera, float scroll)
 {
 	if (!camera->worldobj)
 		return;

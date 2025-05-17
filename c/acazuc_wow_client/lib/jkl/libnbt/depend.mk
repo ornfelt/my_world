@@ -1,0 +1,1 @@
+libnbt: zlib

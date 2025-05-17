@@ -17,37 +17,53 @@ struct env
 	unsigned size;
 };
 
-static int truncate_file(struct env *env, const char *file)
+static int
+truncate_file(struct env *env, const char *file)
 {
 	if (env->opt & OPT_o)
 	{
 		struct stat st;
+
 		if (stat(file, &st) == -1)
 		{
-			fprintf(stderr, "%s: stat: %s\n", env->progname, strerror(errno));
+			fprintf(stderr, "%s: stat(%s): %s\n",
+			        env->progname,
+			        file,
+			        strerror(errno));
 			return 1;
 		}
 		if (truncate(file, env->size * st.st_blksize) == -1)
 		{
-			fprintf(stderr, "%s: truncate: %s\n", env->progname, strerror(errno));
+			fprintf(stderr, "%s: truncate(%s): %s\n",
+			        env->progname,
+			        file,
+			        strerror(errno));
 			return 1;
 		}
 		return 0;
 	}
 	if (truncate(file, env->size) == -1)
 	{
-		fprintf(stderr, "%s: truncate: %s\n", env->progname, strerror(errno));
+		fprintf(stderr, "%s: truncate(%s): %s\n",
+		        env->progname,
+		        file,
+		        strerror(errno));
 		return 1;
 	}
 	return 0;
 }
 
-static int get_file_size(struct env *env, const char *file)
+static int
+get_file_size(struct env *env, const char *file)
 {
 	struct stat st;
+
 	if (stat(file, &st) == -1)
 	{
-		fprintf(stderr, "%s: stat: %s\n", env->progname, strerror(errno));
+		fprintf(stderr, "%s: stat(%s): %s\n",
+		        env->progname,
+		        file,
+		        strerror(errno));
 		return 1;
 	}
 	env->size = st.st_size;
@@ -56,12 +72,15 @@ static int get_file_size(struct env *env, const char *file)
 
 static int parse_size(struct env *env, const char *str)
 {
-	errno = 0;
 	char *endptr;
+	errno = 0;
+
 	env->size = strtol(str, &endptr, 10);
 	if (errno)
 	{
-		fprintf(stderr, "%s: strtoul: %s", env->progname, strerror(errno));
+		fprintf(stderr, "%s: strtoul: %s",
+		        env->progname,
+		        strerror(errno));
 		return 1;
 	}
 	if (*endptr)
@@ -72,7 +91,8 @@ static int parse_size(struct env *env, const char *str)
 	return 0;
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-c] [-o] [-r file] [-s size] FILES\n", progname);
 	printf("-c     : don't create files\n");
@@ -81,7 +101,8 @@ static void usage(const char *progname)
 	printf("-s size: size to be set\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

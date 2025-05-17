@@ -18,7 +18,8 @@ struct env
 	int opt;
 };
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-a] [-s] [-n] [-r] [-v] [-m] [-o]\n", progname);
 	printf("-a: print all the fields\n");
@@ -30,7 +31,8 @@ static void usage(const char *progname)
 	printf("-o: print the operating system\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct utsname utsname;
 	struct env env;

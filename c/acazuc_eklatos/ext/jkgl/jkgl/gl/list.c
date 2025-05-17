@@ -1,81 +1,104 @@
 #include "internal.h"
-#include "fixed.h"
 
-GLuint glGenLists(GLsizei range)
+GLuint
+glGenLists(GLsizei range)
 {
+	struct gl_ctx *ctx = g_ctx;
+
 	if (range < 0)
 	{
-		g_ctx->errno = GL_INVALID_VALUE;
+		GL_SET_ERR(ctx, GL_INVALID_VALUE);
 		return 0;
 	}
-	if (g_ctx->immediate.enabled)
+	if (ctx->immediate.enable)
 	{
-		g_ctx->errno = GL_INVALID_OPERATION;
+		GL_SET_ERR(ctx, GL_INVALID_OPERATION);
 		return 0;
 	}
 }
 
-void glDeleteLists(GLuint list, GLsizei range)
+void
+glDeleteLists(GLuint list, GLsizei range)
 {
-	if (g_ctx->immediate.enabled)
+	struct gl_ctx *ctx = g_ctx;
+
+	if (ctx->immediate.enable)
 	{
-		g_ctx->errno = GL_INVALID_OPERATION;
+		GL_SET_ERR(ctx, GL_INVALID_OPERATION);
 		return;
 	}
 }
 
-GLboolean glIsList(GLuint list)
+GLboolean
+glIsList(GLuint list)
 {
-	if (g_ctx->immediate.enabled)
+	struct gl_ctx *ctx = g_ctx;
+
+	if (ctx->immediate.enable)
 	{
-		g_ctx->errno = GL_INVALID_OPERATION;
+		GL_SET_ERR(ctx, GL_INVALID_OPERATION);
 		return GL_FALSE;
 	}
 	/* XXX */
 	return GL_FALSE;
 }
 
-void glListBase(GLuint base)
+void
+glListBase(GLuint base)
 {
-	if (g_ctx->immediate.enabled)
+	struct gl_ctx *ctx = g_ctx;
+
+	if (ctx->immediate.enable)
 	{
-		g_ctx->errno = GL_INVALID_OPERATION;
+		GL_SET_ERR(ctx, GL_INVALID_OPERATION);
 		return;
 	}
 }
 
-void glNewList(GLuint list, GLenum mode)
+void
+glNewList(GLuint list, GLenum mode)
 {
-	if (g_ctx->immediate.enabled)
+	struct gl_ctx *ctx = g_ctx;
+
+	if (ctx->immediate.enable)
 	{
-		g_ctx->errno = GL_INVALID_OPERATION;
+		GL_SET_ERR(ctx, GL_INVALID_OPERATION);
 		return;
 	}
 }
 
-void glEndList(void)
+void
+glEndList(void)
 {
-	if (g_ctx->immediate.enabled)
+	struct gl_ctx *ctx = g_ctx;
+
+	if (ctx->immediate.enable)
 	{
-		g_ctx->errno = GL_INVALID_OPERATION;
+		GL_SET_ERR(ctx, GL_INVALID_OPERATION);
 		return;
 	}
 }
 
-void glCallList(GLuint list)
+void
+glCallList(GLuint list)
 {
-	if (g_ctx->immediate.enabled)
+	struct gl_ctx *ctx = g_ctx;
+
+	if (ctx->immediate.enable)
 	{
-		g_ctx->errno = GL_INVALID_OPERATION;
+		GL_SET_ERR(ctx, GL_INVALID_OPERATION);
 		return;
 	}
 }
 
-void glCallLists(GLsizei n, GLenum type, const GLvoid *lists)
+void
+glCallLists(GLsizei n, GLenum type, const GLvoid *lists)
 {
-	if (g_ctx->immediate.enabled)
+	struct gl_ctx *ctx = g_ctx;
+
+	if (ctx->immediate.enable)
 	{
-		g_ctx->errno = GL_INVALID_OPERATION;
+		GL_SET_ERR(ctx, GL_INVALID_OPERATION);
 		return;
 	}
 }

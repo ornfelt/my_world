@@ -3,10 +3,10 @@
 #include "gx/frame.h"
 #include "gx/blp.h"
 #include "gx/m2.h"
+#include "gx/gx.h"
 
 #include "map/map.h"
 
-#include "graphics.h"
 #include "shaders.h"
 #include "camera.h"
 #include "memory.h"
@@ -107,39 +107,39 @@ struct gx_m2_particles *gx_m2_particles_new(struct gx_m2_instance *parent)
 			blending_type = emitter->emitter->blending_type;
 			emitter->emitter_type = emitter->emitter->emitter_type;
 		}
-		enum world_blend_state blend_state;
+		enum gx_blend_state blend_state;
 		switch (blending_type)
 		{
 			case 0:
-				blend_state = WORLD_BLEND_OPAQUE;
+				blend_state = GX_BLEND_OPAQUE;
 				emitter->alpha_test = 0.0;
 				emitter->fog_override = false;
 				break;
 			case 1:
-				blend_state = WORLD_BLEND_OPAQUE;
+				blend_state = GX_BLEND_OPAQUE;
 				emitter->alpha_test = 224.0 / 255.0;
 				emitter->fog_override = false;
 				break;
 			case 2:
-				blend_state = WORLD_BLEND_ALPHA;
+				blend_state = GX_BLEND_ALPHA;
 				emitter->alpha_test = 1.0 / 255.0;
 				emitter->fog_override = false;
 				break;
 			case 3:
-				blend_state = WORLD_BLEND_NO_ALPHA_ADD;
+				blend_state = GX_BLEND_NO_ALPHA_ADD;
 				emitter->alpha_test = 1.0 / 255.0;
 				emitter->fog_override = true;
 				VEC3_SETV(emitter->fog_color, 0);
 				break;
 			case 4:
-				blend_state = WORLD_BLEND_ADD;
+				blend_state = GX_BLEND_ADD;
 				emitter->alpha_test = 1.0 / 255.0;
 				emitter->fog_override = true;
 				VEC3_SETV(emitter->fog_color, 0);
 				break;
 			default:
 				LOG_INFO("unsupported blending: %d", (int)emitter->emitter->blending_type);
-				blend_state = WORLD_BLEND_ALPHA;
+				blend_state = GX_BLEND_ALPHA;
 				emitter->alpha_test = 0.0;
 				emitter->fog_override = false;
 				break;
@@ -526,8 +526,8 @@ static void render_emitter(struct gx_m2_particles_emitter *emitter, struct gx_fr
 		return;
 	struct gx_m2_particles_emitter_frame *emitter_frame = &emitter->frames[frame->id];
 	gfx_set_buffer_data(&emitter_frame->vertexes_buffer, emitter_frame->vertexes.data, sizeof(struct shader_particle_input) * emitter_frame->vertexes.size, 0);
-	gfx_bind_attributes_state(g_wow->device, &emitter_frame->attributes_state, &g_wow->graphics->particles_input_layout);
-	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->particles_pipeline_states[emitter->pipeline_state]);
+	gfx_bind_attributes_state(g_wow->device, &emitter_frame->attributes_state, &g_wow->gx->particles_input_layout);
+	gfx_bind_pipeline_state(g_wow->device, &g_wow->gx->particles_pipeline_states[emitter->pipeline_state]);
 	struct shader_particle_model_block model_block;
 	model_block.alpha_test = emitter->alpha_test;
 	model_block.mvp = params->vp;
@@ -556,7 +556,7 @@ static void initialize(struct gx_m2_particles *particles)
 			};
 			gfx_create_buffer(g_wow->device, &emitter_frame->vertexes_buffer, GFX_BUFFER_VERTEXES, NULL, sizeof(struct shader_particle_input) * MAX_PARTICLES * 4, GFX_BUFFER_STREAM);
 			gfx_create_buffer(g_wow->device, &emitter_frame->uniform_buffer, GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_particle_model_block), GFX_BUFFER_STREAM);
-			gfx_create_attributes_state(g_wow->device, &emitter_frame->attributes_state, binds, sizeof(binds) / sizeof(*binds), &g_wow->map->particles_indices_buffer, GFX_INDEX_UINT16);
+			gfx_create_attributes_state(g_wow->device, &emitter_frame->attributes_state, binds, sizeof(binds) / sizeof(*binds), &g_wow->gx->particles_indices_buffer, GFX_INDEX_UINT16);
 		}
 	}
 	particles->initialized = true;

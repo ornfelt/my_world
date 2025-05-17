@@ -3,7 +3,8 @@
 #include <stdlib.h>
 #include <errno.h>
 
-static const struct dbg_errno errnos[] =
+static const struct dbg_errno
+errnos[] =
 {
 #define ERRNO_DEF(name) [name] = {#name}
 	ERRNO_DEF(E2BIG),
@@ -87,7 +88,8 @@ static const struct dbg_errno errnos[] =
 #undef ERRNO_DEF
 };
 
-const struct dbg_errno *dbg_errno_get(int err)
+const struct dbg_errno *
+dbg_errno_get(int err)
 {
 	if (err < 0
 	 || (unsigned)err >= sizeof(errnos) / sizeof(*errnos)
@@ -96,7 +98,8 @@ const struct dbg_errno *dbg_errno_get(int err)
 	return &errnos[err];
 }
 
-int dbg_errno_from_name(const char *name)
+int
+dbg_errno_from_name(const char *name)
 {
 	for (size_t i = 0; i < sizeof(errnos) / sizeof(*errnos); ++i)
 	{

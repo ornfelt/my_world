@@ -1,21 +1,21 @@
 include $(MAKEDIR)/env.mk
 
 DIRS = ld \
-       libc \
-       libm \
-       libdl \
-       libreadline \
-       libhistory \
-       libz \
-       libpng \
-       libutil \
-       libfetch \
-       libpthread \
-       libdbg \
-       libelf \
-       libjpeg \
-       libh261 \
        libasm \
+       libc \
+       libdbg \
+       libdl \
        libdwarf \
+       libelf \
+       libfetch \
+       libh261 \
+       libhistory \
+       libjpeg \
+       libm \
+       libpng \
+       libpthread \
+       libreadline \
+       libutil \
+       libz \
 
 include $(MAKEDIR)/dir.mk

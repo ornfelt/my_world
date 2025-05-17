@@ -426,6 +426,10 @@ struct object_stat
 	uint64_t destroyed_count;
 };
 
+typedef int (*req_handler_t)(struct xsrv *xsrv,
+                             struct client *client,
+                             struct request *request);
+
 struct xsrv
 {
 	size_t id_base_bitmap[0x200 / (sizeof(size_t) * 8)];
@@ -466,6 +470,7 @@ struct xsrv
 	uint8_t obj_shmseg;
 	uint8_t obj_picture;
 	uint8_t obj_glyphset;
+	req_handler_t req_handlers[256];
 	TAILQ_HEAD(, client) clients;
 };
 
@@ -477,20 +482,29 @@ uint64_t nanotime(void);
 uint64_t millitime(void);
 uint32_t npot32(uint32_t val);
 
+void register_req_handlers(struct xsrv *xsrv);
+
 struct extension *register_extension(struct xsrv *xsrv, const char *name);
 
 uint8_t register_object_type(struct xsrv *xsrv, const struct object_def *def);
 struct object *object_get_typed(struct xsrv *xsrv, uint32_t id, uint8_t type);
 
-void xsrv_set_focus(struct xsrv *xsrv, struct window *window,
-                    uint8_t revert_to, uint32_t timestamp);
+void xsrv_set_focus(struct xsrv *xsrv,
+                    struct window *window,
+                    uint8_t revert_to,
+                    uint32_t timestamp);
 void xsrv_revert_focus(struct xsrv *xsrv);
 
-void xsrv_grab_pointer(struct xsrv *xsrv, struct client *client,
-                       struct window *window, struct window *confine_to,
-                       struct cursor *cursor, uint16_t event_mask,
-                       uint8_t pointer_mode, uint8_t keyboard_mode,
-                       uint8_t owner_events, uint32_t time);
+void xsrv_grab_pointer(struct xsrv *xsrv,
+                       struct client *client,
+                       struct window *window,
+                       struct window *confine_to,
+                       struct cursor *cursor,
+                       uint16_t event_mask,
+                       uint8_t pointer_mode,
+                       uint8_t keyboard_mode,
+                       uint8_t owner_events,
+                       uint32_t time);
 void xsrv_ungrab_pointer(struct xsrv *xsrv);
 
 void delete_button_grab(struct xsrv *xsrv, struct button_grab *button_grab);
@@ -508,8 +522,11 @@ int client_has_free_id(struct xsrv *xsrv, struct client *client, uint32_t id);
 int client_recv(struct xsrv *xsrv, struct client *client);
 int client_send(struct xsrv *xsrv, struct client *client);
 
-void object_init(struct xsrv *xsrv, struct client *client,
-                 struct object *object, uint8_t type, uint32_t id);
+void object_init(struct xsrv *xsrv,
+                 struct client *client,
+                 struct object *object,
+                 uint8_t type,
+                 uint32_t id);
 void object_add(struct xsrv *xsrv, struct object *object);
 void object_remove(struct xsrv *xsrv, struct object *object);
 struct object *object_get(struct xsrv *xsrv, uint32_t id);
@@ -522,9 +539,12 @@ struct gcontext *gcontext_get(struct xsrv *xsrv, uint32_t id);
 struct drawable *drawable_get(struct xsrv *xsrv, uint32_t id);
 void object_free(struct xsrv *xsrv, struct object *object);
 void object_destroy(struct xsrv *xsrv, struct object *object);
-int drawable_init(struct xsrv *xsrv, struct drawable *drawable,
-                  uint16_t width, uint16_t height,
-                  const struct format *format, struct window *root);
+int drawable_init(struct xsrv *xsrv,
+                  struct drawable *drawable,
+                  uint16_t width,
+                  uint16_t height,
+                  const struct format *format,
+                  struct window *root);
 
 uint32_t xsrv_allocate_id(struct xsrv *xsrv);
 uint32_t xsrv_allocate_id_base(struct xsrv *xsrv);
@@ -533,164 +553,273 @@ void xsrv_release_id_base(struct xsrv *xsrv, uint32_t base);
 struct window *get_window_at(struct xsrv *xsrv, uint32_t *x, uint32_t *y);
 
 const struct format *xsrv_get_format(struct xsrv *xsrv, uint8_t depth);
-uint32_t drawable_get_pixel(struct xsrv *xsrv, struct drawable *drawable,
-                            uint16_t x, uint16_t y);
-void drawable_set_pixel(struct xsrv *xsrv, struct drawable *drawable,
-                        uint16_t x, uint16_t y, uint32_t value);
+uint32_t drawable_get_pixel(struct xsrv *xsrv,
+                            struct drawable *drawable,
+                            uint16_t x,
+                            uint16_t y);
+void drawable_set_pixel(struct xsrv *xsrv,
+                        struct drawable *drawable,
+                        uint16_t x,
+                        uint16_t y,
+                        uint32_t value);
 
 void window_register(struct xsrv *xsrv);
-struct window *window_new(struct xsrv *xsrv, struct client *client, uint32_t id,
-                          struct window *parent, int16_t x, int16_t y,
-                          uint16_t width, uint16_t height,
-                          const struct format *format, uint16_t border_width,
-                          struct visual *visual, uint16_t class,
+struct window *window_new(struct xsrv *xsrv,
+                          struct client *client,
+                          uint32_t id,
+                          struct window *parent,
+                          int16_t x,
+                          int16_t y,
+                          uint16_t width,
+                          uint16_t height,
+                          const struct format *format,
+                          uint16_t border_width,
+                          struct visual *visual,
+                          uint16_t class,
                           struct window_attributes *attributes);
 int window_visible(struct window *window);
 void window_map(struct xsrv *xsrv, struct client *client, struct window *window);
 void window_unmap(struct xsrv *xsrv, struct window *window);
 struct cursor *window_get_cursor(struct xsrv *xsrv, struct window *window);
-int window_resize(struct xsrv *xsrv, struct window *window,
-                  uint16_t width, uint16_t height);
-void window_get_fb_rect(struct xsrv *xsrv, struct window *window,
-                        uint32_t *x, uint32_t *y,
-                        uint32_t *width, uint32_t *height);
-void window_get_full_rect(struct xsrv *xsrv, struct window *window,
-                          uint32_t *x, uint32_t *y,
-                          uint32_t *width, uint32_t *height);
-void window_reparent(struct xsrv *xsrv, struct client *client,
-                     struct window *window, struct window *parent,
-                     int16_t x, int16_t y);
+int window_resize(struct xsrv *xsrv,
+                  struct window *window,
+                  uint16_t width,
+                  uint16_t height);
+void window_get_fb_rect(struct xsrv *xsrv,
+                        struct window *window,
+                        uint32_t *x,
+                        uint32_t *y,
+                        uint32_t *width,
+                        uint32_t *height);
+void window_get_full_rect(struct xsrv *xsrv,
+                          struct window *window,
+                          uint32_t *x,
+                          uint32_t *y,
+                          uint32_t *width,
+                          uint32_t *height);
+void window_reparent(struct xsrv *xsrv,
+                     struct client *client,
+                     struct window *window,
+                     struct window *parent,
+                     int16_t x,
+                     int16_t y);
 struct property *window_get_property(struct window *window, struct atom *prop);
-void window_delete_property(struct xsrv *xsrv, struct window *window,
+void window_delete_property(struct xsrv *xsrv,
+                            struct window *window,
                             struct atom *prop);
 struct button_grab *window_get_button_grab(struct xsrv *xsrv,
                                            struct window *window,
                                            uint8_t button,
                                            uint16_t modifiers);
-void window_remove_button_grab(struct xsrv *xsrv, struct window *window,
-                               uint8_t button, uint16_t modifiers);
+void window_remove_button_grab(struct xsrv *xsrv,
+                               struct window *window,
+                               uint8_t button,
+                               uint16_t modifiers);
 void window_redraw(struct xsrv *xsrv, struct window *window);
-void window_set_cursor(struct xsrv *xsrv, struct window *window,
+void window_set_cursor(struct xsrv *xsrv,
+                       struct window *window,
                        struct cursor *cursor);
-void window_clear(struct xsrv *xsrv, struct window *window,
-                  int16_t x, int16_t y, uint16_t width, uint16_t height);
-void window_button_press(struct xsrv *xsrv, struct window *window,
-                         uint8_t button, uint32_t wx, uint32_t wy);
-void window_button_release(struct xsrv *xsrv, struct window *window,
-                           uint8_t button, uint32_t wx, uint32_t wy);
-void window_motion_notify(struct xsrv *xsrv, struct window *window,
-                          uint8_t detail, uint32_t wx, uint32_t wy);
-void window_key_press(struct xsrv *xsrv, struct window *window, uint8_t key);
-void window_key_release(struct xsrv *xsrv, struct window *window, uint8_t key);
-void window_enter_notify(struct xsrv *xsrv, struct window *window,
+void window_clear(struct xsrv *xsrv,
+                  struct window *window,
+                  int16_t x,
+                  int16_t y,
+                  uint16_t width,
+                  uint16_t height);
+void window_button_press(struct xsrv *xsrv,
+                         struct window *window,
+                         uint8_t button,
+                         uint32_t wx,
+                         uint32_t wy);
+void window_button_release(struct xsrv *xsrv,
+                           struct window *window,
+                           uint8_t button,
+                           uint32_t wx,
+                           uint32_t wy);
+void window_motion_notify(struct xsrv *xsrv,
+                          struct window *window,
+                          uint8_t detail,
+                          uint32_t wx,
+                          uint32_t wy);
+void window_key_press(struct xsrv *xsrv,
+                      struct window *window,
+                      uint8_t key);
+void window_key_release(struct xsrv *xsrv,
+                        struct window *window,
+                        uint8_t key);
+void window_enter_notify(struct xsrv *xsrv,
+                         struct window *window,
                          uint8_t detail);
-void window_leave_notify(struct xsrv *xsrv, struct window *window,
+void window_leave_notify(struct xsrv *xsrv,
+                         struct window *window,
                          uint8_t detail);
-int window_map_request(struct xsrv *xsrv, struct client *client,
+int window_map_request(struct xsrv *xsrv,
+                       struct client *client,
                        struct window *window);
 void window_map_notify(struct xsrv *xsrv, struct window *window);
 void window_unmap_notify(struct xsrv *xsrv, struct window *window);
 void window_focus_in(struct xsrv *xsrv, struct window *window, uint8_t detail);
 void window_focus_out(struct xsrv *xsrv, struct window *window, uint8_t detail);
 void window_keymap_notify(struct xsrv *xsrv, struct window *window);
-void window_reparent_notify(struct xsrv *xsrv, struct window *window,
+void window_reparent_notify(struct xsrv *xsrv,
+                            struct window *window,
                             struct window *oldparent);
-int window_resize_request(struct xsrv *xsrv, struct client *client,
+int window_resize_request(struct xsrv *xsrv,
+                          struct client *client,
                           struct window *window,
-                          uint16_t width, uint16_t height);
+                          uint16_t width,
+                          uint16_t height);
 void window_expose(struct xsrv *xsrv, struct window *window);
 void window_create_notify(struct xsrv *xsrv, struct window *window);
 void window_destroy_notify(struct xsrv *xsrv, struct window *window);
-int window_configure_request(struct xsrv *xsrv, struct client *client,
-                             struct window *window,  uint32_t value_mask,
-                             int16_t x, int16_t y,
-                             uint16_t width, uint16_t height,
-                             uint16_t border_width, struct window *sibling,
+int window_configure_request(struct xsrv *xsrv,
+                             struct client *client,
+                             struct window *window,
+                             uint32_t value_mask,
+                             int16_t x,
+                             int16_t y,
+                             uint16_t width,
+                             uint16_t height,
+                             uint16_t border_width,
+                             struct window *sibling,
                              uint8_t stack_mode);
 void window_configure_notify(struct xsrv *xsrv, struct window *window);
-void window_property_notify(struct xsrv *xsrv, struct window *window,
-                            struct atom *property, uint8_t state);
+void window_property_notify(struct xsrv *xsrv,
+                            struct window *window,
+                            struct atom *property,
+                            uint8_t state);
 
 void colormap_register(struct xsrv *xsrv);
-struct colormap *colormap_new(struct xsrv *xsrv, struct client *client,
+struct colormap *colormap_new(struct xsrv *xsrv,
+                              struct client *client,
                               uint32_t id);
 
 void font_register(struct xsrv *xsrv);
-struct font *font_new(struct xsrv *xsrv, struct client *client, uint32_t id,
+struct font *font_new(struct xsrv *xsrv,
+                      struct client *client,
+                      uint32_t id,
                       struct font_def *def);
 
 void gcontext_register(struct xsrv *xsrv);
-struct gcontext *gcontext_new(struct xsrv *xsrv, struct client *client,
-                              uint32_t id, struct drawable *drawable,
+struct gcontext *gcontext_new(struct xsrv *xsrv,
+                              struct client *client,
+                              uint32_t id,
+                              struct drawable *drawable,
                               struct gcontext_values *values);
 
 void pixmap_register(struct xsrv *xsrv);
-struct pixmap *pixmap_new(struct xsrv *xsrv, struct client *client,
-                          uint32_t id, uint16_t width, uint16_t height,
-                          const struct format *format, struct window *root);
+struct pixmap *pixmap_new(struct xsrv *xsrv,
+                          struct client *client,
+                          uint32_t id,
+                          uint16_t width,
+                          uint16_t height,
+                          const struct format *format,
+                          struct window *root);
 
 void cursor_register(struct xsrv *xsrv);
-struct cursor *cursor_new(struct xsrv *xsrv, struct client *client, uint32_t id,
-                          struct pixmap *color, struct pixmap *mask,
-                          uint16_t fore_red, uint16_t fore_green,
-                          uint16_t fore_blue, uint16_t back_red,
-                          uint16_t back_green, uint16_t back_blue,
-                          uint16_t xhot, uint16_t yhot,
-                          int16_t maskx, int16_t masky);
+struct cursor *cursor_new(struct xsrv *xsrv,
+                          struct client *client,
+                          uint32_t id,
+                          struct pixmap *color,
+                          struct pixmap *mask,
+                          uint16_t fore_red,
+                          uint16_t fore_green,
+                          uint16_t fore_blue,
+                          uint16_t back_red,
+                          uint16_t back_green,
+                          uint16_t back_blue,
+                          uint16_t xhot,
+                          uint16_t yhot,
+                          int16_t maskx,
+                          int16_t masky);
 
-void framebuffer_redraw(struct xsrv *xsrv, int16_t x, int16_t y,
-                        uint16_t width, uint16_t height);
+void framebuffer_redraw(struct xsrv *xsrv,
+                        int16_t x,
+                        int16_t y,
+                        uint16_t width,
+                        uint16_t height);
 void framebuffer_update(struct xsrv *xsrv, struct rect *rect);
 
-void poly_point(struct xsrv *xsrv, struct drawable *drawable,
-                struct gcontext *gcontext, int16_t x, int16_t y);
-void poly_line(struct xsrv *xsrv, struct drawable *drawable,
-               struct gcontext *gcontext, int16_t x1, int16_t y1,
-               int16_t x2, int16_t y2);
-void poly_rect(struct xsrv *xsrv, struct drawable *drawable,
-               struct gcontext *gcontext, int16_t x, int16_t y,
-               uint16_t width, uint16_t height);
-void poly_arc(struct xsrv *xsrv, struct drawable *drawable,
-              struct gcontext *gcontext, int16_t x, int16_t y,
-              uint16_t width, uint16_t height, int16_t angle1, int16_t angle2);
-void poly_fill_rect(struct xsrv *xsrv, struct drawable *drawable,
-                    struct gcontext *gcontext, int16_t x, int16_t y,
-                    uint16_t width, uint16_t height);
-void poly_text8(struct xsrv *xsrv, struct drawable *drawable,
-                struct gcontext *gcontext, int16_t x, int16_t y,
-                uint8_t text_len, const uint8_t *text,
-                uint32_t *minx, uint32_t *miny,
-                uint32_t *maxx, uint32_t *maxy);
+void poly_point(struct xsrv *xsrv,
+                struct drawable *drawable,
+                struct gcontext *gcontext,
+                int16_t x,
+                int16_t y);
+void poly_line(struct xsrv *xsrv,
+               struct drawable *drawable,
+               struct gcontext *gcontext,
+               int16_t x1,
+               int16_t y1,
+               int16_t x2,
+               int16_t y2);
+void poly_rect(struct xsrv *xsrv,
+               struct drawable *drawable,
+               struct gcontext *gcontext,
+               int16_t x,
+               int16_t y,
+               uint16_t width,
+               uint16_t height);
+void poly_arc(struct xsrv *xsrv,
+              struct drawable *drawable,
+              struct gcontext *gcontext,
+              int16_t x,
+              int16_t y,
+              uint16_t width,
+              uint16_t height,
+              int16_t angle1,
+              int16_t angle2);
+void poly_fill_rect(struct xsrv *xsrv,
+                    struct drawable *drawable,
+                    struct gcontext *gcontext,
+                    int16_t x,
+                    int16_t y,
+                    uint16_t width,
+                    uint16_t height);
+void poly_text8(struct xsrv *xsrv,
+                struct drawable *drawable,
+                struct gcontext *gcontext,
+                int16_t x,
+                int16_t y,
+                uint8_t text_len,
+                const uint8_t *text,
+                uint32_t *minx,
+                uint32_t *miny,
+                uint32_t *maxx,
+                uint32_t *maxy);
 
 struct atom *atom_get(struct xsrv *xsrv, const char *name);
 struct atom *atom_get_id(struct xsrv *xsrv, uint32_t id);
 struct atom *atom_new(struct xsrv *xsrv, const char *name);
 
-void test_fb_redraw(struct xsrv *xsrv, struct drawable *drawable,
-                    int32_t min_x, int32_t min_y,
-                    int32_t max_x, int32_t max_y);
+void test_fb_redraw(struct xsrv *xsrv,
+                    struct drawable *drawable,
+                    int32_t min_x,
+                    int32_t min_y,
+                    int32_t max_x,
+                    int32_t max_y);
 
-#define CLIENT_RI8(c) ringbuf_ri8(&(c)->rbuf)
-#define CLIENT_RU8(c) ringbuf_ru8(&(c)->rbuf)
-#define CLIENT_RI16(c) ringbuf_ri16(&(c)->rbuf)
-#define CLIENT_RU16(c) ringbuf_ru16(&(c)->rbuf)
-#define CLIENT_RI32(c) ringbuf_ri32(&(c)->rbuf)
-#define CLIENT_RU32(c) ringbuf_ru32(&(c)->rbuf)
-#define CLIENT_READ(c, d, n) ringbuf_read(&(c)->rbuf, d, n)
-#define CLIENT_RPAD(c, v) ringbuf_rpad(&(c)->rbuf, v)
-#define CLIENT_WI8(c, v) ringbuf_wi8(&(c)->wbuf, v)
-#define CLIENT_WU8(c, v) ringbuf_wu8(&(c)->wbuf, v)
-#define CLIENT_WI16(c, v) ringbuf_wi16(&(c)->wbuf, v)
-#define CLIENT_WU16(c, v) ringbuf_wu16(&(c)->wbuf, v)
-#define CLIENT_WU32(c, v) ringbuf_wi32(&(c)->wbuf, v)
-#define CLIENT_WI32(c, v) ringbuf_wu32(&(c)->wbuf, v)
+#define CLIENT_RI8(c)         ringbuf_ri8(&(c)->rbuf)
+#define CLIENT_RU8(c)         ringbuf_ru8(&(c)->rbuf)
+#define CLIENT_RI16(c)        ringbuf_ri16(&(c)->rbuf)
+#define CLIENT_RU16(c)        ringbuf_ru16(&(c)->rbuf)
+#define CLIENT_RI32(c)        ringbuf_ri32(&(c)->rbuf)
+#define CLIENT_RU32(c)        ringbuf_ru32(&(c)->rbuf)
+#define CLIENT_READ(c, d, n)  ringbuf_read(&(c)->rbuf, d, n)
+#define CLIENT_RPAD(c, v)     ringbuf_rpad(&(c)->rbuf, v)
+#define CLIENT_WI8(c, v)      ringbuf_wi8(&(c)->wbuf, v)
+#define CLIENT_WU8(c, v)      ringbuf_wu8(&(c)->wbuf, v)
+#define CLIENT_WI16(c, v)     ringbuf_wi16(&(c)->wbuf, v)
+#define CLIENT_WU16(c, v)     ringbuf_wu16(&(c)->wbuf, v)
+#define CLIENT_WU32(c, v)     ringbuf_wi32(&(c)->wbuf, v)
+#define CLIENT_WI32(c, v)     ringbuf_wu32(&(c)->wbuf, v)
 #define CLIENT_WRITE(c, d, n) ringbuf_write(&(c)->wbuf, d, n)
-#define CLIENT_WPAD(c, n) ringbuf_wpad(&(c)->wbuf, n)
+#define CLIENT_WPAD(c, n)     ringbuf_wpad(&(c)->wbuf, n)
 
 #define OBJECT(obj) (&(obj)->object)
 
-int client_error(struct xsrv *xsrv, struct client *client,
-                 struct request *request, uint8_t error_code,
+int client_error(struct xsrv *xsrv,
+                 struct client *client,
+                 struct request *request,
+                 uint8_t error_code,
                  uint32_t xid);
 
 #define CLIENT_BAD_REQUEST(x, c, r)      client_error(x, c, r, BadRequest, 0)
@@ -711,123 +840,260 @@ int client_error(struct xsrv *xsrv, struct client *client,
 #define CLIENT_BAD_LENGTH(x, c, r)       client_error(x, c, r, BadLength, 0)
 #define CLIENT_BAD_IMPLEM(x, c, r)       client_error(x, c, r, BadImplementation, 0)
 
-int ev_key_press(struct xsrv *xsrv, struct client *client, uint8_t detail,
-                 uint32_t time, struct window *root, struct window *event,
-                 struct window *child, int16_t root_x, int16_t root_y,
-                 int16_t event_x, int16_t event_y, uint16_t state,
+int ev_key_press(struct xsrv *xsrv,
+                 struct client *client,
+                 uint8_t detail,
+                 uint32_t time,
+                 struct window *root,
+                 struct window *event,
+                 struct window *child,
+                 int16_t root_x,
+                 int16_t root_y,
+                 int16_t event_x,
+                 int16_t event_y,
+                 uint16_t state,
                  uint8_t same_screen);
-int ev_key_release(struct xsrv *xsrv, struct client *client, uint8_t detail,
-                   uint32_t time, struct window *root, struct window *event,
-                   struct window *child, int16_t root_x, int16_t root_y,
-                   int16_t event_x, int16_t event_y, uint16_t state,
+int ev_key_release(struct xsrv *xsrv,
+                   struct client *client,
+                   uint8_t detail,
+                   uint32_t time,
+                   struct window *root,
+                   struct window *event,
+                   struct window *child,
+                   int16_t root_x,
+                   int16_t root_y,
+                   int16_t event_x,
+                   int16_t event_y,
+                   uint16_t state,
                    uint8_t same_screen);
-int ev_button_press(struct xsrv *xsrv, struct client *client, uint8_t detail,
-                    uint32_t time, struct window *root, struct window *event,
-                    struct window *child, int16_t root_x, int16_t root_y,
-                    int16_t event_x, int16_t event_y, uint16_t state,
+int ev_button_press(struct xsrv *xsrv,
+                    struct client *client,
+                    uint8_t detail,
+                    uint32_t time,
+                    struct window *root,
+                    struct window *event,
+                    struct window *child,
+                    int16_t root_x,
+                    int16_t root_y,
+                    int16_t event_x,
+                    int16_t event_y,
+                    uint16_t state,
                     uint8_t same_screen);
-int ev_button_release(struct xsrv *xsrv, struct client *client, uint8_t detail,
-                      uint32_t time, struct window *root, struct window *event,
-                      struct window *child, int16_t root_x, int16_t root_y,
-                      int16_t event_x, int16_t event_y, uint16_t state,
+int ev_button_release(struct xsrv *xsrv,
+                      struct client *client,
+                      uint8_t detail,
+                      uint32_t time,
+                      struct window *root,
+                      struct window *event,
+                      struct window *child,
+                      int16_t root_x,
+                      int16_t root_y,
+                      int16_t event_x,
+                      int16_t event_y,
+                      uint16_t state,
                       uint8_t same_screen);
-int ev_motion_notify(struct xsrv *xsrv, struct client *client, uint8_t detail,
-                     uint32_t time, struct window *root, struct window *event,
-                     struct window *child, int16_t root_x, int16_t root_y,
-                     int16_t event_x, int16_t event_y, uint16_t state,
+int ev_motion_notify(struct xsrv *xsrv,
+                     struct client *client,
+                     uint8_t detail,
+                     uint32_t time,
+                     struct window *root,
+                     struct window *event,
+                     struct window *child,
+                     int16_t root_x,
+                     int16_t root_y,
+                     int16_t event_x,
+                     int16_t event_y,
+                     uint16_t state,
                      uint8_t same_screen);
-int ev_enter_notify(struct xsrv *xsrv, struct client *client, uint8_t detail,
-                    uint32_t time, struct window *root, struct window *event,
-                    struct window *child, int16_t root_x, int16_t root_y,
-                    int16_t event_x, int16_t event_y, uint16_t state,
+int ev_enter_notify(struct xsrv *xsrv,
+                    struct client *client,
+                    uint8_t detail,
+                    uint32_t time,
+                    struct window *root,
+                    struct window *event,
+                    struct window *child,
+                    int16_t root_x,
+                    int16_t root_y,
+                    int16_t event_x,
+                    int16_t event_y,
+                    uint16_t state,
                     uint8_t same_screen);
-int ev_leave_notify(struct xsrv *xsrv, struct client *client, uint8_t detail,
-                    uint32_t time, struct window *root, struct window *event,
-                    struct window *child, int16_t root_x, int16_t root_y,
-                    int16_t event_x, int16_t event_y, uint16_t state,
+int ev_leave_notify(struct xsrv *xsrv,
+                    struct client *client,
+                    uint8_t detail,
+                    uint32_t time,
+                    struct window *root,
+                    struct window *event,
+                    struct window *child,
+                    int16_t root_x,
+                    int16_t root_y,
+                    int16_t event_x,
+                    int16_t event_y,
+                    uint16_t state,
                     uint8_t same_screen);
-int ev_focus_in(struct xsrv *xsrv, struct client *client,
-                uint8_t detail, struct window *window, uint8_t mode);
-int ev_focus_out(struct xsrv *xsrv, struct client *client,
-                 uint8_t detail, struct window *window, uint8_t mode);
-int ev_keymap_notify(struct xsrv *xsrv, struct client *client, uint8_t *keys);
-int ev_expose(struct xsrv *xsrv, struct client *client,
-              struct window *window, int16_t x, int16_t y,
-              uint16_t width, uint16_t height, uint16_t count);
-int ev_graphics_exposure(struct xsrv *xsrv, struct client *client,
-                         struct drawable *drawable, uint16_t x, uint16_t y,
-                         uint16_t width, uint16_t height,
-                         uint16_t minor_opcode, uint16_t count,
+int ev_focus_in(struct xsrv *xsrv,
+                struct client *client,
+                uint8_t detail,
+                struct window *window,
+                uint8_t mode);
+int ev_focus_out(struct xsrv *xsrv,
+                 struct client *client,
+                 uint8_t detail,
+                 struct window *window,
+                 uint8_t mode);
+int ev_keymap_notify(struct xsrv *xsrv,
+                     struct client *client,
+                     uint8_t *keys);
+int ev_expose(struct xsrv *xsrv,
+              struct client *client,
+              struct window *window,
+              int16_t x,
+              int16_t y,
+              uint16_t width,
+              uint16_t height,
+              uint16_t count);
+int ev_graphics_exposure(struct xsrv *xsrv,
+                         struct client *client,
+                         struct drawable *drawable,
+                         uint16_t x,
+                         uint16_t y,
+                         uint16_t width,
+                         uint16_t height,
+                         uint16_t minor_opcode,
+                         uint16_t count,
                          uint8_t major_opcode);
-int ev_no_exposure(struct xsrv *xsrv, struct client *client,
-                   struct drawable *drawable, uint16_t minor_opcode,
+int ev_no_exposure(struct xsrv *xsrv,
+                   struct client *client,
+                   struct drawable *drawable,
+                   uint16_t minor_opcode,
                    uint8_t major_opcode);
-int ev_visibility_notify(struct xsrv *xsrv, struct client *client,
-                         struct window *window, uint8_t state);
-int ev_create_notify(struct xsrv *xsrv, struct client *client,
-                     struct window *parent, struct window *window,
-                     int16_t x, int16_t y, uint16_t width, uint16_t height,
-                     uint16_t border_width, uint8_t override_redirect);
-int ev_destroy_notify(struct xsrv *xsrv, struct client *client,
-                      struct window *event, struct window *window);
-int ev_unmap_notify(struct xsrv *xsrv, struct client *client,
-                    struct window *event, struct window *window,
+int ev_visibility_notify(struct xsrv *xsrv,
+                         struct client *client,
+                         struct window *window,
+                         uint8_t state);
+int ev_create_notify(struct xsrv *xsrv,
+                     struct client *client,
+                     struct window *parent,
+                     struct window *window,
+                     int16_t x,
+                     int16_t y,
+                     uint16_t width,
+                     uint16_t height,
+                     uint16_t border_width,
+                     uint8_t override_redirect);
+int ev_destroy_notify(struct xsrv *xsrv,
+                      struct client *client,
+                      struct window *event,
+                      struct window *window);
+int ev_unmap_notify(struct xsrv *xsrv,
+                    struct client *client,
+                    struct window *event,
+                    struct window *window,
                     uint8_t from_configure);
-int ev_map_notify(struct xsrv *xsrv, struct client *client,
-                  struct window *event, struct window *window,
+int ev_map_notify(struct xsrv *xsrv,
+                  struct client *client,
+                  struct window *event,
+                  struct window *window,
                   uint8_t override_redirect);
-int ev_map_request(struct xsrv *xsrv, struct client *client,
-                   struct window *parent, struct window *window);
-int ev_reparent_notify(struct xsrv *xsrv, struct client *client,
-                       struct window *event, struct window *window,
-                       struct window *parent, int16_t x, int16_t y,
+int ev_map_request(struct xsrv *xsrv,
+                   struct client *client,
+                   struct window *parent,
+                   struct window *window);
+int ev_reparent_notify(struct xsrv *xsrv,
+                       struct client *client,
+                       struct window *event,
+                       struct window *window,
+                       struct window *parent,
+                       int16_t x,
+                       int16_t y,
                        uint8_t override_redirect);
-int ev_configure_notify(struct xsrv *xsrv, struct client *client,
-                        struct window *event, struct window *window,
-                        struct window *above_sibling, int16_t x, int16_t y,
-                        uint16_t width, uint16_t height, uint16_t border_width,
+int ev_configure_notify(struct xsrv *xsrv,
+                        struct client *client,
+                        struct window *event,
+                        struct window *window,
+                        struct window *above_sibling,
+                        int16_t x,
+                        int16_t y,
+                        uint16_t width,
+                        uint16_t height,
+                        uint16_t border_width,
                         uint8_t override_redirect);
-int ev_configure_request(struct xsrv *xsrv, struct client *client,
-                         uint8_t stack_mode, struct window *parent,
-                         struct window *window, struct window *sibling,
-                         int16_t x, int16_t y, uint16_t width, uint16_t height,
-                         uint16_t border_width, uint16_t value_mask);
-int ev_gravity_notify(struct xsrv *xsrv, struct client *client,
-                      struct window *event, struct window *window,
-                      int16_t x, int16_t y);
-int ev_resize_request(struct xsrv *xsrv, struct client *client,
-                      struct window *window, uint16_t width, uint16_t height);
-int ev_circulate_notify(struct xsrv *xsrv, struct client *client,
-                        struct window *event, struct window *window,
+int ev_configure_request(struct xsrv *xsrv,
+                         struct client *client,
+                         uint8_t stack_mode,
+                         struct window *parent,
+                         struct window *window,
+                         struct window *sibling,
+                         int16_t x,
+                         int16_t y,
+                         uint16_t width,
+                         uint16_t height,
+                         uint16_t border_width,
+                         uint16_t value_mask);
+int ev_gravity_notify(struct xsrv *xsrv,
+                      struct client *client,
+                      struct window *event,
+                      struct window *window,
+                      int16_t x,
+                      int16_t y);
+int ev_resize_request(struct xsrv *xsrv,
+                      struct client *client,
+                      struct window *window,
+                      uint16_t width,
+                      uint16_t height);
+int ev_circulate_notify(struct xsrv *xsrv,
+                        struct client *client,
+                        struct window *event,
+                        struct window *window,
                         uint8_t place);
-int ev_circulate_request(struct xsrv *xsrv, struct client *client,
-                         struct window *parent, struct window *window,
+int ev_circulate_request(struct xsrv *xsrv,
+                         struct client *client,
+                         struct window *parent,
+                         struct window *window,
                          uint8_t place);
-int ev_property_notify(struct xsrv *xsrv, struct client *client,
-                       struct window *window, struct atom *atom, uint32_t time,
+int ev_property_notify(struct xsrv *xsrv,
+                       struct client *client,
+                       struct window *window,
+                       struct atom *atom,
+                       uint32_t time,
                        uint8_t state);
-int ev_selection_clear(struct xsrv *xsrv, struct client *client, uint32_t time,
-                       struct window *owner, struct atom *selection);
-int ev_selection_request(struct xsrv *xsrv, struct client *client,
-                         uint32_t time, struct window *owner,
-                         struct window *requestor, struct atom *selection,
-                         struct atom *target, struct atom *property);
-int ev_selection_notify(struct xsrv *xsrv, struct client *client,
-                        uint32_t time, struct window *requestor,
-                        struct atom *selection, struct atom *target,
+int ev_selection_clear(struct xsrv *xsrv,
+                       struct client *client,
+                       uint32_t time,
+                       struct window *owner,
+                       struct atom *selection);
+int ev_selection_request(struct xsrv *xsrv,
+                         struct client *client,
+                         uint32_t time,
+                         struct window *owner,
+                         struct window *requestor,
+                         struct atom *selection,
+                         struct atom *target,
+                         struct atom *property);
+int ev_selection_notify(struct xsrv *xsrv,
+                        struct client *client,
+                        uint32_t time,
+                        struct window *requestor,
+                        struct atom *selection,
+                        struct atom *target,
                         struct atom *property);
-int ev_colormap_notify(struct xsrv *xsrv, struct client *client,
-                       struct window *window, struct colormap *colormap,
-                       uint8_t new, uint8_t state);
-int ev_client_message(struct xsrv *xsrv, struct client *client,
-                      uint8_t format, struct window *window, struct atom *type,
-                      uint8_t data_len, uint8_t *data);
-int ev_mapping_notify(struct xsrv *xsrv, struct client *client,
-                      uint8_t request, uint8_t first_keycode, uint8_t count);
-
-typedef int (*req_handler_t)(struct xsrv *xsrv, struct client *client,
-                             struct request *request);
-
-extern req_handler_t g_req_handlers[256];
+int ev_colormap_notify(struct xsrv *xsrv,
+                       struct client *client,
+                       struct window *window,
+                       struct colormap *colormap,
+                       uint8_t new,
+                       uint8_t state);
+int ev_client_message(struct xsrv *xsrv,
+                      struct client *client,
+                      uint8_t format,
+                      struct window *window,
+                      struct atom *type,
+                      uint8_t data_len,
+                      uint8_t *data);
+int ev_mapping_notify(struct xsrv *xsrv,
+                      struct client *client,
+                      uint8_t request,
+                      uint8_t first_keycode,
+                      uint8_t count);
 
 #endif

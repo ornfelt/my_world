@@ -2,7 +2,8 @@
 
 #include <stdio.h>
 
-void funlockfile(FILE *fp)
+void
+funlockfile(FILE *fp)
 {
 	_libc_unlock(&fp->lock);
 }

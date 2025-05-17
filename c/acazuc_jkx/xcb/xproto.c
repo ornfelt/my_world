@@ -3,26 +3,31 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void write_masked8(xcb_connection_t *conn, uint8_t value)
+static void
+write_masked8(xcb_connection_t *conn, uint8_t value)
 {
 	buf_wu8(&conn->wbuf, value);
 	buf_write(&conn->wbuf, NULL, 3);
 }
 
-static void write_masked16(xcb_connection_t *conn, uint16_t value)
+static void
+write_masked16(xcb_connection_t *conn, uint16_t value)
 {
 	buf_wu16(&conn->wbuf, value);
 	buf_write(&conn->wbuf, NULL, 2);
 }
 
-static void write_masked32(xcb_connection_t *conn, uint32_t value)
+static void
+write_masked32(xcb_connection_t *conn, uint32_t value)
 {
 	buf_wu32(&conn->wbuf, value);
 }
 
-xcb_list_extensions_cookie_t xcb_list_extensions(xcb_connection_t *conn)
+xcb_list_extensions_cookie_t
+xcb_list_extensions(xcb_connection_t *conn)
 {
 	uint16_t length = 1;
+
 	REQ_INIT(list_extensions, XCB_LIST_EXTENSIONS, length);
 	r->pad0 = 0;
 	xcb_list_extensions_cookie_t cookie;
@@ -30,9 +35,10 @@ xcb_list_extensions_cookie_t xcb_list_extensions(xcb_connection_t *conn)
 	return cookie;
 }
 
-xcb_list_extensions_reply_t *xcb_list_extensions_reply(xcb_connection_t *conn,
-                                                       xcb_list_extensions_cookie_t cookie,
-                                                       xcb_generic_error_t **error)
+xcb_list_extensions_reply_t *
+xcb_list_extensions_reply(xcb_connection_t *conn,
+                          xcb_list_extensions_cookie_t cookie,
+                          xcb_generic_error_t **error)
 {
 	REPLY_ANSWER(priv_list_extensions, 0);
 	reply->reply.response_type = answer->reply.response_type;
@@ -52,40 +58,46 @@ xcb_list_extensions_reply_t *xcb_list_extensions_reply(xcb_connection_t *conn,
 	return &reply->reply;
 }
 
-int xcb_list_extensions_names_length(const xcb_list_extensions_reply_t *reply)
+int
+xcb_list_extensions_names_length(const xcb_list_extensions_reply_t *reply)
 {
 	return reply->names_len;
 }
 
-xcb_str_iterator_t xcb_list_extensions_names_iterator(const xcb_list_extensions_reply_t *reply)
+xcb_str_iterator_t
+xcb_list_extensions_names_iterator(const xcb_list_extensions_reply_t *reply)
 {
 	xcb_priv_list_extensions_reply_t *priv_reply = (xcb_priv_list_extensions_reply_t*)reply;
 	xcb_str_iterator_t it;
+
 	it.data = &priv_reply->names->str;
 	it.rem = reply->names_len;
 	it.index = 0;
 	return it;
 }
 
-xcb_query_extension_cookie_t xcb_query_extension(xcb_connection_t *conn,
-                                                 uint16_t name_len,
-                                                 const char *name)
+xcb_query_extension_cookie_t
+xcb_query_extension(xcb_connection_t *conn,
+                    uint16_t name_len,
+                    const char *name)
 {
+	xcb_query_extension_cookie_t cookie;
 	uint16_t length = 2 + (name_len + 3) / 4;
+
 	REQ_INIT(query_extension, XCB_QUERY_EXTENSION, length);
 	r->pad0 = 0;
 	r->name_len = name_len;
 	r->pad1 = 0;
 	buf_write(&conn->wbuf, name, name_len);
 	buf_wpad(&conn->wbuf);
-	xcb_query_extension_cookie_t cookie;
 	cookie.sequence = ++conn->sequence;
 	return cookie;
 }
 
-xcb_query_extension_reply_t *xcb_query_extension_reply(xcb_connection_t *conn,
-                                                       xcb_query_extension_cookie_t cookie,
-                                                       xcb_generic_error_t **error)
+xcb_query_extension_reply_t *
+xcb_query_extension_reply(xcb_connection_t *conn,
+                          xcb_query_extension_cookie_t cookie,
+                          xcb_generic_error_t **error)
 {
 	REPLY_ANSWER(query_extension, 0);
 	reply->response_type = answer->reply.response_type;
@@ -99,27 +111,30 @@ xcb_query_extension_reply_t *xcb_query_extension_reply(xcb_connection_t *conn,
 	return reply;
 }
 
-xcb_void_cookie_t xcb_create_window(xcb_connection_t *conn,
-                                    uint8_t depth,
-                                    xcb_window_t wid,
-                                    xcb_window_t parent,
-                                    int16_t x,
-                                    int16_t y,
-                                    uint16_t width,
-                                    uint16_t height,
-                                    uint16_t border_width,
-                                    uint16_t _class,
-                                    xcb_visualid_t visual,
-                                    uint32_t value_mask,
-                                    const uint32_t *value_list)
+xcb_void_cookie_t
+xcb_create_window(xcb_connection_t *conn,
+                  uint8_t depth,
+                  xcb_window_t wid,
+                  xcb_window_t parent,
+                  int16_t x,
+                  int16_t y,
+                  uint16_t width,
+                  uint16_t height,
+                  uint16_t border_width,
+                  uint16_t _class,
+                  xcb_visualid_t visual,
+                  uint32_t value_mask,
+                  const uint32_t *value_list)
 {
+	uint16_t length;
 	size_t n = 0;
+
 	for (size_t i = 0; i < 15; ++i)
 	{
 		if (value_mask & (1 << i))
 			n++;
 	}
-	uint16_t length = 8 + n;
+	length = 8 + n;
 	REQ_INIT(create_window, XCB_CREATE_WINDOW, length);
 	r->depth = depth;
 	r->wid = wid;
@@ -138,24 +153,23 @@ xcb_void_cookie_t xcb_create_window(xcb_connection_t *conn,
 		if (value_mask & (1 << i))
 			buf_write(&conn->wbuf, &value_list[n++], 4);
 	}
-	xcb_void_cookie_t cookie;
-	cookie.sequence = ++conn->sequence;
-	return cookie;
+	return xcb_build_void_cookie(conn);
 }
 
-xcb_void_cookie_t xcb_create_window_checked(xcb_connection_t *conn,
-                                            uint8_t depth,
-                                            xcb_window_t wid,
-                                            xcb_window_t parent,
-                                            int16_t x,
-                                            int16_t y,
-                                            uint16_t width,
-                                            uint16_t height,
-                                            uint16_t border_width,
-                                            uint16_t _class,
-                                            xcb_visualid_t visual,
-                                            uint32_t value_mask,
-                                            const uint32_t *value_list)
+xcb_void_cookie_t
+xcb_create_window_checked(xcb_connection_t *conn,
+                          uint8_t depth,
+                          xcb_window_t wid,
+                          xcb_window_t parent,
+                          int16_t x,
+                          int16_t y,
+                          uint16_t width,
+                          uint16_t height,
+                          uint16_t border_width,
+                          uint16_t _class,
+                          xcb_visualid_t visual,
+                          uint32_t value_mask,
+                          const uint32_t *value_list)
 {
 	return checked_request(conn,
 		xcb_create_window(conn,
@@ -173,10 +187,12 @@ xcb_void_cookie_t xcb_create_window_checked(xcb_connection_t *conn,
 		                  value_list));
 }
 
-xcb_void_cookie_t xcb_destroy_window(xcb_connection_t *conn,
-                                     xcb_window_t window)
+xcb_void_cookie_t
+xcb_destroy_window(xcb_connection_t *conn,
+                   xcb_window_t window)
 {
 	uint16_t length = 2;
+
 	REQ_INIT(destroy_window, XCB_DESTROY_WINDOW, length);
 	r->pad0 = 0;
 	r->window = window;

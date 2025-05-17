@@ -2,7 +2,8 @@
 
 #include <unistd.h>
 
-int setpgid(pid_t pid, pid_t pgid)
+int
+setpgid(pid_t pid, pid_t pgid)
 {
 	return syscall2(SYS_setpgid, pid, pgid);
 }

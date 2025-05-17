@@ -16,16 +16,19 @@ struct env
 	const char *sep;
 };
 
-static void strings_file(struct env *env, const char *file)
+static void
+strings_file(struct env *env, const char *file)
 {
-	FILE *fp = fopen(file, "r");
+	FILE *fp;
+	long buf_sz = 0;
+	int c;
+
+	fp = fopen(file, "r");
 	if (!fp)
 	{
 		fprintf(stderr, "%s: %s\n", env->progname, strerror(errno));
 		goto end;
 	}
-	long buf_sz = 0;
-	int c;
 	while ((c = getc(fp)) != EOF)
 	{
 		if (!isprint(c))
@@ -58,7 +61,8 @@ end:
 		fclose(fp);
 }
 
-static void usage(const char *progname)
+static void
+usage(const char *progname)
 {
 	printf("%s [-h] [-n minlen] [-f] [-s separator] FILES\n", progname);
 	printf("-h          : show this help\n");
@@ -67,7 +71,8 @@ static void usage(const char *progname)
 	printf("-s separator: use the given separator between each match instead of newline\n");
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct env env;
 	int c;

@@ -5,20 +5,23 @@
 #include <string.h>
 #include <stdio.h>
 
-static const char *map_states[] =
+static const char *
+map_states[] =
 {
 	[IsUnmapped]   = "IsUnmapped",
 	[IsUnviewable] = "IsUnviewable",
 	[IsViewable]   = "IsViewable",
 };
 
-static const char *classes[] =
+static const char *
+classes[] =
 {
 	[InputOnly]   = "InputOnly",
 	[InputOutput] = "InputOutput",
 };
 
-static const char *win_gravities[] =
+static const char *
+win_gravities[] =
 {
 	[UnmapGravity]     = "UnmapGravity",
 	[NorthWestGravity] = "NorthWestGravity",
@@ -33,7 +36,8 @@ static const char *win_gravities[] =
 	[StaticGravity]    = "StaticGravity",
 };
 
-static const char *bit_gravities[] =
+static const char *
+bit_gravities[] =
 {
 	[ForgetGravity]    = "ForgetGravity",
 	[NorthWestGravity] = "NorthWestGravity",
@@ -48,14 +52,16 @@ static const char *bit_gravities[] =
 	[StaticGravity]    = "StaticGravity",
 };
 
-static const char *backing_stores[] =
+static const char *
+backing_stores[] =
 {
 	[NotUseful]  = "NotUseful",
 	[WhenMapped] = "WhenMapped",
 	[Always]     = "Always",
 };
 
-static const char *event_masks[] =
+static const char *
+event_masks[] =
 {
 	"KeyPress",
 	"KeyRelease",
@@ -84,16 +90,21 @@ static const char *event_masks[] =
 	"OwnerGrabButton",
 };
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
+	XWindowAttributes attributes;
+	XTextProperty *prop;
+	Display *display;
+	Window window;
+
 	(void)argc;
-	Display *display = XOpenDisplay(NULL);
+	display = XOpenDisplay(NULL);
 	if (!display)
 	{
 		fprintf(stderr, "%s: failed to open display\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	Window window;
 	if (argc > 1)
 	{
 		window = strtol(argv[1], NULL, 10);
@@ -110,18 +121,18 @@ int main(int argc, char **argv)
 	}
 	if (!window)
 		window = DefaultRootWindow(display);
-	XWindowAttributes attributes;
 	if (!XGetWindowAttributes(display, window, &attributes))
 	{
 		fprintf(stderr, "%s: failed to get window attributes\n",
 		        argv[0]);
 		return EXIT_FAILURE;
 	}
-	XTextProperty *prop;
 	if (!XGetWMName(display, window, &prop))
 		prop = NULL;
 	printf("\n");
-	printf("%s: Window id: 0x%x \"%s\"\n", argv[0], window,
+	printf("%s: Window id: 0x%x \"%s\"\n",
+	       argv[0],
+	       window,
 	       prop ? (char*)prop->value : "");
 	printf("\n");
 	printf("  Relative upper-left X: %d\n", attributes.x);
