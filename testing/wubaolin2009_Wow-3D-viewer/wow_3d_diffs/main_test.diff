@@ -1,0 +1,13 @@
+﻿diff --git a/C:/Users/jonas/Code2/Wow/tools/my_world/c++/wubaolin2009_Wow-3D-viewer/main_test.cpp b/C:/Users/jonas/Code2/Wow/tools/my_world/testing/wubaolin2009_Wow-3D-viewer/main_test.cpp
+index 190c214..a3c11a5 100644
+--- a/C:/Users/jonas/Code2/Wow/tools/my_world/c++/wubaolin2009_Wow-3D-viewer/main_test.cpp
++++ b/C:/Users/jonas/Code2/Wow/tools/my_world/testing/wubaolin2009_Wow-3D-viewer/main_test.cpp
+@@ -7,7 +7,7 @@
+ #include "creature.h"
+ #include "ray.h"
+ #include "CharControl.h"
+-#include "my_CEGUI.h"
++//#include "my_CEGUI.h"
+ #include "world.h"
+ 
+ #include <Windows.h>

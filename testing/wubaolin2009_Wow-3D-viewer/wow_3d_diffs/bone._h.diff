@@ -1,0 +1,13 @@
+﻿diff --git a/C:/Users/jonas/Code2/Wow/tools/my_world/c++/wubaolin2009_Wow-3D-viewer/bone.h b/C:/Users/jonas/Code2/Wow/tools/my_world/testing/wubaolin2009_Wow-3D-viewer/bone.h
+index da29cea..1dabc0a 100644
+--- a/C:/Users/jonas/Code2/Wow/tools/my_world/c++/wubaolin2009_Wow-3D-viewer/bone.h
++++ b/C:/Users/jonas/Code2/Wow/tools/my_world/testing/wubaolin2009_Wow-3D-viewer/bone.h
+@@ -45,7 +45,7 @@ public:
+ 
+ 	bool calc;
+ 	CharacterModel *model;
+-	void calcMatrix(Bone* allbones,ssize_t anim, size_t time, bool rotate=true);
++	void calcMatrix(Bone* allbones,SSIZE_T anim, size_t time, bool rotate=true);
+ 	void initV3(MPQFile &f, ModelBoneDef &b, uint32 *global, MPQFile *animfiles);
+ 	///void initV2(MPQFile &f, ModelBoneDef &b, uint32 *global);  //æ¬╘ô╩╟ÅUùë╡─
+ };

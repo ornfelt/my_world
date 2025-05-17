@@ -1,0 +1,22 @@
+﻿diff --git a/C:/Users/jonas/Code2/Wow/tools/my_world/c++/wubaolin2009_Wow-3D-viewer/animated.cpp b/C:/Users/jonas/Code2/Wow/tools/my_world/testing/wubaolin2009_Wow-3D-viewer/animated.cpp
+index 4c16d5e..1f12a5c 100644
+--- a/C:/Users/jonas/Code2/Wow/tools/my_world/c++/wubaolin2009_Wow-3D-viewer/animated.cpp
++++ b/C:/Users/jonas/Code2/Wow/tools/my_world/testing/wubaolin2009_Wow-3D-viewer/animated.cpp
+@@ -12,7 +12,7 @@ void ModelTransparency::init(MPQFile &f, ModelTransDef &mcd, uint32 *global)
+ }
+ 
+ //1╘┬26╚╒╝╙╚δ TexAnim
+-void TextureAnim::calc(ssize_t anim, size_t time)
++void TextureAnim::calc(SSIZE_T anim, size_t time)
+ {
+ 	if (trans.uses(anim)) {
+ 		tval = trans.getValue(anim, time);
+@@ -25,7 +25,7 @@ void TextureAnim::calc(ssize_t anim, size_t time)
+ 	}
+ }
+ //1╘┬29╚╒ ╢╘╬╞└φ╜°╨╨▒Σ╗╗
+-void TextureAnim::setup(ssize_t anim,LPDIRECT3DDEVICE9 p_d3ddevice)
++void TextureAnim::setup(SSIZE_T anim,LPDIRECT3DDEVICE9 p_d3ddevice)
+ {
+ 	/*glLoadIdentity();
+ 	if (trans.uses(anim)) {

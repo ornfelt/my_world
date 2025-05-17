@@ -1,0 +1,13 @@
+﻿diff --git a/C:/Users/jonas/Code2/Wow/tools/my_world/c++/wubaolin2009_Wow-3D-viewer/bone.cpp b/C:/Users/jonas/Code2/Wow/tools/my_world/testing/wubaolin2009_Wow-3D-viewer/bone.cpp
+index e6a2164..2511522 100644
+--- a/C:/Users/jonas/Code2/Wow/tools/my_world/c++/wubaolin2009_Wow-3D-viewer/bone.cpp
++++ b/C:/Users/jonas/Code2/Wow/tools/my_world/testing/wubaolin2009_Wow-3D-viewer/bone.cpp
+@@ -30,7 +30,7 @@ void PrintMatrix(Matrix& ma)
+ 
+ }
+ 
+-void Bone::calcMatrix(Bone *allbones,ssize_t anim, size_t time, bool rotate)
++void Bone::calcMatrix(Bone *allbones,SSIZE_T anim, size_t time, bool rotate)
+ {
+ 	if (calc)
+ 		return;

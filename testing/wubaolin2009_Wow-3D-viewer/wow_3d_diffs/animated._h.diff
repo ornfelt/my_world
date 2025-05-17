@@ -1,0 +1,17 @@
+﻿diff --git a/C:/Users/jonas/Code2/Wow/tools/my_world/c++/wubaolin2009_Wow-3D-viewer/animated.h b/C:/Users/jonas/Code2/Wow/tools/my_world/testing/wubaolin2009_Wow-3D-viewer/animated.h
+index 6564977..8e2230a 100644
+--- a/C:/Users/jonas/Code2/Wow/tools/my_world/c++/wubaolin2009_Wow-3D-viewer/animated.h
++++ b/C:/Users/jonas/Code2/Wow/tools/my_world/testing/wubaolin2009_Wow-3D-viewer/animated.h
+@@ -379,9 +379,9 @@ public:
+ 
+ 	Vec3D tval, rval, sval;
+ 
+-	void calc(ssize_t anim, size_t time);
++	void calc(SSIZE_T anim, size_t time);
+ 	void init(MPQFile &f, ModelTexAnimDef &mta, uint32 *global);
+-	void setup(ssize_t anim,LPDIRECT3DDEVICE9 p_d3ddevice);
++	void setup(SSIZE_T anim,LPDIRECT3DDEVICE9 p_d3ddevice);
+ };
+ 
+ #endif
+\ No newline at end of file
