@@ -20,3 +20,8 @@ link_directories("C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Lib/x
 # Link against DirectX 9 libraries
 target_link_libraries(wow_3d d3d9.lib d3dx9.lib)
 
+# Fix linker subsystem
+set_target_properties(wow_3d PROPERTIES
+    LINK_FLAGS "/SUBSYSTEM:WINDOWS"
+)
+
